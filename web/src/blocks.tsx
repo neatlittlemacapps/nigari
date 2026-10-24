@@ -469,6 +469,7 @@ type ColumnsEditor = {
   insertBlocks: (blocks: unknown[], ref: unknown, place: 'before' | 'after') => void;
   removeBlocks: (blocks: unknown[]) => void;
   getBlock: (id: string) => ColumnsBlockData | undefined;
+  isEditable: boolean;
 };
 type ColumnsBlockData = {
   id: string;
@@ -477,10 +478,10 @@ type ColumnsBlockData = {
 };
 
 // The row the columns sit in is the .bn-block-group BELOW this block, so the
-// grip cannot live in it. It lives in this block's own strip, hung down over the
-// group, and is placed from the group's measured width — measured, never
-// written: see the note in ColumnsBlock about marking editor DOM.
-type Geometry = { left: number; width: number; gap: number; height: number };
+// divider cannot live in it. It lives in this block's own strip, laid over the
+// group, and is placed from the group's measured box — measured, never written:
+// see the note in ColumnsBlock about marking editor DOM.
+type Geometry = { left: number; top: number; width: number; gap: number; height: number };
 
 function ColumnsBlock({ block, editor }: { block: ColumnsBlockData; editor: ColumnsEditor }) {
   const count = Number(block.props.count) === 3 ? 3 : 2;
@@ -490,6 +491,10 @@ function ColumnsBlock({ block, editor }: { block: ColumnsBlockData; editor: Colu
   // edit per pixel into the undo history and over the wire to collaborators.
   const [drag, setDrag] = useState<number[] | null>(null);
   const widths = drag ?? stored ?? equalWidths(count);
+  // Where the tracks really are. Equal columns are 1fr each, a true third, not
+  // the 33/33/34 that equalWidths hands out for storing: drawn from that the
+  // divider sat up to 3px off the gap's middle.
+  const drawn = drag ?? stored ?? Array<number>(count).fill(100 / count);
   const strip = useRef<HTMLDivElement>(null);
   const [geo, setGeo] = useState<Geometry | null>(null);
 
@@ -500,11 +505,15 @@ function ColumnsBlock({ block, editor }: { block: ColumnsBlockData; editor: Colu
       const r = row.getBoundingClientRect();
       const s = strip.current!.getBoundingClientRect();
       const gap = parseFloat(getComputedStyle(row).columnGap) || 0;
-      setGeo({ left: r.left - s.left, width: r.width, gap, height: r.height });
+      setGeo({ left: r.left - s.left, top: r.top - s.top, width: r.width, height: r.height, gap });
     };
     measure();
+    // The strip too: the row can stay the same size while the strip above it
+    // grows or shrinks (the bar wrapping on a narrow screen), and the row's top
+    // is measured from the strip.
     const ro = new ResizeObserver(measure);
     ro.observe(row);
+    ro.observe(strip.current);
     return () => ro.disconnect();
   }, [count, block.children.length]);
 
@@ -588,39 +597,49 @@ function ColumnsBlock({ block, editor }: { block: ColumnsBlockData; editor: Colu
   // repeating one is the plain way to count for more without !important.
   const row = `[data-id="${id}"]`.repeat(3);
   const tracks = geo && count > 1 ? geo : null;
+  const editable = editor.isEditable;
   let x = 0;
   return (
     <div className="bn-columns" data-count={count} contentEditable={false} ref={strip}>
       {custom && (
         <style>{`.bn-block-outer${row} > .bn-block > .bn-block-group{grid-template-columns:${gridTemplate(custom)}}`}</style>
       )}
-      <div className="bn-columns-bar" role="group" aria-label={t('Column layout')}>
-        {PRESETS.map((w) => {
-          const on = w.length === count && sameWidths(w, stored ?? equalWidths(count));
-          return (
-            <button
-              key={w.join('-')}
-              type="button"
-              className={'bn-columns-n' + (on ? ' is-on' : '')}
-              aria-pressed={on}
-              onClick={() => apply(w)}
-              title={w.join(' / ')}
-            >
-              <span className="bn-columns-glyph" aria-hidden="true">
-                {w.map((n, i) => (
-                  <i key={i} style={{ flex: n }} />
-                ))}
-              </span>
-              <span className="bn-columns-sr">{w.join(' / ')}</span>
-            </button>
-          );
-        })}
-      </div>
+      {editable && (
+        <div className="bn-columns-bar" role="group" aria-label={t('Column layout')}>
+          {PRESETS.map((w) => {
+            const on = w.length === count && sameWidths(w, stored ?? equalWidths(count));
+            return (
+              <button
+                key={w.join('-')}
+                type="button"
+                className={'bn-columns-n' + (on ? ' is-on' : '')}
+                aria-pressed={on}
+                onClick={() => apply(w)}
+                title={w.join(' / ')}
+              >
+                <span className="bn-columns-glyph" aria-hidden="true">
+                  {w.map((n, i) => (
+                    <i key={i} style={{ flex: n }} />
+                  ))}
+                </span>
+                <span className="bn-columns-sr">{w.join(' / ')}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
       {tracks &&
         widths.slice(0, -1).map((w, i) => {
           const room = tracks.width - tracks.gap * (count - 1);
-          x += (w / 100) * room;
+          x += (drawn[i] / 100) * room;
           const centre = tracks.left + x + tracks.gap * i + tracks.gap / 2;
+          // One element is both the divider and its handle, so the line can
+          // never drift away from the thing that drags it. Where the page cannot
+          // be edited it is the line alone: no role, no focus, no handlers.
+          const place = { left: centre - 6, top: tracks.top, height: tracks.height };
+          if (!editable) {
+            return <div key={i} className="bn-columns-grip is-static" aria-hidden="true" style={place} />;
+          }
           return (
             <div
               key={i}
@@ -632,8 +651,15 @@ function ColumnsBlock({ block, editor }: { block: ColumnsBlockData; editor: Colu
               aria-valuemin={MIN_PCT}
               aria-valuemax={100 - MIN_PCT}
               tabIndex={0}
-              style={{ left: centre - 6, height: tracks.height }}
+              style={place}
               title={t('Drag to resize, double-click to reset')}
+              // Not preventDefault on the POINTERdown (see startDrag), but on the
+              // mousedown behind it: that is the one ProseMirror listens to, and
+              // it would otherwise start a text or node selection in the row.
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
               onPointerDown={startDrag(i)}
               onKeyDown={onKey(i)}
               onDoubleClick={() => stored && commit(equalWidths(count))}

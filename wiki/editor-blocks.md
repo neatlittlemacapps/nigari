@@ -98,9 +98,10 @@ column; going back to two removes the last column only if it is empty, so
 nothing you wrote is deleted by a click. A column is one block, and a block can
 be indented into it, so a column can hold more than one thing.
 
-**Drag the gap between two columns** to change their widths. It is the same
-handle as a table's column border: the cursor turns into a column-resize arrow
-and the handle lights up under the pointer. The two columns beside the handle
+A thin line runs down the middle of the gap between columns. **Drag it** to
+change their widths. It is the same handle as a table's column border: the
+cursor turns into a column-resize arrow and the line thickens under the
+pointer. Where a page cannot be edited the line stays and the handle goes. The two columns beside the handle
 trade width and neither goes below 15%. Double-click the handle to make the
 columns equal again. With the keyboard, Tab to a handle and press the left or
 right arrow (5% a press, 1% with Shift). The widths are saved on the block, so
