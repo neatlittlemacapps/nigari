@@ -9960,7 +9960,12 @@ body:has(.live-down) .update-banner {
    block's children, which BlockNote renders into the .bn-block-group beneath
    it. Laying that group out as a grid is the whole feature — no container, no
    nested editor, and every bit of nesting behaviour keeps working. */
+.bn-block-content[data-content-type='columns'],
 .bn-columns {
+  width: 100%;
+}
+.bn-columns {
+  position: relative;
   display: flex;
   justify-content: flex-end;
   padding: 2px 0;
@@ -9971,7 +9976,11 @@ body:has(.live-down) .update-banner {
   opacity: 0;
   transition: opacity 0.12s;
 }
+/* Two forms, as for the row below: BlockNote wraps a React block in a
+   .react-renderer between the block and its content, so the plain child chain
+   alone never matched and the bar only ever showed when it had focus. */
 .bn-block:hover > .bn-block-content > .bn-columns .bn-columns-bar,
+.bn-block:hover > * > .bn-block-content > .bn-columns .bn-columns-bar,
 .bn-columns-bar:focus-within {
   opacity: 1;
 }
@@ -9990,6 +9999,47 @@ body:has(.live-down) .update-banner {
   background: var(--accent-soft, #e8f2ec);
   color: var(--accent, #2f7d4f);
   border-color: transparent;
+}
+/* A layout drawn as itself: one little bar per column, as wide as the column. */
+.bn-columns-glyph {
+  display: flex;
+  gap: 2px;
+  width: 24px;
+  height: 11px;
+}
+.bn-columns-glyph i {
+  min-width: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.6;
+}
+.bn-columns-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+/* The grip between two columns is the table's own (.col-resize: same width,
+   cursor, hover colour and is-col-resizing), moved from a cell's edge to the
+   gap. It hangs from the bottom of the strip down over the row of columns, and
+   is placed inline from the measured row. It shows only while hovered, dragged
+   or focused with the keyboard, like the table's. */
+.col-resize.bn-columns-grip {
+  top: 100%;
+  right: auto;
+  z-index: 2;
+  border-radius: 3px;
+}
+.col-resize.bn-columns-grip:focus {
+  outline: none;
+}
+.col-resize.bn-columns-grip:focus-visible {
+  outline: 2px solid var(--accent, #2f7d4f);
+  outline-offset: -2px;
+  background: var(--accent, #3b6fb5);
+  opacity: 0.5;
 }
 /* Two forms of the same rule, because BlockNote puts a wrapper between the
    block and its content and the class on that wrapper is not ours to rely on.
