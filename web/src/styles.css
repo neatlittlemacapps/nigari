@@ -10022,24 +10022,46 @@ body:has(.live-down) .update-banner {
   white-space: nowrap;
 }
 /* The grip between two columns is the table's own (.col-resize: same width,
-   cursor, hover colour and is-col-resizing), moved from a cell's edge to the
-   gap. It hangs from the bottom of the strip down over the row of columns, and
-   is placed inline from the measured row. It shows only while hovered, dragged
-   or focused with the keyboard, like the table's. */
-.col-resize.bn-columns-grip {
+   cursor and is-col-resizing), moved from a cell's edge to the gap. The 12px
+   box is only the target; what you see is a thin line down the middle of the
+   gap, ON the divider, faint while the block is hovered and in the accent
+   colour under the pointer, while dragging, or with keyboard focus. It hangs
+   from the bottom of the strip over the row of columns and is placed inline
+   from the measured row. */
+.col-resize.bn-columns-grip,
+.col-resize.bn-columns-grip:hover,
+.col-resize.bn-columns-grip:active {
   top: 100%;
   right: auto;
   z-index: 2;
-  border-radius: 3px;
+  background: none;
+  opacity: 1;
+}
+.bn-columns-grip::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: var(--accent, #3b6fb5);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.bn-block:hover .bn-columns-grip::before {
+  opacity: 0.25;
+}
+.bn-columns-grip:hover::before,
+.bn-columns-grip:active::before,
+.bn-columns-grip:focus-visible::before {
+  width: 4px;
+  margin-left: -2px;
+  opacity: 0.7;
 }
 .col-resize.bn-columns-grip:focus {
   outline: none;
-}
-.col-resize.bn-columns-grip:focus-visible {
-  outline: 2px solid var(--accent, #2f7d4f);
-  outline-offset: -2px;
-  background: var(--accent, #3b6fb5);
-  opacity: 0.5;
 }
 /* Two forms of the same rule, because BlockNote puts a wrapper between the
    block and its content and the class on that wrapper is not ours to rely on.
