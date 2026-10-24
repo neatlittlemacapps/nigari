@@ -121,6 +121,9 @@ interface Props {
    *  navigates the one you are in (see pageOpen). */
   onOpenInNewTab?: (id: string) => void;
   onPagesChanged: () => void;
+  /** Opens one of this database's templates for editing, in a dialog. Without
+   *  it (an embedded view) the template opens as a page instead. */
+  onEditTemplate?: (id: string) => void;
   embed?: EmbedState;
 }
 
@@ -261,7 +264,7 @@ function applyView(rows: Row[], view: ViewDef, schema: PropDef[]): Row[] {
   return out;
 }
 
-export default function CollectionView({ collectionId, pages, tagColors, onNavigate, onOpenInNewTab, onPagesChanged, embed }: Props) {
+export default function CollectionView({ collectionId, pages, tagColors, onNavigate, onOpenInNewTab, onPagesChanged, onEditTemplate, embed }: Props) {
   const [config, setConfig] = useState<CollectionConfig | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   // A full page remembers its view across tab switches and reloads (see
@@ -325,7 +328,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     setTplOpen(false);
     try {
       const p = await api.addDatabaseTemplate(collectionId);
-      onNavigate(p.id);
+      (onEditTemplate ?? onNavigate)(p.id);
     } catch {
       toast(t('Could not create the template'));
     }
@@ -1004,7 +1007,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
                           </button>
                           {tplRowMenu === p.id && (
                             <div className="menu dbt-row-menu" role="menu">
-                              <button role="menuitem" onClick={() => { setTplOpen(false); onNavigate(p.id); }}>
+                              <button role="menuitem" onClick={() => { setTplOpen(false); (onEditTemplate ?? onNavigate)(p.id); }}>
                                 <Pencil size={15} /> {t('Edit')}
                               </button>
                               <button role="menuitem" onClick={() => void duplicateTemplate(p)}>

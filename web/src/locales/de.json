@@ -1138,5 +1138,6 @@
   "Saved as a template of this database": "Als Vorlage dieser Datenbank gespeichert",
   "Template for {name}. New rows start as a copy of this page.": "Vorlage für {name}. Neue Zeilen beginnen als Kopie dieser Seite.",
   "Templates for {name}": "Vorlagen für {name}",
-  "Copy of {name}": "Kopie von {name}"
+  "Copy of {name}": "Kopie von {name}",
+  "Edit template": "Vorlage bearbeiten"
 }

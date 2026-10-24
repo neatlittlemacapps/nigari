@@ -38,6 +38,7 @@ import { collectTags, suggestTags } from '../tagSuggest';
 import { modalOpen, useMenuDismiss } from '../modal';
 import { Menu, Copy, Star, Lock, LockOpen, Globe, MessageSquare, History, MoreHorizontal, Printer, FileCode, FileText, Upload, AlignLeft, Check, Image as ImageIcon , Smile, PanelRight, Link2, Trash2, FilePlus2, Columns2, Workflow, LayoutTemplate} from 'lucide-react';
 import { blockTypeFor, carriesExternalFiles } from '../dropFiles';
+import Portal from './Portal';
 
 export interface EditorProps {
   pageId: string;
@@ -54,6 +55,9 @@ export interface EditorProps {
   onMissing: (id: string) => void;
   onNavigate: (id: string | null) => void;
   onOpenInNewTab: (id: string) => void;
+  /** Shown inside a dialog (editing a database's template): no top bar, and the
+   *  dialog's own Done button replaces the way back to the database. */
+  inDialog?: boolean;
   onCreatePage: (parentId: string | null, type?: 'doc' | 'collection') => void;
   // Deleting was reachable from the sidebar tree only. A database ROW — and any
   // page filed under one — never appears there as a tree item, so nothing in the
@@ -68,6 +72,8 @@ export default function Editor(props: EditorProps) {
   const [page, setPage] = useState<Page | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
+  // A database's template being edited in a dialog over this page.
+  const [tplEditId, setTplEditId] = useState<string | null>(null);
   // The panel is a reading preference, not a property of the page: it stays
   // put while you move through the workspace, like the comment column's.
   const [structureOpen, setStructureOpen] = useState(structurePanelOpen);
@@ -185,6 +191,7 @@ export default function Editor(props: EditorProps) {
         'editor-page' +
         (structureOpen || (commentsOpen && canComment) ? ' with-structure' : '') +
         (narrow ? ' is-narrow' : '') +
+        (props.inDialog ? ' in-dialog' : '') +
         (arriving ? ' panel-arriving' : '')
       }
     >
@@ -206,6 +213,7 @@ export default function Editor(props: EditorProps) {
             onNavigate={props.onNavigate}
             onOpenInNewTab={props.onOpenInNewTab}
             onPagesChanged={props.onPagesChanged}
+            onEditTemplate={props.inDialog ? undefined : setTplEditId}
           />
         ) : (
           <CollabEditor
@@ -233,6 +241,9 @@ export default function Editor(props: EditorProps) {
           onClose={() => showComments(false)}
         />
       )}
+      {tplEditId && (
+        <TemplateEditDialog templateId={tplEditId} editorProps={props} onClose={() => setTplEditId(null)} />
+      )}
       {structureOpen && (
         <StructurePanel
           pageId={page.id}
@@ -243,6 +254,52 @@ export default function Editor(props: EditorProps) {
         />
       )}
     </div>
+  );
+}
+
+// A database's template, opened over the database instead of in a tab of its
+// own: you came from the New menu and go back to it. It is the ordinary page
+// editor, minus the top bar.
+function TemplateEditDialog({
+  templateId,
+  editorProps,
+  onClose,
+}: {
+  templateId: string;
+  editorProps: EditorProps;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <Portal>
+      <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+        <div className="dialog wide tpl-editor" role="dialog" aria-modal="true" aria-label={t('Edit template')}>
+          <div className="tpl-editor-bar">
+            <span>{t('Edit template')}</span>
+            <button className="btn-sm primary" onClick={onClose}>
+              {t('Done')}
+            </button>
+          </div>
+          <div className="tpl-editor-body">
+            <Editor
+              {...editorProps}
+              pageId={templateId}
+              inDialog
+              onNavigate={(id) => {
+                onClose();
+                editorProps.onNavigate(id);
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </Portal>
   );
 }
 
@@ -464,6 +521,7 @@ function PageHeader({
   onToggleFavorite,
   onMetaChange,
   onNavigate,
+  inDialog,
   onTrash,
   onLocalMeta,
   onPagesChanged,
@@ -1278,9 +1336,11 @@ function PageHeader({
               pagesById.get(page.templateOf)?.title || t('Untitled'),
             )}
           </span>
-          <button className="btn-sm" onClick={() => onNavigate(page.templateOf!)}>
-            {t('Back to the database')}
-          </button>
+          {!inDialog && (
+            <button className="btn-sm" onClick={() => onNavigate(page.templateOf!)}>
+              {t('Back to the database')}
+            </button>
+          )}
         </div>
       )}
       <div className={'page-head' + (cover ? ' with-cover' : '') + (page.type === 'collection' ? ' page-head--db' : '')}>

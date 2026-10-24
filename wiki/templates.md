@@ -229,7 +229,7 @@ arrow. It opens a menu headed *Templates for <database>*:
 | --- | --- |
 | **Empty row** | the same as pressing **New** |
 | a template's name | creates a row from it and stays on the database |
-| the pencil beside a name | opens the template itself, to edit it |
+| the **⋯** beside a name | **Edit** opens the template in a dialog, **Duplicate** makes a copy of it, **Move to trash** removes it |
 | **New template** | creates an empty template and opens it |
 
 A database with no templates yet shows *Create a reusable page template for
@@ -243,8 +243,10 @@ template changes the rows made later, never the ones that exist.
 **Making one.** Either **New template** in that menu, or the **⋯** menu of a
 row, **Save as a template of this database**, which snapshots that row and
 leaves it where it is. A template opens as an ordinary page with the database's
-properties under the title, and a line above it, *Template for <database>*,
-with a button back to the database.
+properties under the title, and a line above it, *Template for <database>*.
+It opens in a dialog over the database, with a **Done** button, so you never
+leave the table. (A database embedded in another page opens the template as a
+page instead.)
 
 **Where it lives.** A template of a database has no parent page. That is what
 keeps it out of the table, the counts, rollups, relations, the calendar feed,

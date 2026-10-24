@@ -10397,3 +10397,31 @@ body:has(.live-down) .update-banner {
 .template-banner > span {
   flex: 1;
 }
+
+/* A database's template edited in a dialog: the page editor fills it, and its
+   top bar (breadcrumb, share, menu) is left out, because none of that is about
+   a template. */
+.modal-overlay > .dialog.tpl-editor {
+  width: min(860px, 96vw);
+  height: calc(100dvh - 9dvh);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.tpl-editor-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+}
+.tpl-editor-body {
+  flex: 1;
+  min-height: 0;
+}
+.editor-page.in-dialog .topbar {
+  display: none;
+}
