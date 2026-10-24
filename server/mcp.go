@@ -145,7 +145,8 @@ var mcpTools = []map[string]any{
 		"name": "update_page",
 		"description": "Update a page's metadata: title, icon, cover, description, tags, visibility — and where it sits. " +
 			"parent_id moves it under another page (empty string moves it to the top level), workspace_id moves it and its whole sub-tree into another workspace, " +
-			"and favorite pins it in the sidebar. Only the fields you pass are changed. Tags replace the whole list — call list with kind=\"tags\" first and " +
+			"and favorite pins it in the sidebar. full_width makes a document use the whole window width instead of the normal column, " +
+			"for everyone who opens it and on its public link (false puts it back; documents only). Only the fields you pass are changed. Tags replace the whole list — call list with kind=\"tags\" first and " +
 			"reuse existing tags instead of inventing near-duplicates. Cover: " + coverHint,
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{
@@ -159,6 +160,7 @@ var mcpTools = []map[string]any{
 				"parent_id":    map[string]any{"type": "string", "description": "Move under this page. Pass \"\" to move it to the top level."},
 				"workspace_id": map[string]any{"type": "string", "description": "Move the page and its whole sub-tree into this workspace. Takes precedence over parent_id."},
 				"favorite":     map[string]any{"type": "boolean", "description": "Pin the page in the sidebar, or unpin it."},
+				"full_width":   map[string]any{"type": "boolean", "description": "Make the document full width (true) or back to the normal column (false). get_page shows it as \"Page settings: full_width=true\" when on; missing means off."},
 			},
 			"required": []string{"page_id"}},
 	},
@@ -686,6 +688,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		// get_page absorbed export_markdown; its flag reads better as this.
 		IncludeChildren bool  `json:"include_children"`
 		Favorite        *bool `json:"favorite"`
+		FullWidth       *bool `json:"full_width"`
 		// Agent parity A2.
 		RemoveProperties []string `json:"remove_properties"`
 		PropertyID       string   `json:"property_id"`
@@ -899,7 +902,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 				}
 				return wrapUntrusted(md), nil
 			}
-			return wrapUntrusted(pageMarkdown(p)), nil
+			return wrapUntrusted(pageMarkdown(p)) + appearanceNote(p.Props), nil
 		case "create_page":
 			// template_id replaces create_from_template: same act, one entry point.
 			if args.TemplateID != "" {
@@ -990,6 +993,17 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 				}
 				done = append(done, msg)
 			}
+			appearance := map[string]bool{}
+			if args.FullWidth != nil {
+				appearance["full_width"] = *args.FullWidth
+			}
+			if len(appearance) > 0 {
+				msg, err := s.mcpSetAppearance(u, args.PageID, appearance)
+				if err != nil {
+					return "", err
+				}
+				done = append(done, msg)
+			}
 			hasMeta := args.Title != "" || args.Icon != "" || args.Cover != "" ||
 				args.Description != "" || args.Visibility != "" || args.Tags != nil
 			if hasMeta {
@@ -1001,7 +1015,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 				done = append(done, msg)
 			}
 			if len(done) == 0 {
-				return "", fmt.Errorf("nothing to update: pass at least one of title, icon, cover, description, visibility, tags, parent_id, workspace_id or favorite")
+				return "", fmt.Errorf("nothing to update: pass at least one of title, icon, cover, description, visibility, tags, parent_id, workspace_id, favorite or full_width")
 			}
 			return strings.Join(done, " "), nil
 		case "delete_comment":

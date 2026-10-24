@@ -99,16 +99,17 @@ func (s *Server) handlePublicView(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(doc))
 }
 
-// pageIsFullWidth reads the "Full width" switch of the page's Appearance menu.
-// It lives in the page's props under a key no property id can take (ids are
-// generated), so it is copied with the page, shared by everyone who opens it,
-// and needs no column of its own.
-func pageIsFullWidth(props json.RawMessage) bool {
+// The switches of a page's Appearance menu live in its props under keys no
+// property id can take (ids are generated), so they are copied with the page,
+// shared by everyone who opens it, and need no column of their own.
+func pageIsFullWidth(props json.RawMessage) bool { return propIsTrue(props, "_fullWidth") }
+
+func propIsTrue(props json.RawMessage, key string) bool {
 	var m map[string]json.RawMessage
 	if json.Unmarshal(props, &m) != nil {
 		return false
 	}
-	return string(m["_fullWidth"]) == "true"
+	return string(m[key]) == "true"
 }
 
 func (s *Server) publicDocument(title, body, nonce string) string {
