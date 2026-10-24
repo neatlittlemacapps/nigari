@@ -67,7 +67,7 @@ import {
   SquareArrowOutUpRight,
   ExternalLink,
   ArrowLeft,
-  ArrowRight, History} from 'lucide-react';
+  ArrowRight, History, ChevronDown, FileText, LayoutTemplate } from 'lucide-react';
 
 // Small type glyph shown next to each property (Notion-style visibility panel).
 function propTypeIcon(t: PropDef['type']) {
@@ -277,6 +277,34 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     embed?.onViewId(id);
   };
   const [schemaOpen, setSchemaOpen] = useState(false);
+  // The arrow beside New: this database's own templates, loaded when it opens
+  // so the list is never older than the click.
+  const [tplOpen, setTplOpen] = useState(false);
+  const [tpls, setTpls] = useState<PageMeta[] | null>(null);
+  const toggleTemplates = () => {
+    if (tplOpen) return setTplOpen(false);
+    setTpls(null);
+    setTplOpen(true);
+    api.databaseTemplates(collectionId).then(setTpls).catch(() => setTpls([]));
+  };
+  const addRowFromTemplate = async (templateId: string) => {
+    setTplOpen(false);
+    try {
+      await api.rowFromTemplate(collectionId, { templateId });
+      onPagesChanged();
+    } catch {
+      toast(t('The template could not be used'));
+    }
+  };
+  const newTemplate = async () => {
+    setTplOpen(false);
+    try {
+      const p = await api.addDatabaseTemplate(collectionId);
+      onNavigate(p.id);
+    } catch {
+      toast(t('Could not create the template'));
+    }
+  };
 
   // Open comments per row. Trello shows on every card whether anything was
   // discussed there — on a sales board the course of the conversation sits
@@ -904,9 +932,62 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         </div>
         )}
         {view.type !== 'form' && (
-          <button className="btn-sm primary" onClick={() => void addRow()}>
-            <Plus size={14} /> {t('New')}
-          </button>
+          <div className="view-menu-wrap split-btn">
+            <button className="btn-sm primary" onClick={() => void addRow()}>
+              <Plus size={14} /> {t('New')}
+            </button>
+            <button
+              className="btn-sm primary split-btn-arrow"
+              title={t('Templates')}
+              aria-label={t('Templates')}
+              aria-haspopup="menu"
+              aria-expanded={tplOpen}
+              onClick={toggleTemplates}
+            >
+              <ChevronDown size={14} />
+            </button>
+            {tplOpen && (
+              <>
+                <div className="fs-backdrop" onClick={() => setTplOpen(false)} />
+                <div className="menu tpl-menu" role="menu">
+                  <div className="menu-label">
+                    {t('Templates for {name}').replace('{name}', pages.get(collectionId)?.title || t('Untitled'))}
+                  </div>
+                  {tpls === null ? (
+                    <div className="tpl-hint">{t('Loading…')}</div>
+                  ) : tpls.length === 0 ? (
+                    <div className="tpl-hint">{t('Create a reusable page template for this database.')}</div>
+                  ) : (
+                    <>
+                      <button role="menuitem" onClick={() => { setTplOpen(false); void addRow(); }}>
+                        <FileText size={15} /> {t('Empty row')}
+                      </button>
+                      {tpls.map((p) => (
+                        <div key={p.id} className="tpl-item">
+                          <button role="menuitem" onClick={() => void addRowFromTemplate(p.id)}>
+                            <PageIcon icon={p.icon} size={15} fallback={<LayoutTemplate size={15} />} />
+                            <span className="tpl-name">{p.title || t('Untitled')}</span>
+                          </button>
+                          <button
+                            className="tpl-edit"
+                            title={t('Edit the template itself')}
+                            aria-label={t('Edit the template itself')}
+                            onClick={() => { setTplOpen(false); onNavigate(p.id); }}
+                          >
+                            <Pencil size={13} />
+                          </button>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  <div className="menu-sep" />
+                  <button role="menuitem" onClick={() => void newTemplate()}>
+                    <Plus size={15} /> {t('New template')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>

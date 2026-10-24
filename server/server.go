@@ -273,6 +273,9 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	m.HandleFunc("GET /api/collections/{id}", s.auth(s.handleGetCollection))
 	m.HandleFunc("PUT /api/collections/{id}", s.auth(s.handlePutCollection))
 	m.HandleFunc("GET /api/collections/{id}/rows", s.auth(s.handleCollectionRows))
+	m.HandleFunc("GET /api/collections/{id}/templates", s.auth(s.handleListDatabaseTemplates))
+	m.HandleFunc("POST /api/collections/{id}/templates", s.auth(s.handleAddDatabaseTemplate))
+	m.HandleFunc("POST /api/collections/{id}/from-template", s.auth(s.handleRowFromTemplate))
 
 	m.HandleFunc("GET /api/favorites", s.auth(s.handleListFavorites))
 	m.HandleFunc("POST /api/favorites/{id}", s.auth(s.handleAddFavorite))

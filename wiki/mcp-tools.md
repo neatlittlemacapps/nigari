@@ -1,7 +1,7 @@
 # MCP tools
 
 salt.md speaks MCP (Model Context Protocol) on one endpoint, `/mcp`, and offers
-**33 tools**. This page is the complete reference: every tool, every parameter,
+**34 tools**. This page is the complete reference: every tool, every parameter,
 what comes back, and what can go wrong. It is written for the person wiring an
 agent up and for the agent itself.
 
@@ -170,7 +170,7 @@ to it.
 | Area | Tools |
 | --- | --- |
 | Orientation | `list`, `search`, `get_page`, `get_links`, `whoami`, `get_workspace`, `get_permissions` |
-| Pages | `create_page`, `update_page`, `write_content`, `duplicate_page`, `set_trashed`, `save_as_template`, `upload_file`, `embed_database` |
+| Pages | `create_page`, `update_page`, `write_content`, `duplicate_page`, `set_trashed`, `save_as_template`, `database_templates`, `upload_file`, `embed_database` |
 | Databases | `create_database`, `get_collection`, `update_schema`, `query_rows`, `create_rows`, `set_properties`, `set_view`, `delete_view` |
 | History and talk | `revisions`, `comments`, `delete_comment`, `note` |
 | Sharing | `set_sharing` |
@@ -190,6 +190,7 @@ tools.
 | `kind` | string | yes |
 | `workspace_id` | string | no |
 | `under` | string | no |
+| `database_id` | string | no |
 
 `kind` is one of `pages`, `templates`, `tags`, `workspaces`, `files`, `users`,
 `cover_presets`.
@@ -200,7 +201,9 @@ What each returns:
   `- Title (id: …)`, with ` [database]` appended to a database. Empty answer:
   `No pages yet.`
 - **templates**: JSON with `id`, `title`, `icon`, `kind`, `description`,
-  `workspace_id`.
+  `workspace_id`. Only the workspace's own templates. With `database_id`, the
+  templates of that database instead (`id`, `title`, `icon`, `description`,
+  `database_id`), see `database_templates`.
 - **tags**: `{"tags":[{"tag":"…","count":n}]}`, most frequent first,
   alphabetical on a tie. Call this before tagging so you reuse a tag instead of
   inventing a near-duplicate.
@@ -414,10 +417,14 @@ share.
 dropped, spaces become hyphens, duplicates removed.
 
 **With `template_id` nothing else applies but `title`.** The call goes straight
-to instantiating the template and every other argument is ignored.
+to instantiating the template and every other argument is ignored. One
+exception: a template of a database (see `database_templates`) makes a **row**
+in that database, `properties` apply on top of the template's values, and
+`parent_id` may be left out. If it is given it must be that database.
 
 Returns `Created page "Title" with id <id> (path: /p/<id>)`, or
-`Created page <id> from template <id>`.
+`Created page <id> from template <id>`, or for a database's template
+`Created row <id> in database <id> from template <id>`.
 
 Errors: `title is required`; `parent page "…" not found`; `template "…" not
 found`; `page "…" is not a template`; the cover message above; `you are a viewer
@@ -550,6 +557,38 @@ parts of the sub-tree you may read.
 
 Errors: `page_id is required`; `page "…" not found`, which is also the answer
 for a page you may read but not write.
+
+### database_templates
+
+| Parameter | Type | Required |
+| --- | --- | --- |
+| `database_id` | string | yes |
+| `action` | string | no |
+| `template_id` | string | for `rename`, `remove` |
+| `title` | string | for `rename`, optional for `add` |
+| `from_page_id` | string | no |
+
+A database's **own** templates, the ones its **New** button offers. They are not
+rows and not in the workspace template list. `action` is:
+
+- `list` (the default): JSON with `id`, `title`, `icon`, `description` and
+  `database_id`, wrapped as untrusted content like every list.
+- `add`: an empty template, or with `from_page_id` a snapshot of that page,
+  usually one of the database's rows. The page must be in the same workspace.
+  Fill the new template in with `write_content` and `set_properties` on its id.
+- `rename`: give it a new `title`.
+- `remove`: to the trash. `set_trashed` with `trashed: false` restores it.
+
+To make a row from a template, call `create_page` with `template_id`. It is a
+**snapshot**: the row and the template do not affect each other afterwards, so to
+change what later rows start from, edit the template itself.
+
+`list` is a read; the other actions need a write token and write permission on
+the database. A template of another database is refused even with a valid id:
+`template "…" not found in this database`.
+
+Errors: `database_id is required`; `database "…" not found`; `template_id is
+required`; `title is required` for `rename`; `unknown action`.
 
 ### upload_file
 

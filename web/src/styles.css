@@ -10275,3 +10275,102 @@ body:has(.live-down) .update-banner {
 .prop-url-open { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 24px; height: 24px; color: var(--muted); border-radius: 4px; }
 .prop-url-open:hover { color: var(--accent); background: var(--hover); }
 .prop-url-value :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* --- a database's own templates -------------------------------------------------
+   New and its arrow are ONE button. The shape (pill, tinted fill, ring) belongs
+   to the group, and the two halves inside it are flat: each only tints on its
+   own hover, and a hairline between them says there are two things to press.
+   The mechanic is a button group: the container owns the radius and the ring,
+   the children own nothing but their hit area. */
+.split-btn {
+  align-items: stretch;
+  gap: 0;
+  border-radius: 999px;
+  background: var(--pill-dark);
+}
+.split-btn > .btn-sm.primary {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  border-radius: 0;
+  transform: none;
+  position: relative;
+}
+.split-btn > .btn-sm.primary:hover {
+  background: var(--pill-dark-hover);
+  transform: none;
+  box-shadow: none;
+}
+.split-btn > .btn-sm.primary:first-child {
+  border-radius: 999px 0 0 999px;
+  padding-left: 13px;
+}
+.split-btn-arrow {
+  padding-left: 7px;
+  padding-right: 10px;
+  border-radius: 0 999px 999px 0 !important;
+}
+.split-btn-arrow::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 22%;
+  bottom: 22%;
+  width: 1px;
+  background: currentColor;
+  opacity: 0.3;
+}
+.split-btn > .btn-sm.primary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.menu.tpl-menu {
+  /* Above .fs-backdrop (310), which catches the click that closes it. */
+  z-index: 320;
+  top: 32px;
+  right: 0;
+  left: auto;
+  min-width: 240px;
+  max-width: 320px;
+}
+.tpl-hint {
+  padding: 6px 10px 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.tpl-item {
+  display: flex;
+  align-items: center;
+}
+.tpl-item > button:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.tpl-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tpl-edit {
+  flex: none;
+  opacity: 0.55;
+}
+.tpl-item:hover .tpl-edit,
+.tpl-edit:focus-visible {
+  opacity: 1;
+}
+/* Said above the title of a template that belongs to a database: you are
+   editing what later rows start from, not a row. */
+.template-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  margin: 0 auto 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.template-banner > span {
+  flex: 1;
+}

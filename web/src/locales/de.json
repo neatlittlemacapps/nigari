@@ -1128,5 +1128,14 @@
   "That is the newest release.": "Das ist die neueste Version.",
   "This copy was installed on the system, not by salt.md, so it is updated by whatever installed it.": "Diese Kopie wurde auf dem System installiert, nicht von salt.md, und wird dort aktualisiert, wo sie herkommt.",
   "Keep it up to date automatically (checked daily, checksum verified)": "Automatisch aktuell halten (täglich geprüft, mit Prüfsumme)",
-  "Check now": "Jetzt prüfen"
+  "Check now": "Jetzt prüfen",
+  "Back to the database": "Zurück zur Datenbank",
+  "Could not create the template": "Die Vorlage konnte nicht erstellt werden",
+  "Create a reusable page template for this database.": "Erstelle eine wiederverwendbare Seitenvorlage für diese Datenbank.",
+  "Empty row": "Leere Zeile",
+  "New template": "Neue Vorlage",
+  "Save as a template of this database": "Als Vorlage dieser Datenbank speichern",
+  "Saved as a template of this database": "Als Vorlage dieser Datenbank gespeichert",
+  "Template for {name}. New rows start as a copy of this page.": "Vorlage für {name}. Neue Zeilen beginnen als Kopie dieser Seite.",
+  "Templates for {name}": "Vorlagen für {name}"
 }

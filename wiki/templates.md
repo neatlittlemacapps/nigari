@@ -102,8 +102,9 @@ is offered on one, and what you get is rarely what you wanted:
 - An agent can still see it: `list` with `kind: "templates"` reads the flag
   directly and finds it.
 
-If you want a reusable row, keep the shape in an ordinary page and template
-that instead.
+For a reusable row, use the entry below it in the same menu instead, **Save as
+a template of this database**. See
+[Templates that belong to a database](#templates-that-belong-to-a-database).
 
 ## The Templates section
 
@@ -215,6 +216,51 @@ set up cleanly against each other, that is what a blueprint does. See below.
 Relations and rollups themselves are explained in
 [Relations and rollups](relations-and-rollups.md).
 
+## Templates that belong to a database
+
+A database can have templates of its own. They are the starting points its
+**New** button offers, they live with the database and nowhere else, and they
+are never rows.
+
+**Using one.** Next to **New** in the toolbar of a database there is a small
+arrow. It opens a menu headed *Templates for <database>*:
+
+| Entry | What it does |
+| --- | --- |
+| **Empty row** | the same as pressing **New** |
+| a template's name | creates a row from it and stays on the database |
+| the pencil beside a name | opens the template itself, to edit it |
+| **New template** | creates an empty template and opens it |
+
+A database with no templates yet shows *Create a reusable page template for
+this database.* above **New template**, and nothing else.
+
+A row made from a template is a copy of it: the body, the icon, the cover, the
+sub-pages and the property values all come along, and the title is the
+template's. After that the two have nothing to do with each other. Changing the
+template changes the rows made later, never the ones that exist.
+
+**Making one.** Either **New template** in that menu, or the **⋯** menu of a
+row, **Save as a template of this database**, which snapshots that row and
+leaves it where it is. A template opens as an ordinary page with the database's
+properties under the title, and a line above it, *Template for <database>*,
+with a button back to the database.
+
+**Where it lives.** A template of a database has no parent page. That is what
+keeps it out of the table, the counts, rollups, relations, the calendar feed,
+public tables and exports: it is simply not one of the rows. For the same reason
+it is not in the **Templates** section or the gallery, which list the workspace's
+own templates. Move it to the trash like any page; it can be restored from there.
+When a database is deleted for good, its templates go with it.
+
+**Limits.**
+
+- Duplicating a database and exporting a workspace do not carry its templates
+  yet.
+- A relation value inside a template still points at the original row.
+- The plain **New** button still makes an empty row. A default template comes
+  separately.
+
 ## Templates for agents
 
 Over MCP a template is reached with three of the tools listed in
@@ -227,6 +273,12 @@ Over MCP a template is reached with three of the tools listed in
 | `save_as_template` with `page_id` | snapshots the page; the answer says *the page itself is unchanged* |
 
 `duplicate_page` is the plain copy, with no template flag involved.
+
+A database's own templates have their own tool, `database_templates`, with
+`list`, `add`, `rename` and `remove`. `list` with `kind: "templates"`
+and `database_id` gives the same list, and `create_page` with `template_id` of
+one of them makes a **row** in that database, with `properties` laid over the
+template's values. The workspace-wide `list` does not include them.
 
 Two differences from the browser are worth knowing. `list` with
 `kind: "templates"` returns templates from **every** workspace the connection
@@ -412,8 +464,10 @@ open them. See [Agents](agents.md).
   on the shelves in the [library](library.md), and they sit in the tree where
   they were filed. The one place the flag takes them out of is the **graph**:
   a template is not drawn there and neither are its connections.
-- **A row's template is a trap.** Saved from a database row, it becomes another
-  row of that collection and never appears in the Templates section.
+- **A row's template is a trap.** Saved from a database row with the plain
+  **Save as template**, it becomes another row of that collection and never
+  appears in the Templates section. **Save as a template of this database** is
+  the entry that does what you meant.
 - **Duplication does not rewrite references.** A copied database keeps its
   relation columns pointed at the original target.
 - **Creating workspaces can be switched off** instance-wide, which removes the

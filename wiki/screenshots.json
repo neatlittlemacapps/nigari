@@ -79,8 +79,8 @@
         }
       ],
       "takenAt": {
-        "web/src/components/Sidebar.tsx": "7d75823681d0",
-        "web/src/components/Editor.tsx": "68b120107f3b",
+        "web/src/components/Sidebar.tsx": "d6865e5e79d5",
+        "web/src/components/Editor.tsx": "d9d2871b8f63",
         "web/src/App.tsx": "466c89abad2e",
         "web/src/theme.css": "b1c3dece61ce"
       }
@@ -106,7 +106,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/Sidebar.tsx": "7d75823681d0",
+        "web/src/components/Sidebar.tsx": "d6865e5e79d5",
         "web/src/treeMode.ts": "413de5b84cd9",
         "web/src/theme.css": "b1c3dece61ce"
       },
@@ -141,7 +141,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/Editor.tsx": "68b120107f3b",
+        "web/src/components/Editor.tsx": "d9d2871b8f63",
         "web/src/theme.css": "b1c3dece61ce"
       }
     },
@@ -299,7 +299,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "3437d8d67650",
+        "web/src/components/CollectionView.tsx": "0a43a0256b9a",
         "web/src/theme.css": "b1c3dece61ce"
       }
     },
@@ -333,7 +333,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "3437d8d67650",
+        "web/src/components/CollectionView.tsx": "0a43a0256b9a",
         "web/src/cardLayout.ts": "eb7f92584275",
         "web/src/theme.css": "b1c3dece61ce"
       }
@@ -367,7 +367,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "3437d8d67650",
+        "web/src/components/CollectionView.tsx": "0a43a0256b9a",
         "web/src/theme.css": "b1c3dece61ce"
       }
     },
@@ -459,7 +459,7 @@
       ],
       "takenAt": {
         "server/public.go": "62d933047cbe",
-        "web/src/components/Editor.tsx": "68b120107f3b",
+        "web/src/components/Editor.tsx": "d9d2871b8f63",
         "web/src/theme.css": "b1c3dece61ce"
       }
     },
@@ -588,7 +588,7 @@
       ],
       "takenAt": {
         "web/src/components/AgentConnect.tsx": "e0a5a3a2e940",
-        "server/mcp.go": "7c6f6f3b9b1b",
+        "server/mcp.go": "d313a98db73d",
         "web/src/theme.css": "b1c3dece61ce"
       },
       "element": ".dialog"

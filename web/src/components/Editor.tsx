@@ -36,7 +36,7 @@ import { usePeers, setPeers, clearPeers } from '../presence';
 import { tagColorClass, TAG_PALETTE } from '../tags';
 import { collectTags, suggestTags } from '../tagSuggest';
 import { modalOpen, useMenuDismiss } from '../modal';
-import { Menu, Copy, Star, Lock, LockOpen, Globe, MessageSquare, History, MoreHorizontal, Printer, FileCode, FileText, Upload, AlignLeft, Check, Image as ImageIcon , Smile, PanelRight, Link2, Trash2, FilePlus2, Columns2, Workflow} from 'lucide-react';
+import { Menu, Copy, Star, Lock, LockOpen, Globe, MessageSquare, History, MoreHorizontal, Printer, FileCode, FileText, Upload, AlignLeft, Check, Image as ImageIcon , Smile, PanelRight, Link2, Trash2, FilePlus2, Columns2, Workflow, LayoutTemplate} from 'lucide-react';
 import { blockTypeFor, carriesExternalFiles } from '../dropFiles';
 
 export interface EditorProps {
@@ -1269,6 +1269,20 @@ function PageHeader({
           />
         )}
       </div>
+      {page.templateOf && (
+        <div className="template-banner">
+          <LayoutTemplate size={15} />
+          <span>
+            {t('Template for {name}. New rows start as a copy of this page.').replace(
+              '{name}',
+              pagesById.get(page.templateOf)?.title || t('Untitled'),
+            )}
+          </span>
+          <button className="btn-sm" onClick={() => onNavigate(page.templateOf!)}>
+            {t('Back to the database')}
+          </button>
+        </div>
+      )}
       <div className={'page-head' + (cover ? ' with-cover' : '') + (page.type === 'collection' ? ' page-head--db' : '')}>
         <textarea
           ref={titleRef}
@@ -1432,10 +1446,10 @@ function PageHeader({
             )}
           </div>
         )}
-        {page.parentId && pagesById.get(page.parentId)?.type === 'collection' && (
+        {(page.templateOf || (page.parentId && pagesById.get(page.parentId)?.type === 'collection')) && (
           <RowProperties
             pageId={pageId}
-            parentId={page.parentId}
+            parentId={(page.templateOf || page.parentId)!}
             initialProps={page.props}
             canEdit={canEdit}
           />

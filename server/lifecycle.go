@@ -28,6 +28,26 @@ func (s *Server) duplicatePage(rootID, userID string, fromTemplate, asTemplate b
 	if !s.canWrite(userID, rootID) {
 		return "", fmt.Errorf("page is not writable")
 	}
+	return s.duplicateTree(rootID, userID, dupOpts{fromTemplate: fromTemplate, asTemplate: asTemplate})
+}
+
+// dupOpts says where the copy of a tree goes. The zero value is a sibling of
+// the original. The caller has already checked who may do what: read access to
+// the source, write access to wherever the copy lands.
+type dupOpts struct {
+	fromTemplate, asTemplate bool
+	// intoParent puts the root of the copy under this page: a row made from a
+	// database's template lands in the database, not beside the template.
+	intoParent string
+	// templateOf makes the root a template that belongs to this database. It
+	// hangs off no parent, so it is never one of the database's rows.
+	templateOf string
+	// title, when not empty, replaces the root's title.
+	title string
+}
+
+func (s *Server) duplicateTree(rootID, userID string, o dupOpts) (string, error) {
+	fromTemplate, asTemplate := o.fromTemplate, o.asTemplate
 	ids, err := subtreeIDs(s.db, rootID)
 	if err != nil {
 		return "", err
@@ -92,6 +112,9 @@ func (s *Server) duplicatePage(rootID, userID string, fromTemplate, asTemplate b
 	}
 	rows.Close()
 	workspaceID := wsByID[rootID]
+	if dest := firstNonEmpty(o.intoParent, o.templateOf); dest != "" {
+		workspaceID = s.pageWorkspace(dest)
+	}
 
 	// Parents before children: the order from subtreeIDs, narrowed to what was
 	// actually loaded.
@@ -127,6 +150,11 @@ func (s *Server) duplicatePage(rootID, userID string, fromTemplate, asTemplate b
 	if root.hasParent {
 		rootParent = root.parentID
 	}
+	if o.intoParent != "" {
+		rootParent = o.intoParent
+	} else if o.templateOf != "" {
+		rootParent = nil
+	}
 	var rootPos float64
 	s.db.QueryRow(`SELECT COALESCE(MAX(position),0)+1 FROM pages WHERE parent_id IS ?`, rootParent).Scan(&rootPos)
 
@@ -145,8 +173,11 @@ func (s *Server) duplicatePage(rootID, userID string, fromTemplate, asTemplate b
 			if !fromTemplate && !asTemplate {
 				title = "Copy of " + d.title
 			}
-			if asTemplate {
+			if asTemplate || o.templateOf != "" {
 				isTemplate = 1 // only the root carries the flag; the subtree is its body
+			}
+			if o.title != "" {
+				title = o.title
 			}
 		} else if np, ok := newID2[d.parentID]; ok {
 			parent = np
@@ -159,9 +190,9 @@ func (s *Server) duplicatePage(rootID, userID string, fromTemplate, asTemplate b
 			// skipped.
 			continue
 		}
-		if _, err := s.db.Exec(`INSERT INTO pages (id, parent_id, title, icon, cover, content, position, created_at, updated_at, type, props, workspace_id, owner_id, visibility, is_template)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			nid, parent, title, d.icon, d.cover, d.content, pos, ts, ts, d.typ, d.props, workspaceID, userID, d.visibility, isTemplate); err != nil {
+		if _, err := s.db.Exec(`INSERT INTO pages (id, parent_id, title, icon, cover, content, position, created_at, updated_at, type, props, workspace_id, owner_id, visibility, is_template, template_of)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			nid, parent, title, d.icon, d.cover, d.content, pos, ts, ts, d.typ, d.props, workspaceID, userID, d.visibility, isTemplate, ownerOf(oldID == rootID, o.templateOf)); err != nil {
 			return "", err
 		}
 		if sv, ok := collectionSchemas[oldID]; ok {
@@ -269,6 +300,24 @@ func firstHeading(md string) string {
 		if strings.HasPrefix(t, "#") {
 			return strings.TrimSpace(strings.TrimLeft(t, "# "))
 		}
+	}
+	return ""
+}
+
+func firstNonEmpty(v ...string) string {
+	for _, x := range v {
+		if x != "" {
+			return x
+		}
+	}
+	return ""
+}
+
+// ownerOf is the database a copied page is a template of: only the root of a
+// template carries it, the pages under it are just its body.
+func ownerOf(isRoot bool, templateOf string) string {
+	if isRoot {
+		return templateOf
 	}
 	return ""
 }
