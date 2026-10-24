@@ -1146,5 +1146,6 @@
   "Save as a template of this database": "Guardar como plantilla de esta base de datos",
   "Saved as a template of this database": "Guardado como plantilla de esta base de datos",
   "Template for {name}. New rows start as a copy of this page.": "Plantilla de {name}. Las filas nuevas empiezan como una copia de esta página.",
-  "Templates for {name}": "Plantillas de {name}"
+  "Templates for {name}": "Plantillas de {name}",
+  "Copy of {name}": "Copia de {name}"
 }

@@ -67,7 +67,7 @@ import {
   SquareArrowOutUpRight,
   ExternalLink,
   ArrowLeft,
-  ArrowRight, History, ChevronDown, FileText, LayoutTemplate } from 'lucide-react';
+  ArrowRight, History, ChevronDown, FileText, LayoutTemplate, Copy } from 'lucide-react';
 
 // Small type glyph shown next to each property (Notion-style visibility panel).
 function propTypeIcon(t: PropDef['type']) {
@@ -284,8 +284,33 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const toggleTemplates = () => {
     if (tplOpen) return setTplOpen(false);
     setTpls(null);
+    setTplRowMenu(null);
     setTplOpen(true);
     api.databaseTemplates(collectionId).then(setTpls).catch(() => setTpls([]));
+  };
+  // The ⋯ on a template row: which template's menu is open.
+  const [tplRowMenu, setTplRowMenu] = useState<string | null>(null);
+  const reloadTemplates = () => api.databaseTemplates(collectionId).then(setTpls).catch(() => setTpls([]));
+  const duplicateTemplate = async (p: PageMeta) => {
+    setTplRowMenu(null);
+    try {
+      await api.addDatabaseTemplate(collectionId, {
+        fromPageId: p.id,
+        title: t('Copy of {name}').replace('{name}', p.title || t('Untitled')),
+      });
+      await reloadTemplates();
+    } catch {
+      toast(t('Could not create the template'));
+    }
+  };
+  const trashTemplate = async (p: PageMeta) => {
+    setTplRowMenu(null);
+    try {
+      await api.trashPage(p.id);
+      await reloadTemplates();
+    } catch {
+      toast(t('Could not be changed'));
+    }
   };
   const addRowFromTemplate = async (templateId: string) => {
     setTplOpen(false);
@@ -949,33 +974,47 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             {tplOpen && (
               <>
                 <div className="fs-backdrop" onClick={() => setTplOpen(false)} />
-                <div className="menu tpl-menu" role="menu">
+                <div className="menu dbt-menu" role="menu">
                   <div className="menu-label">
                     {t('Templates for {name}').replace('{name}', pages.get(collectionId)?.title || t('Untitled'))}
                   </div>
                   {tpls === null ? (
-                    <div className="tpl-hint">{t('Loading…')}</div>
+                    <div className="dbt-hint">{t('Loading…')}</div>
                   ) : tpls.length === 0 ? (
-                    <div className="tpl-hint">{t('Create a reusable page template for this database.')}</div>
+                    <div className="dbt-hint">{t('Create a reusable page template for this database.')}</div>
                   ) : (
                     <>
                       <button role="menuitem" onClick={() => { setTplOpen(false); void addRow(); }}>
                         <FileText size={15} /> {t('Empty row')}
                       </button>
                       {tpls.map((p) => (
-                        <div key={p.id} className="tpl-item">
+                        <div key={p.id} className="dbt-item">
                           <button role="menuitem" onClick={() => void addRowFromTemplate(p.id)}>
                             <PageIcon icon={p.icon} size={15} fallback={<LayoutTemplate size={15} />} />
-                            <span className="tpl-name">{p.title || t('Untitled')}</span>
+                            <span className="dbt-name">{p.title || t('Untitled')}</span>
                           </button>
                           <button
-                            className="tpl-edit"
-                            title={t('Edit the template itself')}
-                            aria-label={t('Edit the template itself')}
-                            onClick={() => { setTplOpen(false); onNavigate(p.id); }}
+                            className="dbt-more"
+                            title={t('More')}
+                            aria-label={t('More')}
+                            aria-haspopup="menu"
+                            onClick={() => setTplRowMenu(tplRowMenu === p.id ? null : p.id)}
                           >
-                            <Pencil size={13} />
+                            <MoreHorizontal size={15} />
                           </button>
+                          {tplRowMenu === p.id && (
+                            <div className="menu dbt-row-menu" role="menu">
+                              <button role="menuitem" onClick={() => { setTplOpen(false); onNavigate(p.id); }}>
+                                <Pencil size={15} /> {t('Edit')}
+                              </button>
+                              <button role="menuitem" onClick={() => void duplicateTemplate(p)}>
+                                <Copy size={15} /> {t('Duplicate')}
+                              </button>
+                              <button role="menuitem" className="danger" onClick={() => void trashTemplate(p)}>
+                                <Trash2 size={15} /> {t('Move to trash')}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </>
