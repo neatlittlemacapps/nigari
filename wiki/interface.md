@@ -356,15 +356,36 @@ and **Stop sharing**. See [Sharing](sharing.md).
 ### The ⋯ menu
 
 It holds: *Add a description* (or *Remove description*), *To the comments*,
-*Version history*, *Import (.md / .zip)*, an **Export** group with
+*Version history*, *Import (.md / .zip)*, an **Appearance** group with
+*Full width*, an **Export** group with
 *Markdown (.md)*, *Web page (.html)* and *Print / as PDF*, and *Move to trash*.
 On a narrow screen it also holds the three icons that stepped aside: comments,
 *Make it private* / *Make it visible to the workspace*, and share to web.
 
 **With the viewer role in a workspace the menu is shorter.** Everything that
 changes the page is dropped: *Add a description*, *Remove description*,
-*Import (.md / .zip)* and *Move to trash*. What is left is *To the comments*,
+*Import (.md / .zip)*, the Appearance group and *Move to trash*. What is left is *To the comments*,
 *Version history* and the Export group. See [Permissions](permissions.md).
+
+### Appearance: full width
+
+A document is drawn in a column about 940 px wide, which suits text and leaves
+wide tables, code and columns cramped. **⋯ → Appearance → Full width** lets the
+page use the whole width of the window instead; choose it again to go back to
+the normal column. The side margins stay, so text never touches the edge.
+
+- **It belongs to the page, not to your browser.** It is saved with the page, so
+  everyone who opens it sees the same width, on every device, and it survives
+  being duplicated or turned into a template. (The theme and typeface below are
+  the opposite: they are per browser.)
+- **Who can change it:** anyone who can edit the page. A viewer sees the width
+  the page has, but the entry is not in their menu.
+- **Documents only.** A collection already uses the width of its view.
+- **A public link honours it**: a page shared to the web is also wide.
+- **Print and PDF ignore it**, as they ignore the theme: they always use the
+  full paper width.
+- The same switch can be set over the API as the page property `_fullWidth`
+  (`true`, or `null` to remove it) in a `propsPatch`.
 
 ## Theme and typeface
 
