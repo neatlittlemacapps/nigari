@@ -41,10 +41,16 @@ func (s *Server) mcpWhoami(u *user) (string, error) {
 		// although list with kind="users" exists, and "backup/restore" although the same token
 		// reached the backup through the REST interface. Both are accurate now:
 		// administration requires a sign-in in the browser.
+		//
+		// Membership is the one entry with a REST exception, decided rather than
+		// overlooked (issue #1): MCP has no tool for it, but a workspace admin's
+		// read-write token may manage that workspace's members over REST, as
+		// wiki/agent-access.md documents. The entry says so, because a list that
+		// overpromises is the defect the two corrections above already fixed once.
 		"not_available_via_mcp": []string{
 			"two-factor settings", "API tokens", "creating or deleting accounts",
 			"backup/restore", "tunnel and instance settings",
-			"workspace membership and roles",
+			"workspace membership and roles (no MCP tool; over REST, a workspace admin's read-write token can manage that workspace's members)",
 			"applying workspace rules (workspace admins may submit a draft via propose_workspace_rules; applying it stays in the browser)",
 		},
 		"note": "list with kind=\"users\" names only the people you share a workspace with; " +

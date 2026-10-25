@@ -59,10 +59,13 @@ Connect Claude, ChatGPT, Codex, Cursor, Gemini CLI or any other MCP client to
 - **Presence**: the page shows which agent is working on it, before you start typing
 
 **And a list it cannot touch.** No agent can create or delete accounts, issue
-tokens, take or restore a backup, change instance settings or decide who is in
-a workspace, and the server tells every agent that connects. A credential
-carries its person's access and never more, every workspace decides what agents
-may do there, and the activity log keeps their changes apart from yours.
+tokens, take or restore a backup or change instance settings, and over MCP none
+can decide who is in a workspace; the server tells every agent that connects.
+A credential carries its person's access and never more: a workspace admin's
+own API token can manage that workspace's members over the REST API, as
+[agent access](https://salt.md/wiki/agent-access/) explains. Every workspace
+decides what agents may do there, and the activity log keeps their changes
+apart from yours.
 
 [MCP tools](https://salt.md/wiki/mcp-tools/) · [Agent access](https://salt.md/wiki/agent-access/) · [Permissions](https://salt.md/wiki/permissions/)
 

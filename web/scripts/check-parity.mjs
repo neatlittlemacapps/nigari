@@ -23,6 +23,8 @@
 //                    ownerOnly), so no token reaches it — unless it is listed
 //                    under tokenReachable with a note, which keeps a known
 //                    contradiction visible in every run until it is decided.
+//                    Once decided, "accepted": true records that the exception
+//                    is deliberate; the note then says where it was decided.
 //      infrastructure → no tools.
 //   4. The wiki page each capability names exists.
 //   5. Gaps only go down: their count must equal gapBudget, so closing one
@@ -119,7 +121,10 @@ for (const [id, cap] of Object.entries(manifest.capabilities)) {
         for (const r of listed) {
           if (!rest.includes(r)) errors.push(`${id}: tokenReachable names "${r}", which is not one of its routes`);
         }
-        if (listed.size) notes.push(`open ${id}: ${listed.size} route(s) a token reaches — ${cap.tokenReachable.note}`);
+        if (listed.size) {
+          const state = cap.tokenReachable.accepted ? 'accepted' : 'open';
+          notes.push(`${state} ${id}: ${listed.size} route(s) a token reaches — ${cap.tokenReachable.note}`);
+        }
       }
       break;
     case 'infrastructure':

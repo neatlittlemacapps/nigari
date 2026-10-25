@@ -225,7 +225,8 @@
       "reason": "Listed in not_available_via_mcp: workspace membership and roles.",
       "tokenReachable": {
         "routes": ["POST /api/workspaces/{id}/members", "PATCH /api/workspaces/{id}/members/{userId}", "DELETE /api/workspaces/{id}/members/{userId}"],
-        "note": "Open question. wiki/workspaces.md documents these as reachable by scripts and agents with a workspace admin's token, while the README and whoami tell agents membership is not theirs to decide. Either wrap them in sessionOnly or change the promise."
+        "accepted": true,
+        "note": "Decided in #1: no MCP tool, but a workspace admin's read-write token may manage that workspace's members over REST. README, whoami and wiki/agent-access.md say so."
       },
       "rest": ["POST /api/workspaces/{id}/members", "PATCH /api/workspaces/{id}/members/{userId}", "DELETE /api/workspaces/{id}/members/{userId}", "PUT /api/admin/membership", "GET /api/admin/access"],
       "wiki": "wiki/permissions.md"
