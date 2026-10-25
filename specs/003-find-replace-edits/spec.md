@@ -70,15 +70,17 @@ unchanged and each answer names the count.
 Two colleagues are writing in the page while an agent corrects a typo further down. Their
 editing session carries on.
 
-**Why this priority**: it is the most visible improvement for people working beside agents,
-but its scope depends on a decision (see FR-008).
+**Why this priority**: it is the most visible improvement for people working beside agents.
+Per FR-008 it ships in two steps: this feature keeps today's reload; the uninterrupted
+session is a follow-up.
 
 **Independent Test**: keep an editor open and typing while an agent applies an edit; observe
 the editor's session and the final text.
 
 **Acceptance Scenarios**:
 
-1. **Given** a person typing in paragraph 1, **When** an agent edits paragraph 5, **Then** the person's text and the agent's edit both end up in the page, and [the person's session is not interrupted — see FR-008].
+1. **Given** a person typing in paragraph 1, **When** an agent edits paragraph 5, **Then** the person's text and the agent's edit both end up in the page; the person's editor reloads with the new text and any unsaved keystrokes are kept in the page history (FR-008).
+2. *(Follow-up, not this feature)* **Given** the same situation, **When** live delivery lands, **Then** the person's session is not interrupted.
 
 ---
 
@@ -116,7 +118,7 @@ A script uses the same operation over the REST API, with the same rules.
 - **FR-005**: A successful request MUST save the previous state in the page history and attribute the change to the caller (person or agent), as other writes do.
 - **FR-006**: The answer MUST say how many replacements were made per edit and MUST NOT return the whole page.
 - **FR-007**: The operation MUST apply the same permission and credential checks as every other write: page rights, workspace access for credentials, read-only scope, trash.
-- **FR-008**: Open editing sessions on the page MUST [NEEDS CLARIFICATION: either (A) keep running, with the edit arriving as a live change like a colleague's typing, or (B) be reloaded with the new text as every outside write does today, with unsaved keystrokes kept in history?].
+- **FR-008**: Open editing sessions on the page MUST be reloaded with the new text, as every outside write does today, with unsaved keystrokes kept in the page history. Delivering the edit live into running sessions (like a colleague's typing) is a follow-up feature, not part of this one.
 - **FR-009**: The operation MUST be available to agents over MCP and to scripts over the REST API with identical behaviour, refusals and limits.
 - **FR-010**: Search, backlinks, webhooks (`page.updated`) and the activity log MUST reflect the edited content as they do for other writes.
 - **FR-011**: The existing ways to write content (append, prepend, replace all) MUST keep working unchanged.
@@ -135,7 +137,7 @@ A script uses the same operation over the REST API, with the same rules.
 - **SC-002**: An ambiguous or missing quote never changes a page: 0 changed pages across all refusal tests.
 - **SC-003**: The data an agent sends to fix one sentence on a 5,000-word page is under 1% of what a full rewrite sends.
 - **SC-004**: REST and MCP agree on every allow/refuse verdict for this operation in the parity property test.
-- **SC-005**: Edits made while a person is typing never lose either the person's or the agent's text (with or without an interruption, depending on FR-008).
+- **SC-005**: Edits made while a person is typing never lose either the person's or the agent's text (the editor reloads, per FR-008).
 
 ## Assumptions
 
@@ -144,7 +146,15 @@ A script uses the same operation over the REST API, with the same rules.
 - The request size limits that apply to other content writes apply here.
 - This change extends an existing capability (`pages.update` in `capabilities.json`); it does not add a new parity gap.
 
+## Clarifications
+
+### Session 2026-10-25
+
+- Q: During an agent's find-and-replace, do open editors keep running (A), reload as today (B), or B now and A later (C)? → A: **C**. This feature reloads open editors as other outside writes do; live delivery into running sessions is #26. Rejected: A now (needs server-side Yjs merging, much larger), B only (leaves the interruption with no plan).
+
 ## Out of Scope
+
+- Delivering the edit live into open editing sessions without a reload (follow-up, see FR-008).
 
 - Regular expressions or fuzzy matching.
 - Editing database row properties (already covered by setting properties).
