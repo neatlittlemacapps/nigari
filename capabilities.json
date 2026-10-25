@@ -108,6 +108,13 @@
       "mcp": ["get_collection", "update_schema", "set_view", "delete_view", "query_rows", "create_rows"],
       "wiki": "wiki/collections.md"
     },
+    "collections.templates": {
+      "summary": "A database's own templates: list, add, rename, remove, and create a row from one",
+      "agent": "allowed",
+      "rest": ["GET /api/collections/{id}/templates", "POST /api/collections/{id}/templates", "POST /api/collections/{id}/from-template"],
+      "mcp": ["database_templates", "create_page"],
+      "wiki": "wiki/templates.md"
+    },
     "forms.share": {
       "summary": "Share a form view publicly so outsiders can submit rows",
       "agent": "gap",
