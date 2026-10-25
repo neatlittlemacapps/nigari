@@ -486,15 +486,30 @@ Write Markdown into a page's body.
 | Parameter | Type | Required |
 | --- | --- | --- |
 | `page_id` | string | yes |
-| `markdown` | string | yes |
-| `mode` | string | no: `append` (default), `prepend`, `replace` |
+| `markdown` | string | for `append`, `prepend`, `replace` |
+| `mode` | string | no: `append` (default), `prepend`, `replace`, `edit` |
+| `edits` | array of `{old, new, all}` | for `edit` |
+| `allow_removals` | boolean | no (`edit` only) |
 
-`append` is the default because it is the only one of the three that cannot
+`append` is the default because it is the only mode that cannot
 destroy anything.
 
-All three leave a revision behind, but not the same one, and the difference is
+**To change part of a page, use `edit`, not `replace`.** Each edit quotes a
+passage exactly as `get_page` shows it, Markdown included, and gives what it
+becomes; an empty `new` deletes it. Only that passage changes: the other blocks
+are kept exactly as stored, and the edited paragraph keeps its identity, so
+comments on it stay. Up to 100 edits go in one call, applied in order, all or
+none. Nothing is written, and the error says why, when a quote matches 0 times or
+more than once (set `all` to replace every occurrence), when it touches a block
+Markdown cannot carry (columns, a coloured block, a table of contents), or when it
+would remove a link to a page (set `allow_removals` if you mean it). The same edit
+is available over REST as `POST /api/pages/{id}/edits` ([REST API](api.md)).
+
+Every mode leaves a revision behind, but not the same one, and the difference is
 the whole point of the history:
 
+- `edit` saves the page **before** writing, every time: two edits a minute apart
+  leave both earlier states, not one.
 - `prepend` and `replace` save the page **before** overwriting it. That older
   state is what `revisions` gives you back, so both are undoable.
 - `append` saves a revision **after** it has written. It records the new state,
@@ -505,15 +520,19 @@ Snapshots are throttled to one per page every two minutes, so a burst of writes
 leaves one revision rather than ten, and two `replace` calls a minute apart
 leave only the state from before the first.
 
-All three write past the realtime editor and then reset the live document.
+All four write past the realtime editor and then reset the live document.
 Anyone with the page open at that moment loses unsaved edits from the page; they
 are kept in its version history, not in the text. That is why append is the
 recommendation, not politeness.
 
-Returns `Appended content to page <id>`, `Prepended N block(s) to page <id>` or
-`Replaced content of page <id>`.
+Returns `Appended content to page <id>`, `Prepended N block(s) to page <id>`,
+`Replaced content of page <id>` or
+`Applied N edit(s) to page <id>: M replacement(s) (… per edit)`.
 
-Errors: `unknown mode "x" — use append (the default), prepend or replace`;
+Errors: `unknown mode "x" — use append (the default), prepend, replace or edit`;
+for `edit`, `edit N matched 0 times…`, `edit N matched K times…`,
+`edit N touches a … block…`, `edit N would remove a link to…`,
+`the page changed while the edit was being applied…`;
 `markdown is empty` (prepend); `page "…" not found`.
 
 ### duplicate_page

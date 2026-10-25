@@ -34,7 +34,7 @@
     "pages.update": {
       "summary": "Change a page: content, title, icon, cover, tags, visibility, parent, workspace, favourite, row properties",
       "agent": "allowed",
-      "rest": ["PATCH /api/pages/{id}", "POST /api/favorites/{id}", "DELETE /api/favorites/{id}"],
+      "rest": ["PATCH /api/pages/{id}", "POST /api/pages/{id}/edits", "POST /api/favorites/{id}", "DELETE /api/favorites/{id}"],
       "mcp": ["update_page", "write_content", "set_properties", "save_as_template", "embed_database"],
       "wiki": "wiki/pages.md"
     },

@@ -255,6 +255,7 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	m.HandleFunc("PATCH /api/pages/{id}", s.auth(s.handleUpdatePage))
 	m.HandleFunc("DELETE /api/pages/{id}", s.auth(s.handleDeletePage))
 	m.HandleFunc("POST /api/pages/{id}/restore", s.auth(s.handleRestorePage))
+	m.HandleFunc("POST /api/pages/{id}/edits", s.auth(s.handleEditPage))
 	m.HandleFunc("POST /api/reindex-siblings", s.auth(s.handleReindexSiblings))
 	m.HandleFunc("GET /api/pages/{id}/backlinks", s.auth(s.handleBacklinks))
 	m.HandleFunc("GET /api/pages/{id}/preview", s.auth(s.handlePreviewPage))

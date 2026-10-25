@@ -611,3 +611,27 @@ func TestARetryKeyDoesNotCrossCredentials(t *testing.T) {
 		}
 	}
 }
+
+// Find-and-replace edits (cap_edits.go) name a page, so both doors meet the
+// existing gates; this pins that for every outsider shape, over REST and MCP,
+// because an edit path that reached pages some other way would not.
+func TestEditsStayOutOfOtherWorkspaces(t *testing.T) {
+	f := newScopeFixture(t)
+	page := f.s.makePage(t, f.other, f.owner, "", "Payroll", `{}`)
+	body := `[{"id":"a","type":"paragraph","props":{},"content":[{"type":"text","text":"salary 100","styles":{}}],"children":[]}]`
+	f.s.db.Exec(`UPDATE pages SET content = ? WHERE id = ?`, body, page)
+	for _, o := range f.outsiders(t) {
+		o.setup()
+		if rec := f.bearer(o.tok, "POST", "/api/pages/"+page+"/edits", `{"edits":[{"old":"100","new":"999"}]}`); rec.Code == 200 {
+			t.Errorf("%s: edited over REST", o.name)
+		}
+		if _, err := callTool(t, f.s, o.u, "write_content", `{"page_id":"`+page+`","mode":"edit","edits":[{"old":"100","new":"999"}]}`); err == nil {
+			t.Errorf("%s: edited over MCP", o.name)
+		}
+		var c string
+		f.s.db.QueryRow(`SELECT content FROM pages WHERE id = ?`, page).Scan(&c)
+		if c != body {
+			t.Fatalf("%s: the page was changed", o.name)
+		}
+	}
+}

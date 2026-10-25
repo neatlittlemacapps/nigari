@@ -52,6 +52,9 @@ var parityActs = []parityAct{
 	{"duplicate", "POST", "/api/pages/%s/duplicate", "", "duplicate_page", `{"page_id":"%s"}`},
 	{"backlinks", "GET", "/api/pages/%s/backlinks", "", "get_links", `{"page_id":"%s"}`},
 	{"note", "POST", "/api/pages/%s/notes", `{"body":"A note"}`, "note", `{"page_id":"%s","text":"A note"}`},
+	// Every parity page's body is the one paragraph "x" (see the loop below),
+	// so an edit that passes the gates succeeds on both doors.
+	{"edit", "POST", "/api/pages/%s/edits", `{"edits":[{"old":"x","new":"y"}]}`, "write_content", `{"page_id":"%s","mode":"edit","edits":[{"old":"x","new":"y"}]}`},
 }
 
 type parityWorld struct {
@@ -199,6 +202,7 @@ func TestAgentParityHoldsForEveryCredentialShape(t *testing.T) {
 		pages := [2]string{}
 		for j := range pages {
 			pages[j] = w.s.makePage(t, target, w.owner, "", "Parity page", `{}`)
+			w.s.db.Exec(`UPDATE pages SET content = '[{"id":"p","type":"paragraph","props":{},"content":[{"type":"text","text":"x","styles":{}}],"children":[]}]' WHERE id = ?`, pages[j])
 			if private {
 				// Private to the colleague: the owner and outsider are not its owner.
 				w.s.db.Exec(`UPDATE pages SET visibility = 'private', owner_id = ? WHERE id = ?`, w.colleague, pages[j])

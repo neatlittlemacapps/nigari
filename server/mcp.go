@@ -299,15 +299,27 @@ var mcpTools = []map[string]any{
 			"required":   []string{"comment_id"}},
 	},
 	{
-		"name":        "write_content",
-		"description": "Write Markdown into a page. mode: append (the default — adds at the end) | prepend (adds at the top) | replace (replaces the whole body). " + pageLinkHint + " " + diagramHint,
+		"name": "write_content",
+		"description": "Write Markdown into a page. mode: append (the default — adds at the end) | prepend (adds at the top) | replace (replaces the whole body) | edit (find-and-replace: changes only the passages you quote). " +
+			"To change part of a page, use edit, not replace: quote each passage exactly as get_page shows it (Markdown included) in edits[].old, give edits[].new, and the rest of the page stays untouched. " +
+			"An edit is refused, with nothing changed, when its quote matches 0 times or more than once (unless all is true), when it touches a block Markdown cannot carry (columns, colours, a table of contents), or when it would remove a link to a page or a database (unless allow_removals is true). Several edits apply in order, all or none. " +
+			pageLinkHint + " " + diagramHint,
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{
 				"page_id":  map[string]any{"type": "string"},
-				"markdown": map[string]any{"type": "string"},
-				"mode":     map[string]any{"type": "string", "description": "append (default) | prepend | replace. replace overwrites the body and bypasses the realtime editor, so anyone with the page open loses unsaved edits — prefer append."},
+				"markdown": map[string]any{"type": "string", "description": "The Markdown to write, for append, prepend and replace. Not used by edit."},
+				"mode":     map[string]any{"type": "string", "description": "append (default) | prepend | replace | edit. replace overwrites the body and bypasses the realtime editor, so anyone with the page open loses unsaved edits — prefer edit for a change, append for an addition."},
+				"edits": map[string]any{"type": "array", "description": "mode edit only: up to 100 edits, applied in order.",
+					"items": map[string]any{"type": "object",
+						"properties": map[string]any{
+							"old": map[string]any{"type": "string", "description": "The passage as get_page shows it. Exact and case-sensitive."},
+							"new": map[string]any{"type": "string", "description": "What it becomes. Empty deletes it."},
+							"all": map[string]any{"type": "boolean", "description": "Replace every occurrence (default false: the quote must match once)."},
+						},
+						"required": []string{"old", "new"}}},
+				"allow_removals": map[string]any{"type": "boolean", "description": "mode edit only: allow an edit to remove links to pages or embedded databases (default false)."},
 			},
-			"required": []string{"page_id", "markdown"}},
+			"required": []string{"page_id"}},
 	},
 	{
 		"name":        "revisions",
@@ -752,10 +764,13 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		ExpectedMinutes int  `json:"expected_minutes"`
 		Done            bool `json:"done"`
 		// The merged tools: one action/mode word instead of a separate entry.
-		Mode    string `json:"mode"`
-		Action  string `json:"action"`
-		Public  *bool  `json:"public"`
-		Trashed *bool  `json:"trashed"`
+		Mode string `json:"mode"`
+		// write_content mode edit.
+		Edits         []pageEdit `json:"edits"`
+		AllowRemovals bool       `json:"allow_removals"`
+		Action        string     `json:"action"`
+		Public        *bool      `json:"public"`
+		Trashed       *bool      `json:"trashed"`
 		// list(kind:) — one tool for the seven former list_* tools.
 		Kind string `json:"kind"`
 		// Graph.
@@ -1229,6 +1244,9 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		case "database_templates":
 			return s.mcpDatabaseTemplates(u, args.Action, args.DatabaseID, args.TemplateID, args.Title, args.FromPageID)
 		case "write_content":
+			if args.Mode == "edit" {
+				return s.mcpEditContent(u, args.PageID, args.Markdown, args.Edits, args.AllowRemovals)
+			}
 			return s.mcpWriteContent(u, args.PageID, args.Markdown, args.Mode)
 		case "revisions":
 			return s.mcpRevisions(u, args.PageID, args.Action, args.RevisionID, args.Limit)

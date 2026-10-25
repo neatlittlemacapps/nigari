@@ -29,6 +29,14 @@ func (s *Server) snapshotRevision(pageID, authorID, authorName string) {
 			return
 		}
 	}
+	s.snapshotRevisionNow(pageID, authorID, authorName)
+}
+
+// snapshotRevisionNow is snapshotRevision without the throttle, for a write
+// whose "before" must be restorable however soon it follows the last one: a
+// find-and-replace edit (cap_edits.go) a minute after another would otherwise
+// leave the state between them in no revision.
+func (s *Server) snapshotRevisionNow(pageID, authorID, authorName string) {
 	var title, content string
 	if s.db.QueryRow(`SELECT title, content FROM pages WHERE id = ?`, pageID).Scan(&title, &content) != nil {
 		return
