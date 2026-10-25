@@ -271,6 +271,11 @@ A document comes back as `# Icon Title` followed by the body. A **database**
 comes back as a Markdown table of its rows: a Title column plus one column per
 property, with select option ids resolved to their names.
 
+When a document has an Appearance switch on (see `update_page`), the answer ends
+with a line outside the untrusted block: `Page settings: full_width=true`. A page
+with none on has no such line, so missing means off. It is not added to the
+`include_children` form.
+
 `include_children` returns the whole sub-tree instead: each page as a heading
 one level deeper than its parent (capped at six), separated by `---`, with
 sub-pages you may not read silently skipped.
@@ -445,6 +450,7 @@ Metadata and place, in one tool. Only the fields you pass change.
 | `parent_id` | string | no: `""` moves to the top level |
 | `workspace_id` | string | no |
 | `favorite` | boolean | no |
+| `full_width` | boolean | no: the document uses the whole window width (`true`) or the normal column (`false`) |
 
 The move happens first, then the favourite, then the metadata, so a failed move
 does not leave a half-renamed page behind. `workspace_id` takes precedence over
@@ -454,9 +460,15 @@ where it lands at the top level, its previous parent staying behind.
 `tags` **replaces** the whole list. `favorite` pins the page in the sidebar for
 you alone.
 
+`full_width` is the **Full width** switch of ⋯ → Appearance in the page menu. It
+is saved with the page, so it holds for everyone and on the public link, it needs
+a write token, and it is refused for a viewer exactly as the menu hides it. It
+applies to documents only. Setting it writes an `agent` entry to the activity
+log, like any property change. `get_page` reports it back.
+
 Errors: `nothing to update: pass at least one of title, icon, cover,
-description, visibility, tags, parent_id, workspace_id or favorite`;
-`a page cannot be its own parent`; `cannot move a page into its own subtree`;
+description, visibility, tags, parent_id, workspace_id, favorite or full_width`;
+`page settings apply to documents only`; `a page cannot be its own parent`; `cannot move a page into its own subtree`;
 `a page can only be re-parented within its own workspace`;
 `visibility must be "workspace" or "private"`.
 

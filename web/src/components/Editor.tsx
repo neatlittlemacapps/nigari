@@ -36,7 +36,7 @@ import { usePeers, setPeers, clearPeers } from '../presence';
 import { tagColorClass, TAG_PALETTE } from '../tags';
 import { collectTags, suggestTags } from '../tagSuggest';
 import { modalOpen, useMenuDismiss } from '../modal';
-import { Menu, Copy, Star, Lock, LockOpen, Globe, MessageSquare, History, MoreHorizontal, Printer, FileCode, FileText, Upload, AlignLeft, Check, Image as ImageIcon , Smile, PanelRight, Link2, Trash2, FilePlus2, Columns2, Workflow} from 'lucide-react';
+import { Menu, Copy, Star, Lock, LockOpen, Globe, MessageSquare, History, MoreHorizontal, Printer, FileCode, FileText, Upload, AlignLeft, Check, Image as ImageIcon , Smile, PanelRight, Link2, Trash2, FilePlus2, Columns2, Workflow, MoveHorizontal} from 'lucide-react';
 import { blockTypeFor, carriesExternalFiles } from '../dropFiles';
 
 export interface EditorProps {
@@ -185,6 +185,7 @@ export default function Editor(props: EditorProps) {
         'editor-page' +
         (structureOpen || (commentsOpen && canComment) ? ' with-structure' : '') +
         (narrow ? ' is-narrow' : '') +
+        (page.type === 'doc' && page.props?._fullWidth === true ? ' page-wide' : '') +
         (arriving ? ' panel-arriving' : '')
       }
     >
@@ -825,6 +826,18 @@ function PageHeader({
     setDescription(v);
     saveMeta({ description: v });
   };
+  // Appearance: how the page is drawn for everybody who opens it. It is saved
+  // with the page (a prop, like a database row's values), so a wide page is
+  // wide for the whole team and on its public link, not just in this browser.
+  const fullWidth = page.props?._fullWidth === true;
+  const toggleFullWidth = () => {
+    const next = !fullWidth;
+    const { _fullWidth: _drop, ...rest } = page.props ?? {};
+    onLocalMeta({ props: next ? { ...rest, _fullWidth: true } : rest });
+    api
+      .updatePage(pageId, { propsPatch: { _fullWidth: next ? true : null } })
+      .catch(() => toast(t('Page width not saved')));
+  };
   const removeDescription = () => {
     setShowDesc(false);
     changeDescription('');
@@ -1153,6 +1166,24 @@ function PageHeader({
                   >
                     <Upload size={15} /> Import (.md / .zip)
                   </button>
+                )}
+                {canEdit && page.type === 'doc' && (
+                  <>
+                    <div className="menu-sep" />
+                    <div className="menu-label">{t('Appearance')}</div>
+                    <button
+                      className="menu-item"
+                      role="menuitemcheckbox"
+                      aria-checked={fullWidth}
+                      onClick={() => {
+                        setOverflowOpen(false);
+                        toggleFullWidth();
+                      }}
+                    >
+                      <MoveHorizontal size={15} /> {t('Full width')}
+                      {fullWidth && <Check size={14} style={{ marginLeft: 'auto' }} />}
+                    </button>
+                  </>
                 )}
                 <div className="menu-sep" />
                 <div className="menu-label">{t('Export')}</div>
