@@ -1,0 +1,26 @@
+# Claude Code in this repository
+
+`AGENTS.md` holds the project instructions for every agent. Claude Code reads it
+when there is no `CLAUDE.md`. `CLAUDE.md` is gitignored on purpose — a local one
+once carried deployment details into the public repository — so if you keep a
+local `CLAUDE.md`, make its first line `@AGENTS.md`, or Claude stops reading the
+shared instructions.
+
+- **Rules per domain** load on their own from `.claude/rules/` when you touch
+  matching files: Go server, MCP, frontend, translations, wiki, tests.
+- **The gate runs when you stop.** A `Stop` hook runs `scripts/agent-gate.sh`.
+  If it fails, its output comes back to you: fix the cause, do not weaken the
+  check. If a check is genuinely wrong, say so and stop; changing a check is a
+  decision for a person.
+- **Protected files.** Deny rules in `.claude/settings.json` refuse edits to
+  `LICENSE`, `CLA.md`, `THIRD-PARTY-NOTICES.md`, lockfiles and `go.sum`,
+  `wiki/img/`, `.github/cla-signatures.json` and `.gitignore`. Do not work
+  around them with shell commands; ask the person. Lockfiles change through `npm install`; screenshots through
+  `web/scripts/shoot-wiki.mjs`; notices through `scripts/licenses.mjs`.
+- **Formatting.** Go files are run through `gofmt` after each edit, unless the
+  file is already unformatted in the last commit (`server/server.go`,
+  `server/audit.go`, `server/desktop_auth.go`, `server/tunnel_update_test.go`
+  today). Those are left alone so a small change does not carry an unrelated
+  reformat; format them in a commit of their own.
+- **Plan before large changes.** Anything spanning more than one surface starts
+  in plan mode or with `/speckit-plan`, not with edits.
