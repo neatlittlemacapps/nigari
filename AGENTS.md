@@ -86,6 +86,13 @@ and either change it or state why it does not apply:
    spec for interaction bugs.
 8. **Performance** — new queries are indexed; nothing scans every page per
    request.
+9. **The manifest** — `capabilities.json` names every route and MCP tool and
+   says what agents may do with each capability. `check-parity.mjs` fails on a
+   route or tool it does not know, and on a closed capability a token can
+   reach. A new parity gap must be named there and `gapBudget` raised in the
+   same pull request, where a reviewer sees it. `parity_property_test.go`
+   checks that REST and MCP agree on access; add a pair of acts for a new
+   capability.
 
 The history of this repo shows what happens when a surface is skipped: checks
 added on the REST side and missing on the MCP side, found later one by one.

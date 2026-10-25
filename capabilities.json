@@ -1,0 +1,319 @@
+{
+  "$comment": [
+    "Every route and every MCP tool belongs to one capability. Checked by web/scripts/check-parity.mjs (part of npm run check).",
+    "agent: allowed        a person can do it in the interface and an agent can do it over MCP (rest and mcp both named)",
+    "       agent-only     exists for agents; no interface route needed (mcp named)",
+    "       gap            a person can do it, an agent cannot yet; a known parity gap with a note. The count may only go down (gapBudget)",
+    "       closed         deliberately not for agents (the not_available_via_mcp list); every writing route must be session-only",
+    "       infrastructure not a capability: sign-in flows, transport, public share pages, the SPA itself",
+    "wiki: the page that documents it. The check verifies the file exists."
+  ],
+  "gapBudget": 11,
+  "capabilities": {
+    "pages.tree": {
+      "summary": "See the page tree and the templates",
+      "agent": "allowed",
+      "rest": ["GET /api/pages", "GET /api/templates"],
+      "mcp": ["list"],
+      "wiki": "wiki/pages.md"
+    },
+    "pages.read": {
+      "summary": "Read a page, its preview or its sub-tree as Markdown",
+      "agent": "allowed",
+      "rest": ["GET /api/pages/{id}", "GET /api/pages/{id}/preview", "GET /api/export/{id}"],
+      "mcp": ["get_page", "get_permissions"],
+      "wiki": "wiki/pages.md"
+    },
+    "pages.create": {
+      "summary": "Create a page or a database, optionally from a template",
+      "agent": "allowed",
+      "rest": ["POST /api/pages"],
+      "mcp": ["create_page", "create_database"],
+      "wiki": "wiki/pages.md"
+    },
+    "pages.update": {
+      "summary": "Change a page: content, title, icon, cover, tags, visibility, parent, workspace, favourite, row properties",
+      "agent": "allowed",
+      "rest": ["PATCH /api/pages/{id}", "POST /api/favorites/{id}", "DELETE /api/favorites/{id}"],
+      "mcp": ["update_page", "write_content", "set_properties", "save_as_template", "embed_database"],
+      "wiki": "wiki/pages.md"
+    },
+    "pages.order": {
+      "summary": "Put sibling pages in a chosen order",
+      "agent": "gap",
+      "note": "update_page moves a page under a parent but cannot set its position among siblings.",
+      "rest": ["POST /api/reindex-siblings"],
+      "wiki": "wiki/pages.md"
+    },
+    "pages.favorites.list": {
+      "summary": "List one's favourite pages",
+      "agent": "gap",
+      "note": "update_page sets a favourite; list has no favorites kind to read them back.",
+      "rest": ["GET /api/favorites"],
+      "wiki": "wiki/interface.md"
+    },
+    "pages.trash": {
+      "summary": "Move a page to the trash and bring it back",
+      "agent": "allowed",
+      "rest": ["DELETE /api/pages/{id}", "POST /api/pages/{id}/restore"],
+      "mcp": ["set_trashed"],
+      "wiki": "wiki/trash-and-recovery.md"
+    },
+    "pages.duplicate": {
+      "summary": "Duplicate a page with its sub-tree",
+      "agent": "allowed",
+      "rest": ["POST /api/pages/{id}/duplicate"],
+      "mcp": ["duplicate_page"],
+      "wiki": "wiki/pages.md"
+    },
+    "pages.links": {
+      "summary": "Backlinks and the link graph",
+      "agent": "allowed",
+      "rest": ["GET /api/pages/{id}/backlinks", "GET /api/graph"],
+      "mcp": ["get_links"],
+      "wiki": "wiki/library.md"
+    },
+    "tags.list": {
+      "summary": "List tags with their counts",
+      "agent": "allowed",
+      "rest": ["GET /api/tags", "GET /api/tag-colors"],
+      "mcp": ["list"],
+      "wiki": "wiki/pages.md"
+    },
+    "tags.color": {
+      "summary": "Give a tag a colour",
+      "agent": "gap",
+      "note": "set_tag_color was folded away in the tool consolidation and nothing took it over: mcpSetTagColor is never called.",
+      "rest": ["PUT /api/tag-colors"],
+      "wiki": "wiki/pages.md"
+    },
+    "search": {
+      "summary": "Full-text search over pages and indexed PDFs",
+      "agent": "allowed",
+      "rest": ["GET /api/search"],
+      "mcp": ["search"],
+      "wiki": "wiki/search.md"
+    },
+    "files": {
+      "summary": "Upload a file, attach it to a page, list files",
+      "agent": "allowed",
+      "rest": ["POST /api/upload", "GET /api/files"],
+      "mcp": ["upload_file", "list"],
+      "wiki": "wiki/files.md"
+    },
+    "collections": {
+      "summary": "Read and change a database: schema, views, rows",
+      "agent": "allowed",
+      "rest": ["GET /api/collections/{id}", "PUT /api/collections/{id}", "GET /api/collections/{id}/rows"],
+      "mcp": ["get_collection", "update_schema", "set_view", "delete_view", "query_rows", "create_rows"],
+      "wiki": "wiki/collections.md"
+    },
+    "forms.share": {
+      "summary": "Share a form view publicly so outsiders can submit rows",
+      "agent": "gap",
+      "note": "set_sharing shares pages only.",
+      "rest": ["GET /api/collections/{id}/form-share", "POST /api/collections/{id}/form-share", "DELETE /api/collections/{id}/form-share"],
+      "wiki": "wiki/forms.md"
+    },
+    "pages.share": {
+      "summary": "Turn a page's public link on or off",
+      "agent": "allowed",
+      "rest": ["POST /api/pages/{id}/share", "DELETE /api/pages/{id}/share"],
+      "mcp": ["set_sharing"],
+      "wiki": "wiki/sharing.md"
+    },
+    "revisions": {
+      "summary": "A page's history: list, read and restore revisions",
+      "agent": "allowed",
+      "rest": ["GET /api/pages/{id}/revisions", "GET /api/pages/{id}/revisions/{revId}", "POST /api/pages/{id}/revisions/{revId}/restore"],
+      "mcp": ["revisions"],
+      "wiki": "wiki/history-and-audit.md"
+    },
+    "activity.log": {
+      "summary": "Read the activity log and revert an entry",
+      "agent": "gap",
+      "note": "Agents have per-page revisions but not the workspace activity log or its revert.",
+      "rest": ["GET /api/audit", "POST /api/audit/{id}/revert"],
+      "wiki": "wiki/history-and-audit.md"
+    },
+    "comments": {
+      "summary": "List, add, resolve, reopen and delete comments",
+      "agent": "allowed",
+      "rest": ["GET /api/pages/{id}/comments", "POST /api/pages/{id}/comments", "POST /api/comments/{id}/resolve", "DELETE /api/comments/{id}", "GET /api/comment-counts"],
+      "mcp": ["comments", "delete_comment"],
+      "wiki": "wiki/comments-and-notes.md"
+    },
+    "notes.write": {
+      "summary": "Add a line to a page's note trail",
+      "agent": "allowed",
+      "rest": ["POST /api/pages/{id}/notes"],
+      "mcp": ["note"],
+      "wiki": "wiki/comments-and-notes.md"
+    },
+    "notes.read": {
+      "summary": "Read a page's note trail",
+      "agent": "gap",
+      "note": "Agents write the trail with note but no tool reads pageNotes back.",
+      "rest": ["GET /api/pages/{id}/notes"],
+      "wiki": "wiki/comments-and-notes.md"
+    },
+    "notes.clear": {
+      "summary": "Discard a page's whole note trail",
+      "agent": "closed",
+      "reason": "The trail is the record of what agents did; only a person may discard it.",
+      "rest": ["DELETE /api/pages/{id}/notes"],
+      "wiki": "wiki/comments-and-notes.md"
+    },
+    "import.content": {
+      "summary": "Import Markdown, CSV or a Notion/zip export",
+      "agent": "gap",
+      "note": "import_url imports JSON records from a URL; file imports are browser-only so far.",
+      "rest": ["POST /api/import", "POST /api/import-zip"],
+      "wiki": "wiki/import-export.md"
+    },
+    "import.url": {
+      "summary": "Bulk-import records from a JSON URL and follow the job",
+      "agent": "agent-only",
+      "mcp": ["import_url", "get_import_status"],
+      "wiki": "wiki/mcp-tools.md"
+    },
+    "export.all": {
+      "summary": "Export everything one can read as a zip",
+      "agent": "gap",
+      "note": "Agents read page by page with get_page; there is no bulk export.",
+      "rest": ["GET /api/export"],
+      "wiki": "wiki/import-export.md"
+    },
+    "workspaces.list": {
+      "summary": "List workspaces and read one with its members and rules",
+      "agent": "allowed",
+      "rest": ["GET /api/workspaces", "GET /api/workspaces/{id}/members"],
+      "mcp": ["list", "get_workspace"],
+      "wiki": "wiki/workspaces.md"
+    },
+    "workspaces.manage": {
+      "summary": "Create a workspace, rename it, set its icon",
+      "agent": "allowed",
+      "rest": ["POST /api/workspaces", "PATCH /api/workspaces/{id}"],
+      "mcp": ["workspace"],
+      "wiki": "wiki/workspaces.md"
+    },
+    "workspaces.blueprints": {
+      "summary": "Start a workspace from the blueprint library",
+      "agent": "gap",
+      "note": "workspace from_workspace copies an existing workspace; the built-in library is browser-only.",
+      "rest": ["GET /api/library", "POST /api/library/{id}"],
+      "wiki": "wiki/library.md"
+    },
+    "workspaces.transfer": {
+      "summary": "Export a workspace as a portable file and import one",
+      "agent": "gap",
+      "note": "Decide whether agents should move whole workspaces.",
+      "rest": ["GET /api/workspaces/{id}/export", "POST /api/workspaces/import"],
+      "wiki": "wiki/import-export.md"
+    },
+    "workspaces.delete": {
+      "summary": "Delete a workspace",
+      "agent": "gap",
+      "note": "Not offered over MCP. Decide: closed (then session-only) or a tool.",
+      "rest": ["DELETE /api/workspaces/{id}"],
+      "wiki": "wiki/workspaces.md"
+    },
+    "workspaces.membership": {
+      "summary": "Add, change and remove workspace members and their roles",
+      "agent": "closed",
+      "reason": "Listed in not_available_via_mcp: workspace membership and roles.",
+      "tokenReachable": {
+        "routes": ["POST /api/workspaces/{id}/members", "PATCH /api/workspaces/{id}/members/{userId}", "DELETE /api/workspaces/{id}/members/{userId}"],
+        "note": "Open question. wiki/workspaces.md documents these as reachable by scripts and agents with a workspace admin's token, while the README and whoami tell agents membership is not theirs to decide. Either wrap them in sessionOnly or change the promise."
+      },
+      "rest": ["POST /api/workspaces/{id}/members", "PATCH /api/workspaces/{id}/members/{userId}", "DELETE /api/workspaces/{id}/members/{userId}", "PUT /api/admin/membership", "GET /api/admin/access"],
+      "wiki": "wiki/permissions.md"
+    },
+    "workspaces.rules": {
+      "summary": "Write workspace rules for agents; agents may propose a draft",
+      "agent": "closed",
+      "reason": "Applying rules stays in the browser; agents submit drafts with propose_workspace_rules.",
+      "rest": ["PUT /api/workspaces/{id}/rules", "DELETE /api/workspaces/{id}/rules-proposal"],
+      "wiki": "wiki/agent-access.md"
+    },
+    "workspaces.rules.propose": {
+      "summary": "Propose workspace rules as a draft for an admin",
+      "agent": "agent-only",
+      "mcp": ["propose_workspace_rules"],
+      "wiki": "wiki/agent-access.md"
+    },
+    "workspaces.break-glass": {
+      "summary": "Owner access to a workspace in an emergency",
+      "agent": "closed",
+      "reason": "Instance-owner emergency access.",
+      "rest": ["POST /api/workspaces/{id}/break-glass", "GET /api/workspaces/{id}/break-glass", "DELETE /api/workspaces/{id}/break-glass/{grantId}"],
+      "wiki": "wiki/administration.md"
+    },
+    "agents.presence": {
+      "summary": "Announce work on a page and see who is working where",
+      "agent": "agent-only",
+      "mcp": ["working_on"],
+      "wiki": "wiki/agents.md"
+    },
+    "agents.self": {
+      "summary": "What may this credential do",
+      "agent": "agent-only",
+      "mcp": ["whoami"],
+      "wiki": "wiki/agent-access.md"
+    },
+    "account.prefs": {
+      "summary": "Personal preferences, two-factor, calendar feed address",
+      "agent": "closed",
+      "reason": "Listed in not_available_via_mcp: two-factor settings; preferences belong to the person.",
+      "rest": ["PUT /api/me/prefs", "GET /api/2fa", "POST /api/2fa/setup", "POST /api/2fa/enable", "POST /api/2fa/disable", "GET /api/ics"],
+      "wiki": "wiki/account.md"
+    },
+    "account.tokens": {
+      "summary": "API tokens and OAuth grants for agents",
+      "agent": "closed",
+      "reason": "Listed in not_available_via_mcp: API tokens.",
+      "rest": ["GET /api/tokens", "POST /api/tokens", "DELETE /api/tokens/{id}", "POST /api/oauth/approve", "GET /api/oauth/request", "GET /api/oauth/grants", "DELETE /api/oauth/grants/{id}"],
+      "wiki": "wiki/agent-access.md"
+    },
+    "admin.users": {
+      "summary": "Create, change, disable and delete accounts; invitations; ownership",
+      "agent": "closed",
+      "reason": "Listed in not_available_via_mcp: creating or deleting accounts.",
+      "rest": ["GET /api/users", "POST /api/users", "PATCH /api/users/{id}", "DELETE /api/users/{id}", "GET /api/users/{id}/deletion-impact", "PUT /api/users/{id}/disabled", "POST /api/invites", "POST /api/admin/transfer-owner", "GET /api/admin/stranded-workspaces", "POST /api/admin/stranded-workspaces/{id}/adopt", "DELETE /api/admin/stranded-workspaces/{id}"],
+      "wiki": "wiki/administration.md"
+    },
+    "admin.instance": {
+      "summary": "Instance settings, mail, tunnel, updates, webhooks, audit retention",
+      "agent": "closed",
+      "reason": "Listed in not_available_via_mcp: tunnel and instance settings.",
+      "rest": ["GET /api/settings", "PUT /api/settings", "GET /api/admin/info", "GET /api/update", "GET /api/admin/public-access", "POST /api/admin/tunnel", "POST /api/admin/mail-oauth/disconnect", "POST /api/admin/mail-test", "POST /api/admin/audit-prune", "GET /api/webhooks", "POST /api/webhooks", "DELETE /api/webhooks/{id}"],
+      "wiki": "wiki/administration.md"
+    },
+    "admin.backup": {
+      "summary": "Download a backup",
+      "agent": "closed",
+      "reason": "Listed in not_available_via_mcp: backup/restore.",
+      "rest": ["GET /api/admin/backup"],
+      "wiki": "wiki/self-hosting.md"
+    },
+    "infrastructure.auth": {
+      "summary": "Sign-in, sign-up, setup, OAuth for MCP clients, SSO and mail OAuth callbacks, desktop sign-in, invitation acceptance",
+      "agent": "infrastructure",
+      "rest": ["GET /api/me", "POST /api/setup", "POST /api/login", "POST /api/logout", "POST /api/signup", "GET /api/signup-policy", "GET /.well-known/oauth-protected-resource", "GET /.well-known/oauth-protected-resource/mcp", "GET /.well-known/oauth-authorization-server", "POST /oauth/register", "GET /oauth/authorize", "POST /oauth/token", "POST /oauth/revoke", "GET /api/oauth/{provider}/start", "GET /api/oauth/{provider}/callback", "GET /api/admin/mail-oauth/{provider}/start", "GET /api/admin/mail-oauth/{provider}/callback", "GET /desktop/login", "POST /desktop/approve", "POST /api/desktop/exchange", "GET /api/invites/{token}", "POST /api/invites/{token}/accept"],
+      "wiki": "wiki/account.md"
+    },
+    "infrastructure.transport": {
+      "summary": "Health, live events, presence feed, realtime editing, MCP endpoint, the agent skill bundle, uploaded files, the app itself, licences",
+      "agent": "infrastructure",
+      "rest": ["GET /api/health", "GET /api/events", "GET /api/presence", "GET /collab/{id}", "/mcp", "/mcp/{token}", "GET /api/skill", "GET /files/", "/", "GET /licenses", "GET /api/public-base", "GET /ics/{token}"],
+      "wiki": "wiki/self-hosting.md"
+    },
+    "infrastructure.public": {
+      "summary": "What outsiders see: shared pages, their files, public forms",
+      "agent": "infrastructure",
+      "rest": ["GET /api/public/{token}", "GET /public/{token}/files/{name}", "GET /public/{token}", "POST /public/{token}", "GET /api/public/form/{token}", "POST /api/public/form/{token}/submit"],
+      "wiki": "wiki/sharing.md"
+    }
+  }
+}

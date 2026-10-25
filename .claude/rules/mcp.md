@@ -1,6 +1,8 @@
 ---
 paths:
   - "server/mcp*.go"
+  - "server/server.go"
+  - "capabilities.json"
   - "wiki/mcp-tools.md"
   - "wiki/agent-access.md"
 ---
@@ -30,3 +32,7 @@ paths:
   tool needs its section in `wiki/mcp-tools.md`, a removed one must leave it.
 - **Tests** call `callTool(t, s, u, name, args)` against `testServer(t)`. Cover
   the refusal paths, not only the happy path.
+- **The manifest.** A new or renamed tool or route goes into `capabilities.json`
+  in the same change. Closing a gap: name the tool, set `agent` to `allowed`,
+  lower `gapBudget`, and add the REST/MCP pair to `parityActs` in
+  `parity_property_test.go`.
