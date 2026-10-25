@@ -1130,5 +1130,8 @@
   "Keep it up to date automatically (checked daily, checksum verified)": "Automatisch aktuell halten (täglich geprüft, mit Prüfsumme)",
   "Check now": "Jetzt prüfen",
   "Full width": "Volle Breite",
-  "Page width not saved": "Seitenbreite nicht gespeichert"
+  "Page width not saved": "Seitenbreite nicht gespeichert",
+  "Column layout": "Spaltenaufteilung",
+  "Column width": "Spaltenbreite",
+  "Drag to resize, double-click to reset": "Ziehen zum Verbreitern, Doppelklick setzt gleiche Breiten"
 }

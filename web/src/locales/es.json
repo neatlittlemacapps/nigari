@@ -1139,5 +1139,8 @@
   "Public link": "Enlace público",
   "Copy failed; select the link": "No se pudo copiar; selecciona el enlace",
   "Full width": "Ancho completo",
-  "Page width not saved": "Ancho de página no guardado"
+  "Page width not saved": "Ancho de página no guardado",
+  "Column layout": "Distribución de columnas",
+  "Column width": "Ancho de columna",
+  "Drag to resize, double-click to reset": "Arrastra para redimensionar, doble clic para igualar los anchos"
 }
