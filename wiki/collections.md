@@ -143,7 +143,7 @@ right, the settings for the view you are on.
 | **Columns** | Show and hide properties. Two lists, **Shown** and **Hidden**, with **Hide all** and **Show all**. The button reads **Columns**, and `Columns (4/7)` once something is hidden. |
 | **Properties** | Opens the schema dialog (see below). |
 | `⋯` (View options) | **Rename view**, **Move left**, **Move right**, **Remove view**. The arrows grey out at the ends; with only one view left the menu offers nothing but **Rename view**. |
-| **New** | Creates a row and opens it. |
+| **New** | Creates a row and opens it. The arrow beside it lists the database's own templates: see [Templates](templates.md#templates-that-belong-to-a-database). |
 
 On a **form** view the bar keeps only **Columns**, **Properties** and the `⋯`.
 There is nothing to filter, sort or add by hand there, and hiding a property

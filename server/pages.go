@@ -35,6 +35,8 @@ type pageMeta struct {
 	Description string          `json:"description"`
 	Snippet     string          `json:"snippet"`
 	Thumb       string          `json:"thumb"`
+	// The database this page is a template of; empty for every other page.
+	TemplateOf string `json:"templateOf,omitempty"`
 	// Only on a page in the trash: when it went, and — in the page list, where
 	// the trash is drawn — who sent it there, read from the activity log. See
 	// attachTrashers.
@@ -61,7 +63,7 @@ func scanMeta(sc interface{ Scan(...any) error }) (pageMeta, error) {
 	var trashedAt sql.NullString
 	var props, tags string
 	var isTemplate int
-	err := sc.Scan(&m.ID, &m.ParentID, &m.Title, &m.Icon, &m.Cover, &m.Position, &m.UpdatedAt, &trashedAt, &m.Type, &props, &m.WorkspaceID, &m.OwnerID, &m.Visibility, &isTemplate, &tags, &m.Description, &m.Snippet, &m.Thumb)
+	err := sc.Scan(&m.ID, &m.ParentID, &m.Title, &m.Icon, &m.Cover, &m.Position, &m.UpdatedAt, &trashedAt, &m.Type, &props, &m.WorkspaceID, &m.OwnerID, &m.Visibility, &isTemplate, &tags, &m.Description, &m.Snippet, &m.Thumb, &m.TemplateOf)
 	m.Trashed = trashedAt.Valid
 	if trashedAt.Valid {
 		m.TrashedAt = trashedAt.String
@@ -75,7 +77,7 @@ func scanMeta(sc interface{ Scan(...any) error }) (pageMeta, error) {
 	return m, err
 }
 
-const pageMetaCols = `id, parent_id, title, icon, cover, position, updated_at, trashed_at, type, props, workspace_id, owner_id, visibility, is_template, tags, description, snippet, thumb`
+const pageMetaCols = `id, parent_id, title, icon, cover, position, updated_at, trashed_at, type, props, workspace_id, owner_id, visibility, is_template, tags, description, snippet, thumb, template_of`
 
 func (s *Server) handleListPages(w http.ResponseWriter, r *http.Request) {
 	// Scope to the user's workspaces (further narrowed by a workspace-scoped
@@ -161,7 +163,7 @@ func (s *Server) handleListTemplates(w http.ResponseWriter, r *http.Request) {
 	}
 	rows, err := s.db.Query(`SELECT `+pageMetaCols+` FROM pages p
 		WHERE workspace_id IN (`+placeholders(len(ws))+`)
-		AND is_template = 1 AND trashed_at IS NULL
+		AND is_template = 1 AND template_of = '' AND trashed_at IS NULL
 		ORDER BY title`, args...)
 	if err != nil {
 		httpError(w, 500, err.Error())
@@ -186,7 +188,7 @@ func (s *Server) getPage(id string) (*page, error) {
 	var trashedAt sql.NullString
 	var content, props, tags string
 	var isTemplate int
-	err := row.Scan(&p.ID, &p.ParentID, &p.Title, &p.Icon, &p.Cover, &p.Position, &p.UpdatedAt, &trashedAt, &p.Type, &props, &p.WorkspaceID, &p.OwnerID, &p.Visibility, &isTemplate, &tags, &p.Description, &p.Snippet, &p.Thumb, &content, &p.CreatedAt, &p.DocGen)
+	err := row.Scan(&p.ID, &p.ParentID, &p.Title, &p.Icon, &p.Cover, &p.Position, &p.UpdatedAt, &trashedAt, &p.Type, &props, &p.WorkspaceID, &p.OwnerID, &p.Visibility, &isTemplate, &tags, &p.Description, &p.Snippet, &p.Thumb, &p.TemplateOf, &content, &p.CreatedAt, &p.DocGen)
 	if err != nil {
 		return nil, err
 	}

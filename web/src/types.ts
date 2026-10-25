@@ -15,6 +15,8 @@ export interface PageMeta {
   ownerId: string;
   visibility: 'workspace' | 'private';
   isTemplate: boolean;
+  /** Set on a template that belongs to one database: that database's id. */
+  templateOf?: string;
   tags: string[];
   description: string;
   snippet: string; // plain-text preview for the notes list (derived server-side)

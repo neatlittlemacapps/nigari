@@ -10393,3 +10393,153 @@ body:has(.live-down) .update-banner {
 .prop-url-open { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 24px; height: 24px; color: var(--muted); border-radius: 4px; }
 .prop-url-open:hover { color: var(--accent); background: var(--hover); }
 .prop-url-value :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* --- a database's own templates -------------------------------------------------
+   New and its arrow are ONE button. The shape (pill) belongs to the group, and
+   the two halves inside it are flat: each only tints on its own hover, and a
+   hairline between them says there are two things to press. The mechanic is a
+   button group: the container owns the radius and the fill, the children own
+   nothing but their hit area. (The dbt- prefix is because .tpl-* is the
+   template gallery's.) */
+.split-btn {
+  align-items: stretch;
+  gap: 0;
+  border-radius: 999px;
+  background: var(--pill-dark);
+}
+.split-btn > .btn-sm.primary {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  border-radius: 0;
+  transform: none;
+  position: relative;
+}
+.split-btn > .btn-sm.primary:hover {
+  background: var(--pill-dark-hover);
+  transform: none;
+  box-shadow: none;
+}
+.split-btn > .btn-sm.primary:first-child {
+  border-radius: 999px 0 0 999px;
+  padding-left: 13px;
+}
+.split-btn-arrow {
+  padding-left: 7px;
+  padding-right: 10px;
+  border-radius: 0 999px 999px 0 !important;
+}
+.split-btn-arrow::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 22%;
+  bottom: 22%;
+  width: 1px;
+  background: currentColor;
+  opacity: 0.3;
+}
+.split-btn > .btn-sm.primary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.menu.dbt-menu {
+  /* Above .fs-backdrop (310), which catches the click that closes it. */
+  z-index: 320;
+  top: 32px;
+  right: 0;
+  left: auto;
+  min-width: 240px;
+  max-width: 320px;
+}
+.dbt-hint {
+  padding: 6px 10px 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+/* One row, one highlight. The name and the ⋯ are both .menu buttons, and each
+   used to paint its own hover, which drew a box inside a box. The row owns the
+   highlight; the buttons inside it stay transparent. */
+.dbt-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+}
+.dbt-item:hover,
+.dbt-item:focus-within {
+  background: var(--active);
+}
+.menu .dbt-item > button,
+.menu .dbt-item > button:hover {
+  background: transparent;
+}
+.dbt-item > button:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.dbt-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dbt-more {
+  flex: none;
+  opacity: 0.55;
+}
+.dbt-item:hover .dbt-more,
+.dbt-more:focus-visible {
+  opacity: 1;
+}
+/* The ⋯ menu of one template: edit, duplicate, trash. Opens under the row, on
+   top of the menu it belongs to. */
+.menu.dbt-row-menu {
+  top: calc(100% + 2px);
+  right: 0;
+  left: auto;
+  min-width: 170px;
+  z-index: 330;
+}
+/* Said above the title of a template that belongs to a database: you are
+   editing what later rows start from, not a row. */
+.template-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  margin: 0 auto 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.template-banner > span {
+  flex: 1;
+}
+
+/* A database's template edited in a dialog: the page editor fills it, and its
+   top bar (breadcrumb, share, menu) is left out, because none of that is about
+   a template. */
+.modal-overlay > .dialog.tpl-editor {
+  width: min(860px, 96vw);
+  height: calc(100dvh - 9dvh);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.tpl-editor-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+}
+.tpl-editor-body {
+  flex: 1;
+  min-height: 0;
+}
+.editor-page.in-dialog .topbar {
+  display: none;
+}

@@ -101,6 +101,7 @@ var mcpTools = []map[string]any{
 				"kind":         map[string]any{"type": "string", "description": "pages | templates | tags | workspaces | files | users | cover_presets"},
 				"workspace_id": map[string]any{"type": "string", "description": "Limit to one workspace. Omit for all you can reach."},
 				"under":        map[string]any{"type": "string", "description": "files only — a page id: just the files on this page and its sub-pages."},
+				"database_id":  map[string]any{"type": "string", "description": "templates only — a database id: that database's own templates instead of the workspace ones. Workspace templates do not include them."},
 			},
 			"required": []string{"kind"}},
 	},
@@ -129,7 +130,7 @@ var mcpTools = []map[string]any{
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{
 				"title":        map[string]any{"type": "string"},
-				"template_id":  map[string]any{"type": "string", "description": "Build the page from a template instead of from scratch — call list with kind=\"templates\" for the ids. Only title applies alongside it."},
+				"template_id":  map[string]any{"type": "string", "description": "Build the page from a template instead of from scratch — call list with kind=\"templates\" for the ids. Only title applies alongside it. A template of a database (list with kind=\"templates\" and database_id) makes a ROW in that database, and then properties apply on top as well; parent_id may be left out."},
 				"parent_id":    map[string]any{"type": "string", "description": "Optional parent page id. Pass a database id to create a ROW in that database."},
 				"workspace_id": map[string]any{"type": "string", "description": "Which workspace to create in when there is no parent_id. Call list with kind=\"workspaces\" first — without this the page lands in your first workspace, which may not be the one you mean."},
 				"markdown":     map[string]any{"type": "string", "description": "Optional initial content as Markdown. " + pageLinkHint + " " + diagramHint},
@@ -172,6 +173,22 @@ var mcpTools = []map[string]any{
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{"page_id": map[string]any{"type": "string"}},
 			"required":   []string{"page_id"}},
+	},
+	{
+		"name": "database_templates",
+		"description": "A database's OWN templates: the starting points its New button offers. They are not rows and not in the workspace template list. " +
+			"action: list | add (empty, or from_page_id: a snapshot of that page, usually one of the database's rows) | rename (title) | remove (to the trash, restorable). " +
+			"To make a row from one, call create_page with template_id (and properties to fill or overwrite values). A template is a SNAPSHOT: using it copies it and the two never affect each other again, " +
+			"so edit the template itself (write_content, set_properties on its id) to change what later rows start from.",
+		"inputSchema": map[string]any{"type": "object",
+			"properties": map[string]any{
+				"action":       map[string]any{"type": "string", "description": "list | add | rename | remove (default list)"},
+				"database_id":  map[string]any{"type": "string"},
+				"template_id":  map[string]any{"type": "string", "description": "rename and remove: which template"},
+				"title":        map[string]any{"type": "string", "description": "add: the template's title; rename: its new title"},
+				"from_page_id": map[string]any{"type": "string", "description": "add: snapshot this page (same workspace) instead of making an empty template"},
+			},
+			"required": []string{"database_id"}},
 	},
 	{
 		"name":        "upload_file",
@@ -719,6 +736,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		Password      string `json:"password"`
 		// Templates (W115).
 		TemplateID string `json:"template_id"`
+		FromPageID string `json:"from_page_id"`
 		// Workspace rules (W123).
 		Rules string `json:"rules"`
 		// File index (W125).
@@ -771,6 +789,8 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 	case "revisions":
 		// Reading the history is a read; putting a page back is not.
 		mutating = args.Action == "restore"
+	case "database_templates":
+		mutating = args.Action != "" && args.Action != "list"
 	case "comments":
 		mutating = args.Action == "add" || args.Action == "resolve" || args.Action == "reopen"
 	}
@@ -864,7 +884,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 	run := func() (string, error) {
 		switch name {
 		case "list":
-			out, err := s.mcpList(u, args.Kind, args.WorkspaceID, args.Under)
+			out, err := s.mcpList(u, args.Kind, args.WorkspaceID, args.Under, args.DatabaseID)
 			if err != nil {
 				return "", err
 			}
@@ -906,7 +926,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		case "create_page":
 			// template_id replaces create_from_template: same act, one entry point.
 			if args.TemplateID != "" {
-				return s.mcpCreateFromTemplate(u, args.TemplateID, args.Title)
+				return s.mcpCreateFromTemplate(u, args.TemplateID, args.Title, parentID, args.Properties)
 			}
 			if strings.TrimSpace(args.Title) == "" {
 				return "", fmt.Errorf("title is required")
@@ -1206,6 +1226,8 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 			return "Duplicated page → new id " + nid, nil
 		case "save_as_template":
 			return s.mcpSaveAsTemplate(u, args.PageID)
+		case "database_templates":
+			return s.mcpDatabaseTemplates(u, args.Action, args.DatabaseID, args.TemplateID, args.Title, args.FromPageID)
 		case "write_content":
 			return s.mcpWriteContent(u, args.PageID, args.Markdown, args.Mode)
 		case "revisions":

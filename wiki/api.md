@@ -8,7 +8,7 @@ authenticate, what an answer and an error look like, the limits you will hit,
 and a grouped list of the endpoints worth calling.
 
 **If you are connecting an AI agent, use the MCP endpoint instead.** It speaks
-the same data through 33 purpose-built tools, with descriptions the agent reads
+the same data through 34 purpose-built tools, with descriptions the agent reads
 before it acts, and it needs no glue code at all. See
 [Agents](agents.md) and the [tool reference](mcp-tools.md). The REST API is for
 code you write; MCP is for models. Both accept the same credentials.
