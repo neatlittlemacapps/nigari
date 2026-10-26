@@ -431,6 +431,12 @@ func openDB(path string) (*sql.DB, error) {
 	if err := ensureColumn(db, "page_chunks", "fts_rowid", `fts_rowid INTEGER`); err != nil {
 		return nil, fmt.Errorf("migrate page_chunks.fts_rowid: %w", err)
 	}
+	// Search joins its hits to their passages by this column (#78). Created
+	// here and not in the schema constant: the column itself only exists once
+	// ensureColumn above has added it.
+	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_chunk_fts_rowid ON page_chunks(fts_rowid)`); err != nil {
+		return nil, fmt.Errorf("migrate idx_chunk_fts_rowid: %w", err)
+	}
 	// Existing tokens predate scoping — default them to full write access so an
 	// upgrade never silently downgrades a working integration.
 	if err := ensureColumn(db, "api_tokens", "scope", `scope TEXT NOT NULL DEFAULT 'write'`); err != nil {

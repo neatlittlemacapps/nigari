@@ -270,7 +270,11 @@ func (f rowFilter) where() (string, []any) {
 	}
 	// The value may be stored as a scalar or inside a list (multiselect, a
 	// relation): both spellings have to answer the same question.
-	inList := "EXISTS (SELECT 1 FROM json_each(props, '$." + f.Prop + "') WHERE value IN (" + holders + "))"
+	// json_each only for a list (or an object): for a scalar it yields the
+	// scalar again, which `ex IN (…)` has already compared. Unguarded, every
+	// non-matching row of a select ran a correlated subquery for nothing — on
+	// a 10k-row database that was half the time of query_rows (#79).
+	inList := "(json_type(props, '$." + f.Prop + "') IN ('array', 'object') AND EXISTS (SELECT 1 FROM json_each(props, '$." + f.Prop + "') WHERE value IN (" + holders + ")))"
 	set := "(" + ex + " IS NOT NULL AND " + ex + " != '' AND " + ex + " != json('[]'))"
 	switch op {
 	case "is_empty":
@@ -383,13 +387,10 @@ func (s *Server) collectionRowsQuery(ctx context.Context, u *user, colID string,
 
 	ctx, cancel := withReadLimit(ctx)
 	defer cancel()
-	// The count used to ignore its error. Under a deadline that would report
-	// "0 rows" for a query that was merely stopped.
-	if err := s.rdb.QueryRowContext(ctx, `SELECT COUNT(*) FROM pages WHERE `+whereSQL, args...).Scan(&total); err != nil {
-		return nil, 0, readErr(ctx, err)
-	}
-
-	rows, err := s.rdb.QueryContext(ctx, `SELECT id, title, icon, cover, position, props, tags FROM pages WHERE `+whereSQL+` ORDER BY `+orderSQL+` LIMIT ? OFFSET ?`, append(args, limit, offset)...)
+	// The total rides along as a window count. It used to be a COUNT(*) of
+	// its own, which scanned and filtered every row a second time: the sort
+	// already visits all of them, so counting there is nearly free (#79).
+	rows, err := s.rdb.QueryContext(ctx, `SELECT id, title, icon, cover, position, props, tags, COUNT(*) OVER () FROM pages WHERE `+whereSQL+` ORDER BY `+orderSQL+` LIMIT ? OFFSET ?`, append(args, limit, offset)...)
 	if err != nil {
 		return nil, 0, readErr(ctx, err)
 	}
@@ -398,7 +399,7 @@ func (s *Server) collectionRowsQuery(ctx context.Context, u *user, colID string,
 	for rows.Next() {
 		var id, title, icon, cover, props, tags string
 		var position float64
-		if rows.Scan(&id, &title, &icon, &cover, &position, &props, &tags) != nil {
+		if rows.Scan(&id, &title, &icon, &cover, &position, &props, &tags, &total) != nil {
 			continue
 		}
 		var pm map[string]any
@@ -418,6 +419,16 @@ func (s *Server) collectionRowsQuery(ctx context.Context, u *user, colID string,
 	// return the first rows as if they were all of them.
 	if err := rows.Err(); err != nil {
 		return nil, 0, readErr(ctx, err)
+	}
+	// No row, no window count: an empty database, a filter that matches
+	// nothing, or an offset past the end. Only the last needs the total, but
+	// telling them apart costs the same as asking. Its error is not ignored:
+	// under a deadline that would report "0 rows" for a query that was merely
+	// stopped.
+	if len(list) == 0 {
+		if err := s.rdb.QueryRowContext(ctx, `SELECT COUNT(*) FROM pages WHERE `+whereSQL, args...).Scan(&total); err != nil {
+			return nil, 0, readErr(ctx, err)
+		}
 	}
 
 	// Compute rollups and formulas server-side (relations resolved against the
