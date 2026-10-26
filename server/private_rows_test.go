@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"net/http/httptest"
 	"strings"
@@ -151,7 +152,7 @@ func TestPrivateRowsStayOutOfGetPageOverMCP(t *testing.T) {
 // still nobody else's business.
 func TestPrivateRowsStayOutOfFilterGroups(t *testing.T) {
 	f := newPrivateRowsFixture(t)
-	list, _, err := f.s.collectionRowsQuery(&user{ID: f.member}, f.col, nil, [][]rowFilter{
+	list, _, err := f.s.collectionRowsQuery(context.Background(), &user{ID: f.member}, f.col, nil, [][]rowFilter{
 		{{Prop: "amount", Op: "gt", Value: "50000"}},
 		{{Prop: "amount", Op: "lt", Value: "15"}},
 	}, "", 100, 0, time.Time{})

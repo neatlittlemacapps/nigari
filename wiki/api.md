@@ -233,7 +233,7 @@ Not every error has a code yet. Where there is none, only `error` is present.
 | `413` | the upload is over the instance's file limit |
 | `429` | too many sign-in attempts, or too many public form submissions |
 | `500` | the server failed |
-| `503` | `/api/health` only: the database did not answer |
+| `503` | `/api/health`: the database did not answer; a database's rows: the query ran out of time (`"code": "query_timeout"`) |
 
 **`404` is also the answer for "you may not".** A page in a workspace you do not
 belong to reports "page not found", so nobody can tell an existing private page
@@ -254,6 +254,7 @@ Codes you are likely to meet: `bad_credentials`, `2fa_required`, `2fa_invalid`,
 | Comment | 10 000 characters |
 | A note in the raw trail | 2000 characters, truncated rather than refused |
 | Rows per request | 100 by default, 500 maximum; **a larger `limit` is ignored**, so asking for 1000 gives you 100, not 500 |
+| Time per rows request | 5 seconds, rollups included; then `503` with `"code": "query_timeout"` and no rows |
 | Audit entries per request | 50 by default, 200 maximum; same rule: over 200 falls back to 50 |
 | Sign-in attempts | 30 per minute per address, burst of 10 |
 | Public form submissions | 20 per minute per address, burst of 8 |
@@ -429,6 +430,13 @@ A saved view keeps flat filters only, because that is all the interface shows.
 whole filtered set, not the page. Rollups, formulas and backrelations are filled
 in per row. Other people's private rows are excluded before the count, so paging
 stays honest.
+
+A rows request that takes longer than 5 seconds is stopped and answered with
+`503` and `{"error": "The query took longer than 5 seconds and was stopped.
+Narrow the filter or ask for fewer rows.", "code": "query_timeout"}`, never with
+part of the rows. The server reads through one database connection, so a long
+query would hold up every other request. Narrow the filter or ask for a smaller
+`limit`.
 
 Rows are pages, so you create one with `POST /api/pages` naming the database as
 `parentId`, and set its values with `PATCH`. See

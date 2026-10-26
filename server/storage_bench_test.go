@@ -1,10 +1,13 @@
 package server
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"math"
 	"math/rand/v2"
 	"net/http/httptest"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -120,8 +123,30 @@ func BenchmarkStorageQueryRows(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				l.time(func() {
-					if _, _, err := w.s.collectionRowsQuery(w.member(), w.rowsDB, filters, nil, "amount:desc", 50, 0, benchDay); err != nil {
+					if _, _, err := w.s.collectionRowsQuery(context.Background(), w.member(), w.rowsDB, filters, nil, "amount:desc", 50, 0, benchDay); err != nil {
 						b.Fatalf("query: %v", err)
+					}
+				})
+			}
+			l.report(b)
+		})
+	}
+}
+
+// A grouped count, the aggregation behind a chart: rows per stage, in one
+// GROUP BY over the rows the member may see (groupCounts). 1k and 10k run on
+// every pull request; the 100k size its budget is written for needs
+// BENCH_LARGE=1.
+func BenchmarkStorageGroupedCount(b *testing.B) {
+	for _, n := range rowSizes() {
+		b.Run("rows="+sizeName(n), func(b *testing.B) {
+			w := sharedBenchWorld(b, 0, n)
+			var l latencies
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				l.time(func() {
+					if _, err := w.s.groupCounts(context.Background(), w.member(), w.rowsDB, "stage"); err != nil {
+						b.Fatalf("group: %v", err)
 					}
 				})
 			}
@@ -139,14 +164,14 @@ func BenchmarkStorageRollup(b *testing.B) {
 		b.Fatalf("schema: %v", err)
 	}
 	schema := parseSchema(schemaJSON)
-	rows, _, err := w.s.collectionRowsQuery(w.member(), w.rowsDB, nil, nil, "", 100, 0, benchDay)
+	rows, _, err := w.s.collectionRowsQuery(context.Background(), w.member(), w.rowsDB, nil, nil, "", 100, 0, benchDay)
 	if err != nil || len(rows) == 0 {
 		b.Fatalf("rows: %d, %v", len(rows), err)
 	}
 	var l latencies
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		l.time(func() { w.s.computeDerived(w.member(), schema, rows) })
+		l.time(func() { w.s.computeDerived(context.Background(), w.member(), schema, rows) })
 	}
 	l.report(b)
 }
@@ -173,6 +198,14 @@ func BenchmarkStorageSearch(b *testing.B) {
 // of the queue as much as of the write.
 func BenchmarkStoragePropertyWriteBurst(b *testing.B) {
 	w := sharedBenchWorld(b, 0, 10000)
+	var l latencies
+	b.ResetTimer()
+	writeBurst(b, w, &l)
+	l.report(b)
+}
+
+// writeBurst runs b.N property writes from five agents at once, timing each.
+func writeBurst(b *testing.B, w *benchWorld, l *latencies) {
 	var writable []string
 	for _, id := range w.rows {
 		if !w.private[id] {
@@ -180,8 +213,6 @@ func BenchmarkStoragePropertyWriteBurst(b *testing.B) {
 		}
 	}
 	const agents = 5
-	var l latencies
-	b.ResetTimer()
 	var wg sync.WaitGroup
 	for a := 0; a < agents; a++ {
 		wg.Add(1)
@@ -205,5 +236,70 @@ func BenchmarkStoragePropertyWriteBurst(b *testing.B) {
 		}(a)
 	}
 	wg.Wait()
-	l.report(b)
+}
+
+// The measurement behind research P5: what a long read costs the writes queued
+// behind it, and what a second, read-only connection would buy back. 100k rows,
+// BENCH_LARGE=1 only.
+//
+//   - conn=single: the long read goes through the server's one connection, as
+//     every read does today. Writes wait for it to finish.
+//   - conn=readonly: the same SQL on a separate mode=ro connection beside the
+//     writer, which WAL lets run concurrently. This is the design P5 measures
+//     before building; nothing outside this benchmark opens such a connection.
+//
+// The reader loops until the writes are done, so every write meets a read in
+// progress, as it would behind a chart or an agent paging a large database.
+func BenchmarkStorageWriteDuringLongRead(b *testing.B) {
+	if !benchLarge() {
+		b.Skip("needs BENCH_LARGE=1: the long read is a 100k-row query")
+	}
+	w := sharedBenchWorld(b, 0, 100000)
+	const longRead = `SELECT id, props FROM pages WHERE parent_id = ? AND trashed_at IS NULL
+		ORDER BY json_extract(props, '$.amount') DESC LIMIT 500`
+	for _, mode := range []string{"single", "readonly"} {
+		b.Run("conn="+mode, func(b *testing.B) {
+			db := w.s.db
+			if mode == "readonly" {
+				ro, err := sql.Open("sqlite", "file:"+filepath.Join(w.dir, DBFile)+"?mode=ro&_pragma=busy_timeout(5000)")
+				if err != nil {
+					b.Fatal(err)
+				}
+				defer ro.Close()
+				ro.SetMaxOpenConns(1)
+				db = ro
+			}
+			stop := make(chan struct{})
+			done := make(chan struct{})
+			reads := 0
+			go func() {
+				defer close(done)
+				for {
+					select {
+					case <-stop:
+						return
+					default:
+					}
+					rows, err := db.Query(longRead, w.rowsDB)
+					if err != nil {
+						b.Errorf("long read: %v", err)
+						return
+					}
+					for rows.Next() {
+					}
+					rows.Close()
+					reads++
+				}
+			}()
+			time.Sleep(20 * time.Millisecond) // the first read is under way
+			var l latencies
+			b.ResetTimer()
+			writeBurst(b, w, &l)
+			b.StopTimer()
+			close(stop)
+			<-done
+			l.report(b)
+			b.ReportMetric(float64(reads), "reads")
+		})
+	}
 }

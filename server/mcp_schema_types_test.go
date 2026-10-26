@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -97,7 +98,7 @@ func TestUpdateSchemaCreatesAWorkingBackrelation(t *testing.T) {
 	s.makeRow(t, ws, uid, tasks, "B", `{"system":["`+sysRow+`"],"status":"open"}`)
 
 	rows := []map[string]any{{"id": sysRow, "props": map[string]any{}}}
-	s.computeDerived(&user{ID: uid}, parseSchema(mustJSON(t, schema)), rows)
+	s.computeDerived(context.Background(), &user{ID: uid}, parseSchema(mustJSON(t, schema)), rows)
 	props := rows[0]["props"].(map[string]any)
 	if got := relationIDs(props["tasks"]); len(got) != 2 {
 		t.Errorf("backrelation saw %d tasks, want 2", len(got))

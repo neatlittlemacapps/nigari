@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 )
@@ -95,7 +96,7 @@ func TestBackrelationNeedsBothHalves(t *testing.T) {
 		{Type: "backrelation", BackrelationCollection: "coll"},
 		{Type: "backrelation", BackrelationProp: "system"},
 	} {
-		got := s.backrelationIDs(&user{ID: "u"}, d, rows)
+		got := s.backrelationIDs(context.Background(), &user{ID: "u"}, d, rows)
 		if len(got) != 1 || got[0] != nil {
 			t.Errorf("incomplete definition %+v returned %v, want nothing", d, got)
 		}
@@ -249,7 +250,7 @@ func TestRollupPercent(t *testing.T) {
 		{"id": withTasks, "props": map[string]any{}},
 		{"id": empty, "props": map[string]any{}},
 	}
-	s.computeDerived(u, parseSchema(mustJSON(t, schema)), rows)
+	s.computeDerived(context.Background(), u, parseSchema(mustJSON(t, schema)), rows)
 
 	if got, _ := toNumber(rows[0]["props"].(map[string]any)["progress"]); got != 50 {
 		t.Errorf("two of four done is %v, want 50", got)

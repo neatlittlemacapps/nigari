@@ -1144,5 +1144,6 @@
   "Template for {name}. New rows start as a copy of this page.": "Vorlage für {name}. Neue Zeilen beginnen als Kopie dieser Seite.",
   "Templates for {name}": "Vorlagen für {name}",
   "Copy of {name}": "Kopie von {name}",
-  "Edit template": "Vorlage bearbeiten"
+  "Edit template": "Vorlage bearbeiten",
+  "The query took longer than 5 seconds and was stopped. Narrow the filter or ask for fewer rows.": "Die Abfrage hat länger als 5 Sekunden gedauert und wurde abgebrochen. Grenze den Filter ein oder frage weniger Zeilen ab."
 }

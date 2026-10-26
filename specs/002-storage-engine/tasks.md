@@ -72,15 +72,15 @@ The benchmarks come first: the driver bump (US1) must be measured before and aft
 
 **Independent Test**: a deliberately slow read stops with `query_timeout` while a concurrent write completes; the grouped-count benchmark at 100k stays within its p95 budget and counts only rows the caller may read.
 
-- [ ] T013 [US3] [test] New `server/cap_limits_test.go`, `TestQueryTimeout…`: a slow read through the limit helper stops after the limit (shortened in the test) and returns nothing partial; a write issued meanwhile completes; REST answers `503` with `"code": "query_timeout"`; MCP `query_rows` through `callTool` returns a tool error with the same sentence (contracts/limits.md). Write it first; it fails until T014–T017 land
-- [ ] T014 [US3] [backend] New `server/cap_limits.go`: `readLimit = 5 * time.Second`, a helper that runs a read under `context.WithTimeout`, and the error sentence verbatim: "The query took longer than 5 seconds and was stopped. Narrow the filter or ask for fewer rows." The comment says why: one connection (`SetMaxOpenConns(1)` in `server/db.go`), so a long read blocks every request
-- [ ] T015 [US3] [backend] `collectionRowsQuery` in `server/collections.go` runs its queries with `QueryContext` under the T014 helper; `handleCollectionRows` maps the timeout to `httpErrorCode(w, 503, "query_timeout", …)`. Writes stay unbounded (`busy_timeout(5000)` covers them)
-- [ ] T016 [US3] [backend] Rollup reads in `server/derived.go` (`computeDerived` → `relatedRows`, `backrelationIDs`) run under the same deadline as the request that triggered them
-- [ ] T017 [P] [US3] [mcp] `mcpQueryRows` in `server/mcp_db.go` returns the timeout as a tool error through the shared helper (no MCP-only check). Add one sentence on the 5 s limit to the `query_rows` description in `server/mcp.go`
-- [ ] T018 [P] [US3] [i18n] `query_timeout` in `web/src/serverErrors.ts`; the German sentence in `web/src/locales/de.json`; `es.json` (reported, not required)
-- [ ] T019 [P] [US3] [wiki] The 5 s read limit in the Limits tables of `wiki/mcp-tools.md` and `wiki/api.md`, with the `503 query_timeout` answer
-- [ ] T020 [US3] [perf] `BenchmarkStorageGroupedCount` in `server/storage_bench_test.go` (100k, `BENCH_LARGE=1`): a `GROUP BY` over `json_extract` of a select property, in SQL, over the same permission-filtered row set `collectionRowsQuery` uses. A test beside it asserts that the group counts equal what `query_rows` returns per value for a non-owner, so private rows of others are excluded exactly as `query_rows` excludes them (acceptance scenario 1; FR-005)
-- [ ] T021 [US3] [perf] Read-only connection measurement (research P5): a benchmark variant that opens `mode=ro` beside the writer and runs the burst-write benchmark during a 100k-row query, compared with the single connection. Record the result in research P5. Build the second connection only if single-connection write p95 during a long read exceeds its budget; otherwise write down that it was not needed
+- [x] T013 [US3] [test] New `server/cap_limits_test.go`, `TestQueryTimeout…`: a slow read through the limit helper stops after the limit (shortened in the test) and returns nothing partial; a write issued meanwhile completes; REST answers `503` with `"code": "query_timeout"`; MCP `query_rows` through `callTool` returns a tool error with the same sentence (contracts/limits.md). Write it first; it fails until T014–T017 land
+- [x] T014 [US3] [backend] New `server/cap_limits.go`: `readLimit = 5 * time.Second`, a helper that runs a read under `context.WithTimeout`, and the error sentence verbatim: "The query took longer than 5 seconds and was stopped. Narrow the filter or ask for fewer rows." The comment says why: one connection (`SetMaxOpenConns(1)` in `server/db.go`), so a long read blocks every request
+- [x] T015 [US3] [backend] `collectionRowsQuery` in `server/collections.go` runs its queries with `QueryContext` under the T014 helper; `handleCollectionRows` maps the timeout to `httpErrorCode(w, 503, "query_timeout", …)`. Writes stay unbounded (`busy_timeout(5000)` covers them)
+- [x] T016 [US3] [backend] Rollup reads in `server/derived.go` (`computeDerived` → `relatedRows`, `backrelationIDs`) run under the same deadline as the request that triggered them
+- [x] T017 [P] [US3] [mcp] `mcpQueryRows` in `server/mcp_db.go` returns the timeout as a tool error through the shared helper (no MCP-only check). Add one sentence on the 5 s limit to the `query_rows` description in `server/mcp.go`
+- [x] T018 [P] [US3] [i18n] `query_timeout` in `web/src/serverErrors.ts`; the German sentence in `web/src/locales/de.json`; `es.json` (reported, not required)
+- [x] T019 [P] [US3] [wiki] The 5 s read limit in the Limits tables of `wiki/mcp-tools.md` and `wiki/api.md`, with the `503 query_timeout` answer
+- [x] T020 [US3] [perf] `BenchmarkStorageGroupedCount` in `server/storage_bench_test.go` (100k, `BENCH_LARGE=1`): a `GROUP BY` over `json_extract` of a select property, in SQL, over the same permission-filtered row set `collectionRowsQuery` uses. A test beside it asserts that the group counts equal what `query_rows` returns per value for a non-owner, so private rows of others are excluded exactly as `query_rows` excludes them (acceptance scenario 1; FR-005)
+- [x] T021 [US3] [perf] Read-only connection measurement (research P5): a benchmark variant that opens `mode=ro` beside the writer and runs the burst-write benchmark during a 100k-row query, compared with the single connection. Record the result in research P5. Build the second connection only if single-connection write p95 during a long read exceeds its budget; otherwise write down that it was not needed. **Result**: exceeded (write p95 ~2.7 s against 8 ms); the build is its own change, #82
 
 **Checkpoint**: SC-004 measured; FR-005 and FR-006 are met for the read paths that exist today. #20 builds its chart aggregation on T020's query.
 
@@ -88,8 +88,8 @@ The benchmarks come first: the driver bump (US1) must be measured before and aft
 
 ## Phase 6: Polish & cross-cutting
 
-- [ ] T022 [P] [test] `server/credential_audit_test.go` and `parity_property_test.go`: confirm nothing changes (no new route or tool, `capabilities.json` untouched). If the time limit changes an existing pair of acts, update the pair
-- [ ] T023 [test] Run quickstart.md steps 1–6 and `scripts/agent-gate.sh --all`; tick the checkboxes here in the same PR as the work
+- [x] T022 [P] [test] `server/credential_audit_test.go` and `parity_property_test.go`: confirm nothing changes (no new route or tool, `capabilities.json` untouched). If the time limit changes an existing pair of acts, update the pair
+- [x] T023 [test] Run quickstart.md steps 1–6 and `scripts/agent-gate.sh --all`; tick the checkboxes here in the same PR as the work
 
 ---
 

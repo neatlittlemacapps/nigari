@@ -1,8 +1,10 @@
 package server
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -196,6 +198,20 @@ func (s *Server) privateRowRule(userID, colID string) (string, []any) {
 	return "(? = 1 OR visibility != 'private' OR owner_id = ?)", []any{wsAdmin, userID}
 }
 
+// rowScope is the set of rows a user may see in a database, before any
+// filter: its live rows minus other people's private ones. Every read over a
+// database's rows starts from it — collectionRowsQuery and groupCounts — so a
+// chart can never count a row the table would hide.
+//
+// The private-row condition belongs in the SQL, not behind the LIMIT:
+// filtering afterwards would falsify paging and the total count.
+func (s *Server) rowScope(u *user, colID string) (where []string, args []any) {
+	where = []string{"parent_id = ?", "trashed_at IS NULL"}
+	args = []any{colID}
+	rule, ruleArgs := s.privateRowRule(u.ID, colID)
+	return append(where, rule), append(args, ruleArgs...)
+}
+
 // where builds the SQL for one filter condition and the arguments to go with
 // it. An empty condition means "does not filter": an unsafe property id, a
 // comparison with nothing to compare against, or a half-built range. The
@@ -302,7 +318,11 @@ func (f rowFilter) where() (string, []any) {
 // today is the day relative date words ("today", "today-1M") resolve against:
 // the viewer's day, sent by the interface with every query. Zero means the
 // caller does not know it (agents, old clients) and the server's day applies.
-func (s *Server) collectionRowsQuery(u *user, colID string, flat []rowFilter, groups [][]rowFilter, sortParam string, limit, offset int, today time.Time) (list []map[string]any, total int, err error) {
+//
+// Every query here runs under readLimit (cap_limits.go), derived from ctx: a
+// read that takes longer stops with errQueryTimeout and returns nothing, not
+// the rows it had so far.
+func (s *Server) collectionRowsQuery(ctx context.Context, u *user, colID string, flat []rowFilter, groups [][]rowFilter, sortParam string, limit, offset int, today time.Time) (list []map[string]any, total int, err error) {
 	now := today
 	if now.IsZero() {
 		now = time.Now()
@@ -316,14 +336,7 @@ func (s *Server) collectionRowsQuery(u *user, colID string, flat []rowFilter, gr
 		resolved[i] = s.resolveSmartDates(colID, g, now)
 	}
 	groups = resolved
-	where := []string{"parent_id = ?", "trashed_at IS NULL"}
-	args := []any{colID}
-	// Other people's private rows stay out. The condition belongs in the SQL,
-	// not behind the LIMIT: filtering afterwards would falsify paging and the
-	// total count.
-	rule, ruleArgs := s.privateRowRule(u.ID, colID)
-	where = append(where, rule)
-	args = append(args, ruleArgs...)
+	where, args := s.rowScope(u, colID)
 	// The flat list is a term of its own beside the OR of the groups. Copied
 	// into every group instead, it made an unfinished group match whatever the
 	// flat list matched, so adding a condition could widen the answer.
@@ -368,11 +381,17 @@ func (s *Server) collectionRowsQuery(u *user, colID string, flat []rowFilter, gr
 		}
 	}
 
-	s.db.QueryRow(`SELECT COUNT(*) FROM pages WHERE `+whereSQL, args...).Scan(&total)
+	ctx, cancel := withReadLimit(ctx)
+	defer cancel()
+	// The count used to ignore its error. Under a deadline that would report
+	// "0 rows" for a query that was merely stopped.
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pages WHERE `+whereSQL, args...).Scan(&total); err != nil {
+		return nil, 0, readErr(ctx, err)
+	}
 
-	rows, err := s.db.Query(`SELECT id, title, icon, cover, position, props, tags FROM pages WHERE `+whereSQL+` ORDER BY `+orderSQL+` LIMIT ? OFFSET ?`, append(args, limit, offset)...)
+	rows, err := s.db.QueryContext(ctx, `SELECT id, title, icon, cover, position, props, tags FROM pages WHERE `+whereSQL+` ORDER BY `+orderSQL+` LIMIT ? OFFSET ?`, append(args, limit, offset)...)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, readErr(ctx, err)
 	}
 	defer rows.Close()
 	list = []map[string]any{}
@@ -394,6 +413,12 @@ func (s *Server) collectionRowsQuery(u *user, colID string, flat []rowFilter, gr
 			"id": id, "title": title, "icon": icon, "cover": cover, "position": position, "props": pm, "tags": tagList,
 		})
 	}
+	// A cursor stopped by the deadline ends the loop like a finished one; only
+	// rows.Err tells them apart. Without this check a timed-out read would
+	// return the first rows as if they were all of them.
+	if err := rows.Err(); err != nil {
+		return nil, 0, readErr(ctx, err)
+	}
 
 	// Compute rollups and formulas server-side (relations resolved against the
 	// target rows), so they're correct and consistent regardless of client.
@@ -405,8 +430,12 @@ func (s *Server) collectionRowsQuery(u *user, colID string, flat []rowFilter, gr
 	// connection. Anyone adding a `break` here keeps the cursor open and brings
 	// the whole server to a standstill.
 	var schemaJSON string
-	if s.db.QueryRow(`SELECT schema FROM collections WHERE page_id = ?`, colID).Scan(&schemaJSON) == nil {
-		s.computeDerived(u, parseSchema(schemaJSON), list)
+	if err := s.db.QueryRowContext(ctx, `SELECT schema FROM collections WHERE page_id = ?`, colID).Scan(&schemaJSON); err == nil {
+		if err := s.computeDerived(ctx, u, parseSchema(schemaJSON), list); err != nil {
+			return nil, 0, readErr(ctx, err)
+		}
+	} else if ctx.Err() != nil {
+		return nil, 0, readErr(ctx, err)
 	}
 	return list, total, nil
 }
@@ -497,7 +526,13 @@ func (s *Server) handleCollectionRows(w http.ResponseWriter, r *http.Request) {
 	if day, ok := parseTodayParam(q.Get("today")); ok {
 		today = day
 	}
-	list, total, err := s.collectionRowsQuery(requestUser(r), colID, filters, parseFilterGroups(q["filter_group"]), q.Get("sort"), limit, offset, today)
+	list, total, err := s.collectionRowsQuery(r.Context(), requestUser(r), colID, filters, parseFilterGroups(q["filter_group"]), q.Get("sort"), limit, offset, today)
+	if errors.Is(err, errQueryTimeout) {
+		// 503, not 500: nothing is broken, the server declined to hold its one
+		// connection for this long. The browser translates the code.
+		httpErrorCode(w, 503, "query_timeout", err.Error())
+		return
+	}
 	if err != nil {
 		httpError(w, 500, err.Error())
 		return

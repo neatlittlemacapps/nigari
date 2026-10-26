@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 )
@@ -62,7 +63,7 @@ func TestBackrelationFindsARowWrittenWithoutItsList(t *testing.T) {
 	s.makeRow(t, ws, uid, tasks, "Bare string", `{"system":"`+sysRow+`"}`)
 
 	def := propDef{Type: "backrelation", BackrelationCollection: tasks, BackrelationProp: "system"}
-	got := s.backrelationIDs(u, def, []map[string]any{{"id": sysRow, "props": map[string]any{}}})
+	got := s.backrelationIDs(context.Background(), u, def, []map[string]any{{"id": sysRow, "props": map[string]any{}}})
 
 	if len(got[0]) != 2 {
 		t.Fatalf("the system should see both of its tasks, saw %d", len(got[0]))

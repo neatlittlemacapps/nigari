@@ -201,6 +201,10 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
         'No refresh token received. Remove the access in your account settings and connect again.',
       );
 
+    // ---- long reads (the 5 s limit, spec 002) ----
+    case 'query_timeout':
+      return t('The query took longer than 5 seconds and was stopped. Narrow the filter or ask for fewer rows.');
+
     // ---- other ----
     case 'impact_unavailable':
       return t('The consequences of this deletion could not be determined. Please try again.');

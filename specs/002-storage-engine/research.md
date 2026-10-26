@@ -83,12 +83,12 @@ Measured on the CI runner (`ubuntu-latest`, 4 cores, Go 1.27.3), `-bench Storage
 | Rollup over a relation | 10k rows | 100 ms | 23.8 ms | 36 ms |
 | Full-text search | 1k pages | — | 13.4 ms | 21 ms |
 | Full-text search | 20k pages | 50 ms | 200.6 ms | 301 ms (#78) |
-| Grouped count (chart) | 100k rows | 250 ms | no benchmark yet (T019) | 250 ms, provisional |
+| Grouped count (chart) | 100k rows | 250 ms | not run in CI; 139 ms on a 4-core dev machine (T020) | 250 ms, provisional |
 | Property write during a 5-agent burst | 10k rows | 20 ms per write | 5.3 ms | 8 ms per write |
 
 - **Two budgets are looser than the guess.** Search at 20k pages and `query_rows` at 10k rows measured above the provisional 50 ms. The budget records what the code does today, so the CI job catches it getting worse; the 50 ms target stays with #78 and #79. When either is fixed, its budget is lowered in the same PR.
 - **The driver bump (#80) lowers most of these** (−11% to −44% p95 on a 4-core dev machine). Measured before it, these budgets have that much headroom until the next re-baseline.
-- **The 100k sizes stay provisional:** `BENCH_LARGE=1` takes too long for every PR. They are re-measured with T019's grouped-count benchmark.
+- **The 100k sizes stay provisional:** `BENCH_LARGE=1` takes too long for every PR. The grouped count also runs at 1k and 10k (`StorageGroupedCount`), so CI tracks its trend; those sizes get budgets from the next CI baseline.
 
 A budget may only be raised in a PR that says why.
 
@@ -102,6 +102,18 @@ A budget may only be raised in a PR that says why.
 - **Decision**: analytical reads (`query_rows`, rollups, the coming chart aggregation) run with `QueryContext` under a 5 s limit. They answer `query_timeout` instead of holding the single connection.
 - A second, read-only WAL connection is **measured, not built**: a benchmark variant opens `mode=ro` beside the writer and runs the burst-write test with a concurrent 100k-row query. It is built only if the single-connection p95 for writes during a long read exceeds its budget (spec revisit trigger 2 is about this).
 - **Rejected**: two connections from the start. The one-connection rule exists because a query inside an open cursor deadlocks (`.claude/rules/go-server.md`). A second pool reopens that class of bug, so it needs a measured reason first.
+
+**Measured** (T021, 2026-10-26; `BenchmarkStorageWriteDuringLongRead`, `BENCH_LARGE=1 -benchtime 200x -count=3`, 4-core dev machine, driver v1.60.1). Five agents write properties while a 100k-row sorted read (`LIMIT 500`) runs back to back:
+
+| Writes | p50 | p95 |
+|---|---|---|
+| No read running (`StoragePropertyWriteBurst`) | 2.2–2.8 ms | 3.4–4.6 ms |
+| Long reads on the one connection | 1.7–1.9 s | 2.6–2.8 s |
+| Long reads on a separate `mode=ro` connection | 2.8–2.9 ms | 4.0–4.8 ms |
+
+- **The trigger is met.** With one connection, write p95 during long reads is about 2.7 s against an 8 ms budget. A read-only connection beside the writer brings it back to the no-read figure: WAL lets the reader and the writer run at once.
+- **Worse than one read's length.** A single sorted 100k read takes ~100 ms here, but writes waited for seconds. `database/sql` does not hand a freed connection to the longest waiter (its queue is a map), so a reader that asks again at once can win repeatedly. Back-to-back reads are the worst case, but an agent paging a large database looks like that.
+- **Not built in this pass (#82).** Building it moves the one-connection rule that `.claude/rules/go-server.md` and every cursor-handling comment rely on, so it is its own change with its own review. Until then the 5 s limit bounds each read, not the queue: a single runaway read can no longer hold writes for longer than 5 s, but a steady stream of shorter reads still can, as measured above.
 
 ### P6. The decision is recorded in the repository
 
