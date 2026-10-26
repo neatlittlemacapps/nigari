@@ -135,6 +135,7 @@ nothing hands it back. Reading it means the browser, or `GET
 | One upload | the instance's `max_upload_mb` (50 MB by default) |
 | Rows per `create_rows` call | 200 |
 | Rows per `query_rows` call | 500 |
+| Time per `query_rows` call | 5 seconds, rollups included |
 | Revisions per `revisions` call | 100 |
 | Revisions kept per page | 50, oldest dropped |
 | Workspace rules | 16000 characters |
@@ -144,6 +145,13 @@ Over the rate limit you get `rate limit exceeded: too many requests, slow
 down` as an ordinary tool error. Over the body limit the server refuses
 **before reading** (it checks Content-Length first) and tells you to use
 `/api/upload` instead.
+
+Over the time limit `query_rows` stops and returns no rows, only the tool error
+`The query took longer than 5 seconds and was stopped. Narrow the filter or ask
+for fewer rows.` Nothing partial comes back, so a result you did get is always
+complete. The limit exists because the server reads through one database
+connection: a query that ran for a minute would hold up every other request,
+yours and everyone else's. Narrow the filter, or page with a smaller `limit`.
 
 ### Three arguments no schema mentions
 

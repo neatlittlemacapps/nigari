@@ -1153,5 +1153,6 @@
   "Template for {name}. New rows start as a copy of this page.": "Plantilla de {name}. Las filas nuevas empiezan como una copia de esta página.",
   "Templates for {name}": "Plantillas de {name}",
   "Copy of {name}": "Copia de {name}",
-  "Edit template": "Editar plantilla"
+  "Edit template": "Editar plantilla",
+  "The query took longer than 5 seconds and was stopped. Narrow the filter or ask for fewer rows.": "La consulta tardó más de 5 segundos y se detuvo. Acota el filtro o pide menos filas."
 }

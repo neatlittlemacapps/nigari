@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -51,7 +52,10 @@ func (s *Server) mcpQueryRows(u *user, pageID string, flat []rowFilter, groups [
 	for i, g := range groups {
 		resolved[i] = s.resolveFilterValues(pageID, g)
 	}
-	rows, total, err := s.collectionRowsQuery(u, pageID, s.resolveFilterValues(pageID, flat), resolved, sort, limit, offset, today)
+	// The same limit and the same sentence as REST (collectionRowsQuery owns
+	// both); an MCP call carries no request context of its own, so the limit
+	// starts here.
+	rows, total, err := s.collectionRowsQuery(context.Background(), u, pageID, s.resolveFilterValues(pageID, flat), resolved, sort, limit, offset, today)
 	if err != nil {
 		return "", err
 	}

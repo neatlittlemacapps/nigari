@@ -3,6 +3,7 @@ package server
 // i18n-ok-file: the generated page text is German on purpose; full-text search must fold it.
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -321,7 +322,7 @@ func TestBenchWorldMemberSeesExactlyTheRowsNotPrivateToOthers(t *testing.T) {
 	if len(w.private) == 0 {
 		t.Fatal("no private rows were generated; the filter would go unmeasured")
 	}
-	list, total, err := w.s.collectionRowsQuery(w.member(), w.rowsDB, nil, nil, "", 500, 0, benchDay)
+	list, total, err := w.s.collectionRowsQuery(context.Background(), w.member(), w.rowsDB, nil, nil, "", 500, 0, benchDay)
 	if err != nil {
 		t.Fatalf("query: %v", err)
 	}

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -128,7 +129,13 @@ func toNumber(v any) (float64, bool) {
 // computeDerived injects rollup and formula values into each row's props map,
 // resolving relations against the target collection. Formulas support +-*/(),
 // numeric literals, and other-property references by id, with cycle detection.
-func (s *Server) computeDerived(u *user, schema []propDef, rows []map[string]any) {
+//
+// The relation reads run under ctx, the deadline of the read that asked for
+// the rows (readLimit, cap_limits.go). A rollup over a large relation was the
+// one part of a row query no limit reached: the rows came back in time, then
+// the per-target reads held the connection. When ctx ends, the error is
+// returned and the half-filled rows must be thrown away.
+func (s *Server) computeDerived(ctx context.Context, u *user, schema []propDef, rows []map[string]any) error {
 	// Index derived props.
 	var rollups, formulas, relations, backrelations, activities []propDef
 	for _, d := range schema {
@@ -146,7 +153,7 @@ func (s *Server) computeDerived(u *user, schema []propDef, rows []map[string]any
 		}
 	}
 	if len(rollups) == 0 && len(formulas) == 0 && len(relations) == 0 && len(backrelations) == 0 && len(activities) == 0 {
-		return
+		return nil
 	}
 	if len(activities) > 0 {
 		s.fillLastActivity(activities, rows)
@@ -157,7 +164,10 @@ func (s *Server) computeDerived(u *user, schema []propDef, rows []map[string]any
 	// what turns "which tasks point at this system" into "how many of them are
 	// done" without anyone maintaining a second list.
 	for _, br := range backrelations {
-		ids := s.backrelationIDs(u, br, rows)
+		ids := s.backrelationIDs(ctx, u, br, rows)
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		for i, row := range rows {
 			props, _ := row["props"].(map[string]any)
 			if props == nil {
@@ -174,7 +184,10 @@ func (s *Server) computeDerived(u *user, schema []propDef, rows []map[string]any
 	// Rollups: for each row, aggregate a target property over its related rows,
 	// optionally only those meeting a condition.
 	for _, ru := range rollups {
-		related := s.relatedRows(u, ru.RollupRelation, rows)
+		related := s.relatedRows(ctx, u, ru.RollupRelation, rows)
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		for i, row := range rows {
 			props, _ := row["props"].(map[string]any)
 			if props == nil {
@@ -223,6 +236,7 @@ func (s *Server) computeDerived(u *user, schema []propDef, rows []map[string]any
 			}
 		}
 	}
+	return nil
 }
 
 // fillDerivedForPage computes a single row's derived properties.
@@ -235,6 +249,10 @@ func (s *Server) computeDerived(u *user, schema []propDef, rows []map[string]any
 //
 // A no-op for anything that is not a row: a page whose parent is not a database
 // has no schema to compute against.
+//
+// It gets the same read limit as a row query. When that runs out the page
+// still opens, with its stored properties and without the computed ones: a
+// page that will not open over a slow rollup is worse than a missing number.
 func (s *Server) fillDerivedForPage(u *user, p *page) {
 	if p.ParentID == nil || *p.ParentID == "" {
 		return
@@ -248,7 +266,11 @@ func (s *Server) fillDerivedForPage(u *user, p *page) {
 		props = map[string]any{}
 	}
 	rows := []map[string]any{{"id": p.ID, "props": props}}
-	s.computeDerived(u, parseSchema(schemaJSON), rows)
+	ctx, cancel := withReadLimit(context.Background())
+	defer cancel()
+	if s.computeDerived(ctx, u, parseSchema(schemaJSON), rows) != nil {
+		return
+	}
 	if b, err := json.Marshal(props); err == nil {
 		p.Props = b
 	}
@@ -258,8 +280,8 @@ func (s *Server) fillDerivedForPage(u *user, p *page) {
 // rows it relates to. Kept as the thin wrapper it always was; the fetching now
 // lives in relatedRows so a rollup can also look at properties OTHER than the
 // one it aggregates — which is what a condition needs.
-func (s *Server) relatedRowProps(u *user, relationProp, targetProp string, rows []map[string]any) [][]any {
-	related := s.relatedRows(u, relationProp, rows)
+func (s *Server) relatedRowProps(ctx context.Context, u *user, relationProp, targetProp string, rows []map[string]any) [][]any {
+	related := s.relatedRows(ctx, u, relationProp, rows)
 	out := make([][]any, len(rows))
 	for i, props := range related {
 		for _, p := range props {
@@ -270,8 +292,9 @@ func (s *Server) relatedRowProps(u *user, relationProp, targetProp string, rows 
 }
 
 // relatedRows returns, per input row, the full property maps of the rows it
-// relates to (via relationProp holding an array of target ids).
-func (s *Server) relatedRows(u *user, relationProp string, rows []map[string]any) [][]map[string]any {
+// relates to (via relationProp holding an array of target ids). It stops early
+// when ctx ends; the caller checks ctx and discards what came back.
+func (s *Server) relatedRows(ctx context.Context, u *user, relationProp string, rows []map[string]any) [][]map[string]any {
 	// Collect all referenced target ids.
 	idSet := map[string]bool{}
 	for _, row := range rows {
@@ -283,6 +306,9 @@ func (s *Server) relatedRows(u *user, relationProp string, rows []map[string]any
 	// Fetch target props for referenced ids.
 	targetVal := map[string]map[string]any{}
 	for id := range idSet {
+		if ctx.Err() != nil {
+			break
+		}
 		// The target ids come from a row the user fills in themselves —
 		// unchecked that was a read primitive on EVERY page of the instance:
 		// create your own database, write somebody else's page id into the
@@ -299,7 +325,7 @@ func (s *Server) relatedRows(u *user, relationProp string, rows []map[string]any
 			continue
 		}
 		var p string
-		if s.db.QueryRow(`SELECT props FROM pages WHERE id = ? AND trashed_at IS NULL`, id).Scan(&p) == nil {
+		if s.db.QueryRowContext(ctx, `SELECT props FROM pages WHERE id = ? AND trashed_at IS NULL`, id).Scan(&p) == nil {
 			var m map[string]any
 			json.Unmarshal([]byte(p), &m)
 			targetVal[id] = m
@@ -329,7 +355,10 @@ func (s *Server) relatedRows(u *user, relationProp string, rows []map[string]any
 // Permissions are checked the same way a forward relation checks them — per
 // row, plus the token's workspace boundary. Skipping that here would leak the
 // existence of rows in collections the caller cannot read.
-func (s *Server) backrelationIDs(u *user, def propDef, rows []map[string]any) [][]string {
+//
+// Like relatedRows it stops early when ctx ends, and the caller discards the
+// result.
+func (s *Server) backrelationIDs(ctx context.Context, u *user, def propDef, rows []map[string]any) [][]string {
 	out := make([][]string, len(rows))
 	if def.BackrelationCollection == "" || def.BackrelationProp == "" {
 		return out
@@ -349,7 +378,7 @@ func (s *Server) backrelationIDs(u *user, def propDef, rows []map[string]any) []
 	// query inside an open cursor blocks the whole server.
 	type cand struct{ id, props, ws string }
 	var cands []cand
-	rowsQ, err := s.db.Query(
+	rowsQ, err := s.db.QueryContext(ctx,
 		`SELECT id, props, workspace_id FROM pages WHERE parent_id = ? AND trashed_at IS NULL`,
 		def.BackrelationCollection)
 	if err != nil {
@@ -364,6 +393,9 @@ func (s *Server) backrelationIDs(u *user, def propDef, rows []map[string]any) []
 	rowsQ.Close()
 
 	for _, c := range cands {
+		if ctx.Err() != nil {
+			break
+		}
 		var m map[string]any
 		if json.Unmarshal([]byte(c.props), &m) != nil {
 			continue

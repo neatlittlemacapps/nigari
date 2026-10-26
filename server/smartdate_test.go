@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -139,7 +140,7 @@ func TestSmartDateFilterEndToEnd(t *testing.T) {
 // server's: the way the interface always queries (see the today param).
 func countWithToday(t *testing.T, s *Server, col string, f rowFilter, today time.Time) int {
 	t.Helper()
-	_, total, err := s.collectionRowsQuery(&user{ID: "u"}, col, nil, [][]rowFilter{{f}}, "", 100, 0, today)
+	_, total, err := s.collectionRowsQuery(context.Background(), &user{ID: "u"}, col, nil, [][]rowFilter{{f}}, "", 100, 0, today)
 	if err != nil {
 		t.Fatalf("query: %v", err)
 	}
