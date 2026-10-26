@@ -69,19 +69,28 @@ the comparison worth making is SQLite against an optional PostgreSQL server mode
 - **Decision**: each storage benchmark times its operations individually and reports `p50-ns` and `p95-ns` through `b.ReportMetric`, alongside `ns/op`. The spec asks for p50/p95, and Go's default output is a mean.
 - The workspace generator (`server/bench_world_test.go`) is seeded (`BENCH_SEED`, default 20261026) and builds 1k/20k pages and 1k/10k/100k-row databases with select, date, number, person and relation properties. The 100k size runs only with `-bench` plus `BENCH_LARGE=1`, so `go test ./...` stays fast.
 
-### P3. Latency budgets (provisional until the first baseline)
+### P3. Latency budgets
 
-| Operation | Size | p95 budget |
-|---|---|---|
-| Open a page (`GET /api/pages/{id}`) | 20k pages | 20 ms |
-| `query_rows`, filter and sort | 10k rows | 50 ms |
-| `query_rows`, filter and sort | 100k rows | 300 ms |
-| Rollup over a relation | 10k rows | 100 ms |
-| Full-text search | 20k pages | 50 ms |
-| Grouped count (chart) | 100k rows | 250 ms |
-| Property write during a 5-agent burst | 10k rows | 20 ms per write |
+Measured on the CI runner (`ubuntu-latest`, 4 cores, Go 1.27.3), `-bench Storage -count=6`, PR #81 run 40365065291, driver v1.34.5. Each budget is the measured p95 × 1.5, rounded up to the next whole millisecond (SC-002). The first column is the guess the spec started from.
 
-After the first CI baseline, each budget becomes the measured p95 × 1.5, rounded up, and is committed here (SC-002). A budget may only be raised in a PR that says why.
+| Operation | Size | Provisional | CI p95 | p95 budget |
+|---|---|---|---|---|
+| Open a page (`GET /api/pages/{id}`) | 1k pages | — | 0.42 ms | 1 ms |
+| Open a page (`GET /api/pages/{id}`) | 20k pages | 20 ms | 0.44 ms | 1 ms |
+| `query_rows`, filter and sort | 1k rows | — | 17.2 ms | 26 ms |
+| `query_rows`, filter and sort | 10k rows | 50 ms | 74.7 ms | 113 ms (#79) |
+| `query_rows`, filter and sort | 100k rows | 300 ms | not run in CI | 300 ms, provisional |
+| Rollup over a relation | 10k rows | 100 ms | 23.8 ms | 36 ms |
+| Full-text search | 1k pages | — | 13.4 ms | 21 ms |
+| Full-text search | 20k pages | 50 ms | 200.6 ms | 301 ms (#78) |
+| Grouped count (chart) | 100k rows | 250 ms | no benchmark yet (T019) | 250 ms, provisional |
+| Property write during a 5-agent burst | 10k rows | 20 ms per write | 5.3 ms | 8 ms per write |
+
+- **Two budgets are looser than the guess.** Search at 20k pages and `query_rows` at 10k rows measured above the provisional 50 ms. The budget records what the code does today, so the CI job catches it getting worse; the 50 ms target stays with #78 and #79. When either is fixed, its budget is lowered in the same PR.
+- **The driver bump (#80) lowers most of these** (−11% to −44% p95 on a 4-core dev machine). Measured before it, these budgets have that much headroom until the next re-baseline.
+- **The 100k sizes stay provisional:** `BENCH_LARGE=1` takes too long for every PR. They are re-measured with T019's grouped-count benchmark.
+
+A budget may only be raised in a PR that says why.
 
 ### P4. CI comparison
 

@@ -7,6 +7,24 @@ entries are not edited away.
 
 ---
 
+## 2026-10-26 — Storage budgets record today's speed; targets stay with issues
+
+**Decision**: the latency budgets in spec 002 research P3 are the CI runner's
+measured p95 × 1.5, as SC-002 says. That holds even where the measurement is
+worse than the spec's guess: full-text search at 20k pages gets 301 ms (guess
+50 ms) and `query_rows` at 10k rows gets 113 ms (guess 50 ms). The 50 ms targets
+stay with #78 and #79, and a fix lowers its budget in the same PR.
+
+**Why**: the registry's Storage budgets row holds every new or changed
+hot-path query to its budget. A budget set below what the code does today would
+fail every feature that touches search, however well that feature behaves, and
+teach everyone to ignore budgets. Set from a measurement, it catches the next
+slowdown. Making search fast is a separate piece of work, tracked in the issues.
+
+**Rejected**: keeping 50 ms as the budget (every search-touching plan would
+miss it, with nothing that plan could do about it). Measuring after the driver bump #80 (that would tie
+this PR to #80; the bump only adds headroom, so the budgets are conservative).
+
 ## 2026-10-26 — Test branches in GitHub Codespaces
 
 **Decision**: a dev container (`.devcontainer/`) builds the branch a codespace

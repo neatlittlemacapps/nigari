@@ -28,7 +28,7 @@ This feature introduces a concept later features must respect, so it adds **Stor
 
 **Target Platform**: One static binary (`CGO_ENABLED=0`), Linux/macOS/Windows; browser, desktop shell, MCP clients.
 
-**Performance Goals**: the budgets in research P3 (provisional until the first baseline).
+**Performance Goals**: the budgets in research P3 (measured on CI; 100k sizes still provisional).
 
 **Constraints**: No external services. English source strings as translation keys. Agent parity except the closed list in `server/mcp_workspace.go`.
 

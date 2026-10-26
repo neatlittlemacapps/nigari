@@ -45,3 +45,81 @@ jobs:
 
       - name: Go build
         run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o salt .
+
+  # Storage benchmarks, base against head, on pull requests that can change
+  # them (spec 002, research P4). Not a required check: shared runners are
+  # noisy, so a p95 change above +15% is only a warning in the summary, and
+  # only one above +50% fails the job. Both runs share this runner, which is
+  # what makes the comparison fair; the numbers are not comparable across runs.
+  bench:
+    name: Storage benchmarks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    # Explicit bash runs with pipefail, so `go test … | tee` fails when the
+    # benchmarks do.
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: head
+          fetch-depth: 0
+
+      # A job-level paths filter needs a third-party action; git answers the
+      # same question. go.mod and go.sum count because a driver bump changes
+      # every number without touching server/.
+      - name: Does this change touch the server?
+        id: touched
+        working-directory: head
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          if git diff --name-only "$base"...HEAD | grep -qE '^(server/|go\.(mod|sum)$|scripts/bench-compare\.sh$)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No server, module or benchmark-script change: nothing to measure." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.touched.outputs.run
+        with:
+          path: base
+          ref: ${{ github.event.pull_request.base.sha }}
+
+      - uses: actions/setup-go@v5
+        if: steps.touched.outputs.run
+        with:
+          go-version: "1.27"
+          cache-dependency-path: |
+            head/go.sum
+            base/go.sum
+
+      # A base from before the benchmarks existed has nothing to compare with.
+      - name: Benchmark the base
+        if: steps.touched.outputs.run
+        working-directory: base
+        run: |
+          if ! grep -q '^func BenchmarkStorage' server/*_test.go; then
+            echo "The base has no storage benchmarks; skipping the comparison." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          go test ./server -run '^$' -bench Storage -count=6 -timeout 60m | tee ../base.txt
+
+      - name: Benchmark the head
+        if: steps.touched.outputs.run
+        working-directory: head
+        run: go test ./server -run '^$' -bench Storage -count=6 -timeout 60m | tee ../head.txt
+
+      - name: Compare
+        if: steps.touched.outputs.run && hashFiles('base.txt') != ''
+        run: head/scripts/bench-compare.sh base.txt head.txt
+
+      # Kept so budgets can be set from measured numbers (research P3, T012).
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.touched.outputs.run
+        with:
+          name: storage-benchmarks
+          path: |
+            base.txt
+            head.txt
+          if-no-files-found: ignore
