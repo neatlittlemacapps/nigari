@@ -35,7 +35,11 @@ import (
 
 // ftsVersion is the version this build expects. Raise it whenever the
 // tokenizer line or the column layout changes.
-const ftsVersion = "3"
+//
+// Version 4: entries are found by the rowid recorded in pages.fts_rowid and
+// page_chunks.fts_rowid (#75). Entries written before have none recorded, so
+// they are rebuilt once.
+const ftsVersion = "4"
 
 // foldQuery folds a search term exactly the way the index does.
 //
@@ -146,6 +150,10 @@ func (s *Server) migrateSearchIndex() error {
 	// so emptying them is enough.
 	s.db.Exec(`DELETE FROM chunks_fts`)
 	s.db.Exec(`DELETE FROM page_chunks`)
+	// The recorded rowids point into the table just dropped. Left in place, a
+	// page's next reindex would delete whatever entry the new table gave that
+	// number (#75).
+	s.db.Exec(`UPDATE pages SET fts_rowid = NULL`)
 	if _, err := s.db.Exec(`CREATE VIRTUAL TABLE pages_fts USING fts5(
 		id UNINDEXED, title, body,
 		tokenize = "unicode61 remove_diacritics 2"
