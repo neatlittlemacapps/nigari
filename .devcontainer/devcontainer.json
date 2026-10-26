@@ -1,0 +1,22 @@
+// A test instance of whatever branch the codespace is opened on, reachable
+// from a phone's browser. See README.md beside this file.
+{
+  "name": "salt.md test instance",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    // The versions CI builds with (.github/workflows/ci.yml).
+    "ghcr.io/devcontainers/features/go:1": { "version": "1.27.2" },
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" }
+  },
+  // Two cores: half the free monthly allowance that four would use, and the
+  // build takes a few minutes either way.
+  "hostRequirements": { "cpus": 2 },
+  "postCreateCommand": "cd web && npm ci",
+  // Every start builds the checked-out commit and runs it, so stopping and
+  // starting the codespace after a `git pull` is how it updates.
+  "postStartCommand": ".devcontainer/start.sh",
+  "forwardPorts": [8420],
+  "portsAttributes": {
+    "8420": { "label": "salt.md", "onAutoForward": "openBrowser" }
+  }
+}

@@ -156,10 +156,32 @@ func blockPlainText(blk mdBlock) string {
 // Runs in the same breath as reindexPage. The delete path needs nothing of its
 // own: page_chunks hangs off pages by foreign key, and chunks_fts is carried
 // along here (a virtual table knows no cascade).
+//
+// The old entries are deleted by the rowids recorded in page_chunks, for the
+// same reason as in reindexPage: chunk_id is UNINDEXED, and deleting by it read
+// the whole passage index on every save (#75).
 func (s *Server) reindexChunks(pageID, workspaceID, title string, content []byte, trashed bool) error {
-	if _, err := s.db.Exec(`DELETE FROM chunks_fts WHERE chunk_id IN
-		(SELECT id FROM page_chunks WHERE page_id = ?)`, pageID); err != nil {
+	type entry struct {
+		rowid int64
+		id    string
+	}
+	var old []entry
+	rows, err := s.db.Query(`SELECT fts_rowid, id FROM page_chunks WHERE page_id = ? AND fts_rowid IS NOT NULL`, pageID)
+	if err != nil {
 		return err
+	}
+	for rows.Next() {
+		var e entry
+		if rows.Scan(&e.rowid, &e.id) == nil {
+			old = append(old, e)
+		}
+	}
+	// Drained and closed before the deletes: one connection (go-server rules).
+	rows.Close()
+	for _, e := range old {
+		if _, err := s.db.Exec(`DELETE FROM chunks_fts WHERE rowid = ? AND chunk_id = ?`, e.rowid, e.id); err != nil {
+			return err
+		}
 	}
 	if _, err := s.db.Exec(`DELETE FROM page_chunks WHERE page_id = ?`, pageID); err != nil {
 		return err
@@ -178,15 +200,20 @@ func (s *Server) reindexChunks(pageID, workspaceID, title string, content []byte
 	}
 	for _, c := range chunks {
 		id := newID()
-		if _, err := s.db.Exec(`INSERT INTO page_chunks (id, page_id, workspace_id, ord, heading, text)
-			VALUES (?, ?, ?, ?, ?, ?)`, id, pageID, workspaceID, c.Ord, c.Heading, c.Text); err != nil {
-			return err
-		}
 		// The title goes into every passage: otherwise a two-word German query
 		// finds nothing when one word is in the title and the other in the
 		// paragraph — i18n-ok: "Vertrag Kündigung" is the example that showed it.
-		if _, err := s.db.Exec(`INSERT INTO chunks_fts (chunk_id, title, heading, text) VALUES (?, ?, ?, ?)`,
-			id, title, c.Heading, c.Text); err != nil {
+		res, err := s.db.Exec(`INSERT INTO chunks_fts (chunk_id, title, heading, text) VALUES (?, ?, ?, ?)`,
+			id, title, c.Heading, c.Text)
+		if err != nil {
+			return err
+		}
+		rowid, err := res.LastInsertId()
+		if err != nil {
+			return err
+		}
+		if _, err := s.db.Exec(`INSERT INTO page_chunks (id, page_id, workspace_id, ord, heading, text, fts_rowid)
+			VALUES (?, ?, ?, ?, ?, ?, ?)`, id, pageID, workspaceID, c.Ord, c.Heading, c.Text, rowid); err != nil {
 			return err
 		}
 	}

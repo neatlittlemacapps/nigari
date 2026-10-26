@@ -865,9 +865,21 @@ func (s *Server) handleReindexSiblings(w http.ResponseWriter, r *http.Request) {
 }
 
 // reindexPage refreshes the full-text index for a single page.
+//
+// The old entry is found by the rowid recorded when it was written. `id` is an
+// UNINDEXED column, so `DELETE … WHERE id = ?` read every entry in the index:
+// each save cost time in proportion to the whole instance's text, about 25 ms
+// a save at 5k pages and growing (#75, found by the spec 002 benchmarks). The
+// id check stays beside the rowid, so a rowid FTS5 has handed out again after
+// a bulk delete never removes another page's entry.
 func (s *Server) reindexPage(id string) error {
-	if _, err := s.db.Exec(`DELETE FROM pages_fts WHERE id = ?`, id); err != nil {
-		return err
+	var ftsRowid sql.NullInt64
+	s.db.QueryRow(`SELECT fts_rowid FROM pages WHERE id = ?`, id).Scan(&ftsRowid)
+	if ftsRowid.Valid {
+		if _, err := s.db.Exec(`DELETE FROM pages_fts WHERE rowid = ? AND id = ?`, ftsRowid.Int64, id); err != nil {
+			return err
+		}
+		s.db.Exec(`UPDATE pages SET fts_rowid = NULL WHERE id = ?`, id)
 	}
 	var title, content string
 	var trashedAt sql.NullString
@@ -907,9 +919,13 @@ func (s *Server) reindexPage(id string) error {
 	// Strip the snippet highlight markers so page content can never inject
 	// fake <mark> tags into search results.
 	clean := strings.NewReplacer("\x01", "", "\x02", "")
-	if _, err := s.db.Exec(`INSERT INTO pages_fts (id, title, body) VALUES (?, ?, ?)`,
-		id, clean.Replace(title), clean.Replace(body)); err != nil {
+	res, err := s.db.Exec(`INSERT INTO pages_fts (id, title, body) VALUES (?, ?, ?)`,
+		id, clean.Replace(title), clean.Replace(body))
+	if err != nil {
 		return err
+	}
+	if rowid, err := res.LastInsertId(); err == nil {
+		s.db.Exec(`UPDATE pages SET fts_rowid = ? WHERE id = ?`, rowid, id)
 	}
 	// Passages in the same breath (see chunks.go). A failure here may not make the
 	// page indexing fail — the full-text search is the foundation, the passages

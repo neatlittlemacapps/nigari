@@ -294,7 +294,8 @@ after. See [Files](files.md).
   which is before the upload's own response returns.
 - **On upgrade:** when a release changes how the index is built, the whole
   index is rebuilt while the server starts. At a few hundred pages that is a
-  fraction of a second, and the log reports it.
+  fraction of a second; at 20,000 pages it is under a minute (about 2 ms a
+  page). The log reports it.
 
 Any write to a page's title, content or properties re-indexes it, so editing a
 page that seems to be missing from search is enough to put it back. See

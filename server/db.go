@@ -376,6 +376,16 @@ func openDB(path string) (*sql.DB, error) {
 	if err := ensureColumn(db, "pages", "visibility", `visibility TEXT NOT NULL DEFAULT 'workspace'`); err != nil {
 		return nil, fmt.Errorf("migrate pages.visibility: %w", err)
 	}
+	// Where a page's and a passage's entries sit in pages_fts and chunks_fts.
+	// The FTS tables can only find an entry quickly by rowid: deleting by the
+	// UNINDEXED id column read the whole index on every save (#75). See
+	// reindexPage.
+	if err := ensureColumn(db, "pages", "fts_rowid", `fts_rowid INTEGER`); err != nil {
+		return nil, fmt.Errorf("migrate pages.fts_rowid: %w", err)
+	}
+	if err := ensureColumn(db, "page_chunks", "fts_rowid", `fts_rowid INTEGER`); err != nil {
+		return nil, fmt.Errorf("migrate page_chunks.fts_rowid: %w", err)
+	}
 	// Existing tokens predate scoping — default them to full write access so an
 	// upgrade never silently downgrades a working integration.
 	if err := ensureColumn(db, "api_tokens", "scope", `scope TEXT NOT NULL DEFAULT 'write'`); err != nil {
