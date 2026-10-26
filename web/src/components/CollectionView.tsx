@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { api } from '../api';
 import { onRefresh } from '../pwa';
 import Portal from './Portal';
+import { anchoredMenuStyle, menuStyleFor } from '../anchoredMenu';
 import { useBoardDrag } from '../boardDrag';
 import { tagColorClass } from '../tags';
 import { compare, firstWeekday, formatDay, formatMonth, isReadableDay, isUnfinishedRelativeDay, resolveSmartDate, toDayString, today, weekdayNames } from '../format';
@@ -283,6 +284,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // The arrow beside New: this database's own templates, loaded when it opens
   // so the list is never older than the click.
   const [tplOpen, setTplOpen] = useState(false);
+  const tplBtnRef = useRef<HTMLButtonElement>(null);
   const [tpls, setTpls] = useState<PageMeta[] | null>(null);
   const toggleTemplates = () => {
     if (tplOpen) return setTplOpen(false);
@@ -379,6 +381,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const [addViewOpen, setAddViewOpen] = useState(false);
   const addViewBtnRef = useRef<HTMLButtonElement>(null);
   const [viewMenuFor, setViewMenuFor] = useState<string | null>(null);
+  const viewMenuBtnRef = useRef<HTMLButtonElement>(null);
   const [addViewPos, setAddViewPos] = useState<React.CSSProperties | null>(null);
   // A right-click on a view's tab opens the same actions the ⋯ holds, for THAT
   // view, at the pointer (#24). The ⋯ only ever acted on the view you are on.
@@ -920,16 +923,19 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         {!embed && (
         <div className="view-menu-wrap">
           <button
+            ref={viewMenuBtnRef}
             className="btn-sm"
             title={t('View options')}
             onClick={() => setViewMenuFor((cur) => (cur ? null : view.id))}
           >
             <MoreHorizontal size={14} />
           </button>
+          {/* Portaled: drawn inside the toolbar, which scrolls sideways on a
+              phone, the menu was clipped to a rim (see anchoredMenu.ts). */}
           {viewMenuFor === view.id && (
-            <>
+            <Portal>
               <div className="fs-backdrop" onClick={() => setViewMenuFor(null)} />
-              <div className="menu view-tab-menu">
+              <div className="menu view-tab-menu" style={menuStyleFor(viewMenuBtnRef.current, 220)}>
                 <button onClick={() => void renameView(view)}>
                   <Pencil size={15} /> {t('Rename view')}
                 </button>
@@ -955,7 +961,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
                   </button>
                 )}
               </div>
-            </>
+            </Portal>
           )}
         </div>
         )}
@@ -965,6 +971,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
               <Plus size={14} /> {t('New')}
             </button>
             <button
+              ref={tplBtnRef}
               className="btn-sm primary split-btn-arrow"
               title={t('Templates')}
               aria-label={t('Templates')}
@@ -974,10 +981,11 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             >
               <ChevronDown size={14} />
             </button>
+            {/* Portaled for the same reason as the view options menu above. */}
             {tplOpen && (
-              <>
+              <Portal>
                 <div className="fs-backdrop" onClick={() => setTplOpen(false)} />
-                <div className="menu dbt-menu" role="menu">
+                <div className="menu dbt-menu" role="menu" style={menuStyleFor(tplBtnRef.current, 280)}>
                   <div className="menu-label">
                     {t('Templates for {name}').replace('{name}', pages.get(collectionId)?.title || t('Untitled'))}
                   </div>
@@ -1027,7 +1035,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
                     <Plus size={15} /> {t('New template')}
                   </button>
                 </div>
-              </>
+              </Portal>
             )}
           </div>
         )}
@@ -2620,20 +2628,7 @@ function ColumnsControl({
       return;
     }
     const r = btnRef.current.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    if (vw <= 640) {
-      setPos({ position: 'fixed', left: 8, right: 8, bottom: 8, maxHeight: vh * 0.72 });
-    } else {
-      const width = 268;
-      setPos({
-        position: 'fixed',
-        width,
-        left: Math.max(8, Math.min(r.right - width, vw - width - 8)),
-        top: r.bottom + 6,
-        maxHeight: vh - r.bottom - 24,
-      });
-    }
+    setPos(anchoredMenuStyle(r, { width: window.innerWidth, height: window.innerHeight }, 268, true));
   }, [open]);
 
   const hidden = new Set(view.hidden ?? []);
