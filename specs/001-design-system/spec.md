@@ -114,7 +114,7 @@ build them without edits.
 ### Edge Cases
 
 - **BlockNote's own menus** (slash menu, formatting toolbar, suggestion menus) are rendered by `@blocknote/mantine`. They must take their colours, radii and fonts from the same tokens even if their components are not ours.
-- **Public pages and print** (`server/public.go`) are rendered server-side with inline CSS. They must use the same token values, generated, not retyped.
+- **Public pages and print** (`server/public.go`) are rendered server-side; they link the app stylesheet and read its custom properties, so they follow the tokens without a copy (research P2).
 - **Desktop app** (`desktop/`) shows the same frontend and needs nothing of its own.
 - **Right-to-left text and long German labels** must not break buttons or menus (German is a required catalogue).
 - **Reduced motion** is respected by every animated component.
@@ -128,7 +128,7 @@ build them without edits.
 
 - **FR-001**: Design tokens MUST live in `web/tokens/` as JSON in the Design Tokens Format Module 2025.10 (`$value`, `$type`, aliases), in three tiers: primitives (raw scales), semantic (roles such as `color.surface`, `color.text.muted`, `color.accent`), and component tokens only where a component needs its own value.
 - **FR-002**: Light and dark MUST be two values of the same semantic tokens, not two token sets. The existing `[data-theme]` and `prefers-color-scheme` behaviour MUST be kept.
-- **FR-003**: A build step MUST generate `web/src/tokens.css` (CSS custom properties) and a Go source file with the values `server/public.go` needs, from the same JSON. Generated files are committed and marked as generated.
+- **FR-003**: A build step MUST generate `web/src/tokens.css` (CSS custom properties) from the JSON. The generated file is committed and marked as generated. (Amended at plan time: no Go output — public pages already load the app stylesheet, research P2.)
 - **FR-004**: The token build MUST check contrast for every declared text/surface pair in both themes and fail below WCAG AA.
 - **FR-005**: `check-tokens.mjs`, added to `npm run check`, MUST fail on colour, font-size, radius, shadow and `z-index` literals in `web/src/**/*.{css,tsx,ts}` outside the generated token file, except lines marked `/* token-ok: <reason> */`. Existing literals are allowed under a budget that may only go down (`literalBudget`), the same ratchet as `gapBudget` in `capabilities.json`.
 

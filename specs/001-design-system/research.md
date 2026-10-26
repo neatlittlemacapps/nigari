@@ -78,3 +78,65 @@ worth a measured follow-up once the app no longer depends on Mantine anywhere el
 - [BlockNote with shadcn](https://blocknotejs.org/docs/advanced/shadcn)
 - [Design Tokens specification reaches first stable version](https://www.w3.org/community/design-tokens/2025/10/28/design-tokens-specification-reaches-first-stable-version/)
 - [Design Tokens Format Module 2025.10](https://www.w3.org/community/reports/design-tokens/CG-FINAL-format-20251028/)
+
+## Plan-time decisions (2026-10-26)
+
+Each: decision, why, rejected.
+
+### P1. Base UI 1.9.0, pinned
+
+- **Decision**: `@base-ui/react` `1.9.0` (released 2026-10-09), exact version in `web/package.json`.
+- **Why**: peer range `react ^17 || ^18 || ^19`, so React 18.3 needs no upgrade (the spec's open assumption). `date-fns` peers are optional and only for its date components, which this feature does not use. Components are imported per subpath (`@base-ui/react/dialog`), so unused ones are not bundled.
+- **Rejected**: a caret range (a headless library's behaviour is the contract we test against; upgrades are deliberate PRs).
+
+### P2. No Go token file: public pages already load the app stylesheet
+
+- **Decision**: the token build writes `web/src/tokens.css` only. FR-003's Go output is dropped (spec amended).
+- **Why**: `server/public.go` links the built app CSS (`publicCSSHref(index)` in `server/public_assets.go`) and its inline style already reads `var(--bg)`, `var(--accent)` and the rest. Generated Go constants would be a second copy of values the page already receives.
+- **Rejected**: generating Go anyway "for later" (a file with no reader rots).
+
+### P3. Type scale: 7 steps
+
+Measured: 34 literal sizes; 75% of uses are 11–14 px in half-pixel steps.
+
+| Token | Value | Absorbs today |
+|---|---|---|
+| `font.size.2xs` | 11px | 7–11.5 |
+| `font.size.xs` | 12px | 12, 12.5 |
+| `font.size.sm` | 13px | 13, 13.5 |
+| `font.size.md` | 14px | 14, 14.5, 15 |
+| `font.size.lg` | 16px | 16, 17, 18 |
+| `font.size.xl` | 20px | 19–24 |
+| `font.size.display` | `clamp(28px, 4vw, 40px)` | 25–60 (page titles, empty states) |
+
+- **Why**: seven steps cover every use within ±1px except display sizes, which become one fluid token. Collapsing half pixels is the only visible change this feature allows itself (spec: "encodes, does not redesign"); it happens per migration batch, with screenshots retaken.
+- **Rejected**: keeping half-pixel steps (14 steps is no scale); a modular ratio scale (would move every size).
+
+### P4. Radius and layer scales
+
+- Radius: `radius.xs 2px`, `sm 4px`, `md 6px`, `lg 8px`, `xl 12px`, `full 999px` (5, 7, 9, 10 round to the nearest).
+- Layers (`z-index`), named instead of 24 numbers: `layer.raised 10`, `sticky 50`, `dropdown 200`, `overlay 300`, `modal 400`, `toast 900`, `tooltip 1000`, `top 1200`. Base UI portals render menus and dialogs at body level, which removes most stacking fights the high numbers were patching.
+
+### P5. Contrast check without a dependency
+
+- **Decision**: `build-tokens.mjs` computes WCAG 2.x relative luminance itself (sRGB and alpha-over-surface; OKLCH converted first). Pairs to check are declared in the semantic tier (`$extensions["md.salt.contrast"]: { on: "color.surface", min: 4.5 }`).
+- **Rejected**: `culori`/`colorjs.io` as dependencies (40 lines of math vs. a package; rule against dependencies without a reason).
+
+### P6. Catalogue as a dev-only Vite entry
+
+- **Decision**: `web/catalog.html` + `web/src/catalog/`, served by `npx vite` in development and by a second config `web/vite.catalog.config.ts` for tests. `npm run build` uses the existing config, so the catalogue never reaches `web/dist` or the binary (FR-012).
+- **Rejected**: Storybook (a framework and hundreds of packages for one page).
+
+### P7. Visual and accessibility tests
+
+- **Decision**: `web/tests/catalog.mjs` screenshots each catalogue section in light and dark against baselines in `web/tests/catalog-baselines/`, and runs `@axe-core/playwright` 4.14.0 (dev dependency of `web/tests` only) failing on serious/critical.
+- **Why**: reuses the existing Playwright set-up; nothing is added to the shipped app.
+
+### P8. Bundle budget
+
+- Baseline at `c4de997`: main chunk 1,802,733 B raw, 790,888 B gzip.
+- **Budget**: +60 KB gzip for the whole feature, checked by `check-bundle.mjs` against `web/tokens/budgets.json` after `vite build` (CI), not in `npm run check` (which does not build).
+
+### P9. Ratchets live in one file
+
+`web/tokens/budgets.json` holds `literals` (per kind: colour, font-size, radius, shadow, z-index), `rawButtons`, `handDialogs` and `bundleGzip`. Starting values are measured by the first run of `check-tokens.mjs --measure` and committed in the same PR, then may only go down (`bundleGzip` may only stay under its cap).
