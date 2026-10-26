@@ -93,13 +93,13 @@ read, and benchmark it at the sizes in Story 2.
 ### Functional Requirements
 
 - **FR-001**: salt.md MUST keep SQLite (pure Go, `modernc.org/sqlite`) as its only database engine, with one file and `CGO_ENABLED=0` builds.
-- **FR-002**: The driver MUST be upgraded from `modernc.org/sqlite` v1.34.5 to the current release (embedding SQLite 3.54.x), in its own pull request with the full test suite and benchmarks before and after.
+- **FR-002**: The driver MUST be upgraded from `modernc.org/sqlite` v1.34.5 (SQLite 3.46.0) to v1.60.1 (SQLite 3.53.4), the newest release old enough to pin (research P1), in its own pull request with the full test suite and benchmarks before and after.
 - **FR-003**: A storage benchmark suite MUST exist in `server/` (`*_bench_test.go`) with a deterministic workspace generator at fixed sizes (1k / 10k / 100k rows; 1k / 20k pages), covering the operations in Story 2.
 - **FR-004**: CI MUST run the benchmarks on pull requests touching `server/` and compare with `main` (`benchstat`), reporting regressions above the plan's threshold.
 - **FR-005**: Aggregations for chart views (#20) MUST be computed in SQL over the permission-filtered row set, never by loading all rows into Go.
 - **FR-006**: Long-running reads MUST be bounded by a time limit so one query cannot hold the single connection; the plan measures whether a separate read-only WAL connection is needed.
 - **FR-007**: `research.md` MUST record the revisit triggers below, and the benchmarks MUST report the numbers they refer to.
-- **FR-008**: The decision MUST be recorded on a decisions page in the salt.md workspace (AGENTS.md: decisions with the options rejected).
+- **FR-008**: The decision MUST be recorded in `docs/decisions.md` with the options rejected (amended: the owner chose the repository for decisions, research P6).
 
 ### Revisit triggers
 

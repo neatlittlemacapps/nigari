@@ -7,6 +7,26 @@ entries are not edited away.
 
 ---
 
+## 2026-10-26 — The list of surfaces is a registry that grows with new concepts
+
+**Context**: the owner's standing instruction is that every feature request is
+thought through against every aspect of the code. When a request introduces a new
+concept, such as the design system, that concept joins the list every later feature
+is checked against.
+
+**Decision**: `.specify/memory/surfaces.md` is the one list of surfaces, each with what
+a feature checks and the date it was added. Every plan's Surfaces table has a row per
+entry, and `check-surfaces.mjs` (in `npm run check` and the gate) fails a plan that
+skips one or leaves it empty. A feature that introduces a concept adds it to the
+registry in the same pull request. The first two added this way are the design
+system (spec 001) and storage budgets (spec 002), along with the manifest, which had
+been a loose line in each plan. Constitution VI now points at the registry (v1.1.0).
+
+**Rejected**: keeping the list in the plan template only. A surface added later reached
+the next plan only if its writer remembered, which is the failure the constitution
+exists to prevent. Also rejected: asking older plans to answer surfaces that did not
+exist when they were written, because a plan records what was considered at the time.
+
 ## 2026-10-25 — Find-and-replace edits reload open editors; live delivery comes later
 
 **Context**: spec 003 (#13), FR-008. An agent's edit has to reach people who have the

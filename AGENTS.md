@@ -6,6 +6,11 @@ These instructions are for every coding agent that opens this repository.
 
 ## This project is documented in salt.md — use it at every step
 
+When the instance below is reachable (a local session), use it as described.
+A cloud session cannot reach `localhost:8420`: skip the `working_on`/`note`
+calls and put what they would have carried in the commit body or the pull
+request instead.
+
 Decisions and documentation live at http://localhost:8420, workspace
 **Workspace** (`f6526406952b1c9b154760df965df59a`), reachable over MCP. Work
 status lives on the GitHub Projects board (see "How work flows").
@@ -16,8 +21,10 @@ status lives on the GitHub Projects board (see "How work flows").
 - **While working:** `note(page_id, text)` for what a write-up loses — the
   approach you dropped, the surprise, why not the obvious road. One line,
   written as it happens.
-- **Decisions go on a page, with the reasoning, including the options
-  rejected.** A decision explained only in chat is lost when the chat is.
+- **Decisions go in `docs/decisions.md`, with the reasoning, including the
+  options rejected** (newest first). A decision explained only in chat is lost
+  when the chat is. The repository, not the workspace, because cloud agent
+  sessions cannot reach a local instance, and every agent can reach the repo.
 - **Read first.** `search` and `get_page` are cheap; a second page about
   something that already has one is worse than none.
 - **The workspace has its own rules** — `get_workspace()` returns them and they
@@ -66,11 +73,14 @@ npm test --prefix web/tests                  # browser regressions (needs Playwr
 scripts/agent-gate.sh                        # what an agent must pass before it stops
 ```
 
-## Every change to a capability touches its surfaces
+## Every change touches its surfaces — and the list of surfaces grows
 
 A capability is something a person or agent can do (rename a page, add a
 property, share a view). When you add or change one, go through every surface
-and either change it or state why it does not apply:
+and either change it or state why it does not apply. The full list is the
+registry, `.specify/memory/surfaces.md`; every plan's Surfaces table has a row
+for each entry, and `check-surfaces.mjs` fails a plan that skips one. The core
+nine, which the registry starts from:
 
 1. **Domain logic and gates** — permission (`canRead`/`canWrite`), workspace
    gate (`credentialMayEnter`), validation, `audit(...)`, `fireWebhook(...)`.
@@ -94,6 +104,17 @@ and either change it or state why it does not apply:
    checks that REST and MCP agree on access; add a pair of acts for a new
    capability.
 
+Beyond these, the registry holds the concepts later features have to respect:
+today the **design system** (spec 001: build from `web/src/ui/` and tokens, no
+new literals) and **storage budgets** (spec 002: benchmark a new hot-path query
+against its p95 budget).
+
+**When a feature introduces such a concept, add it to the registry in the same
+pull request** — with what a later feature has to check against it — so the next
+plan answers for it without anyone having to remember. Think about it at
+`/speckit-specify` already: a request that brings a new concept (a component
+layer, a budget, a credential type, an event) is a request to extend the list.
+
 The history of this repo shows what happens when a surface is skipped: checks
 added on the REST side and missing on the MCP side, found later one by one.
 
@@ -114,6 +135,13 @@ added on the REST side and missing on the MCP side, found later one by one.
 - Small fixes can skip the spec: an issue, a branch, a pull request.
 
 ## Commits
+
+Commits are authored by the repository owner, not the agent: before the first
+commit in a session, `git config user.name neatlittlemacapps` and
+`git config user.email 60575307+neatlittlemacapps@users.noreply.github.com`.
+The agent goes in a `Co-Authored-By:` trailer. Upstream's CLA bot matches the
+commit author to a signature, and an agent's address belongs to no GitHub
+account, so its commits can never be signed for.
 
 The subject line is a sentence that says what changed, readable without the
 diff ("A board refuses a grouping it cannot make columns from"). The body says

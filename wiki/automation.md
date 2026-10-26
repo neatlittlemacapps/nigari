@@ -64,10 +64,9 @@ writes to the database in silence:
 - a row created by a visitor filling a [public form](forms.md)
 
 Over MCP the surface is narrower still: only `create_page` and `write_content`
-in its `replace` mode send anything. An agent renaming a page, setting an icon,
-writing properties or changing a schema fires nothing, while the same edits
-made in the browser fire `page.updated`. Appending or prepending content is
-silent too.
+(every mode: append, prepend, replace and edit) send anything. An agent
+renaming a page, setting an icon, writing properties or changing a schema fires
+nothing, while the same edits made in the browser fire `page.updated`.
 
 Bulk work coming **in** therefore never announces itself page by page, which is
 deliberate: a two-thousand-page import would otherwise turn into two thousand

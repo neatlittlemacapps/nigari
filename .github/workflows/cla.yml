@@ -26,13 +26,18 @@ permissions:
 jobs:
   cla:
     runs-on: ubuntu-latest
+    # Upstream only. The CLA protects saltmd/salt.md's right to relicense what
+    # it receives; in a fork there is nobody to collect a signature from, and
+    # the bot asked the fork's owner, already signed upstream (saltmd#87), to
+    # sign again for every agent-authored commit.
     # A comment counts on a pull request only: the signature itself, or
     # "recheck", which the bot itself suggests, to run the check again.
     if: >
+      github.repository == 'saltmd/salt.md' && (
       github.event_name == 'pull_request_target' ||
       (github.event.issue.pull_request &&
         (github.event.comment.body == 'recheck' ||
-         contains(github.event.comment.body, 'I have read the CLA')))
+         contains(github.event.comment.body, 'I have read the CLA'))))
     steps:
       - uses: contributor-assistant/github-action@v2.6.1
         env:

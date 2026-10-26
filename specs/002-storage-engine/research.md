@@ -54,3 +54,46 @@ the comparison worth making is SQLite against an optional PostgreSQL server mode
 - [DuckDB full-text search](https://duckdb.org/docs/2.0/core_extensions/full_text_search)
 - [modernc.org/sqlite](https://pkg.go.dev/modernc.org/sqlite)
 - [marcboeker/go-duckdb (earlier driver)](https://pkg.go.dev/github.com/marcboeker/go-duckdb)
+
+## Plan-time decisions (2026-10-26)
+
+### P1. Driver: `modernc.org/sqlite` v1.60.1 (SQLite 3.53.4)
+
+- **Decision**: upgrade from v1.34.5 (SQLite 3.46.0) to v1.60.1 (released 2026-09-29). It pulls `modernc.org/libc`, `memory` and `mathutil` along.
+- **Evidence (trial in a scratch copy, 2026-10-26)**: `CGO_ENABLED=0 go build ./server` succeeds for linux/amd64, linux/arm64, darwin/amd64, darwin/arm64 and windows/amd64. `go test ./server` passes unchanged on the new driver.
+- **Rejected**: v1.61.0 (2026-10-21). Too new to pin: the repository waits two weeks before taking a release. It is the next upgrade.
+- The spec said "3.54.x". The pinnable release embeds 3.53.4, and the spec is amended to match.
+
+### P2. Benchmarks report percentiles, not just means
+
+- **Decision**: each storage benchmark times its operations individually and reports `p50-ns` and `p95-ns` through `b.ReportMetric`, alongside `ns/op`. The spec asks for p50/p95, and Go's default output is a mean.
+- The workspace generator (`server/bench_world_test.go`) is seeded (`BENCH_SEED`, default 20261026) and builds 1k/20k pages and 1k/10k/100k-row databases with select, date, number, person and relation properties. The 100k size runs only with `-bench` plus `BENCH_LARGE=1`, so `go test ./...` stays fast.
+
+### P3. Latency budgets (provisional until the first baseline)
+
+| Operation | Size | p95 budget |
+|---|---|---|
+| Open a page (`GET /api/pages/{id}`) | 20k pages | 20 ms |
+| `query_rows`, filter and sort | 10k rows | 50 ms |
+| `query_rows`, filter and sort | 100k rows | 300 ms |
+| Rollup over a relation | 10k rows | 100 ms |
+| Full-text search | 20k pages | 50 ms |
+| Grouped count (chart) | 100k rows | 250 ms |
+| Property write during a 5-agent burst | 10k rows | 20 ms per write |
+
+After the first CI baseline, each budget becomes the measured p95 × 1.5, rounded up, and is committed here (SC-002). A budget may only be raised in a PR that says why.
+
+### P4. CI comparison
+
+- **Decision**: a `bench` job in `.github/workflows/ci.yml` runs on PRs that touch `server/**`. It runs the storage benchmarks on the base and on the head (`-count=6`) and compares them with `benchstat` (`go run golang.org/x/perf/cmd/benchstat@v0.0.0-20261009192801-be2c69fb417e`, pinned; a CI tool, not a module dependency).
+- **Threshold**: a significant change (p < 0.05) of more than **+15%** in `p95-ns` is reported in the job summary and as a warning. It does not fail the job: shared runners are noisy, and a red build that is wrong half the time gets ignored. A regression above **+50%** fails the job.
+
+### P5. Bounded reads, one connection kept for now
+
+- **Decision**: analytical reads (`query_rows`, rollups, the coming chart aggregation) run with `QueryContext` under a 5 s limit. They answer `query_timeout` instead of holding the single connection.
+- A second, read-only WAL connection is **measured, not built**: a benchmark variant opens `mode=ro` beside the writer and runs the burst-write test with a concurrent 100k-row query. It is built only if the single-connection p95 for writes during a long read exceeds its budget (spec revisit trigger 2 is about this).
+- **Rejected**: two connections from the start. The one-connection rule exists because a query inside an open cursor deadlocks (`.claude/rules/go-server.md`). A second pool reopens that class of bug, so it needs a measured reason first.
+
+### P6. The decision is recorded in the repository
+
+FR-008 named the salt.md workspace. The owner chose the repository for decisions (2026-10-25), and `docs/decisions.md` already carries "Keep SQLite". The spec is amended to match.

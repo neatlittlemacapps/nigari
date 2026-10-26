@@ -1,0 +1,48 @@
+name: Board sync
+
+# Fills the board's Surface field from an issue's surface:* label, so the board
+# can be grouped and filtered by surface without setting the field by hand.
+# Setup (once): a classic token with the `project` and `repo` scopes as the
+# secret BOARD_TOKEN, and the board's number as the variable BOARD_PROJECT
+# (Settings → Secrets and variables → Actions). Without them the job skips.
+# Backfill: Actions → Board sync → Run workflow. See scripts/board-sync.sh.
+
+on:
+  issues:
+    types: [opened, labeled, unlabeled, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: board-sync-${{ github.event.issue.number || 'all' }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # Only label changes that concern a surface; opened/reopened always, since
+    # an issue can be created with its labels already on.
+    if: >-
+      vars.BOARD_PROJECT != '' &&
+      (github.event_name != 'issues' ||
+       github.event.action == 'opened' || github.event.action == 'reopened' ||
+       startsWith(github.event.label.name, 'surface:'))
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync
+        env:
+          GH_TOKEN: ${{ secrets.BOARD_TOKEN }}
+          BOARD_PROJECT: ${{ vars.BOARD_PROJECT }}
+          BOARD_FIELD: ${{ vars.BOARD_FIELD || 'Surface' }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::BOARD_TOKEN is not set; skipping board sync"
+            exit 0
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            scripts/board-sync.sh --all
+          else
+            scripts/board-sync.sh "${{ github.event.issue.number }}"
+          fi

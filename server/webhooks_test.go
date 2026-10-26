@@ -246,3 +246,42 @@ func TestWebhookGuardIsInTheDeliveryPath(t *testing.T) {
 		t.Errorf("last_status is %q — a refused delivery has to be visible to an admin", status)
 	}
 }
+
+// Every write_content mode tells subscribers the page changed. append and
+// prepend fired nothing, so a hook watching a page missed whatever an agent
+// added to it, while replace on the same page was reported (#47).
+func TestEveryWriteContentModeFiresPageUpdated(t *testing.T) {
+	got := make(chan string, 8)
+	recv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Event  string `json:"event"`
+			PageID string `json:"pageId"`
+		}
+		json.NewDecoder(r.Body).Decode(&body)
+		got <- body.Event
+		w.WriteHeader(200)
+	}))
+	defer recv.Close()
+
+	s := testServer(t)
+	uid, _ := signedIn(t, s, "hooks@example.test")
+	u := &user{ID: uid, Name: "Agent"}
+	page := s.makePage(t, s.firstWorkspaceOf(t, uid), uid, "", "Watched", `{}`)
+	s.db.Exec(`INSERT INTO webhooks (id, url, secret, events, active, created_at)
+		VALUES (?, ?, 's', 'page.updated', 1, ?)`, newID(), recv.URL, now())
+	s.webhookTransport = http.DefaultTransport
+
+	for _, mode := range []string{"append", "prepend", "replace"} {
+		if _, err := callTool(t, s, u, "write_content", `{"page_id":"`+page+`","markdown":"line","mode":"`+mode+`"}`); err != nil {
+			t.Fatalf("%s: %v", mode, err)
+		}
+		select {
+		case ev := <-got:
+			if ev != "page.updated" {
+				t.Errorf("%s: delivered %q", mode, ev)
+			}
+		case <-time.After(3 * time.Second):
+			t.Errorf("%s: no page.updated delivered", mode)
+		}
+	}
+}

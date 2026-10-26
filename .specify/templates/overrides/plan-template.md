@@ -53,8 +53,10 @@ Check the plan against each principle in `.specify/memory/constitution.md` and m
 ## Surfaces
 
 <!--
-  REQUIRED. One row per surface. "Changes" names files and functions; "No change"
-  says WHY it does not apply. An empty or "TBD" cell blocks /speckit-tasks.
+  REQUIRED. One row per surface in .specify/memory/surfaces.md (the registry):
+  copy the rows below and add any the registry has gained since this template
+  was last updated. "Changes" names files and functions; "No change" says WHY
+  it does not apply. check-surfaces.mjs fails on a missing, empty or TBD row.
 -->
 
 | Surface | Changes | Owner |
@@ -70,6 +72,14 @@ Check the plan against each principle in `.specify/memory/constitution.md` and m
 | Wiki (`wiki/*.md`, `mcp-tools.md`, stale screenshots) | | wiki |
 | Tests (Go incl. refusal paths, Playwright spec, check scripts) | | test |
 | Performance (query plans, payload size, per-request work) | | perf |
+| Manifest (`capabilities.json`, `gapBudget`, parity acts) | | mcp |
+| Design system (`web/src/ui/`, tokens, `check-tokens.mjs` budgets, catalogue) | | ui |
+| Storage budgets (benchmarks on the seeded workspace, p95 budgets, read time limit) | | perf |
+
+**New concepts**: [Does this feature introduce something every LATER feature must
+respect — a design system, a budget, a new kind of credential, an event? If so, add
+it to `.specify/memory/surfaces.md` in this pull request, with what later features
+check against it, and add its row above. If not: "None".]
 
 **Parity statement**: [Either "Agents can do this over MCP via <tool>, with the same
 checks as <route>", or "Closed to agents because …, added to not_available_via_mcp".]
