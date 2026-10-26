@@ -66,11 +66,14 @@ npm test --prefix web/tests                  # browser regressions (needs Playwr
 scripts/agent-gate.sh                        # what an agent must pass before it stops
 ```
 
-## Every change to a capability touches its surfaces
+## Every change touches its surfaces — and the list of surfaces grows
 
 A capability is something a person or agent can do (rename a page, add a
 property, share a view). When you add or change one, go through every surface
-and either change it or state why it does not apply:
+and either change it or state why it does not apply. The full list is the
+registry, `.specify/memory/surfaces.md`; every plan's Surfaces table has a row
+for each entry, and `check-surfaces.mjs` fails a plan that skips one. The core
+nine, which the registry starts from:
 
 1. **Domain logic and gates** — permission (`canRead`/`canWrite`), workspace
    gate (`credentialMayEnter`), validation, `audit(...)`, `fireWebhook(...)`.
@@ -93,6 +96,17 @@ and either change it or state why it does not apply:
    same pull request, where a reviewer sees it. `parity_property_test.go`
    checks that REST and MCP agree on access; add a pair of acts for a new
    capability.
+
+Beyond these, the registry holds the concepts later features have to respect:
+today the **design system** (spec 001: build from `web/src/ui/` and tokens, no
+new literals) and **storage budgets** (spec 002: benchmark a new hot-path query
+against its p95 budget).
+
+**When a feature introduces such a concept, add it to the registry in the same
+pull request** — with what a later feature has to check against it — so the next
+plan answers for it without anyone having to remember. Think about it at
+`/speckit-specify` already: a request that brings a new concept (a component
+layer, a budget, a credential type, an event) is a request to extend the list.
 
 The history of this repo shows what happens when a surface is skipped: checks
 added on the REST side and missing on the MCP side, found later one by one.

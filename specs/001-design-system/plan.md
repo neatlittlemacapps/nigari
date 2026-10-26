@@ -13,6 +13,8 @@ tokens. Lock progress with ratchets in `web/tokens/budgets.json`, enforced by
 `check-tokens.mjs`. Prove it in a dev-only catalogue, tested visually and with axe in both
 themes.
 
+This feature introduces a concept every later UI change must respect, so it adds **Design system** to the surfaces registry.
+
 Delivery is in batches (FR-016). **Batch 1**, the scope of this plan's tasks, covers
 tokens, build, check, catalogue, `Button`, `IconButton`, `Dialog`, `AlertDialog`,
 `Field`/`Input`, `Select` and `Switch`, plus migrating the webhook dialog in
@@ -68,10 +70,11 @@ Re-checked after Phase 1 design: unchanged.
 | Wiki (`wiki/*.md`, `mcp-tools.md`, stale screenshots) | Retake the screenshots of the migrated webhook dialog, plus any `check-wiki.mjs` lists as stale. User-facing text unchanged | wiki |
 | Tests (Go incl. refusal paths, Playwright spec, check scripts) | New:<br>- `check-tokens.mjs` (literal and component ratchets), in `npm run check`;<br>- contrast failure in `build-tokens.mjs`;<br>- `web/tests/catalog.mjs` (baselines and axe, both themes);<br>- keyboard test for the migrated dialog.<br>Existing Playwright regressions must stay green | test |
 | Performance (query plans, payload size, per-request work) | `check-bundle.mjs` enforces `bundleGzip` after `vite build` in CI; per-subpath imports | perf |
+| Manifest | No change: no route or tool | mcp |
+| Design system | This feature creates it: tokens, `web/src/ui/`, catalogue, budgets. It enters the registry (`.specify/memory/surfaces.md`) with this plan | ui |
+| Storage budgets | No change: no query added or changed | perf |
 
 **Parity statement**: not a capability. Agents are unaffected, and no route or tool changes.
-
-**Manifest**: no change to `capabilities.json`.
 
 ## Project Structure
 

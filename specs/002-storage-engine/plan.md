@@ -14,6 +14,8 @@ We keep SQLite. The plan has four parts:
 
 A second, read-only connection is measured, not built.
 
+This feature introduces a concept later features must respect, so it adds **Storage budgets** to the surfaces registry: a new hot-path query is benchmarked against its budget.
+
 ## Technical Context
 
 **Language/Version**: Go 1.27 (server, one package `server/`), TypeScript 5.6 + React 18 (`web/src/`)
@@ -59,10 +61,11 @@ Re-checked after Phase 1 design: unchanged.
 | Wiki (`wiki/*.md`, `mcp-tools.md`, stale screenshots) | The 5 s limit in the Limits table of `wiki/mcp-tools.md` and `wiki/api.md`. No screenshots | wiki |
 | Tests (Go incl. refusal paths, Playwright spec, check scripts) | Benchmarks (research P2). `QueryTimeout` test: a slow query is stopped and a concurrent write completes. Full suite before and after the driver bump | test |
 | Performance (query plans, payload size, per-request work) | The CI `bench` job with benchstat (research P4). Baseline committed in research P3 | perf |
+| Manifest | No change: no route or tool | mcp |
+| Design system | No change: no new screen or component; the timeout message uses the existing error path | ui |
+| Storage budgets | This feature creates it: the seeded workspace, percentile benchmarks, p95 budgets and the read time limit. It enters the registry (`.specify/memory/surfaces.md`) with this plan | perf |
 
 **Parity statement**: there is no new capability. The time limit is the same for REST and MCP because both call the same helper.
-
-**Manifest**: no change to `capabilities.json`.
 
 ## Project Structure
 

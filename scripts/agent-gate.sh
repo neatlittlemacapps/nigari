@@ -63,7 +63,7 @@ fi
 # ---- Frontend, translations, wiki ------------------------------------------
 # check-wiki and check-parity read server/mcp.go and server.go too, so a server change that
 # renames a tool or a route has to pass it as well.
-if touches '^web/|^wiki/|^capabilities\.json$|^server/(mcp.*|server)\.go$'; then
+if touches '^web/|^wiki/|^capabilities\.json$|^server/(mcp.*|server)\.go$|^specs/|^\.specify/'; then
   if [[ ! -d web/node_modules ]]; then
     echo "gate: installing web dependencies (npm ci)…"
     if ! out="$(npm ci --prefix web --no-audit --no-fund 2>&1)"; then

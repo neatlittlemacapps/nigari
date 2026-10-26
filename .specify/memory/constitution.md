@@ -1,5 +1,9 @@
 <!--
 Sync Impact Report
+- Version: 1.0.0 → 1.1.0 (2026-10-26): VI now points at the surfaces registry
+  (.specify/memory/surfaces.md) and makes it grow with new concepts; asked for
+  by the owner. Updated: plan-template override, tasks-template override,
+  AGENTS.md, check-surfaces.mjs (new), plans 001 and 002.
 - Version: template → 1.0.0 (first ratification)
 - Principles added: I–VII
 - Templates: .specify/templates/overrides/plan-template.md and tasks-template.md
@@ -60,11 +64,16 @@ Dates, numbers and sorting go through `format.ts`.
 
 ### VI. Every surface, every time
 
-A change to a capability names every surface — domain and gates, schema, REST, MCP,
-UI, translations, wiki, tests, performance — and either changes it or states why it
-does not apply (the Surfaces table in each plan).
+A change names every surface in the registry (`.specify/memory/surfaces.md`) and
+either changes it or states why it does not apply (the Surfaces table in each plan,
+checked by `check-surfaces.mjs`). The registry grows: a feature that introduces a
+concept later features must respect — a design system, a budget, a new kind of
+credential — adds it there in the same pull request, so every plan after it answers
+for it.
 
-*Why:* a feature that works in the browser and is missing over MCP is half a feature.
+*Why:* a feature that works in the browser and is missing over MCP is half a feature,
+and a concept that lives only in the feature that introduced it is forgotten by the
+next one.
 
 ### VII. Measured, not assumed
 
@@ -96,4 +105,4 @@ a person, in a pull request that updates the version, says why, and updates the 
 and tasks overrides and `AGENTS.md` where they depend on the change. Versioning:
 MAJOR for a removed or redefined principle, MINOR for a new one, PATCH for wording.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-25 | **Last Amended**: 2026-10-25
+**Version**: 1.1.0 | **Ratified**: 2026-10-25 | **Last Amended**: 2026-10-26

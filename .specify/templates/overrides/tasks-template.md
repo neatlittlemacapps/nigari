@@ -22,7 +22,8 @@ least one task. A row that says "No change" gets none.
 
 - **[P]**: Can run in parallel (different files, no dependencies)
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
-- **[surface]**: One of `backend`, `mcp`, `ui`, `i18n`, `wiki`, `test`, `perf`.
+- **[surface]**: The tag of the surface's row in `.specify/memory/surfaces.md`
+  (today one of `backend`, `mcp`, `ui`, `i18n`, `wiki`, `test`, `perf`).
   It decides which agent takes the task and becomes the Surface field on the
   board. Write it after the story marker, e.g. `- [ ] T012 [P] [US1] [mcp] …`
 - Include exact file paths in descriptions
