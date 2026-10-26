@@ -9,7 +9,7 @@ description: "Tasks for edit page content by find-and-replace"
 
 **Tests**: required (salt.md). Refusal paths for every gate.
 
-**Issues**: T001–T020 are #27–#46 (sub-issues of #13), in order.
+**Issues**: parent #13; T001–T020 are #27–#46, in order.
 
 ## Format: `[ID] [P?] [Story] [surface] Description`
 
@@ -87,7 +87,7 @@ No setup: no dependency, no schema change (plan, Technical Context).
 - [x] T017 [P] [wiki] `wiki/api.md`: `POST /api/pages/{id}/edits`, body, answers
 - [x] T018 [P] [perf] `BenchmarkEditLargePage` in `server/cap_edits_test.go` on 5,000 blocks; record the number in the PR (target < 50 ms)
 - [x] T019 [wiki] `docs/what-it-does.md`: mention find-and-replace edits for agents where content writes are described
-- [x] T020 Run `quickstart.md` and `scripts/agent-gate.sh --all`
+- [x] T020 [test] Run `quickstart.md` and `scripts/agent-gate.sh --all`
 
 ---
 

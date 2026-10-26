@@ -44,6 +44,12 @@ for s in "${list[@]}"; do
   gh label create "surface:$s" --repo "$repo" --color BFD4F2 \
     --description "Task touches the $s surface" --force
 done
+# The two labels scripts/board-sync.sh reads for Status; every other column
+# follows from the issue's state and its pull requests.
+gh label create "in-progress" --repo "$repo" --color FBCA04 \
+  --description "Someone (person or agent) is working on this" --force
+gh label create "spec" --repo "$repo" --color D4C5F9 \
+  --description "Being specified (specs/NNN-name/), no tasks yet" --force
 
 url="$(gh project view "$number" --owner "$owner" --format json -q .url)"
 cat <<EOF

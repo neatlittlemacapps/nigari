@@ -121,3 +121,20 @@ descriptions, database templates) were merged into `parity-manifest`.
 
 **Why**: agent teams are experimental. Parallel agents would collide in the hotspot
 files (`server/server.go`, `web/src/styles.css`) until those are split.
+
+## 2026-10-26 — The board derives its columns; nobody moves cards
+
+**Decision**: `board-sync.yml` sets every issue's Status from GitHub's own state: closed,
+an open PR that closes it, the `in-progress` and `spec` labels, and whether it is a
+feature's task. A task ticked in `tasks.md` on `main` closes its issue. A nightly run
+catches anything no event reports.
+
+**Why**: spec 003 merged with its twenty task issues still open, and no card had moved.
+A feature PR's `Closes #13` does not close sub-issues, and moving cards was a step people
+and agents had to remember. A cloud agent cannot reach the board at all, but it can set a
+label.
+
+**Rejected**: moving cards by hand, or by the agent (no board access from cloud
+sessions). GitHub's built-in project workflows alone: they cover "closed → Done" and
+"PR merged → Done", but not In review, In progress or a feature's progress through its
+tasks.
