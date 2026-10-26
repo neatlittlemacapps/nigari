@@ -17,7 +17,8 @@ status lives on the GitHub Projects board (see "How work flows").
 
 - **Before starting anything that takes more than a moment:**
   `working_on(page_id, agent, label, note)`, and `done: true` when finished.
-  Move the task's GitHub issue to *In progress* at the same time.
+  Label the task's GitHub issue `in-progress` at the same time; the board
+  follows (see "How work flows").
 - **While working:** `note(page_id, text)` for what a write-up loses — the
   approach you dropped, the surprise, why not the obvious road. One line,
   written as it happens.
@@ -131,7 +132,16 @@ added on the REST side and missing on the MCP side, found later one by one.
   `/speckit-plan`, `/speckit-tasks`, then `/speckit-implement`. Specs live in
   `specs/NNN-name/`; the constitution is `.specify/memory/constitution.md`.
 - `tasks.md` is the source of truth for tasks. Issues on the board mirror it and
-  are created only by `/speckit-github-taskstoissues`.
+  are created only by `/speckit-github-taskstoissues`, as sub-issues of the
+  feature's issue, titled `T001: …`, with the task's `surface:*` label. Then
+  write `**Issues**: parent #N` in `tasks.md` (`check-tasks.mjs` enforces it).
+- **Nobody moves cards.** `board-sync.yml` derives every issue's Status:
+  closed → Done, an open PR that closes it → In review, label `in-progress` →
+  In progress, label `spec` → Spec, a task of a feature → Ready, else Backlog.
+  A task ticked in `tasks.md` on `main` closes its issue. So: label
+  `in-progress` when you start, tick the task in the PR that does it, and list
+  every task issue it finishes as `Closes #N` (closing the feature issue does
+  not close its sub-issues).
 - Small fixes can skip the spec: an issue, a branch, a pull request.
 
 ## Commits

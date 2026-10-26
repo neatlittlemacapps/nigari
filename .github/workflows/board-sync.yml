@@ -1,34 +1,48 @@
 name: Board sync
 
-# Fills the board's Surface field from an issue's surface:* label, so the board
-# can be grouped and filtered by surface without setting the field by hand.
+# Keeps the board in step with the issues (scripts/board-sync.sh): every issue
+# on the board, its Surface from its surface:* label, its Status from its state,
+# its pull requests and its labels. Ticking a task in a spec's tasks.md on main
+# closes the task's issue (scripts/tasks-sync.sh).
 # Setup (once): a classic token with the `project` and `repo` scopes as the
 # secret BOARD_TOKEN, and the board's number as the variable BOARD_PROJECT
 # (Settings → Secrets and variables → Actions). Without them the job skips.
-# Backfill: Actions → Board sync → Run workflow. See scripts/board-sync.sh.
+# Backfill: Actions → Board sync → Run workflow. A nightly run catches what no
+# event reports (sub-issues added or removed).
 
 on:
   issues:
-    types: [opened, labeled, unlabeled, reopened]
+    types: [opened, closed, reopened, labeled, unlabeled]
+  pull_request:
+    types: [opened, reopened, closed, edited, ready_for_review]
+  push:
+    branches: [main]
+    paths: ['specs/**/tasks.md']
+  schedule:
+    - cron: '17 3 * * *'
   workflow_dispatch:
 
+# Everything is done with BOARD_TOKEN; the job's own token only checks out.
 permissions:
   contents: read
 
 concurrency:
-  group: board-sync-${{ github.event.issue.number || 'all' }}
+  group: board-sync-${{ github.event.issue.number || github.event.pull_request.number || github.event_name }}
   cancel-in-progress: false
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-    # Only label changes that concern a surface; opened/reopened always, since
-    # an issue can be created with its labels already on.
+    # Label changes matter only for the labels the board reads. Pull requests
+    # from forks get no secrets, so they are left to the nightly run.
     if: >-
       vars.BOARD_PROJECT != '' &&
       (github.event_name != 'issues' ||
-       github.event.action == 'opened' || github.event.action == 'reopened' ||
-       startsWith(github.event.label.name, 'surface:'))
+       (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
+       startsWith(github.event.label.name, 'surface:') ||
+       github.event.label.name == 'in-progress' || github.event.label.name == 'spec') &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
     steps:
       - uses: actions/checkout@v4
       - name: Sync
@@ -36,13 +50,22 @@ jobs:
           GH_TOKEN: ${{ secrets.BOARD_TOKEN }}
           BOARD_PROJECT: ${{ vars.BOARD_PROJECT }}
           BOARD_FIELD: ${{ vars.BOARD_FIELD || 'Surface' }}
+          EVENT: ${{ github.event_name }}
+          ISSUE: ${{ github.event.issue.number }}
+          PR: ${{ github.event.pull_request.number }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
             echo "::warning::BOARD_TOKEN is not set; skipping board sync"
             exit 0
           fi
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            scripts/board-sync.sh --all
-          else
-            scripts/board-sync.sh "${{ github.event.issue.number }}"
-          fi
+          case "$EVENT" in
+            issues)       scripts/board-sync.sh "$ISSUE" ;;
+            pull_request) scripts/board-sync.sh --pr "$PR" ;;
+            push)
+              # The closes start runs of their own too; syncing here means the
+              # board is right when this run ends, whatever order those take.
+              for n in $(scripts/tasks-sync.sh); do scripts/board-sync.sh "$n"; done ;;
+            *)
+              scripts/tasks-sync.sh >/dev/null
+              scripts/board-sync.sh --all ;;
+          esac

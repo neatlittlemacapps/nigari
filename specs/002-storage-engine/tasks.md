@@ -9,7 +9,7 @@ description: "Tasks for the storage engine: keep SQLite, measure it, bound long 
 
 **Tests**: required (salt.md). The time limit gets a refusal-path test over REST and MCP.
 
-**Issues**: none yet. They are created by `/speckit-github-taskstoissues`.
+**Issues**: parent #50; T001–T023 are #51–#73, in order.
 
 **Pull requests**: three. (1) Benchmarks, Phase 2. (2) The driver bump, Phase 3, on its own as FR-002 requires. (3) The CI comparison and the time limit, Phases 4–5.
 
@@ -89,7 +89,7 @@ The benchmarks come first: the driver bump (US1) must be measured before and aft
 ## Phase 6: Polish & cross-cutting
 
 - [ ] T022 [P] [test] `server/credential_audit_test.go` and `parity_property_test.go`: confirm nothing changes (no new route or tool, `capabilities.json` untouched). If the time limit changes an existing pair of acts, update the pair
-- [ ] T023 Run quickstart.md steps 1–6 and `scripts/agent-gate.sh --all`; tick the checkboxes here in the same PR as the work
+- [ ] T023 [test] Run quickstart.md steps 1–6 and `scripts/agent-gate.sh --all`; tick the checkboxes here in the same PR as the work
 
 ---
 
