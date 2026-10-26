@@ -48,6 +48,14 @@ for (const s of registry) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s.since)) failures.push(`surfaces.md: "${s.name}" has no Since date`);
 }
 
+// 3. Every tag in the registry is a Surface option and a surface:* label the
+//    board helper creates; otherwise a task tagged with it has no column on the
+//    board and board-sync.sh has nothing to set.
+const board = readFileSync(join(repo, 'scripts/setup-board.sh'), 'utf8').match(/^surfaces="([^"]+)"/m)?.[1].split(',') ?? [];
+for (const tag of new Set(registry.map((s) => s.tag))) {
+  if (!board.includes(tag)) failures.push(`surfaces.md: tag "${tag}" is not in scripts/setup-board.sh's surfaces list — add the option to the board and the label`);
+}
+
 const specsDir = join(repo, 'specs');
 let plans = 0;
 for (const dir of existsSync(specsDir) ? readdirSync(specsDir) : []) {
