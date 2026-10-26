@@ -60,7 +60,7 @@ The benchmarks come first: the driver bump (US1) must be measured before and aft
 
 - [x] T010 [P] [US2] [perf] New `scripts/bench-compare.sh`: run `benchstat` (`go run golang.org/x/perf/cmd/benchstat@v0.0.0-20261009192801-be2c69fb417e`) on two result files. Write the table to `$GITHUB_STEP_SUMMARY`. Emit a `::warning::` for a significant (p < 0.05) `p95-ns` change above +15%. Exit non-zero above +50% (research P4)
 - [x] T011 [US2] [perf] `bench` job in `.github/workflows/ci.yml`, on pull requests whose paths include `server/**`: check out the base and the head, run `-bench Storage -count=6` on each, then call T010. It is not a required check: shared runners are noisy (research P4) (depends on T010)
-- [ ] T012 [US2] [perf] After the first green `bench` run on `main`: replace each provisional budget in research P3 with the measured p95 × 1.5, rounded up, and commit the baseline table (SC-002, quickstart step 5)
+- [x] T012 [US2] [perf] After the first green `bench` run on `main`: replace each provisional budget in research P3 with the measured p95 × 1.5, rounded up, and commit the baseline table (SC-002, quickstart step 5)
 
 **Checkpoint**: regressions are visible on every server PR; the budgets are measured, not guessed.
 

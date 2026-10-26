@@ -23,6 +23,9 @@ import (
 // a person waiting on a board notices, and one slow query in twenty is what a
 // single SQLite connection turns into a queue.
 //
+// The budgets themselves live only in research P3, measured on the CI runner;
+// a number repeated here would drift from the one the job is judged by.
+//
 // Every operation runs as a plain member, not the owner, so the private-row
 // rule and canRead are part of the cost, as they are for real users.
 
@@ -89,7 +92,7 @@ func sizeName(n int) string {
 }
 
 // Opening a page: GET /api/pages/{id}, the request behind every click in the
-// sidebar. Budget: 20 ms p95 at 20k pages.
+// sidebar.
 func BenchmarkStorageOpenPage(b *testing.B) {
 	for _, n := range []int{1000, 20000} {
 		b.Run("pages="+sizeName(n), func(b *testing.B) {
@@ -107,7 +110,7 @@ func BenchmarkStorageOpenPage(b *testing.B) {
 }
 
 // query_rows and the board: a filter and a sort, one page of 50, with the
-// rollup column computed. Budgets: 50 ms p95 at 10k, 300 ms at 100k.
+// rollup column computed.
 func BenchmarkStorageQueryRows(b *testing.B) {
 	for _, n := range rowSizes() {
 		b.Run("rows="+sizeName(n), func(b *testing.B) {
@@ -128,8 +131,7 @@ func BenchmarkStorageQueryRows(b *testing.B) {
 }
 
 // A rollup over a relation, on its own: computeDerived for one page of 100
-// rows, each summing the budget of its related project. Budget: 100 ms p95
-// at 10k.
+// rows, each summing the budget of its related project.
 func BenchmarkStorageRollup(b *testing.B) {
 	w := sharedBenchWorld(b, 0, 10000)
 	var schemaJSON string
@@ -151,7 +153,7 @@ func BenchmarkStorageRollup(b *testing.B) {
 
 // Full-text search: GET /api/search for "vertrag", which the generated text
 // holds both as is and as its German plural with an umlaut, so the folding is part of
-// the cost; common enough to fill a result page. Budget: 50 ms p95 at 20k pages.
+// the cost; common enough to fill a result page.
 func BenchmarkStorageSearch(b *testing.B) {
 	for _, n := range []int{1000, 20000} {
 		b.Run("pages="+sizeName(n), func(b *testing.B) {
@@ -168,7 +170,7 @@ func BenchmarkStorageSearch(b *testing.B) {
 
 // Five agents writing properties at once: each PATCHes propsPatch on rows it
 // may edit. Every write waits for the one connection, so the p95 is the cost
-// of the queue as much as of the write. Budget: 20 ms per write at 10k.
+// of the queue as much as of the write.
 func BenchmarkStoragePropertyWriteBurst(b *testing.B) {
 	w := sharedBenchWorld(b, 0, 10000)
 	var writable []string
