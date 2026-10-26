@@ -303,8 +303,9 @@ func (s *Server) relatedRows(ctx context.Context, u *user, relationProp string, 
 			idSet[id] = true
 		}
 	}
-	// Fetch target props for referenced ids.
-	targetVal := map[string]map[string]any{}
+	// Which targets may be read. The checks run per id; the props are then
+	// fetched in batches below.
+	allowed := make([]any, 0, len(idSet))
 	for id := range idSet {
 		if ctx.Err() != nil {
 			break
@@ -324,12 +325,31 @@ func (s *Server) relatedRows(ctx context.Context, u *user, relationProp string, 
 		if !s.credentialMayEnter(u, s.pageWorkspace(id)) {
 			continue
 		}
-		var p string
-		if s.rdb.QueryRowContext(ctx, `SELECT props FROM pages WHERE id = ? AND trashed_at IS NULL`, id).Scan(&p) == nil {
-			var m map[string]any
-			json.Unmarshal([]byte(p), &m)
-			targetVal[id] = m
+		allowed = append(allowed, id)
+	}
+	// The props in batches, not one query per target. A page of 50 rows with a
+	// rollup made ~50 statements, each under the read deadline; on the CI
+	// runner that cost a fixed ~4 ms per page (query_rows at 1k rows, +24% p95
+	// in #83), which one statement per batch does not.
+	targetVal := map[string]map[string]any{}
+	const batch = 500 // well under SQLite's limit on bound parameters
+	for start := 0; start < len(allowed) && ctx.Err() == nil; start += batch {
+		ids := allowed[start:min(start+batch, len(allowed))]
+		q := `SELECT id, props FROM pages WHERE trashed_at IS NULL AND id IN (` +
+			strings.TrimSuffix(strings.Repeat("?,", len(ids)), ",") + `)`
+		rs, err := s.rdb.QueryContext(ctx, q, ids...)
+		if err != nil {
+			break
 		}
+		for rs.Next() {
+			var id, p string
+			if rs.Scan(&id, &p) == nil {
+				var m map[string]any
+				json.Unmarshal([]byte(p), &m)
+				targetVal[id] = m
+			}
+		}
+		rs.Close()
 	}
 	out := make([][]map[string]any, len(rows))
 	for i, row := range rows {
