@@ -129,6 +129,13 @@ added on the REST side and missing on the MCP side, found later one by one.
 
 ## Commits
 
+Commits are authored by the repository owner, not the agent: before the first
+commit in a session, `git config user.name neatlittlemacapps` and
+`git config user.email 60575307+neatlittlemacapps@users.noreply.github.com`.
+The agent goes in a `Co-Authored-By:` trailer. Upstream's CLA bot matches the
+commit author to a signature, and an agent's address belongs to no GitHub
+account, so its commits can never be signed for.
+
 The subject line is a sentence that says what changed, readable without the
 diff ("A board refuses a grouping it cannot make columns from"). The body says
 why it was wrong before. Pull requests to upstream (`saltmd/salt.md`) need a
