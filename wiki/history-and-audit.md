@@ -52,8 +52,9 @@ hands you back:
 
 - A save **from the browser or over the API** records the state as saved. The
   newest entry is what the page says now.
-- A **replace** or a **prepend** over MCP records the state as it was just
-  *before* the agent wrote. So after an agent replaces a page, the newest entry
+- A **replace**, a **prepend** or an **edit** (find-and-replace) over MCP
+  records the state as it was just *before* the agent wrote. An edit does so
+  every time, even within the two-minute window below. So after an agent replaces a page, the newest entry
   in the list is the text it replaced, not the text it wrote.
 - An **append** over MCP records the state with the appended blocks already in.
 

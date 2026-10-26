@@ -376,5 +376,9 @@ func (s *Server) appendMarkdownToPage(pageID, md string) error {
 	// last debounce window before the append — documented as an append-vs-live
 	// edit conflict.
 	s.resetYjsDoc(pageID)
+	// Subscribers hear about an append like any other change to the body. It
+	// used to fire nothing, so a hook watching a page missed every line an
+	// agent added to it (#47).
+	s.fireWebhook("page.updated", pageID)
 	return nil
 }

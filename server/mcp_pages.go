@@ -160,6 +160,7 @@ func (s *Server) mcpPrependMarkdown(u *user, pageID, md string) (string, error) 
 	s.resetYjsDoc(pageID)
 	s.reindexPage(pageID)
 	s.pagesChanged()
+	s.fireWebhook("page.updated", pageID) // as replace does; it was missing here (#47)
 	return fmt.Sprintf("Prepended %d block(s) to page %s", len(blocks), pageID), nil
 }
 
