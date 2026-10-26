@@ -42,11 +42,11 @@ The benchmarks come first: the driver bump (US1) must be measured before and aft
 
 **Independent Test**: the five cross-builds succeed, `go test ./...` passes, and a backup restores as one consistent file.
 
-- [ ] T005 [US1] [perf] On `main`, run `go test ./server -run '^$' -bench Storage -count=6` and keep the output as `old.txt` in a scratch directory, not in the repository (depends on T003)
-- [ ] T006 [US1] [backend] `go get modernc.org/sqlite@v1.60.1 && go mod tidy`. `go.mod` and `go.sum` change through the Go tool only: `go.sum` is protected from hand edits. Not v1.61.0: released 2026-10-21, too new to pin (research P1)
-- [ ] T007 [P] [US1] [test] Backup test in new `server/backup_test.go`: write pages while `Backup` runs, then open the snapshot from the archive and check it holds every committed page, passes `PRAGMA integrity_check`, and has no `-wal` sidecar (acceptance scenario 2; no test covers `Backup` today)
-- [ ] T008 [US1] [test] Run the five cross-builds from `.github/workflows/release.yml` (`linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`, `windows/amd64`) with `CGO_ENABLED=0`, then `go test ./...`, including the search folding and stemming tests (spec edge case: FTS5 must not regress)
-- [ ] T009 [US1] [perf] Run T005 again on the branch → `new.txt`; `benchstat old.txt new.txt`; no `p95-ns` regression above +15%. Put the benchstat table in the PR body (SC-003)
+- [x] T005 [US1] [perf] On `main`, run `go test ./server -run '^$' -bench Storage -count=6` and keep the output as `old.txt` in a scratch directory, not in the repository (depends on T003)
+- [x] T006 [US1] [backend] `go get modernc.org/sqlite@v1.60.1 && go mod tidy`. `go.mod` and `go.sum` change through the Go tool only: `go.sum` is protected from hand edits. Not v1.61.0: released 2026-10-21, too new to pin (research P1)
+- [x] T007 [P] [US1] [test] Backup test in new `server/backup_test.go`: write pages while `Backup` runs, then open the snapshot from the archive and check it holds every committed page, passes `PRAGMA integrity_check`, and has no `-wal` sidecar (acceptance scenario 2; no test covers `Backup` today)
+- [x] T008 [US1] [test] Run the five cross-builds from `.github/workflows/release.yml` (`linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`, `windows/amd64`) with `CGO_ENABLED=0`, then `go test ./...`, including the search folding and stemming tests (spec edge case: FTS5 must not regress)
+- [x] T009 [US1] [perf] Run T005 again on the branch → `new.txt`; `benchstat old.txt new.txt`; no `p95-ns` regression above +15%. Put the benchstat table in the PR body (SC-003)
 
 **Checkpoint**: driver PR ready: `go list -m modernc.org/sqlite` prints v1.60.1 (quickstart step 1).
 
