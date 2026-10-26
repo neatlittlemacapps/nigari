@@ -122,6 +122,21 @@ descriptions, database templates) were merged into `parity-manifest`.
 **Why**: agent teams are experimental. Parallel agents would collide in the hotspot
 files (`server/server.go`, `web/src/styles.css`) until those are split.
 
+## 2026-10-26 — Test branches in GitHub Codespaces
+
+**Decision**: a dev container (`.devcontainer/`) builds the branch a codespace
+is opened on and runs it on port 8420 with the wiki's invented content. The
+owner tests from a phone browser, including pull requests before they merge.
+
+**Why**: the owner works mostly from a phone and asked for a remote way to try
+what has been built. A codespace needs nothing installed, keeps its address
+private to the owner's GitHub account, and costs nothing within the monthly
+allowance.
+
+**Rejected**: a permanent hosted demo (a server to pay for and keep safe, and
+a public address for an unreleased build). An `:edge` image to run locally:
+useful, but not remote; it can follow later.
+
 ## 2026-10-26 — The board derives its columns; nobody moves cards
 
 **Decision**: `board-sync.yml` sets every issue's Status from GitHub's own state: closed,
