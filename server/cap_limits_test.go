@@ -81,8 +81,9 @@ func TestQueryTimeoutStopsTheReadAndReturnsNothingPartial(t *testing.T) {
 	}
 }
 
-// The point of the limit: the one connection comes back. A write issued while
-// the read runs must complete, and soon after the limit, not after the read.
+// A write issued while a read runs into its limit completes, and the read
+// still stops. (Since #82 the read runs on the read pool, so the write does not
+// wait for it at all; TestAWriteDoesNotWaitForALongRead checks that.)
 func TestQueryTimeoutLetsAConcurrentWriteThrough(t *testing.T) {
 	s, u, _, col, firstRow := slowReadFixture(t)
 	shortReadLimit(t, 10*time.Millisecond)
@@ -159,5 +160,49 @@ func TestReadLimitLeavesAnOrdinaryReadAlone(t *testing.T) {
 	}
 	if total != 20000 || len(list) != 50 {
 		t.Fatalf("got %d rows of %d, want 50 of 20000", len(list), total)
+	}
+}
+
+// The reason for the read pool (#82): an analytical read no longer needs the
+// writer's connection. The writer is held inside an open transaction, as a
+// long import or a burst of writes would hold it, and a database's rows must
+// still come back. With one shared connection this read waited for the
+// transaction and ran into its limit.
+//
+// The caller has no account (u.ID ""), so no permission lookup touches the
+// writer either: what is left is exactly the long part of the read.
+func TestARowsReadDoesNotNeedTheWriter(t *testing.T) {
+	s, _, _, col, firstRow := slowReadFixture(t)
+	shortReadLimit(t, 2*time.Second)
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`UPDATE pages SET title = 'Uncommitted' WHERE id = ?`, firstRow); err != nil {
+		t.Fatal(err)
+	}
+
+	list, total, err := s.collectionRowsQuery(context.Background(), &user{}, col, nil, nil, "n:desc", 500, 0, time.Time{})
+	if err != nil {
+		t.Fatalf("rows read while the writer is busy: %v", err)
+	}
+	if total != 20000 || len(list) != 500 {
+		t.Fatalf("got %d rows of %d, want 500 of 20000", len(list), total)
+	}
+	for _, r := range list {
+		if r["title"] == "Uncommitted" {
+			t.Fatal("the read saw a write that was never committed")
+		}
+	}
+}
+
+// The read pool is opened read-only, so a write that strays onto it fails
+// loudly instead of becoming a second writer.
+func TestTheReadPoolRefusesWrites(t *testing.T) {
+	s := testServer(t)
+	if _, err := s.rdb.Exec(`CREATE TABLE stray (x)`); err == nil {
+		t.Fatal("the read pool accepted a write")
 	}
 }

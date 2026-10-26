@@ -20,6 +20,9 @@ import (
 type Server struct {
 	publicCSS string
 	db        *sql.DB
+	// rdb is a read-only pool beside db, for long analytical reads (see
+	// openReadDB in db.go). Everything else, and every write, uses db.
+	rdb *sql.DB
 	mux       *http.ServeMux
 	dataDir   string
 	// name → the markup INSIDE a Lucide <svg>, for the print view.
@@ -65,6 +68,7 @@ func (s *Server) Close() error {
 	default:
 		close(s.stopCleanup)
 	}
+	s.rdb.Close()
 	return s.db.Close()
 }
 
@@ -77,6 +81,13 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	}
 	db, err := openDB(filepath.Join(dataDir, DBFile))
 	if err != nil {
+		return nil, err
+	}
+	// After openDB: the schema and WAL mode must exist before a read-only
+	// connection can open the file.
+	rdb, err := openReadDB(filepath.Join(dataDir, DBFile))
+	if err != nil {
+		db.Close()
 		return nil, err
 	}
 
@@ -110,6 +121,7 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 		lucide:    lucideSet,
 		ingest:    newIngestRegistry(),
 		db:        db,
+		rdb:       rdb,
 		mux:       http.NewServeMux(),
 		dataDir:   dataDir,
 		loginSem:  make(chan struct{}, 4),

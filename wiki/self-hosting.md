@@ -297,10 +297,11 @@ Uploads are **not** deduplicated: each upload gets a fresh random name, so the
 same bytes uploaded twice are two files on disk. The name a person gave the file
 lives in the database, not on disk. See [Files](files.md).
 
-The database runs in WAL mode on a **single connection**. That is why
-`fix-notion-rows` and `restore` want the server stopped while `backup` can run
-beside it, and why a recent change may be sitting in `salt.db-wal` rather than
-in `salt.db`. See [Backing up](#backing-up).
+The database runs in WAL mode with a **single writer connection**, plus a few
+read-only connections for long reads (a large database's rows, rollups), so
+that a long read does not make every save wait. That is why `fix-notion-rows`
+and `restore` want the server stopped while `backup` can run beside it, and why
+a recent change may be sitting in `salt.db-wal` rather than in `salt.db`. See [Backing up](#backing-up).
 
 ## Memory, and what it changes
 
@@ -678,9 +679,10 @@ served directly by salt.md, no proxy and no Let's Encrypt.
 [Troubleshooting](troubleshooting.md) collects symptoms. The three that belong
 to the server rather than to the product:
 
-- **Port open, requests hanging.** The database runs on one connection; one
-  request that cannot finish blocks the rest. Check the log for an extraction or
-  an import.
+- **Port open, requests hanging.** Every write goes through one connection;
+  one request that cannot finish blocks the rest. Check the log for an
+  extraction or an import. (Long reads of a database's rows run on their own
+  read-only connections and stop after 5 seconds, so they are not the cause.)
 - **A PDF is not searchable.** Read the `memory:` line at startup and the
   `pdf extract … skipped for indexing` line. If the PDF is long rather than
   large, remember the 500 KB text cap. The file itself is fine either way.

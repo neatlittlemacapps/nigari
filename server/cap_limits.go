@@ -10,10 +10,12 @@ import (
 // query_rows) and the rollups and backrelations computed for them. A var, not
 // a const, only so a test can shorten it.
 //
-// Why a limit at all: the pool holds ONE connection (SetMaxOpenConns(1) in
-// db.go). A read that runs for a minute does not slow one request down, it
-// stops every request behind it — the editor's saves, the sidebar, every agent.
-// Five seconds is far above anything the storage budgets allow (spec 002,
+// Why a limit at all: these reads used to share the writer's one connection,
+// so a read that ran for a minute stopped every request behind it — the
+// editor's saves, the sidebar, every agent. They now run on the read pool
+// (openReadDB, #82), so writes no longer wait for them, but the pool is small:
+// a few runaway reads would still block every other chart and table. Five
+// seconds is far above anything the storage budgets allow (spec 002,
 // research P3), so a read that hits it is broken or far too broad, and the
 // caller is better served by "narrow it" than by a spinner.
 //

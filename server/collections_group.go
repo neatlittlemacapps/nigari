@@ -14,7 +14,7 @@ import (
 //
 // It is one GROUP BY in SQL over rowScope, the same row set query_rows uses,
 // and not the rows fetched and counted in Go: at 100k rows that would move
-// every row's props across the one connection to throw them away (spec 002,
+// every row's props out of SQLite only to throw them away (spec 002,
 // FR-005, budget in research P3). It runs under readLimit like every
 // analytical read.
 //
@@ -39,7 +39,7 @@ func (s *Server) groupCounts(ctx context.Context, u *user, colID, propID string)
 		GROUP BY 1`
 	ctx, cancel := withReadLimit(ctx)
 	defer cancel()
-	rows, err := s.db.QueryContext(ctx, q, args...)
+	rows, err := s.rdb.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, readErr(ctx, err)
 	}
