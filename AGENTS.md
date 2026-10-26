@@ -6,6 +6,11 @@ These instructions are for every coding agent that opens this repository.
 
 ## This project is documented in salt.md — use it at every step
 
+When the instance below is reachable (a local session), use it as described.
+A cloud session cannot reach `localhost:8420`: skip the `working_on`/`note`
+calls and put what they would have carried in the commit body or the pull
+request instead.
+
 Decisions and documentation live at http://localhost:8420, workspace
 **Workspace** (`f6526406952b1c9b154760df965df59a`), reachable over MCP. Work
 status lives on the GitHub Projects board (see "How work flows").
@@ -16,8 +21,10 @@ status lives on the GitHub Projects board (see "How work flows").
 - **While working:** `note(page_id, text)` for what a write-up loses — the
   approach you dropped, the surprise, why not the obvious road. One line,
   written as it happens.
-- **Decisions go on a page, with the reasoning, including the options
-  rejected.** A decision explained only in chat is lost when the chat is.
+- **Decisions go in `docs/decisions.md`, with the reasoning, including the
+  options rejected** (newest first). A decision explained only in chat is lost
+  when the chat is. The repository, not the workspace, because cloud agent
+  sessions cannot reach a local instance, and every agent can reach the repo.
 - **Read first.** `search` and `get_page` are cheap; a second page about
   something that already has one is worse than none.
 - **The workspace has its own rules** — `get_workspace()` returns them and they
