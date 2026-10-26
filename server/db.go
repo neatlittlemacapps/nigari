@@ -396,6 +396,12 @@ func openDB(path string) (*sql.DB, error) {
 	if err := ensureColumn(db, "pages", "is_template", `is_template INTEGER NOT NULL DEFAULT 0`); err != nil {
 		return nil, fmt.Errorf("migrate pages.is_template: %w", err)
 	}
+	// The database a template belongs to; empty for an ordinary page or a
+	// workspace-wide template. Such a template is never a row of its database
+	// (it has no parent), so nothing that lists rows can show it by accident.
+	if err := ensureColumn(db, "pages", "template_of", `template_of TEXT NOT NULL DEFAULT ''`); err != nil {
+		return nil, fmt.Errorf("migrate pages.template_of: %w", err)
+	}
 	// Page tags: a JSON array of short labels (Obsidian-style, workspace-scoped).
 	if err := ensureColumn(db, "pages", "tags", `tags TEXT NOT NULL DEFAULT '[]'`); err != nil {
 		return nil, fmt.Errorf("migrate pages.tags: %w", err)

@@ -101,6 +101,7 @@ var mcpTools = []map[string]any{
 				"kind":         map[string]any{"type": "string", "description": "pages | templates | tags | workspaces | files | users | cover_presets"},
 				"workspace_id": map[string]any{"type": "string", "description": "Limit to one workspace. Omit for all you can reach."},
 				"under":        map[string]any{"type": "string", "description": "files only — a page id: just the files on this page and its sub-pages."},
+				"database_id":  map[string]any{"type": "string", "description": "templates only — a database id: that database's own templates instead of the workspace ones. Workspace templates do not include them."},
 			},
 			"required": []string{"kind"}},
 	},
@@ -129,7 +130,7 @@ var mcpTools = []map[string]any{
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{
 				"title":        map[string]any{"type": "string"},
-				"template_id":  map[string]any{"type": "string", "description": "Build the page from a template instead of from scratch — call list with kind=\"templates\" for the ids. Only title applies alongside it."},
+				"template_id":  map[string]any{"type": "string", "description": "Build the page from a template instead of from scratch — call list with kind=\"templates\" for the ids. Only title applies alongside it. A template of a database (list with kind=\"templates\" and database_id) makes a ROW in that database, and then properties apply on top as well; parent_id may be left out."},
 				"parent_id":    map[string]any{"type": "string", "description": "Optional parent page id. Pass a database id to create a ROW in that database."},
 				"workspace_id": map[string]any{"type": "string", "description": "Which workspace to create in when there is no parent_id. Call list with kind=\"workspaces\" first — without this the page lands in your first workspace, which may not be the one you mean."},
 				"markdown":     map[string]any{"type": "string", "description": "Optional initial content as Markdown. " + pageLinkHint + " " + diagramHint},
@@ -145,7 +146,8 @@ var mcpTools = []map[string]any{
 		"name": "update_page",
 		"description": "Update a page's metadata: title, icon, cover, description, tags, visibility — and where it sits. " +
 			"parent_id moves it under another page (empty string moves it to the top level), workspace_id moves it and its whole sub-tree into another workspace, " +
-			"and favorite pins it in the sidebar. Only the fields you pass are changed. Tags replace the whole list — call list with kind=\"tags\" first and " +
+			"and favorite pins it in the sidebar. full_width makes a document use the whole window width instead of the normal column, " +
+			"for everyone who opens it and on its public link (false puts it back; documents only). Only the fields you pass are changed. Tags replace the whole list — call list with kind=\"tags\" first and " +
 			"reuse existing tags instead of inventing near-duplicates. Cover: " + coverHint,
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{
@@ -159,6 +161,7 @@ var mcpTools = []map[string]any{
 				"parent_id":    map[string]any{"type": "string", "description": "Move under this page. Pass \"\" to move it to the top level."},
 				"workspace_id": map[string]any{"type": "string", "description": "Move the page and its whole sub-tree into this workspace. Takes precedence over parent_id."},
 				"favorite":     map[string]any{"type": "boolean", "description": "Pin the page in the sidebar, or unpin it."},
+				"full_width":   map[string]any{"type": "boolean", "description": "Make the document full width (true) or back to the normal column (false). get_page shows it as \"Page settings: full_width=true\" when on; missing means off."},
 			},
 			"required": []string{"page_id"}},
 	},
@@ -170,6 +173,22 @@ var mcpTools = []map[string]any{
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{"page_id": map[string]any{"type": "string"}},
 			"required":   []string{"page_id"}},
+	},
+	{
+		"name": "database_templates",
+		"description": "A database's OWN templates: the starting points its New button offers. They are not rows and not in the workspace template list. " +
+			"action: list | add (empty, or from_page_id: a snapshot of that page, usually one of the database's rows) | rename (title) | remove (to the trash, restorable). " +
+			"To make a row from one, call create_page with template_id (and properties to fill or overwrite values). A template is a SNAPSHOT: using it copies it and the two never affect each other again, " +
+			"so edit the template itself (write_content, set_properties on its id) to change what later rows start from.",
+		"inputSchema": map[string]any{"type": "object",
+			"properties": map[string]any{
+				"action":       map[string]any{"type": "string", "description": "list | add | rename | remove (default list)"},
+				"database_id":  map[string]any{"type": "string"},
+				"template_id":  map[string]any{"type": "string", "description": "rename and remove: which template"},
+				"title":        map[string]any{"type": "string", "description": "add: the template's title; rename: its new title"},
+				"from_page_id": map[string]any{"type": "string", "description": "add: snapshot this page (same workspace) instead of making an empty template"},
+			},
+			"required": []string{"database_id"}},
 	},
 	{
 		"name":        "upload_file",
@@ -280,15 +299,27 @@ var mcpTools = []map[string]any{
 			"required":   []string{"comment_id"}},
 	},
 	{
-		"name":        "write_content",
-		"description": "Write Markdown into a page. mode: append (the default — adds at the end) | prepend (adds at the top) | replace (replaces the whole body). " + pageLinkHint + " " + diagramHint,
+		"name": "write_content",
+		"description": "Write Markdown into a page. mode: append (the default — adds at the end) | prepend (adds at the top) | replace (replaces the whole body) | edit (find-and-replace: changes only the passages you quote). " +
+			"To change part of a page, use edit, not replace: quote each passage exactly as get_page shows it (Markdown included) in edits[].old, give edits[].new, and the rest of the page stays untouched. " +
+			"An edit is refused, with nothing changed, when its quote matches 0 times or more than once (unless all is true), when it touches a block Markdown cannot carry (columns, colours, a table of contents), or when it would remove a link to a page or a database (unless allow_removals is true). Several edits apply in order, all or none. " +
+			pageLinkHint + " " + diagramHint,
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{
 				"page_id":  map[string]any{"type": "string"},
-				"markdown": map[string]any{"type": "string"},
-				"mode":     map[string]any{"type": "string", "description": "append (default) | prepend | replace. replace overwrites the body and bypasses the realtime editor, so anyone with the page open loses unsaved edits — prefer append."},
+				"markdown": map[string]any{"type": "string", "description": "The Markdown to write, for append, prepend and replace. Not used by edit."},
+				"mode":     map[string]any{"type": "string", "description": "append (default) | prepend | replace | edit. replace overwrites the body and bypasses the realtime editor, so anyone with the page open loses unsaved edits — prefer edit for a change, append for an addition."},
+				"edits": map[string]any{"type": "array", "description": "mode edit only: up to 100 edits, applied in order.",
+					"items": map[string]any{"type": "object",
+						"properties": map[string]any{
+							"old": map[string]any{"type": "string", "description": "The passage as get_page shows it. Exact and case-sensitive."},
+							"new": map[string]any{"type": "string", "description": "What it becomes. Empty deletes it."},
+							"all": map[string]any{"type": "boolean", "description": "Replace every occurrence (default false: the quote must match once)."},
+						},
+						"required": []string{"old", "new"}}},
+				"allow_removals": map[string]any{"type": "boolean", "description": "mode edit only: allow an edit to remove links to pages or embedded databases (default false)."},
 			},
-			"required": []string{"page_id", "markdown"}},
+			"required": []string{"page_id"}},
 	},
 	{
 		"name":        "revisions",
@@ -686,6 +717,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		// get_page absorbed export_markdown; its flag reads better as this.
 		IncludeChildren bool  `json:"include_children"`
 		Favorite        *bool `json:"favorite"`
+		FullWidth       *bool `json:"full_width"`
 		// Agent parity A2.
 		RemoveProperties []string `json:"remove_properties"`
 		PropertyID       string   `json:"property_id"`
@@ -716,6 +748,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		Password      string `json:"password"`
 		// Templates (W115).
 		TemplateID string `json:"template_id"`
+		FromPageID string `json:"from_page_id"`
 		// Workspace rules (W123).
 		Rules string `json:"rules"`
 		// File index (W125).
@@ -731,10 +764,13 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		ExpectedMinutes int  `json:"expected_minutes"`
 		Done            bool `json:"done"`
 		// The merged tools: one action/mode word instead of a separate entry.
-		Mode    string `json:"mode"`
-		Action  string `json:"action"`
-		Public  *bool  `json:"public"`
-		Trashed *bool  `json:"trashed"`
+		Mode string `json:"mode"`
+		// write_content mode edit.
+		Edits         []pageEdit `json:"edits"`
+		AllowRemovals bool       `json:"allow_removals"`
+		Action        string     `json:"action"`
+		Public        *bool      `json:"public"`
+		Trashed       *bool      `json:"trashed"`
 		// list(kind:) — one tool for the seven former list_* tools.
 		Kind string `json:"kind"`
 		// Graph.
@@ -768,6 +804,8 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 	case "revisions":
 		// Reading the history is a read; putting a page back is not.
 		mutating = args.Action == "restore"
+	case "database_templates":
+		mutating = args.Action != "" && args.Action != "list"
 	case "comments":
 		mutating = args.Action == "add" || args.Action == "resolve" || args.Action == "reopen"
 	}
@@ -861,7 +899,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 	run := func() (string, error) {
 		switch name {
 		case "list":
-			out, err := s.mcpList(u, args.Kind, args.WorkspaceID, args.Under)
+			out, err := s.mcpList(u, args.Kind, args.WorkspaceID, args.Under, args.DatabaseID)
 			if err != nil {
 				return "", err
 			}
@@ -899,11 +937,11 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 				}
 				return wrapUntrusted(md), nil
 			}
-			return wrapUntrusted(pageMarkdown(p)), nil
+			return wrapUntrusted(pageMarkdown(p)) + appearanceNote(p.Props), nil
 		case "create_page":
 			// template_id replaces create_from_template: same act, one entry point.
 			if args.TemplateID != "" {
-				return s.mcpCreateFromTemplate(u, args.TemplateID, args.Title)
+				return s.mcpCreateFromTemplate(u, args.TemplateID, args.Title, parentID, args.Properties)
 			}
 			if strings.TrimSpace(args.Title) == "" {
 				return "", fmt.Errorf("title is required")
@@ -990,6 +1028,17 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 				}
 				done = append(done, msg)
 			}
+			appearance := map[string]bool{}
+			if args.FullWidth != nil {
+				appearance["full_width"] = *args.FullWidth
+			}
+			if len(appearance) > 0 {
+				msg, err := s.mcpSetAppearance(u, args.PageID, appearance)
+				if err != nil {
+					return "", err
+				}
+				done = append(done, msg)
+			}
 			hasMeta := args.Title != "" || args.Icon != "" || args.Cover != "" ||
 				args.Description != "" || args.Visibility != "" || args.Tags != nil
 			if hasMeta {
@@ -1001,7 +1050,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 				done = append(done, msg)
 			}
 			if len(done) == 0 {
-				return "", fmt.Errorf("nothing to update: pass at least one of title, icon, cover, description, visibility, tags, parent_id, workspace_id or favorite")
+				return "", fmt.Errorf("nothing to update: pass at least one of title, icon, cover, description, visibility, tags, parent_id, workspace_id, favorite or full_width")
 			}
 			return strings.Join(done, " "), nil
 		case "delete_comment":
@@ -1192,7 +1241,12 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 			return "Duplicated page → new id " + nid, nil
 		case "save_as_template":
 			return s.mcpSaveAsTemplate(u, args.PageID)
+		case "database_templates":
+			return s.mcpDatabaseTemplates(u, args.Action, args.DatabaseID, args.TemplateID, args.Title, args.FromPageID)
 		case "write_content":
+			if args.Mode == "edit" {
+				return s.mcpEditContent(u, args.PageID, args.Markdown, args.Edits, args.AllowRemovals)
+			}
 			return s.mcpWriteContent(u, args.PageID, args.Markdown, args.Mode)
 		case "revisions":
 			return s.mcpRevisions(u, args.PageID, args.Action, args.RevisionID, args.Limit)

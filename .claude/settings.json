@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(go test *)",
+      "Bash(go vet *)",
+      "Bash(go build *)",
+      "Bash(gofmt *)",
+      "Bash(make build)",
+      "Bash(make frontend)",
+      "Bash(make backend)",
+      "Bash(npm run check *)",
+      "Bash(npm run build *)",
+      "Bash(npm ci *)",
+      "Bash(npm test *)",
+      "Bash(scripts/agent-gate.sh *)",
+      "Bash(node web/scripts/check-*)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)"
+    ],
+    "deny": [
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Read(./data/**)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.p12)",
+      "Read(./**/*.p8)",
+      "Edit(/LICENSE)",
+      "Edit(/CLA.md)",
+      "Edit(/THIRD-PARTY-NOTICES.md)",
+      "Edit(/.gitignore)",
+      "Edit(/.github/cla-signatures.json)",
+      "Edit(/wiki/img/**)",
+      "Edit(/**/package-lock.json)",
+      "Edit(/go.sum)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PROJECT_DIR}\"/.claude/hooks/gofmt.sh", "timeout": 30 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PROJECT_DIR}\"/.claude/hooks/stop-gate.sh", "timeout": 600 }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PROJECT_DIR}\"/.claude/hooks/stop-gate.sh", "timeout": 600 }
+        ]
+      }
+    ]
+  }
+}

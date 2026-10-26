@@ -8,7 +8,7 @@ authenticate, what an answer and an error look like, the limits you will hit,
 and a grouped list of the endpoints worth calling.
 
 **If you are connecting an AI agent, use the MCP endpoint instead.** It speaks
-the same data through 33 purpose-built tools, with descriptions the agent reads
+the same data through 34 purpose-built tools, with descriptions the agent reads
 before it acts, and it needs no glue code at all. See
 [Agents](agents.md) and the [tool reference](mcp-tools.md). The REST API is for
 code you write; MCP is for models. Both accept the same credentials.
@@ -274,6 +274,7 @@ second later.
 | `PATCH /api/pages/{id}` | change anything about it |
 | `DELETE /api/pages/{id}` | move to the trash; `?permanent=1` deletes for good |
 | `POST /api/pages/{id}/restore` | bring it back out of the trash |
+| `POST /api/pages/{id}/edits` | change passages of the body by find-and-replace |
 | `POST /api/pages/{id}/duplicate` | deep-copy the page and everything under it |
 | `GET /api/pages/{id}/backlinks` | the pages that mention this one |
 | `GET /api/pages/{id}/preview` | the page as a plain, script-free HTML document (what the trash's preview shows) |
@@ -321,6 +322,42 @@ worth knowing before you write a script:
 - **`parentId` moves within one workspace only.** Moving between workspaces is
   the separate `workspaceId` field, which takes the whole subtree along and
   answers `{"ok":true,"moved":n,"workspaceId":"…"}`.
+
+### Find-and-replace edits
+
+`POST /api/pages/{id}/edits` changes passages of a page without rewriting the
+rest. You quote each passage as the page's Markdown shows it (the text the
+`get_page` tool and the Markdown export give you, formatting such as `**bold**`
+included), and say what it becomes:
+
+```json
+{ "edits": [ { "old": "Launch is on 3 March", "new": "Launch is on 10 March" } ],
+  "allowRemovals": false }
+```
+
+The answer is `{"ok":true,"applied":[1]}`: how many places each edit changed. It
+never sends the page back. The edits are applied in order, each to the result of
+the one before, and either all of them are written or none. The state before is
+saved in the [version history](history-and-audit.md) every time, even if the last
+revision is only seconds old.
+
+Only the blocks a quote touches are rebuilt from Markdown; every other block is
+kept exactly as it was stored. Nothing is written, and the answer says why, when:
+
+| Status | `code` | What happened |
+| --- | --- | --- |
+| `422` | `edit_no_match` | the quote is not on the page (`matches: 0`): read the page again |
+| `422` | `edit_ambiguous` | it appears more than once (`matches`): quote more text, or set `"all": true` on the edit |
+| `422` | `edit_removes_link` | it would remove a link to a page (`removed`): set `allowRemovals` if you mean it |
+| `422` | `edit_unsupported_block` | it touches a block Markdown cannot carry, such as columns, a coloured block or a table of contents (`blockType`) |
+| `409` | `edit_stale` | the page changed while the edit was being applied: read it again |
+| `400` | `edit_empty`, `edit_empty_quote`, `edit_too_many` | no edits, an empty quote, or more than 100 edits |
+
+`edit` in the answer is the position of the failing edit, counting from 0.
+Matching is exact and case-sensitive; there are no wildcards. Like every write
+from outside the editor, an edit moves anyone with the page open onto the new
+text, with their unsaved typing kept in the history. Not built yet: delivering the
+edit into their open editor without that interruption.
 
 `POST /api/pages/{id}/duplicate` takes two query flags: `?fromTemplate=1` makes
 an ordinary page out of a template, and `?asTemplate=1` marks the copy as a

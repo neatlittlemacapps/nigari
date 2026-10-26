@@ -17,6 +17,8 @@ COPY web ./
 # does not run in one of the two places we build.
 COPY wiki /src/wiki
 COPY server /src/server
+# check-parity.mjs reads the capability manifest at the repository root.
+COPY capabilities.json /src/capabilities.json
 # Same VERSION the backend is stamped with, so the two never disagree and the
 # "reload" banner only fires after an actual deploy.
 RUN SALT_VERSION=${VERSION} npm run build

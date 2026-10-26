@@ -120,6 +120,7 @@ interface TreeCtx {
   setAddFor: (id: string | null) => void;
   onMoveToTop: (id: string) => void;
   onShowFiles: (id: string, title: string) => void;
+  isCollection: (id: string) => boolean;
   setMenuFor: (id: string | null) => void;
   onTrash: (id: string) => void;
   onDuplicate: (id: string) => void;
@@ -584,6 +585,22 @@ function PageMenu({
               >
                 <LayoutTemplate size={16} /> {t('Save as template')}
               </button>
+              {/* A row's own kind of template: it belongs to the database, which
+                  offers it from its New button. The plain entry above would make
+                  the copy one more row of the same database. */}
+              {parentId && ctx.isCollection(parentId) && (
+                <button
+                  onClick={() => {
+                    ctx.setMenuFor(null);
+                    void api
+                      .addDatabaseTemplate(parentId, { fromPageId: id })
+                      .then(() => toast(t('Saved as a template of this database')))
+                      .catch(() => toast(t('Could not save as template')));
+                  }}
+                >
+                  <LayoutTemplate size={16} /> {t('Save as a template of this database')}
+                </button>
+              )}
               <button
                 onClick={() => {
                   ctx.setMenuFor(null);
@@ -1078,6 +1095,7 @@ export default function Sidebar({
       onMove(id, null, roots.length ? roots[roots.length - 1].position + 1 : 1);
     },
     onShowFiles: (id, title) => setFilesFor({ under: id, title }),
+    isCollection: (id) => pages.some((p) => p.id === id && p.type === 'collection'),
     setMenuFor,
     setAddFor,
     onTrash,

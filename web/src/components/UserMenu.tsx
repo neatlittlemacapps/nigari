@@ -394,6 +394,10 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
     create_page: t('created'),
     update_page: t('changed'),
     append_markdown: t('added to'),
+    // Find-and-replace edits: edit_content from REST, write_content from MCP
+    // (all of its modes). Both read as the change they are, not a raw name.
+    edit_content: t('changed'),
+    write_content: t('changed'),
     trash_page: t('moved to trash'),
     delete_page: t('permanently deleted'),
     upload_file: t('uploaded a file to'),

@@ -255,6 +255,7 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	m.HandleFunc("PATCH /api/pages/{id}", s.auth(s.handleUpdatePage))
 	m.HandleFunc("DELETE /api/pages/{id}", s.auth(s.handleDeletePage))
 	m.HandleFunc("POST /api/pages/{id}/restore", s.auth(s.handleRestorePage))
+	m.HandleFunc("POST /api/pages/{id}/edits", s.auth(s.handleEditPage))
 	m.HandleFunc("POST /api/reindex-siblings", s.auth(s.handleReindexSiblings))
 	m.HandleFunc("GET /api/pages/{id}/backlinks", s.auth(s.handleBacklinks))
 	m.HandleFunc("GET /api/pages/{id}/preview", s.auth(s.handlePreviewPage))
@@ -273,6 +274,9 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	m.HandleFunc("GET /api/collections/{id}", s.auth(s.handleGetCollection))
 	m.HandleFunc("PUT /api/collections/{id}", s.auth(s.handlePutCollection))
 	m.HandleFunc("GET /api/collections/{id}/rows", s.auth(s.handleCollectionRows))
+	m.HandleFunc("GET /api/collections/{id}/templates", s.auth(s.handleListDatabaseTemplates))
+	m.HandleFunc("POST /api/collections/{id}/templates", s.auth(s.handleAddDatabaseTemplate))
+	m.HandleFunc("POST /api/collections/{id}/from-template", s.auth(s.handleRowFromTemplate))
 
 	m.HandleFunc("GET /api/favorites", s.auth(s.handleListFavorites))
 	m.HandleFunc("POST /api/favorites/{id}", s.auth(s.handleAddFavorite))

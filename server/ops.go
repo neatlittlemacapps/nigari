@@ -132,6 +132,7 @@ func (s *Server) runCleanup() {
 	if days := s.trashRetentionDays(); days > 0 {
 		cutoff := time.Now().UTC().AddDate(0, 0, -days).Format(time.RFC3339Nano)
 		s.db.Exec(`DELETE FROM pages WHERE trashed_at IS NOT NULL AND trashed_at < ?`, cutoff)
+		s.dropOrphanedTemplates()
 	}
 	// The activity log is the only table here that nothing ever bounded. It grows
 	// with every change forever, which is right by default (see

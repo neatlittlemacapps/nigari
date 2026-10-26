@@ -16,7 +16,7 @@ The Model Context Protocol is a common language between an AI client and a
 program that holds data. The client asks the program which tools it offers, the
 program answers with a list, and from then on the client can call them. salt.md
 implements the server half: no plugin, no separate process, no external service.
-Start the binary and the endpoint is there. What an agent gets is **33 tools**,
+Start the binary and the endpoint is there. What an agent gets is **34 tools**,
 each one an action that already exists in the product, under the permissions of
 the person whose credential it is using.
 

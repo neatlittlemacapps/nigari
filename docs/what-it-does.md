@@ -142,6 +142,11 @@ MCP-capable assistant at your instance and it can search, read, write, create
 databases, fill rows, move pages, comment and share — **49 tools** as of the
 current build.
 
+To change part of a page it quotes the passage and its replacement, and only
+that passage changes. A quote that matches twice, or not at all, is refused
+rather than guessed. Not built yet: such an edit still reloads the editor of
+anyone who has the page open (their unsaved typing goes to the history).
+
 Two things that are not standard elsewhere:
 
 **An agent has exactly the permissions of the person whose token it uses.** It

@@ -35,7 +35,22 @@ func (s *Server) mcpWriteContent(u *user, pageID, markdown, mode string) (string
 	case "replace":
 		return s.mcpReplaceContent(u, pageID, markdown)
 	}
-	return "", fmt.Errorf("unknown mode %q — use append (the default), prepend or replace", mode)
+	return "", fmt.Errorf("unknown mode %q — use append (the default), prepend, replace or edit", mode)
+}
+
+// mcpEditContent is write_content mode edit: find-and-replace through the same
+// editPageContent the REST route calls (cap_edits.go).
+func (s *Server) mcpEditContent(u *user, pageID, markdown string, edits []pageEdit, allowRemovals bool) (string, error) {
+	if markdown != "" {
+		// Refused rather than ignored: an agent that sends both has misread
+		// the mode, and silently dropping half its request hides that.
+		return "", fmt.Errorf("mode edit takes edits, not markdown: put each change in edits as {old, new}")
+	}
+	counts, err := s.editPageContent(u, pageID, editRequest{Edits: edits, AllowRemovals: allowRemovals})
+	if err != nil {
+		return "", err
+	}
+	return editSummary(pageID, counts), nil
 }
 
 // --- revisions --------------------------------------------------------------

@@ -143,7 +143,7 @@ right, the settings for the view you are on.
 | **Columns** | Show and hide properties. Two lists, **Shown** and **Hidden**, with **Hide all** and **Show all**. The button reads **Columns**, and `Columns (4/7)` once something is hidden. |
 | **Properties** | Opens the schema dialog (see below). |
 | `⋯` (View options) | **Rename view**, **Move left**, **Move right**, **Remove view**. The arrows grey out at the ends; with only one view left the menu offers nothing but **Rename view**. |
-| **New** | Creates a row and opens it. |
+| **New** | Creates a row and opens it. The arrow beside it lists the database's own templates: see [Templates](templates.md#templates-that-belong-to-a-database). |
 
 On a **form** view the bar keeps only **Columns**, **Properties** and the `⋯`.
 There is nothing to filter, sort or add by hand there, and hiding a property
@@ -361,7 +361,10 @@ collection's subtree and are found by expanding the row.
 ## Collections inside documents
 
 A collection can be **embedded** in a document's body: type `/` and choose
-**Embed a collection**, then search for it by name. What you get is fully usable
+**Embed a collection**, then search for it by name. Each entry shows the
+collection's icon and name and, when the collection has a description, that
+description in muted text under the name (cut off after two lines); the search
+matches the description as well as the name. What you get is fully usable
 in place (filter it, add rows, drag cards), with the document's own text above
 and below it. The heading of the block opens it as its own page
 (**Open as page ↗**).

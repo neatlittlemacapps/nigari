@@ -360,6 +360,14 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(patch),
     }),
+  // A database's own templates: not rows, and not in the workspace list.
+  databaseTemplates: (collectionId: string) => req<PageMeta[]>(`/api/collections/${collectionId}/templates`),
+  // Empty, or (fromPageId) a snapshot of a page such as one of its rows.
+  addDatabaseTemplate: (collectionId: string, body: { title?: string; fromPageId?: string } = {}) =>
+    req<Page>(`/api/collections/${collectionId}/templates`, { method: 'POST', body: JSON.stringify(body) }),
+  // One request: a row in this database from its template, props laid on top.
+  rowFromTemplate: (collectionId: string, body: { templateId: string; title?: string; props?: Record<string, unknown> }) =>
+    req<Page>(`/api/collections/${collectionId}/from-template`, { method: 'POST', body: JSON.stringify(body) }),
   trashPage: (id: string) => req<{ ok: boolean }>(`/api/pages/${id}`, { method: 'DELETE' }),
   // fromTemplate: instantiate a template (copy keeps the title).
   // asTemplate: save as template — the COPY becomes the template (snapshot),

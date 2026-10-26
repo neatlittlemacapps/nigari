@@ -67,7 +67,7 @@ import {
   SquareArrowOutUpRight,
   ExternalLink,
   ArrowLeft,
-  ArrowRight, History} from 'lucide-react';
+  ArrowRight, History, ChevronDown, FileText, LayoutTemplate, Copy } from 'lucide-react';
 
 // Small type glyph shown next to each property (Notion-style visibility panel).
 function propTypeIcon(t: PropDef['type']) {
@@ -121,6 +121,9 @@ interface Props {
    *  navigates the one you are in (see pageOpen). */
   onOpenInNewTab?: (id: string) => void;
   onPagesChanged: () => void;
+  /** Opens one of this database's templates for editing, in a dialog. Without
+   *  it (an embedded view) the template opens as a page instead. */
+  onEditTemplate?: (id: string) => void;
   embed?: EmbedState;
 }
 
@@ -261,7 +264,7 @@ function applyView(rows: Row[], view: ViewDef, schema: PropDef[]): Row[] {
   return out;
 }
 
-export default function CollectionView({ collectionId, pages, tagColors, onNavigate, onOpenInNewTab, onPagesChanged, embed }: Props) {
+export default function CollectionView({ collectionId, pages, tagColors, onNavigate, onOpenInNewTab, onPagesChanged, onEditTemplate, embed }: Props) {
   const [config, setConfig] = useState<CollectionConfig | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   // A full page remembers its view across tab switches and reloads (see
@@ -277,6 +280,59 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     embed?.onViewId(id);
   };
   const [schemaOpen, setSchemaOpen] = useState(false);
+  // The arrow beside New: this database's own templates, loaded when it opens
+  // so the list is never older than the click.
+  const [tplOpen, setTplOpen] = useState(false);
+  const [tpls, setTpls] = useState<PageMeta[] | null>(null);
+  const toggleTemplates = () => {
+    if (tplOpen) return setTplOpen(false);
+    setTpls(null);
+    setTplRowMenu(null);
+    setTplOpen(true);
+    api.databaseTemplates(collectionId).then(setTpls).catch(() => setTpls([]));
+  };
+  // The ⋯ on a template row: which template's menu is open.
+  const [tplRowMenu, setTplRowMenu] = useState<string | null>(null);
+  const reloadTemplates = () => api.databaseTemplates(collectionId).then(setTpls).catch(() => setTpls([]));
+  const duplicateTemplate = async (p: PageMeta) => {
+    setTplRowMenu(null);
+    try {
+      await api.addDatabaseTemplate(collectionId, {
+        fromPageId: p.id,
+        title: t('Copy of {name}').replace('{name}', p.title || t('Untitled')),
+      });
+      await reloadTemplates();
+    } catch {
+      toast(t('Could not create the template'));
+    }
+  };
+  const trashTemplate = async (p: PageMeta) => {
+    setTplRowMenu(null);
+    try {
+      await api.trashPage(p.id);
+      await reloadTemplates();
+    } catch {
+      toast(t('Could not be changed'));
+    }
+  };
+  const addRowFromTemplate = async (templateId: string) => {
+    setTplOpen(false);
+    try {
+      await api.rowFromTemplate(collectionId, { templateId });
+      onPagesChanged();
+    } catch {
+      toast(t('The template could not be used'));
+    }
+  };
+  const newTemplate = async () => {
+    setTplOpen(false);
+    try {
+      const p = await api.addDatabaseTemplate(collectionId);
+      (onEditTemplate ?? onNavigate)(p.id);
+    } catch {
+      toast(t('Could not create the template'));
+    }
+  };
 
   // Open comments per row. Trello shows on every card whether anything was
   // discussed there — on a sales board the course of the conversation sits
@@ -904,9 +960,76 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         </div>
         )}
         {view.type !== 'form' && (
-          <button className="btn-sm primary" onClick={() => void addRow()}>
-            <Plus size={14} /> {t('New')}
-          </button>
+          <div className="view-menu-wrap split-btn">
+            <button className="btn-sm primary" onClick={() => void addRow()}>
+              <Plus size={14} /> {t('New')}
+            </button>
+            <button
+              className="btn-sm primary split-btn-arrow"
+              title={t('Templates')}
+              aria-label={t('Templates')}
+              aria-haspopup="menu"
+              aria-expanded={tplOpen}
+              onClick={toggleTemplates}
+            >
+              <ChevronDown size={14} />
+            </button>
+            {tplOpen && (
+              <>
+                <div className="fs-backdrop" onClick={() => setTplOpen(false)} />
+                <div className="menu dbt-menu" role="menu">
+                  <div className="menu-label">
+                    {t('Templates for {name}').replace('{name}', pages.get(collectionId)?.title || t('Untitled'))}
+                  </div>
+                  {tpls === null ? (
+                    <div className="dbt-hint">{t('Loading…')}</div>
+                  ) : tpls.length === 0 ? (
+                    <div className="dbt-hint">{t('Create a reusable page template for this database.')}</div>
+                  ) : (
+                    <>
+                      <button role="menuitem" onClick={() => { setTplOpen(false); void addRow(); }}>
+                        <FileText size={15} /> {t('Empty row')}
+                      </button>
+                      {tpls.map((p) => (
+                        <div key={p.id} className="dbt-item">
+                          <button role="menuitem" onClick={() => void addRowFromTemplate(p.id)}>
+                            <PageIcon icon={p.icon} size={15} fallback={<LayoutTemplate size={15} />} />
+                            <span className="dbt-name">{p.title || t('Untitled')}</span>
+                          </button>
+                          <button
+                            className="dbt-more"
+                            title={t('More')}
+                            aria-label={t('More')}
+                            aria-haspopup="menu"
+                            onClick={() => setTplRowMenu(tplRowMenu === p.id ? null : p.id)}
+                          >
+                            <MoreHorizontal size={15} />
+                          </button>
+                          {tplRowMenu === p.id && (
+                            <div className="menu dbt-row-menu" role="menu">
+                              <button role="menuitem" onClick={() => { setTplOpen(false); (onEditTemplate ?? onNavigate)(p.id); }}>
+                                <Pencil size={15} /> {t('Edit')}
+                              </button>
+                              <button role="menuitem" onClick={() => void duplicateTemplate(p)}>
+                                <Copy size={15} /> {t('Duplicate')}
+                              </button>
+                              <button role="menuitem" className="danger" onClick={() => void trashTemplate(p)}>
+                                <Trash2 size={15} /> {t('Move to trash')}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  <div className="menu-sep" />
+                  <button role="menuitem" onClick={() => void newTemplate()}>
+                    <Plus size={15} /> {t('New template')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>

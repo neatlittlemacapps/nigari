@@ -1,7 +1,7 @@
 # MCP tools
 
 salt.md speaks MCP (Model Context Protocol) on one endpoint, `/mcp`, and offers
-**33 tools**. This page is the complete reference: every tool, every parameter,
+**34 tools**. This page is the complete reference: every tool, every parameter,
 what comes back, and what can go wrong. It is written for the person wiring an
 agent up and for the agent itself.
 
@@ -170,7 +170,7 @@ to it.
 | Area | Tools |
 | --- | --- |
 | Orientation | `list`, `search`, `get_page`, `get_links`, `whoami`, `get_workspace`, `get_permissions` |
-| Pages | `create_page`, `update_page`, `write_content`, `duplicate_page`, `set_trashed`, `save_as_template`, `upload_file`, `embed_database` |
+| Pages | `create_page`, `update_page`, `write_content`, `duplicate_page`, `set_trashed`, `save_as_template`, `database_templates`, `upload_file`, `embed_database` |
 | Databases | `create_database`, `get_collection`, `update_schema`, `query_rows`, `create_rows`, `set_properties`, `set_view`, `delete_view` |
 | History and talk | `revisions`, `comments`, `delete_comment`, `note` |
 | Sharing | `set_sharing` |
@@ -190,6 +190,7 @@ tools.
 | `kind` | string | yes |
 | `workspace_id` | string | no |
 | `under` | string | no |
+| `database_id` | string | no |
 
 `kind` is one of `pages`, `templates`, `tags`, `workspaces`, `files`, `users`,
 `cover_presets`.
@@ -200,7 +201,9 @@ What each returns:
   `- Title (id: …)`, with ` [database]` appended to a database. Empty answer:
   `No pages yet.`
 - **templates**: JSON with `id`, `title`, `icon`, `kind`, `description`,
-  `workspace_id`.
+  `workspace_id`. Only the workspace's own templates. With `database_id`, the
+  templates of that database instead (`id`, `title`, `icon`, `description`,
+  `database_id`), see `database_templates`.
 - **tags**: `{"tags":[{"tag":"…","count":n}]}`, most frequent first,
   alphabetical on a tie. Call this before tagging so you reuse a tag instead of
   inventing a near-duplicate.
@@ -270,6 +273,11 @@ Read one page as Markdown.
 A document comes back as `# Icon Title` followed by the body. A **database**
 comes back as a Markdown table of its rows: a Title column plus one column per
 property, with select option ids resolved to their names.
+
+When a document has an Appearance switch on (see `update_page`), the answer ends
+with a line outside the untrusted block: `Page settings: full_width=true`. A page
+with none on has no such line, so missing means off. It is not added to the
+`include_children` form.
 
 `include_children` returns the whole sub-tree instead: each page as a heading
 one level deeper than its parent (capped at six), separated by `---`, with
@@ -414,10 +422,14 @@ share.
 dropped, spaces become hyphens, duplicates removed.
 
 **With `template_id` nothing else applies but `title`.** The call goes straight
-to instantiating the template and every other argument is ignored.
+to instantiating the template and every other argument is ignored. One
+exception: a template of a database (see `database_templates`) makes a **row**
+in that database, `properties` apply on top of the template's values, and
+`parent_id` may be left out. If it is given it must be that database.
 
 Returns `Created page "Title" with id <id> (path: /p/<id>)`, or
-`Created page <id> from template <id>`.
+`Created page <id> from template <id>`, or for a database's template
+`Created row <id> in database <id> from template <id>`.
 
 Errors: `title is required`; `parent page "…" not found`; `template "…" not
 found`; `page "…" is not a template`; the cover message above; `you are a viewer
@@ -445,6 +457,7 @@ Metadata and place, in one tool. Only the fields you pass change.
 | `parent_id` | string | no: `""` moves to the top level |
 | `workspace_id` | string | no |
 | `favorite` | boolean | no |
+| `full_width` | boolean | no: the document uses the whole window width (`true`) or the normal column (`false`) |
 
 The move happens first, then the favourite, then the metadata, so a failed move
 does not leave a half-renamed page behind. `workspace_id` takes precedence over
@@ -454,9 +467,15 @@ where it lands at the top level, its previous parent staying behind.
 `tags` **replaces** the whole list. `favorite` pins the page in the sidebar for
 you alone.
 
+`full_width` is the **Full width** switch of ⋯ → Appearance in the page menu. It
+is saved with the page, so it holds for everyone and on the public link, it needs
+a write token, and it is refused for a viewer exactly as the menu hides it. It
+applies to documents only. Setting it writes an `agent` entry to the activity
+log, like any property change. `get_page` reports it back.
+
 Errors: `nothing to update: pass at least one of title, icon, cover,
-description, visibility, tags, parent_id, workspace_id or favorite`;
-`a page cannot be its own parent`; `cannot move a page into its own subtree`;
+description, visibility, tags, parent_id, workspace_id, favorite or full_width`;
+`page settings apply to documents only`; `a page cannot be its own parent`; `cannot move a page into its own subtree`;
 `a page can only be re-parented within its own workspace`;
 `visibility must be "workspace" or "private"`.
 
@@ -467,15 +486,30 @@ Write Markdown into a page's body.
 | Parameter | Type | Required |
 | --- | --- | --- |
 | `page_id` | string | yes |
-| `markdown` | string | yes |
-| `mode` | string | no: `append` (default), `prepend`, `replace` |
+| `markdown` | string | for `append`, `prepend`, `replace` |
+| `mode` | string | no: `append` (default), `prepend`, `replace`, `edit` |
+| `edits` | array of `{old, new, all}` | for `edit` |
+| `allow_removals` | boolean | no (`edit` only) |
 
-`append` is the default because it is the only one of the three that cannot
+`append` is the default because it is the only mode that cannot
 destroy anything.
 
-All three leave a revision behind, but not the same one, and the difference is
+**To change part of a page, use `edit`, not `replace`.** Each edit quotes a
+passage exactly as `get_page` shows it, Markdown included, and gives what it
+becomes; an empty `new` deletes it. Only that passage changes: the other blocks
+are kept exactly as stored, and the edited paragraph keeps its identity, so
+comments on it stay. Up to 100 edits go in one call, applied in order, all or
+none. Nothing is written, and the error says why, when a quote matches 0 times or
+more than once (set `all` to replace every occurrence), when it touches a block
+Markdown cannot carry (columns, a coloured block, a table of contents), or when it
+would remove a link to a page (set `allow_removals` if you mean it). The same edit
+is available over REST as `POST /api/pages/{id}/edits` ([REST API](api.md)).
+
+Every mode leaves a revision behind, but not the same one, and the difference is
 the whole point of the history:
 
+- `edit` saves the page **before** writing, every time: two edits a minute apart
+  leave both earlier states, not one.
 - `prepend` and `replace` save the page **before** overwriting it. That older
   state is what `revisions` gives you back, so both are undoable.
 - `append` saves a revision **after** it has written. It records the new state,
@@ -486,15 +520,19 @@ Snapshots are throttled to one per page every two minutes, so a burst of writes
 leaves one revision rather than ten, and two `replace` calls a minute apart
 leave only the state from before the first.
 
-All three write past the realtime editor and then reset the live document.
+All four write past the realtime editor and then reset the live document.
 Anyone with the page open at that moment loses unsaved edits from the page; they
 are kept in its version history, not in the text. That is why append is the
 recommendation, not politeness.
 
-Returns `Appended content to page <id>`, `Prepended N block(s) to page <id>` or
-`Replaced content of page <id>`.
+Returns `Appended content to page <id>`, `Prepended N block(s) to page <id>`,
+`Replaced content of page <id>` or
+`Applied N edit(s) to page <id>: M replacement(s) (… per edit)`.
 
-Errors: `unknown mode "x" — use append (the default), prepend or replace`;
+Errors: `unknown mode "x" — use append (the default), prepend, replace or edit`;
+for `edit`, `edit N matched 0 times…`, `edit N matched K times…`,
+`edit N touches a … block…`, `edit N would remove a link to…`,
+`the page changed while the edit was being applied…`;
 `markdown is empty` (prepend); `page "…" not found`.
 
 ### duplicate_page
@@ -550,6 +588,38 @@ parts of the sub-tree you may read.
 
 Errors: `page_id is required`; `page "…" not found`, which is also the answer
 for a page you may read but not write.
+
+### database_templates
+
+| Parameter | Type | Required |
+| --- | --- | --- |
+| `database_id` | string | yes |
+| `action` | string | no |
+| `template_id` | string | for `rename`, `remove` |
+| `title` | string | for `rename`, optional for `add` |
+| `from_page_id` | string | no |
+
+A database's **own** templates, the ones its **New** button offers. They are not
+rows and not in the workspace template list. `action` is:
+
+- `list` (the default): JSON with `id`, `title`, `icon`, `description` and
+  `database_id`, wrapped as untrusted content like every list.
+- `add`: an empty template, or with `from_page_id` a snapshot of that page,
+  usually one of the database's rows. The page must be in the same workspace.
+  Fill the new template in with `write_content` and `set_properties` on its id.
+- `rename`: give it a new `title`.
+- `remove`: to the trash. `set_trashed` with `trashed: false` restores it.
+
+To make a row from a template, call `create_page` with `template_id`. It is a
+**snapshot**: the row and the template do not affect each other afterwards, so to
+change what later rows start from, edit the template itself.
+
+`list` is a read; the other actions need a write token and write permission on
+the database. A template of another database is refused even with a valid id:
+`template "…" not found in this database`.
+
+Errors: `database_id is required`; `database "…" not found`; `template_id is
+required`; `title is required` for `rename`; `unknown action`.
 
 ### upload_file
 

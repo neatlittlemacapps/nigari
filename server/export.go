@@ -122,9 +122,22 @@ func blocksToMarkdown(content []byte) string {
 }
 
 func renderBlocks(b *strings.Builder, blocks []mdBlock, depth int) {
+	renderBlocksMarked(b, blocks, depth, nil)
+}
+
+// renderBlocksMarked is renderBlocks with a mark: before block i of THIS level
+// is written, mark(i) is called, so a caller can tell which part of the text
+// each block produced. Find-and-replace edits (cap_edits.go) need that to map a
+// quote back to the blocks it came from. The marks come from the one renderer
+// get_page uses, so the text an agent quotes and the text it is matched
+// against cannot drift apart.
+func renderBlocksMarked(b *strings.Builder, blocks []mdBlock, depth int, mark func(i int)) {
 	indent := strings.Repeat("    ", depth)
 	num := 0
 	for i, blk := range blocks {
+		if mark != nil {
+			mark(i)
+		}
 		if blk.Type == "numberedListItem" {
 			num++
 		} else {
