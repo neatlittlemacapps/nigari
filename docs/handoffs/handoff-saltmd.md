@@ -1,6 +1,6 @@
 # active-memory handoff: salt.md agentic setup and feature roadmap
 
-**Handoff #3** · 2026-10-26 · Lineage:
+**Handoff #4** · 2026-10-27 · Lineage:
 - **#1 (2026-10-25):** designed and built the agentic setup for the salt.md fork (rules, gate, Spec Kit, parity manifest); merged four feature branches; opened 25 issues; wrote three specs.
 - **#2 (2026-10-26):**
   - built find-and-replace edits (#13, PR #48);
@@ -15,6 +15,11 @@
   - built the storage benchmarks;
   - fixed a save that scanned the whole search index (#75) and clipped mobile menus (#76);
   - added Codespaces testing (PR #77).
+- **#4 (2026-10-26/27):**
+  - finished spec 002: driver bump (PR #80), CI bench job + measured budgets (PR #81), 5 s read limit + grouped count (PR #83);
+  - built a read-only connection pool (#82, PR #84);
+  - sped up `query_rows` and search, moved search onto the pool (PR #85, open);
+  - fixed tag colours for agents (#2, PR #86, open).
 
 ## 0. Instructions for Claude (read first)
 
@@ -41,8 +46,8 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 ## 2. About the user (as relevant to this work)
 - **GitHub:** account `neatlittlemacapps` (id 60575307). Display name on web-UI commits: "Frank De Graeve".
 - **The fork:** owns `neatlittlemacapps/salt.md`, a fork of `saltmd/salt.md` (AGPL-3.0). The repo is public because GitHub doesn't let a fork of a public repo be private. Signed the CLA in saltmd/salt.md#87.
-- **How they work:** mostly from a phone (Claude app, iPhone). Tests in GitHub Codespaces from the phone's browser. Sets GitHub settings by hand.
-- **Local instance:** http://localhost:8420, workspace **Workspace** (`f6526406952b1c9b154760df965df59a`). Cloud sessions cannot reach it.
+- **How they work:** mostly from a phone (Claude app, iPhone). Tests in GitHub Codespaces from the phone's browser. Sets GitHub settings by hand. Merges PRs themselves, often within minutes of "ready".
+- **Local instance:** http://localhost:8420, workspace **Workspace** (`f6526406952b1c9b154760df965df59a`). Cloud sessions cannot reach it (AGENTS.md now says: skip `working_on`/`note` in cloud sessions and put that content in commits/PRs).
 - **Background:** designer/PM. Has design-coach skills (Kernel components on Base UI, W3C/DTCG tokens) and a `saltmd` skill.
 - **GitHub settings in place:**
   - GitHub Actions on; auto-merge enabled in the repo.
@@ -57,25 +62,28 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - **Formatting:**
   - Short lists and small tables.
   - Numbered steps with exact tap paths for anything the user must do by hand, plus direct links when a file must be downloaded.
+  - When asked to explain options (e.g. "Explain abc"): per option, what it gains, what it costs, effort; then one recommendation.
 - **Working style:**
-  - The user gives terse go-aheads ("ok", "go", "yes", "merged").
+  - The user gives terse go-aheads ("ok", "go", "yes", "Build", "merged"). "Ik" was a typo for "Ok".
   - "Keep going until I say stop or when you really really need an answer". Do clear work without asking; ask one short question only when the decision is genuinely theirs.
+  - Every reply that ends a step ends with "Ready to continue with <next step>?"
 - **Avoid:** recaps of steps; long explanations before the result.
 
 ## 4. Hard rules (word for word)
 1. "Use spec-kit but indeed also a board to to track the work"
 2. "Fold them into here so the functionality is in here too (those branches)"
-3. **Pushing:** pushing to GitHub needs the user's explicit OK. Their standing "Keep going until I say stop" covers routine pushes to the working branch. Opening a PR is asked for ("Ready to continue with opening the PR?"). The user merges.
-4. Repo rules in `AGENTS.md` and `.claude/rules/` apply to all code work. A Stop hook runs `scripts/agent-gate.sh` and the git-check; both must pass.
+3. **Pushing:** pushing to GitHub needs the user's explicit OK. Their standing "Keep going until I say stop" covers routine pushes to working branches. Opening a PR is asked for ("Ready to continue with opening the PR?"). The user merges.
+4. Repo rules in `AGENTS.md` and `.claude/rules/` apply to all code work. A Stop hook runs `scripts/agent-gate.sh` and the git-check (uncommitted or unpushed work fails it); both must pass.
 5. "ensure you think about all aspects of the code in relation to my feature requests". A new concept goes into `.specify/memory/surfaces.md`.
 6. Never work around a classifier denial (CI bypass, self-modification, destructive git). Tell the user and give them the manual step.
 7. **Commit authorship:** commits are authored as `neatlittlemacapps <60575307+neatlittlemacapps@users.noreply.github.com>`, with a `Co-Authored-By: Claude …` trailer. Run `git config user.name neatlittlemacapps` and `git config user.email 60575307+neatlittlemacapps@users.noreply.github.com` before the first commit.
 8. "ensure you have good board and issue hygiene":
-   - Label an issue `in-progress` when starting it.
+   - Label an issue `in-progress` when starting it; remove the label when work on it stops without finishing.
    - Tick the task in `tasks.md` in the PR that does it.
    - List every task issue the PR finishes as `Closes #N`; closing a parent does not close its sub-issues.
    - File an issue for every bug or finding.
    - Nobody moves cards by hand.
+9. **After opening a PR:** subscribe to its activity; arm one safety-net check-in (`send_later`, ~50 min); on CI red, fix and push; on a merge, restart the working branch from `main`.
 
 ## 5. Corrections log
 | # | Claude did | The user wanted |
@@ -92,6 +100,13 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 10 | Spec 003 merged with its 20 task issues (#27–#46) still open and in Backlog | "I also found certain features containing many issues are not tackled properly" / "I also don't see those items moved to spec or in progress" → issue and board hygiene (rule 8), automated |
 | 11 | (self) Appended `docs/decisions.md` entries at the bottom | The log is newest first: put new entries at the top |
 | 12 | (self) `pkill -f <pattern>` killed its own shell (exit 144) | Kill by `pgrep -f "name$"` or by PID file, never a pattern that matches the command itself |
+| 13 | (self) Repeated #12 in chat #4 (`pkill -f "server.test.*ZZProbeSearch"`, exit 144) | Kill a Go test binary with `pgrep -x server.test \| xargs -r kill`; a long probe gets `timeout 300` and a per-query context deadline from the start |
+| 14 | (self) Wrote an unmeasured figure ("about 1,200 hits") into a GitHub comment on #78 | Every number in a comment, PR or doc must come from a measurement in the session; fixed by editing the comment |
+| 15 | (self) First read-pool test ("write finishes before the read") passed even with the reads back on the writer | Mutation-check every new test: break the code it guards and confirm the test fails; replaced it with a test that holds the writer in an open transaction |
+| 16 | (self) Guessed the #83 CI regression came from per-statement context overhead and nearly built a fix on it | Measure the hypothesis first (it showed no difference); the batched-read fix was then validated by CI |
+| 17 | (self) `gofmt -w server/*_test.go` reformatted `server/tunnel_update_test.go`, a file left unformatted on purpose | Run gofmt only on files you touched; check `git show HEAD:<file> \| gofmt -l` first for the four exempt files |
+| 18 | (self) Wrote `` `query_timeout` `` in the wiki; `check-wiki.mjs` read it as a missing tool | Write error codes as `` `"code": "query_timeout"` ``; never widen `ALLOWED_NON_TOOLS` to pass |
+| 19 | (self) Fed benchstat raw `go test` output; `go: downloading` lines made it print two tables with no comparison | Keep only `^(goos\|goarch\|pkg\|cpu\|Benchmark)` lines (now built into `scripts/bench-compare.sh`) |
 
 ## 6. Decisions
 | Decision | Why |
@@ -107,25 +122,33 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Surfaces registry `.specify/memory/surfaces.md` (`check-surfaces.mjs`); constitution v1.1.0 | User's way-of-working instruction |
 | Ruleset for `main` (`.github/rulesets/main.json`) | User asked; imported |
 | CLA check only in `saltmd/salt.md` | User: option A |
-| **Board derives Status** (`board-sync.yml`, `scripts/board-sync.sh`): closed → Done, open closing PR → In review, label `in-progress` → In progress, parent with a task started → In progress, parent → Ready, label `spec` → Spec, sub-issue → Ready, else Backlog | Hygiene; cloud agents can't reach the board |
+| **Board derives Status** (`board-sync.yml`, `scripts/board-sync.sh`) | Hygiene; cloud agents can't reach the board |
 | **Ticked task closes its issue** (`scripts/tasks-sync.sh`, on push to `main`) | #13's children stayed open |
 | **`check-tasks.mjs`**: every `tasks.md` has `**Issues**: parent #N` and one surface tag per task | Derive, don't remember |
 | Spec issues = sub-issues of a feature issue, titled `T001: …`, labelled `surface:*` | The mapping `tasks-sync.sh` reads |
-| Search entries deleted by recorded rowid (`pages.fts_rowid`, `page_chunks.fts_rowid`, `ftsVersion` 4) | #75 |
-| Toolbar menus portaled and placed by `web/src/anchoredMenu.ts` (sheet ≤640px, dropdown otherwise) | #76 |
-| **Remote testing via GitHub Codespaces** (`.devcontainer/`) | User: "do the remote solution" |
+| Search entries deleted by recorded rowid (`ftsVersion` 4) | #75 |
+| Toolbar menus portaled (`web/src/anchoredMenu.ts`) | #76 |
+| Remote testing via GitHub Codespaces (`.devcontainer/`) | User: "do the remote solution" |
+| **Storage budgets record today's speed; targets stay with issues** (budget = CI p95 × 1.5, lowered in the PR that fixes it) | `docs/decisions.md` 2026-10-26 |
+| **5 s read limit** on rows, rollups, backrelations, grouped counts: REST `503 query_timeout`, MCP tool error, same sentence | Spec 002 contract; PR #83 |
+| **Read-only pool `s.rdb`** (4 × `mode=ro`) beside the one writer `s.db` | Measured 2.7 s write waits; user: "Build"; `docs/decisions.md` 2026-10-26; PR #84 |
+| **#78 option c**: search runs on the read pool | User: "c in the #79 PR" |
+| **Tag colours**: one function `setTagColor`; agents use `workspace` with `workspace_id`+`tag`+`color` | Parity rule "both doors call one function"; PR #86 |
+| Order after #85/#86: #2 → spec 001 → #20 | Claude recommended; user said "Yes" to #2 |
 
 ## 7. Changed / rejected
 - Decisions page in the salt.md workspace → `docs/decisions.md` (user chose the repo).
 - FR-003 Go token file (spec 001) → dropped: public pages link the app CSS (`publicCSSHref`).
-- Spec 002 "SQLite 3.54.x" → driver v1.60.1 / SQLite 3.53.4. v1.61.0 (released 2026-10-21) is too new: the rule is to pin only releases at least two weeks old.
+- Spec 002 "SQLite 3.54.x" → driver v1.60.1 / SQLite 3.53.4. v1.61.0 too new (rule: releases at least two weeks old).
 - Fixed surfaces list in the plan template → the registry.
 - Force-push (rebase) of the branch → merging `main` into it.
-- Append snapshotting after the write → no change; not a bug.
-- Moving cards by hand, or by the agent → derived Status.
-- Board sync filling Surface only → Surface + Status + parent re-sync.
-- Spec 003 `tasks.md` "Issues" line → `parent #13; T001–T020 are #27–#46`.
-- Menus inline in `.collection-toolbar` → portaled.
+- Moving cards by hand → derived Status.
+- One shared SQLite connection → one writer + read-only pool (#84).
+- Provisional budgets (guesses) → CI-measured budgets (#81), lowered again in #85.
+- Research P5 "a second connection measured, not built" → built (#82).
+- Per-target rollup reads (one query per related row) → one batched `IN (…)` query (#83 fix).
+- `query_rows` count as a separate `COUNT(*)` → `COUNT(*) OVER ()` on the page query.
+- Search join by `chunk_id` → join by `page_chunks.fts_rowid` with `CROSS JOIN`.
 - Rejected:
   - ❌ DuckDB
   - ❌ Mantine as the app component library
@@ -133,122 +156,110 @@ You are continuing work from a previous chat. That chat is gone; this file is th
   - ❌ generic code knowledge graph
   - ❌ agent teams for now
   - ❌ Storybook (the catalogue is a dev-only Vite entry)
-  - ❌ two DB connections up front (measure first)
-  - ❌ permanent hosted demo (cost, a public unreleased build)
+  - ❌ permanent hosted demo
   - ❌ GitHub's built-in project workflows alone
+  - ❌ #78 option a (rank only the first ~2,000 hits) and option b (`workspace_id` in `chunks_fts`, `ftsVersion` 5): not chosen; may come back if search at 20k still feels slow
+  - ❌ widening `ALLOWED_NON_TOOLS` in `check-wiki.mjs` to pass a check
 - Not built yet, possible later: an `:edge` Docker image for local runs.
 
 ## 8. Data & facts (exact)
 
 **Repo**
-- **Toolchain:** Go 1.27.2; Node 22; `modernc.org/sqlite` v1.34.5 (SQLite 3.46.0) today; app version 1.6.8.
-- **Release targets** (`CGO_ENABLED=0`): linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64.
-- **CI:** job `Build and test` (`ci.yml`, required). `cla` is skipped in the fork. `sync` is Board sync.
-- **Parity manifest:** 45 capabilities, 146 routes, 34 tools, `gapBudget: 11`.
-- **Not tidy:** `go.mod` on `main` (`go mod tidy` moves `golang.org/x/net v0.56.0` to direct); `.devcontainer/start.sh` avoids tidy for that reason.
-- **Board:** project number 5. Fields: Status (Backlog, Spec, Ready, In progress, In review, Done) and Surface (backend, mcp, ui, i18n, wiki, test, perf). Labels: `in-progress`, `spec`, `surface:*`. Board sync runs nightly at 03:17 UTC; a full run takes about 2.5 min.
+- **Toolchain:** Go 1.27.2 (CI: 1.27.3); Node 22; `modernc.org/sqlite` **v1.60.1** (SQLite 3.53.4); `go.mod` `go 1.26.0`; app version 1.6.8.
+- **Release targets** (`CGO_ENABLED=0`): linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64. All five build on v1.60.1.
+- **CI:** `Build and test` (required); `Storage benchmarks` (`bench` job, not required; PRs touching `server/`, `go.mod`/`go.sum`, `scripts/bench-compare.sh`; warn +15% p95, fail +50%); `cla` skipped in the fork; `sync` = Board sync.
+- **Parity manifest:** 45 capabilities, 146 routes, 34 tools; `gapBudget` **11 on `main`, 10 after #86**.
+- **Unformatted on purpose** (no gofmt in feature changes): `server/server.go`, `server/audit.go`, `server/desktop_auth.go`, `server/tunnel_update_test.go`.
+- **`go test ./...`** fails at the root package without a built frontend (`web/dist`); build it with `cd web && npx vite build` first. The gate needs it too.
+- **Board:** project 5. Status: Backlog, Spec, Ready, In progress, In review, Done. Surface: backend, mcp, ui, i18n, wiki, test, perf. Labels: `in-progress`, `spec`, `surface:*`.
 
-**Issues**
-| # | What | State |
-|---|---|---|
-| 13 / 27–46 | Spec 003 find-replace and its tasks | closed |
-| 50 | Spec 002 feature (parent) | open |
-| 51–54 | Spec 002 T001–T004 | closed by PR #77 |
-| 55–73 | Spec 002 T005–T023 | open, Ready |
-| 75 | Save scanned the whole search index | closed by #77 |
-| 76 | Mobile toolbar menus clipped | closed by #77 |
-| 78 | Search at 20k pages: 423 ms p95 vs 50 ms budget | open |
-| 79 | `query_rows` at 10k rows: 141 ms p95 vs 50 ms budget | open |
-| 26 | Live edits in open editors | not specced |
+**Read limit and pool**
+- `readLimit = 5 * time.Second` (`server/cap_limits.go`); `readPoolSize = 4` (`server/db.go`, `openReadDB`, DSN `mode=ro&_pragma=busy_timeout(5000)&_pragma=query_only(1)`).
+- Error sentence (REST and MCP): "The query took longer than 5 seconds and was stopped. Narrow the filter or ask for fewer rows."
+- German (`de.json`): "Die Abfrage hat länger als 5 Sekunden gedauert und wurde abgebrochen. Grenze den Filter ein oder frage weniger Zeilen ab."
+- On `s.rdb`: `collectionRowsQuery`, `relatedRows` (batched, 500 per query), `backrelationIDs`, `groupCounts`, and (#85) `searchChunks` and `searchPagesFallback`. Permission lookups stay on `s.db`.
+- Writes during back-to-back 100k reads (dev, p95): writer path 2.6–3.0 s; read pool 4.6–5.9 ms; no read 3.4–4.6 ms. Write budget 8 ms.
 
-**Spec 002 tasks:** T005 baseline on `main`; T006 `go get modernc.org/sqlite@v1.60.1`; T007 Backup test; T008 five cross-builds + full tests; T009 benchstat ≤ +15% p95 (own PR, FR-002); T010–T012 CI bench job and budgets; T013–T021 5 s read limit (`query_timeout`, 503), grouped count, read-only connection measurement; T022–T023 polish.
-
-**Benchmarks** (4 cores, 200 iterations, first run)
-| Operation | p50 | p95 | Budget (provisional) |
+**Budgets (research P3, CI p95 × 1.5)**
+| Operation | Size | CI p95 | Budget |
 |---|---|---|---|
-| Open page, 1k / 20k pages | 0.42 / 0.54 ms | 0.75 / 1.25 ms | 20 ms |
-| `query_rows`, 1k / 10k rows | 21.7 / 89.2 ms | 37.4 / 141.5 ms | 50 ms (10k), 300 ms (100k) |
-| Rollup, 10k (100 rows) | 27.6 ms | 41.8 ms | 100 ms |
-| Search, 1k / 20k pages | 17.9 / 331.9 ms | 26.3 / 422.8 ms | 50 ms |
-| Write during 5-agent burst, 10k | 6.7 ms | 12.0 ms | 20 ms |
-| Grouped count, 100k | — | — | 250 ms |
+| Open a page | 1k / 20k pages | 0.42 / 0.44 ms | 1 / 1 ms |
+| `query_rows` | 1k rows | 11.7 ms (#85) | 18 ms |
+| `query_rows` | 10k rows | 33.1 ms (#85) | 50 ms |
+| `query_rows` | 100k rows | not in CI | 300 ms, provisional |
+| Rollup | 10k rows | 23.8 ms | 36 ms |
+| Search | 1k pages | 10.6 ms (#85) | 16 ms |
+| Search | 20k pages | 122.8 ms (#85) | 185 ms (#78) |
+| Grouped count | 1k / 10k rows | 2.1 / 19.5 ms (#85) | 4 / 30 ms |
+| Grouped count | 100k rows | 139 ms dev, not in CI | 250 ms, provisional |
+| Write in a 5-agent burst | 10k rows | 5.3 ms | 8 ms |
+- The #85 rows and budgets are on branch `claude/fast-reads` (PR #85) until it merges; `main` still has 26 / 113 / 21 / 301 ms for those rows.
+- Baseline runs: PR #81 run 40365065291 (driver v1.34.5); PR #85 run 40452540193.
 
-- **Run:** `go test ./server -run '^$' -bench Storage -benchtime 200x` (add `BENCH_LARGE=1` for 100k). The suite takes about 155 s; the 20k-page world builds in 47 s, about 2 ms a page.
-- **Before #75:** 1k pages built in 3.5 s and 5k pages in 63 s (about 25 ms a save by 5k).
-- **Settings:** `BENCH_SEED` 20261026; benchstat `golang.org/x/perf/cmd/benchstat@v0.0.0-20261009192801-be2c69fb417e`; report at +15% p95, fail at +50%, `-count=6`; read limit 5 s → `503 query_timeout`.
+**#78 measurement (dev, 20k pages, word `vertrag`, 24,160 passages)**
+- `MATCH` only 9 ms; + `bm25` order, no joins 30 ms; joins by `chunk_id` 118 ms; full old query 141 ms; `snippet()` ~5 ms; new full query 85 ms. Benchmark p95 129.5 → 103.8 ms (dev); CI 173.8 → 122.8 ms.
+
+**Benchmarks**
+- Run: `go test ./server -run '^$' -bench Storage -count=6`; add `BENCH_LARGE=1` for 100k and `BenchmarkStorageWriteDuringLongRead`.
+- Compare: `scripts/bench-compare.sh old.txt new.txt`.
+- benchstat `golang.org/x/perf/cmd/benchstat@v0.0.0-20261009192801-be2c69fb417e`; `BENCH_SEED` 20261026.
 
 **Codespaces**
-- **Open:** repo → **Code** → **Codespaces** → **Create codespace on <branch>**. It serves port 8420 at a private address.
-- **Test account (invented):** `ada@example.com` / `WikiPruefung2026!`.
-- **Update:** `git pull && .devcontainer/start.sh`. Data lives in `~/salt-demo`, the log in `~/salt-demo.log`.
-- **Limits:** 2 cores; stops after 30 idle minutes.
+- Open: repo → **Code** → **Codespaces** → **Create codespace on <branch>**. Port 8420, private address.
+- Test account (invented): `ada@example.com` / `WikiPruefung2026!`.
+- Update: `git pull && .devcontainer/start.sh`. Data `~/salt-demo`, log `~/salt-demo.log`. 2 cores; stops after 30 idle minutes.
 
-**Find-and-replace (#13, merged):** `server/cap_edits.go`; `POST /api/pages/{id}/edits`; MCP `write_content` mode `edit`; max 100 edits.
+**Spec 001 plan:** `@base-ui/react` 1.9.0; `@axe-core/playwright` 4.14.0 (dev); type scale 11/12/13/14/16/20 px + display `clamp(28px, 4vw, 40px)`; radius 2/4/6/8/12/999 px; layers 10/50/200/300/400/900/1000/1200; bundle baseline 1,802,733 B raw / 790,888 B gzip; budget +60 KB gzip.
 
-**Spec 001 plan:**
-- `@base-ui/react` 1.9.0; `@axe-core/playwright` 4.14.0 (dev).
-- Type scale 11/12/13/14/16/20 px + display `clamp(28px, 4vw, 40px)`.
-- Radius 2/4/6/8/12/999 px; layers 10/50/200/300/400/900/1000/1200.
-- Bundle baseline 1,802,733 B raw / 790,888 B gzip; budget +60 KB gzip.
-
-**Surfaces registry (14):** Domain logic and gates, Schema and queries, REST routes, MCP tools, Closed-to-agents list, UI components, Translations, Server error codes, Wiki, Tests, Performance, Manifest, Design system, Storage budgets.
+**Surfaces registry (14):** Domain logic and gates, Schema and queries (now says: long reads on `s.rdb` under `withReadLimit`, writes and must-see-the-write reads on `s.db`), REST routes, MCP tools, Closed-to-agents list, UI components, Translations, Server error codes, Wiki, Tests, Performance, Manifest, Design system, Storage budgets.
 
 ## 9. People, terms & names
 - **People:** the user (`neatlittlemacapps`, "Frank De Graeve"); upstream maintainer "Jeremia" (`jeremiaa`).
-- **Terms:**
-  - surface = a registry row a feature must answer for;
-  - gap = a person can, an agent can't;
-  - budget/ratchet = a count that may only go down;
-  - gate = `scripts/agent-gate.sh`;
-  - registry = `.specify/memory/surfaces.md`.
+- **Terms:** surface = a registry row a feature must answer for; gap = a person can, an agent can't; budget/ratchet = a count that may only go down; gate = `scripts/agent-gate.sh`; registry = `.specify/memory/surfaces.md`; read pool = `s.rdb`; writer = `s.db`.
 - **Names in use:**
   - **Board and tasks:** `board-sync.sh`, `tasks-sync.sh`, `board-sync.yml`, `check-tasks.mjs`, `setup-board.sh`.
-  - **Parity and surfaces:** `capabilities.json`, `check-parity.mjs`, `check-surfaces.mjs`.
-  - **Benchmarks and search fix:** `bench_world_test.go`, `storage_bench_test.go`, `searchindex_rowid_test.go`.
-  - **Menu fix:** `anchoredMenu.ts`, `check-anchoredmenu.mjs`, `web/tests/toolbar-menus.mjs`.
-  - **Codespaces and screenshots:** `.devcontainer/start.sh`, `web/scripts/seed-wiki-instance.mjs`, `web/scripts/shoot-wiki.mjs`.
+  - **Parity:** `capabilities.json`, `check-parity.mjs`, `check-surfaces.mjs`, `parity_property_test.go` (`parityActs`, `parityWorkspaceActs`, `fill`), `credential_audit_test.go` (`outsiders`).
+  - **Storage:** `bench_world_test.go`, `storage_bench_test.go` (`writeBurst`, `BenchmarkStorageGroupedCount`, `BenchmarkStorageWriteDuringLongRead`), `scripts/bench-compare.sh`, `cap_limits.go` (`withReadLimit`, `readErr`, `errQueryTimeout`), `collections_group.go` (`groupCounts`), `rowScope`, `openReadDB`, `idx_chunk_fts_rowid`, `backup_test.go`.
+  - **Tags:** `setTagColor`, `errTagWorkspaceNotFound`, `errTagWorkspaceReadOnly`, `errTagRequired`, `errTagColorUnknown` (`server/tags.go`).
   - **Docs:** `docs/decisions.md`, `docs/handoffs/handoff-saltmd.md`.
-  - **Working branch:** `claude/keen-hopper-9joiox`.
-- **Screenshot retake** (in a cloud session):
-  1. Build the frontend with `npx vite build`.
-  2. Run a throwaway instance on :8421 and seed it with `seed-wiki-instance.mjs`.
-  3. Symlink `/opt/node22/lib/node_modules/playwright` into `web/node_modules/`.
-  4. Run `SALT_SHOOT_URL=… SALT_SHOOT_EMAIL=… SALT_SHOOT_PASSWORD=… node scripts/shoot-wiki.mjs <id>`.
-  5. Afterwards, revert `.github/hero.png` (the script touches it) and remove the symlinks.
+  - **Branches:** `claude/keen-hopper-9joiox` (working branch, = `main` + this handoff), `claude/fast-reads` (#85), `claude/tag-colors` (#86).
+- **Screenshot retake** (cloud session; needed whenever `server/mcp.go` changes, shot `agents-connect`):
+  1. `cd web && npx vite build`, then `go build -o <scratch>/salt-shot .`.
+  2. Run it with `SALT_DATA=<scratch>/salt-shots SALT_ADDR=127.0.0.1:8421`; seed with `node scripts/seed-wiki-instance.mjs`.
+  3. `ln -sfn /opt/node22/lib/node_modules/playwright web/node_modules/playwright`.
+  4. `SALT_SHOOT_URL=http://127.0.0.1:8421 SALT_SHOOT_EMAIL=ada@example.com SALT_SHOOT_PASSWORD='WikiPruefung2026!' node scripts/shoot-wiki.mjs agents-connect`.
+  5. Kill the instance by PID, remove the symlink and scratch data; check `.github/hero.png` is untouched.
 
 ## 10. Work state
 | Item | Status | Location | Notes |
 |---|---|---|---|
-| PR #74 (board derives Status, spec 002 tasks) | merged | `main` `21ba0f0` | |
-| PR #77 (search fix, benchmarks, Codespaces, mobile menus) | merged | `main` `9f17e02` | Closed #75, #76, #51–#54 |
+| PR #80 driver bump | merged | `main` | Closed #55–#59 |
+| PR #81 CI bench job + budgets | merged | `main` | Closed #60–#62 |
+| PR #83 5 s read limit, grouped count, T013–T023 | merged | `main` | Closed #63–#73; spec 002 tasks all ticked |
+| PR #84 read-only pool | merged | `main` `346f858` | Closed #82 |
+| PR #85 fast reads + search on pool + lowered budgets | open, green before the last push | `claude/fast-reads` | Closes #79; improves #78. Last push `ce18e06` (budgets) needs CI; then the user merges |
+| PR #86 tag colours | open | `claude/tag-colors` | Closes #2; CI was starting |
+| #78 search at 20k pages | open, not in progress | issue | Findings comment posted; options a/b open |
+| #50 spec 002 parent | open | issue | Close when #85 merges (all tasks done) |
 | Spec 001 | plan done | `specs/001-design-system/` | `/speckit-tasks` not run yet |
-| Spec 002 | T001–T004 done | `specs/002-storage-engine/` | T005–T009 next (driver bump, own PR) |
-| Spec 003 | done | merged | |
-| #78, #79 | open | issues | Measure with the benchmarks, fix in SQL |
+| #20 charts | not specced | issue | Builds on `groupCounts`, the read limit and the pool |
 | #26 live edits | not specced | issue | Needs the user's answers |
-| Working branch | reset to `main` | `claude/keen-hopper-9joiox` | After a merge, always `git checkout -B <branch> origin/main` |
-| Check-ins | none pending | — | |
+| PR subscriptions / check-ins | none in the new session | — | Re-subscribe to #85 and #86 in the new chat |
 
 ## 11. Next steps
-1. **Next action:** spec 002 T005–T009 on a fresh branch from `main`:
-   1. Label #55–#59 `in-progress`.
-   2. Run the benchmarks on `main` (`-count=6`) and save `old.txt` in the scratchpad.
-   3. `go get modernc.org/sqlite@v1.60.1 && go mod tidy`.
-   4. Add the Backup test (T007).
-   5. Run the five cross-builds and `go test ./...`.
-   6. Benchmark again, run `benchstat`, and put the table in the PR body.
-   7. Tick T005–T009 and open its own PR with `Closes #55` … `Closes #59`.
-2. Then T010–T012 (CI bench job) and T013–T021 (5 s read limit), or #78/#79 first if the user prefers.
-3. Spec 001: `/speckit-tasks` → issues → batch 1.
-4. Later: spec #26 with the user's answers.
+1. **Next action:** subscribe to PR #85 and PR #86; check CI on their heads (`ce18e06` for #85); fix anything red; tell the user both are ready to merge.
+2. When #85 merges: close #50 (spec 002 done); reset `claude/keen-hopper-9joiox` to `main`.
+3. Spec 001: run `/speckit-tasks` on `specs/001-design-system/`, then `/speckit-github-taskstoissues`, then build batch 1.
+4. Then #20 (charts): `/speckit-specify`, building on `groupCounts`.
+5. Later: #78 (a or b, if the user wants it), #3–#9 parity gaps, #10–#12 decisions, #26.
 
 ## 12. Open questions ⚠️
-- Turn on auto-merge for every PR Claude opens (it merges once `Build and test` passes)? Asked three times, not answered.
-- #78/#79 before or after the driver bump? Not asked yet; the default is after.
+- Turn on auto-merge for every PR Claude opens (it merges once `Build and test` passes)? Asked several times, never answered.
+- #78: take option a (rank only the first ~2,000 hits for very common words) or b (`workspace_id` in `chunks_fts`, full reindex), or leave it at today's 122.8 ms CI p95?
 - #26: server-side Yjs update or editor-applied? All outside writes or only edits? Keep today's path when no editor is open?
 
 ## 13. Re-attach checklist
-Nothing to attach. This file is `docs/handoffs/handoff-saltmd.md` on `main` of `neatlittlemacapps/salt.md`. Start a Claude Code session on that repo.
+Nothing to attach. This file is `docs/handoffs/handoff-saltmd.md` on branch `claude/keen-hopper-9joiox` of `neatlittlemacapps/salt.md` (it reaches `main` with the next PR from that branch). Start a Claude Code session on that repo and branch.
 
 ---
-<sub>Audit: 13/13 sections · 8 rules · 12 corrections · 95 data points · secrets removed: none found (the Codespaces password is an invented, documented test account) · generated by active-memory</sub>
+<sub>Audit: 13/13 sections · 9 rules · 19 corrections · 120 data points · secrets removed: none found (the Codespaces password is an invented, documented test account) · generated by active-memory</sub>
