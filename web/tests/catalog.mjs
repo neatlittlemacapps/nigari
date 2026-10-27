@@ -32,10 +32,12 @@ import { eventually } from './fixture.mjs';
 const web = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const baselines = join(dirname(fileURLToPath(import.meta.url)), 'catalog-baselines');
 const update = process.env.UPDATE_BASELINES === '1';
-// Text is anti-aliased a little differently from one machine to the next. A
-// real change (a colour, a size, a missing border) moves far more pixels than
-// this; anti-aliasing moves fewer.
-const MAX_DIFF = 0.02;
+// Pixels a shot may differ by after the anti-aliasing allowance in
+// changedPixels. A count, not a share: two recoloured 14px checkboxes are
+// 0.3% of their section and a share let them through. A plain per-pixel share
+// also failed on CI's runner at 2.3–2.9% with nothing changed, all of it
+// anti-aliased edges, which the allowance now forgives.
+const MAX_CHANGED = 25;
 
 const listener = createServer();
 listener.listen(0, '127.0.0.1');
@@ -71,7 +73,7 @@ try {
   page.on('pageerror', (e) => failures.push(`page error: ${e.message}`));
 
   // Pixels of two PNGs, compared in the browser itself: no image library.
-  async function diffRatio(a, b) {
+  async function changedPixels(a, b) {
     return page.evaluate(async ([a, b]) => {
       const load = (b64) =>
         new Promise((ok, fail) => {
@@ -81,7 +83,7 @@ try {
           img.src = 'data:image/png;base64,' + b64;
         });
       const [x, y] = await Promise.all([load(a), load(b)]);
-      if (x.width !== y.width || x.height !== y.height) return 1;
+      if (x.width !== y.width || x.height !== y.height) return Infinity;
       const px = (img) => {
         const c = document.createElement('canvas');
         c.width = img.width;
@@ -92,11 +94,33 @@ try {
       };
       const p = px(x);
       const q = px(y);
+      const w = x.width;
+      const h = x.height;
+      // A pixel counts as changed only when no pixel within one of its place
+      // in the other image is close to it. Anti-aliasing on another machine
+      // moves edges by a fraction of a pixel; that passes. A new colour, size
+      // or spacing moves whole areas; that does not.
+      const near = (a, ia, b, ib) =>
+        Math.abs(a[ia] - b[ib]) <= 24 && Math.abs(a[ia + 1] - b[ib + 1]) <= 24 && Math.abs(a[ia + 2] - b[ib + 2]) <= 24;
+      const matched = (a, b, x0, y0) => {
+        const i = (y0 * w + x0) * 4;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const xx = x0 + dx;
+            const yy = y0 + dy;
+            if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+            if (near(a, i, b, (yy * w + xx) * 4)) return true;
+          }
+        }
+        return false;
+      };
       let off = 0;
-      for (let i = 0; i < p.length; i += 4) {
-        if (Math.abs(p[i] - q[i]) > 40 || Math.abs(p[i + 1] - q[i + 1]) > 40 || Math.abs(p[i + 2] - q[i + 2]) > 40) off++;
+      for (let yy = 0; yy < h; yy++) {
+        for (let xx = 0; xx < w; xx++) {
+          if (!matched(p, q, xx, yy) || !matched(q, p, xx, yy)) off++;
+        }
       }
-      return off / (p.length / 4);
+      return off;
     }, [a.toString('base64'), b.toString('base64')]);
   }
 
@@ -107,14 +131,15 @@ try {
       else writeFileSync(file, shot);
       return;
     }
-    const ratio = await diffRatio(readFileSync(file), shot);
-    if (ratio > MAX_DIFF) {
+    const changed = await changedPixels(readFileSync(file), shot);
+    if (changed > MAX_CHANGED) {
       // Outside the repository, so a failed run leaves nothing to commit by
       // mistake; CI uploads this directory.
       const actual = process.env.CATALOG_ACTUAL ?? join(tmpdir(), 'salt-catalog-actual');
       mkdirSync(actual, { recursive: true });
       writeFileSync(join(actual, `${name}.png`), shot);
-      failures.push(`${name}: ${(ratio * 100).toFixed(1)}% of pixels differ from the baseline (this run's shot: ${join(actual, name)}.png)`);
+      const what = changed === Infinity ? 'a different size than' : `${changed} pixels changed from`;
+      failures.push(`${name}: ${what} the baseline (this run's shot: ${join(actual, name)}.png)`);
     }
   }
 
