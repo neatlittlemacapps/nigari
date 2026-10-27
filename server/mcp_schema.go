@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 )
 
 // Agent parity, part 2: databases.
@@ -672,7 +673,7 @@ func (s *Server) mcpDeleteView(pageID, viewID string) (string, error) {
 // mcpCreateRows creates several rows in one call. "For 40 rows that is 40
 // calls" — and every single one of them can fail and leave half a state
 // behind.
-func (s *Server) mcpCreateRows(userID, pageID string, rows json.RawMessage) (string, error) {
+func (s *Server) mcpCreateRows(userID, pageID string, rows json.RawMessage, viewID string) (string, error) {
 	var list []struct {
 		Title      string          `json:"title"`
 		Icon       string          `json:"icon"`
@@ -699,10 +700,25 @@ func (s *Server) mcpCreateRows(userID, pageID string, rows json.RawMessage) (str
 	if err := s.db.QueryRow(`SELECT workspace_id FROM pages WHERE id = ? AND trashed_at IS NULL`, pageID).Scan(&ws); err != nil {
 		return "", fmt.Errorf("database %q not found", pageID)
 	}
+	// The view, once for every row (spec 005): its pins under each row's own
+	// properties, and its filters to tell which rows will not show there.
+	// Read before the first insert, so a view of another database creates
+	// nothing.
+	var pins map[string]any
+	var viewFilters []rowFilter
+	if viewID != "" {
+		_, filters, schema, err := s.viewOf(pageID, viewID)
+		if err != nil {
+			return "", err
+		}
+		pins = pinsFromFilters(schema, filters, time.Now())
+		viewFilters = s.viewFiltersNow(pageID, filters)
+	}
 	var pos float64
 	s.db.QueryRow(`SELECT COALESCE(MAX(position), 0) + 1 FROM pages WHERE parent_id = ?`, pageID).Scan(&pos)
 
 	ids := []string{}
+	notMatching := []string{}
 	for _, r := range list {
 		if strings.TrimSpace(r.Title) == "" {
 			return "", fmt.Errorf("every row needs a title (row %d is empty) — nothing was created", len(ids)+1)
@@ -714,9 +730,22 @@ func (s *Server) mcpCreateRows(userID, pageID string, rows json.RawMessage) (str
 			return "", fmt.Errorf("created %d row(s), then failed on %q: %w", len(ids), r.Title, err)
 		}
 		pos++
-		if len(r.Properties) > 0 {
-			if _, err := s.mcpSetProperties(id, r.Properties, nil); err != nil {
+		props := r.Properties
+		if viewID != "" {
+			merged, err := mergePins(pins, r.Properties)
+			if err != nil {
+				return "", fmt.Errorf("created %d row(s), then row %q: %w", len(ids)+1, r.Title, err)
+			}
+			props = merged
+		}
+		if len(props) > 0 && string(props) != "{}" {
+			if _, err := s.mcpSetProperties(id, props, nil); err != nil {
 				return "", fmt.Errorf("created %d row(s), then failed setting properties on %q: %w", len(ids)+1, r.Title, err)
+			}
+		}
+		if viewID != "" {
+			if ok, err := s.rowMatchesFilters(id, viewFilters); err == nil && !ok {
+				notMatching = append(notMatching, id)
 			}
 		}
 		s.reindexPage(id)
@@ -724,7 +753,11 @@ func (s *Server) mcpCreateRows(userID, pageID string, rows json.RawMessage) (str
 	}
 	s.pagesChanged()
 	s.rowsChanged(pageID)
-	b, _ := json.Marshal(map[string]any{"created": len(ids), "ids": ids})
+	answer := map[string]any{"created": len(ids), "ids": ids}
+	if viewID != "" {
+		answer["not_matching"] = notMatching
+	}
+	b, _ := json.Marshal(answer)
 	return string(b), nil
 }
 

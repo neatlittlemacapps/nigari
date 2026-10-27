@@ -131,7 +131,7 @@ func TestDatabaseTemplatesOverMCP(t *testing.T) {
 		t.Fatal(err)
 	}
 	// create_page's path: no parent needed, properties on top.
-	msg, err := s.mcpCreateFromTemplate(u, id, "", "", json.RawMessage(`{"Note":"x"}`))
+	msg, err := s.mcpCreateFromTemplate(u, id, "", "", json.RawMessage(`{"Note":"x"}`), "")
 	if err != nil || !strings.Contains(msg, "Created row") {
 		t.Fatalf("create from template: %v %s", err, msg)
 	}
@@ -142,7 +142,7 @@ func TestDatabaseTemplatesOverMCP(t *testing.T) {
 	}
 	// A parent that is not the database is refused.
 	other := s.makeCollection(t, ws, owner, "Tasks", `[]`)
-	if _, err := s.mcpCreateFromTemplate(u, id, "", other, nil); err == nil {
+	if _, err := s.mcpCreateFromTemplate(u, id, "", other, nil, ""); err == nil {
 		t.Error("a template made a row in another database")
 	}
 	// Another database's id cannot be used to edit this one's template.

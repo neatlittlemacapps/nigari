@@ -40,28 +40,34 @@ type parityAct struct {
 	method, path, body string
 	// tool and args (with %s for the page id) over MCP.
 	tool, args string
+	// database: the case's pages are databases with one view, "v-parity",
+	// filtered to "Status is To do", for acts that make a row in them.
+	database bool
 }
 
 var parityActs = []parityAct{
-	{"read", "GET", "/api/pages/%s", "", "get_page", `{"page_id":"%s"}`},
-	{"rename", "PATCH", "/api/pages/%s", `{"title":"Renamed"}`, "update_page", `{"page_id":"%s","title":"Renamed"}`},
-	{"comment", "POST", "/api/pages/%s/comments", `{"body":"A comment"}`, "comments", `{"page_id":"%s","action":"add","body":"A comment"}`},
-	{"trash", "DELETE", "/api/pages/%s", "", "set_trashed", `{"page_id":"%s","trashed":true}`},
-	{"share", "POST", "/api/pages/%s/share", `{}`, "set_sharing", `{"page_id":"%s","public":true}`},
-	{"history", "GET", "/api/pages/%s/revisions", "", "revisions", `{"page_id":"%s"}`},
-	{"duplicate", "POST", "/api/pages/%s/duplicate", "", "duplicate_page", `{"page_id":"%s"}`},
-	{"backlinks", "GET", "/api/pages/%s/backlinks", "", "get_links", `{"page_id":"%s"}`},
-	{"note", "POST", "/api/pages/%s/notes", `{"body":"A note"}`, "note", `{"page_id":"%s","text":"A note"}`},
+	{"read", "GET", "/api/pages/%s", "", "get_page", `{"page_id":"%s"}`, false},
+	{"rename", "PATCH", "/api/pages/%s", `{"title":"Renamed"}`, "update_page", `{"page_id":"%s","title":"Renamed"}`, false},
+	{"comment", "POST", "/api/pages/%s/comments", `{"body":"A comment"}`, "comments", `{"page_id":"%s","action":"add","body":"A comment"}`, false},
+	{"trash", "DELETE", "/api/pages/%s", "", "set_trashed", `{"page_id":"%s","trashed":true}`, false},
+	{"share", "POST", "/api/pages/%s/share", `{}`, "set_sharing", `{"page_id":"%s","public":true}`, false},
+	{"history", "GET", "/api/pages/%s/revisions", "", "revisions", `{"page_id":"%s"}`, false},
+	{"duplicate", "POST", "/api/pages/%s/duplicate", "", "duplicate_page", `{"page_id":"%s"}`, false},
+	{"backlinks", "GET", "/api/pages/%s/backlinks", "", "get_links", `{"page_id":"%s"}`, false},
+	{"note", "POST", "/api/pages/%s/notes", `{"body":"A note"}`, "note", `{"page_id":"%s","text":"A note"}`, false},
 	// Every parity page's body is the one paragraph "x" (see the loop below),
 	// so an edit that passes the gates succeeds on both doors.
-	{"edit", "POST", "/api/pages/%s/edits", `{"edits":[{"old":"x","new":"y"}]}`, "write_content", `{"page_id":"%s","mode":"edit","edits":[{"old":"x","new":"y"}]}`},
+	{"edit", "POST", "/api/pages/%s/edits", `{"edits":[{"old":"x","new":"y"}]}`, "write_content", `{"page_id":"%s","mode":"edit","edits":[{"old":"x","new":"y"}]}`, false},
+	// A row made in a view (spec 005): the view id must open nothing the
+	// database's own write gate does not.
+	{"row in view", "POST", "/api/pages", `{"parentId":"%s","title":"Row","viewId":"v-parity"}`, "create_page", `{"parent_id":"%s","title":"Row","view_id":"v-parity"}`, true},
 }
 
 // parityWorkspaceActs are acts on a workspace rather than a page: %s is the
 // workspace the case's pages live in, in the path, the body and the arguments.
 var parityWorkspaceActs = []parityAct{
 	// The interface and the workspace tool both go through setTagColor (#2).
-	{"tag colour", "PUT", "/api/tag-colors", `{"workspaceId":"%s","tag":"urgent","color":"red"}`, "workspace", `{"workspace_id":"%s","tag":"urgent","color":"red"}`},
+	{"tag colour", "PUT", "/api/tag-colors", `{"workspaceId":"%s","tag":"urgent","color":"red"}`, "workspace", `{"workspace_id":"%s","tag":"urgent","color":"red"}`, false},
 }
 
 type parityWorld struct {
@@ -225,6 +231,12 @@ func TestAgentParityHoldsForEveryCredentialShape(t *testing.T) {
 		for j := range pages {
 			pages[j] = w.s.makePage(t, target, w.owner, "", "Parity page", `{}`)
 			w.s.db.Exec(`UPDATE pages SET content = '[{"id":"p","type":"paragraph","props":{},"content":[{"type":"text","text":"x","styles":{}}],"children":[]}]' WHERE id = ?`, pages[j])
+			if act.database {
+				w.s.db.Exec(`UPDATE pages SET type = 'collection' WHERE id = ?`, pages[j])
+				w.s.db.Exec(`INSERT INTO collections (page_id, schema, views) VALUES (?, ?, ?)`, pages[j],
+					`[{"id":"status","name":"Status","type":"select","options":[{"id":"todo","name":"To do"}]}]`,
+					`[{"id":"v-parity","name":"To do","type":"table","filters":[{"property":"status","op":"is","value":"todo"}]}]`)
+			}
 			if private {
 				// Private to the colleague: the owner and outsider are not its owner.
 				w.s.db.Exec(`UPDATE pages SET visibility = 'private', owner_id = ? WHERE id = ?`, w.colleague, pages[j])

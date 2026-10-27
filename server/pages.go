@@ -286,6 +286,9 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 		Type        string          `json:"type"`
 		Props       json.RawMessage `json:"props"`
 		WorkspaceID string          `json:"workspaceId"`
+		// The view the row is made in (spec 005): its filters' single answers
+		// are stored under props. Only with a database as parent.
+		ViewID string `json:"viewId"`
 	}
 	if err := decodeJSON(w, r, &body); err != nil {
 		httpError(w, 400, "invalid JSON")
@@ -321,6 +324,17 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		workspaceID = pws
+		if body.ViewID != "" {
+			merged, err := s.propsInView(*body.ParentID, body.ViewID, json.RawMessage(props))
+			if err != nil {
+				httpErrorCode(w, 400, "view_not_in_database", err.Error())
+				return
+			}
+			props = string(merged)
+		}
+	} else if body.ViewID != "" {
+		httpErrorCode(w, 400, "view_not_in_database", "A view only applies to a row made in a database.")
+		return
 	} else {
 		workspaceID = body.WorkspaceID
 		if workspaceID == "" {
@@ -369,6 +383,15 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 	s.pagesChanged()
 	s.rowChanged(id)
 	s.fireWebhook("page.created", id)
+	if body.ViewID != "" {
+		matches, err := s.rowMatchesView(id, *body.ParentID, body.ViewID)
+		if err != nil {
+			httpError(w, 500, err.Error())
+			return
+		}
+		writeJSON(w, withMatchesView(p, matches))
+		return
+	}
 	writeJSON(w, p)
 }
 

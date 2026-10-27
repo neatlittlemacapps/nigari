@@ -439,7 +439,13 @@ query would hold up every other request. Narrow the filter or ask for a smaller
 `limit`.
 
 Rows are pages, so you create one with `POST /api/pages` naming the database as
-`parentId`, and set its values with `PATCH`. See
+`parentId`, and set its values with `PATCH`. Add `viewId` (one of the
+database's view ids) to make the row the way **New** does in that view. The
+values its filters pin to a single answer are stored under your `props`, and
+the answer gains `"matchesView": true|false`. `POST
+/api/collections/{id}/from-template` takes `viewId` the same way. A view of
+another database is a `400` with `"code": "view_not_in_database"`, and nothing
+is created. See
 [Collections](collections.md) and [Properties](properties.md) for what the
 values may contain.
 

@@ -177,6 +177,10 @@ func (s *Server) handleRowFromTemplate(w http.ResponseWriter, r *http.Request) {
 		TemplateID string          `json:"templateId"`
 		Title      string          `json:"title"`
 		Props      json.RawMessage `json:"props"`
+		// The view the row is made in (spec 005). Template first, then the
+		// view's pins, then props: the view the person is looking at beats
+		// the template, and what they typed beats both.
+		ViewID string `json:"viewId"`
 	}
 	if err := decodeJSON(w, r, &body); err != nil {
 		httpError(w, 400, "invalid JSON")
@@ -185,6 +189,14 @@ func (s *Server) handleRowFromTemplate(w http.ResponseWriter, r *http.Request) {
 	if len([]rune(body.Title)) > maxTitleLen {
 		httpError(w, 400, "title is too long")
 		return
+	}
+	if body.ViewID != "" {
+		merged, err := s.propsInView(id, body.ViewID, body.Props)
+		if err != nil {
+			httpErrorCode(w, 400, "view_not_in_database", err.Error())
+			return
+		}
+		body.Props = merged
 	}
 	u := requestUser(r)
 	nid, err := s.rowFromTemplate(u.ID, id, body.TemplateID, body.Title, body.Props)
@@ -204,6 +216,15 @@ func (s *Server) handleRowFromTemplate(w http.ResponseWriter, r *http.Request) {
 	s.audit("human", u.ID, u.Name, "create_page", nid, p.WorkspaceID, p.Title)
 	s.rowChanged(nid)
 	s.fireWebhook("page.created", nid)
+	if body.ViewID != "" {
+		matches, err := s.rowMatchesView(nid, id, body.ViewID)
+		if err != nil {
+			httpError(w, 500, err.Error())
+			return
+		}
+		writeJSON(w, withMatchesView(p, matches))
+		return
+	}
 	writeJSON(w, p)
 }
 

@@ -57,7 +57,8 @@ formula.
 **Seven ways to look at the same data:** table, board, gallery, calendar,
 timeline, list and form. A board groups by any select column and its columns
 take the colour you chose for that option. A form view can be shared publicly so
-people outside the workspace can submit entries into it.
+people outside the workspace can submit entries into it. A row added in a
+filtered view starts with the values that view filters on, so it stays in sight.
 
 ### Finding things
 

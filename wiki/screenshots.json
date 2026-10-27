@@ -318,7 +318,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "800231b2fc1e",
+        "web/src/components/CollectionView.tsx": "0997d0261bdd",
         "web/src/tokens.css": "e1f40b165bd5",
         "web/src/theme.css": "42ead492ea94"
       }
@@ -354,7 +354,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "800231b2fc1e",
+        "web/src/components/CollectionView.tsx": "0997d0261bdd",
         "web/src/cardLayout.ts": "eb7f92584275",
         "web/src/tokens.css": "e1f40b165bd5",
         "web/src/theme.css": "42ead492ea94"
@@ -390,7 +390,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "800231b2fc1e",
+        "web/src/components/CollectionView.tsx": "0997d0261bdd",
         "web/src/tokens.css": "e1f40b165bd5",
         "web/src/theme.css": "42ead492ea94"
       }
@@ -625,7 +625,7 @@
       ],
       "takenAt": {
         "web/src/components/AgentConnect.tsx": "e0a5a3a2e940",
-        "server/mcp.go": "c86fb964d6d7",
+        "server/mcp.go": "40a3e93427aa",
         "web/src/tokens.css": "e1f40b165bd5",
         "web/src/theme.css": "42ead492ea94"
       },

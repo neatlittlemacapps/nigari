@@ -34,6 +34,10 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
     case 'account_disabled':
       return t('This account has been deactivated. Talk to an admin.');
 
+    // ---- a row made in a view (spec 005) ----
+    case 'view_not_in_database':
+      return t('This view does not belong to this database, so the row was not created.');
+
     // ---- read-only workspaces ----
     case 'workspace_read_only':
       return t('You can only read this workspace, so nothing can be created or reordered in it.');

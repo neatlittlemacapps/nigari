@@ -328,10 +328,13 @@ export const api = {
     type: 'doc' | 'collection' = 'doc',
     props?: Record<string, unknown>,
     workspaceId?: string,
+    // The view a row is made in (spec 005): the server stores the values its
+    // filters pin down and answers matchesView.
+    viewId?: string,
   ) =>
-    req<Page>('/api/pages', {
+    req<Page & { matchesView?: boolean }>('/api/pages', {
       method: 'POST',
-      body: JSON.stringify({ parentId, title, type, props, workspaceId }),
+      body: JSON.stringify({ parentId, title, type, props, workspaceId, viewId }),
     }),
   getPage: (id: string) => req<Page>(`/api/pages/${id}`),
   updatePage: (
@@ -366,8 +369,8 @@ export const api = {
   addDatabaseTemplate: (collectionId: string, body: { title?: string; fromPageId?: string } = {}) =>
     req<Page>(`/api/collections/${collectionId}/templates`, { method: 'POST', body: JSON.stringify(body) }),
   // One request: a row in this database from its template, props laid on top.
-  rowFromTemplate: (collectionId: string, body: { templateId: string; title?: string; props?: Record<string, unknown> }) =>
-    req<Page>(`/api/collections/${collectionId}/from-template`, { method: 'POST', body: JSON.stringify(body) }),
+  rowFromTemplate: (collectionId: string, body: { templateId: string; title?: string; props?: Record<string, unknown>; viewId?: string }) =>
+    req<Page & { matchesView?: boolean }>(`/api/collections/${collectionId}/from-template`, { method: 'POST', body: JSON.stringify(body) }),
   trashPage: (id: string) => req<{ ok: boolean }>(`/api/pages/${id}`, { method: 'DELETE' }),
   // fromTemplate: instantiate a template (copy keeps the title).
   // asTemplate: save as template — the COPY becomes the template (snapshot),

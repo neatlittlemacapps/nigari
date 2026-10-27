@@ -24,14 +24,14 @@ func TestViewerCannotCreateRootPageOrInstantiateTemplate(t *testing.T) {
 			t.Errorf("viewer create returned %d: %s", rr.Code, rr.Body.String())
 		}
 	}
-	if _, err := s.mcpCreateFromTemplate(&user{ID: viewer}, tpl, "Forbidden copy", "", nil); err == nil {
+	if _, err := s.mcpCreateFromTemplate(&user{ID: viewer}, tpl, "Forbidden copy", "", nil, ""); err == nil {
 		t.Error("viewer instantiated a template in a read-only workspace")
 	}
 	if _, err := s.duplicatePage(tpl, viewer, true, false); err == nil {
 		t.Error("duplicate accepted a viewer")
 	}
 	s.db.Exec(`UPDATE workspace_members SET role = 'member' WHERE workspace_id = ? AND user_id = ?`, ws, viewer)
-	if _, err := s.mcpCreateFromTemplate(&user{ID: viewer}, tpl, "Allowed copy", "", nil); err != nil {
+	if _, err := s.mcpCreateFromTemplate(&user{ID: viewer}, tpl, "Allowed copy", "", nil, ""); err != nil {
 		t.Fatal(err)
 	}
 	rr := requestAs(t, s, cookie, "POST", "/api/pages", `{"title":"Allowed root","workspaceId":"`+ws+`"}`)
