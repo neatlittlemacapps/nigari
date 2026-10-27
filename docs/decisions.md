@@ -7,6 +7,36 @@ entries are not edited away.
 
 ---
 
+## 2026-10-27 — Spec 005: a new row takes what its view's filters pin down
+
+**Decision**:
+- **Only an armed "is" with exactly one value pins a value**, written in the
+  property's stored form: a select option id, a number as a number, a box as
+  true/false, a relative day as the date it means, lists for multiselect,
+  relations and several people. Two filters naming different answers for one
+  property pin nothing.
+- **The server works the values out**, in `server/viewpins.go`, for every door:
+  `POST /api/pages` and the template route (`viewId`), MCP `create_page` and
+  `create_rows` (`view_id`).
+- **Precedence: template, then view, then explicit values.**
+- **"Does the row show?"** is answered with the rows query's own filter SQL.
+  The interface shows a toast with an **Open** action when it doesn't.
+- **Only the view's AND list counts.** Views store no OR groups.
+
+**Why**:
+- **One answer only.** A range or a set has no value to pick without guessing,
+  and a guess stored as data stays.
+- **The server.** A second copy of the filter rules in the browser would drift
+  from the agent path, as the number and checkbox filters did (#95).
+- **The view beats the template.** It is the one the person is looking at when
+  they press **New**.
+- **The same SQL.** The notice can never disagree with what the view then shows.
+- **Measured cost:** +0.45 ms per create on the 1k-row seeded database.
+
+**Rejected**: picking a value from a range or a set; pins computed in the
+browser; a dialog instead of a toast; naming the view in the agent's answer
+(its name is a person's text and would need `wrapUntrusted`).
+
 ## 2026-10-27 — Owner's answers: auto-merge, search, outside edits, column order, board drops
 
 **Decision** (the owner, 2026-10-27):
