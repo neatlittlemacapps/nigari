@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/build-lucide.mjs && npm run check && vite build",
-    "check": "tsc --noEmit && node scripts/check-i18n.mjs && node scripts/check-format.mjs && node scripts/check-select-rename.mjs && node scripts/check-cardlayout.mjs && node scripts/check-anchoredmenu.mjs && node scripts/check-dropfiles.mjs && node scripts/check-treemode.mjs && node scripts/check-columnwidths.mjs && node scripts/check-keys.mjs && node scripts/check-nav.mjs && node scripts/check-wiki.mjs && node scripts/check-parity.mjs && node scripts/check-surfaces.mjs && node scripts/check-tasks.mjs"
+    "check": "tsc --noEmit && node scripts/check-i18n.mjs && node scripts/check-format.mjs && node scripts/check-select-rename.mjs && node scripts/check-cardlayout.mjs && node scripts/check-anchoredmenu.mjs && node scripts/check-dropfiles.mjs && node scripts/check-treemode.mjs && node scripts/check-columnwidths.mjs && node scripts/check-keys.mjs && node scripts/check-nav.mjs && node scripts/check-wiki.mjs && node scripts/check-parity.mjs && node scripts/check-surfaces.mjs && node scripts/check-tasks.mjs && node scripts/check-build-tokens.mjs && node scripts/check-tokens.mjs"
   },
   "devDependencies": {
     "@types/react": "^18.3.31",
@@ -16,6 +16,7 @@
     "vite": "^5.4.21"
   },
   "dependencies": {
+    "@base-ui/react": "1.9.0",
     "@blocknote/core": "^0.51.4",
     "@blocknote/mantine": "^0.51.4",
     "@blocknote/react": "^0.51.4",

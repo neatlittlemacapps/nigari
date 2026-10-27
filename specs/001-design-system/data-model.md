@@ -6,7 +6,7 @@ No database change. The "data" is token files, component contracts and budgets.
 
 | File | Tier | Holds |
 |---|---|---|
-| `primitives.tokens.json` | primitive | raw scales: `color.paper.*`, `color.ink.*`, `color.pink.*`, `space.*`, `font.size.*`, `radius.*`, `layer.*`, `shadow.*`, `motion.*` |
+| `primitives.tokens.json` | primitive | raw scales: `color.paper.*`, `color.ink.*`, `color.pink.*`, `space.*`, `font.size.*`, `radius.scale.*`, `layer.*`, `shadow.*`, `motion.*` |
 | `semantic.tokens.json` | semantic | roles, each with a light and a dark value: `color.surface`, `color.surface.sidebar`, `color.text`, `color.text.muted`, `color.accent`, `color.border`, `color.border.strong`, `color.hover`, `color.active`, `color.danger`, `color.focus` … |
 | `component.tokens.json` | component | only where a component needs its own value (`dialog.width`, `menu.item.height`, `button.height.*`) |
 

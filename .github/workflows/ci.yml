@@ -40,6 +40,11 @@ jobs:
       - name: Frontend (check gate + build)
         run: make frontend
 
+      # The main chunk against its cap (spec 001, research P8). After the
+      # build, because npm run check does not build.
+      - name: Bundle size
+        run: node web/scripts/check-bundle.mjs
+
       - name: Go tests
         run: go test ./...
 

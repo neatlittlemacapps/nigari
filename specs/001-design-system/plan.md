@@ -1,6 +1,6 @@
 # Implementation Plan: Build the interface from a design system
 
-**Branch**: `001-design-system` | **Date**: 2026-10-26 | **Spec**: [spec.md](spec.md) | **Issue**: none yet (created by `/speckit-github-taskstoissues`)
+**Branch**: `001-design-system` | **Date**: 2026-10-26 | **Spec**: [spec.md](spec.md) | **Issue**: #87
 
 **Input**: Feature specification from `/specs/001-design-system/spec.md`
 
@@ -17,8 +17,9 @@ This feature introduces a concept every later UI change must respect, so it adds
 
 Delivery is in batches (FR-016). **Batch 1**, the scope of this plan's tasks, covers
 tokens, build, check, catalogue, `Button`, `IconButton`, `Dialog`, `AlertDialog`,
-`Field`/`Input`, `Select` and `Switch`, plus migrating the webhook dialog in
-`AdminSettings.tsx` (User Story 1). Menus, toasts and the remaining migration follow as
+`Field`/`Input`, `Checkbox`, `Select` and `Switch`, plus migrating the settings dialog
+and its Webhooks tab in `AdminSettings.tsx` (User Story 1; `Checkbox` added at task time,
+see tasks.md). Menus, toasts and the remaining migration follow as
 later batches, each with its own tasks.
 
 ## Technical Context
@@ -29,18 +30,18 @@ later batches, each with its own tasks.
 - `@base-ui/react` 1.9.0, exact pin: headless behaviour for focus, keyboard and ARIA (FR-007; research P1).
 - `@axe-core/playwright` 4.14.0, dev dependency of `web/tests` only (research P7).
 
-**Storage**: One SQLite file, one connection (`SetMaxOpenConns(1)`), schema in `server/db.go`. Schema change: none.
+**Storage**: One SQLite file, one writer plus a read-only pool (#84), schema in `server/db.go`. Schema change: none.
 
 **Testing**: `npm run check` (tsc and the check scripts, plus the new `check-tokens.mjs`); Playwright in `web/tests/` (plus `catalog.mjs` with baselines and axe); existing regressions must stay green.
 
 **Target Platform**: One static binary (`CGO_ENABLED=0`), Linux/macOS/Windows; browser, desktop shell, MCP clients.
 
-**Performance Goals**: the main chunk grows by at most 60 KB gzip over the 790,888 B baseline at `c4de997` (research P8). No layout or interaction gets slower; Base UI portals replace hand-positioned popovers.
+**Performance Goals**: the main chunk grows by at most 60 KB gzip over the 528,706 B baseline on `main` at `2a28bc4` (research P8, corrected). No layout or interaction gets slower; Base UI portals replace hand-positioned popovers.
 
 **Constraints**: no external services; no Tailwind or CSS framework; English source with `t()`; components hold no text of their own.
 
 **Scale/Scope**:
-- Batch 1: 7 components and 1 screen migrated.
+- Batch 1: 8 components and 1 screen migrated.
 - The whole feature: 24 dialogs, 356 raw buttons, 133 hex and 148 rgb(a) literals, 34 font sizes, 13 radii, 24 z-index values.
 
 ## Constitution Check

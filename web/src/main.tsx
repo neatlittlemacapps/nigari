@@ -10,6 +10,10 @@ import '@blocknote/mantine/style.css';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import './styles.css';
+// The design tokens (web/tokens/, generated). After styles.css, whose :root
+// still holds the old green defaults under the same names; before theme.css,
+// which reads them.
+import './tokens.css';
 // The website's look, layered on top — see the head of theme.css for why it is
 // a file of its own rather than edits in styles.css.
 import './theme.css';

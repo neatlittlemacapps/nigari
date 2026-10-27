@@ -7,6 +7,32 @@ entries are not edited away.
 
 ---
 
+## 2026-10-27 — Design tokens: light muted text darkened for AA, and the bundle baseline corrected
+
+**Decision**: the token build checks every text colour against the surfaces it
+sits on, in both themes, and fails below WCAG AA (spec 001, FR-004). Light
+muted text (`--muted`) moves from `#7e7d78` to `#6f6e6a`: the same grey,
+darkened just enough to reach 4.5:1 on the sidebar, the darkest light surface
+(4.89:1 on the document). Nothing else in the look changes; light-mode muted
+text in the wiki screenshots is the one visible difference. The radius scale is
+built as `radius.scale.*` (`--radius-scale-sm`), because `--radius-sm` and
+`--radius-lg` already name today's 7px and 14px. The bundle cap is 590,146 B
+gzip: the main chunk on `main` (528,706 B) plus 60 KB.
+
+**Why**: the first build measured `#7e7d78` at 3.95:1 on the document and
+3.64:1 on the sidebar. It is used for hints and labels at body size, where AA
+asks 4.5:1. Dark muted text already passes (4.78:1 or more). The plan's bundle
+baseline, 790,888 B, was never reproduced: the raw size matched to the byte,
+the gzip size did not, so it was a measuring mistake, and a cap on it would
+have allowed 320 KB of growth instead of 60.
+
+**Rejected**: declaring muted text "large or UI" (3:1) to pass. It is not;
+the check would then guard nothing for the colour that needs it most. Keeping
+`#7e7d78` with an exception and an issue (it ships a known AA failure behind a
+green check). Renaming the legacy `--radius`, `--radius-sm` and `--radius-lg` (15 uses in
+`theme.css` and the public pages' styles in `server/`; they move onto the
+scale batch by batch).
+
 ## 2026-10-26 — A read-only pool beside the one writer connection
 
 **Decision**: long analytical reads (a database's rows, rollups,
