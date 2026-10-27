@@ -17,7 +17,7 @@ import { t } from '../i18n';
 // here", and a flat list of everything the app can ever do is not.
 
 export default function ShortcutSheet({ onClose }: { onClose: () => void }) {
-  useExclusiveModal(onClose);
+  useExclusiveModal(onClose, { escape: false }); // Escape: the registry, below
 
   // Escape closes it, through the registry rather than a listener of its own:
   // `modal` scope outranks everything underneath, so this wins over any Escape

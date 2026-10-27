@@ -30,9 +30,9 @@ you keeps its old wording until you press **Save**. While a language change is
 pending, a line appears under the picker saying *"The language changes when you
 save."*
 
-Press **Cancel**, or click outside the dialog, and nothing is kept; the preview
-is undone with it. There is no Esc shortcut on this dialog; opening another
-dialog closes it the same way Cancel does.
+Press **Cancel** or **Escape**, or click outside the dialog, and nothing is
+kept; the preview is undone with it. Opening another dialog closes it the same
+way Cancel does.
 
 **Save** stores all five and applies them at once. The interface switches
 language on the spot, with no reload.

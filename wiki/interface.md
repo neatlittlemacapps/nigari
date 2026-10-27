@@ -445,7 +445,7 @@ where the document tree would be: the same cards, the same **All** and
 | `⌥N` / `Alt+N` | a new page at the top level of the current workspace |
 | `Ctrl+Alt+←` / `Ctrl+Alt+→` | previous / next tab, wrapping around. Ignored while you are typing, and needs at least two tabs. `⌘` is deliberately not part of it: that combination belongs to the browser |
 | `↑` `↓` `Enter` | in the search dialog, once you have typed: move through the results, open the selected one. The recently-opened list is click-only |
-| `Escape` | closes the search dialog, any open menu, an image opened full-screen, a file preview, the icon picker, and a confirmation |
+| `Escape` | closes the dialog on top: the search dialog, any settings or account dialog, a file preview, a confirmation. An open menu, list or picker inside a dialog closes first, so a second press closes the dialog. Closing a dialog puts focus back where it was, and while one is open `Tab` stays inside it |
 | `Enter` | confirms a dialog that asks for a single line of text |
 | `Enter` in the tag field of a page | commits the tag, and so do `,` and `Tab`. `↑` `↓` move through the suggestions, `Escape` closes them, and `Backspace` in an empty field removes the last tag |
 | `⌘Enter` / `Ctrl+Enter` | posts a comment |

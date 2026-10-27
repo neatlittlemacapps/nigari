@@ -65,7 +65,10 @@ export function DialogHost() {
     if (req?.kind === 'prompt') setTimeout(() => inputRef.current?.focus(), 0);
     if (!req) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') cancel();
+      if (e.key !== 'Escape') return;
+      // Handled: the modal underneath must not close on the same press.
+      e.preventDefault();
+      cancel();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);

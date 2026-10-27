@@ -27,7 +27,7 @@ export default function SearchModal({ recent, onClose, onNavigate }: Props) {
   const [sel, setSel] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const seq = useRef(0);
-  useExclusiveModal(onClose);
+  useExclusiveModal(onClose, { escape: false }); // Escape: onKey below
 
   useEffect(() => {
     inputRef.current?.focus();
