@@ -23,8 +23,8 @@ description: "Tasks for every block an agent can see in Markdown, it can also wr
 
 ## Phase 2: Foundational (blocks every story)
 
-- [ ] T002 [backend] New `server/md_spellings.go`: the alert ↔ emoji table (research R3), the `[[toc]]` / `[[subpages]]` tokens, and the container scanner that cuts `<details>` and `:::` runs out of the lines, skipping fenced code and tracking nesting (R2)
-- [ ] T003 [P] [test] `server/md_spellings_test.go`: scanner tests: nested containers, a container inside code, an unclosed `<details>`, `:::` inside a toggle
+- [x] T002 [backend] New `server/md_spellings.go`: the alert ↔ emoji table (research R3), the `[[toc]]` / `[[subpages]]` tokens, and the container scanner that cuts `<details>` and `:::` runs out of the lines, skipping fenced code and tracking nesting (R2)
+- [x] T003 [P] [test] `server/md_spellings_test.go`: scanner tests: nested containers, a container inside code, an unclosed `<details>`, `:::` inside a toggle
 
 **Checkpoint**: the text can be cut into plain runs and containers.
 
@@ -36,10 +36,10 @@ description: "Tasks for every block an agent can see in Markdown, it can also wr
 
 **Independent Test**: one `write_content` with every spelling; the page holds the real blocks.
 
-- [ ] T004 [US1] [test] Import table in `server/md_spellings_test.go`: every row of contracts/spellings.md and every edge case of the spec (unknown alert type, old `> 💡` callouts, `---` under a paragraph, bare URL stays a link, `[[toc]]` in a sentence, columns 1 and 4+, widths that don't add up)
-- [ ] T005 [US1] [backend] `mdToBlocks` in `server/mdimport.go`: dividers, `[[toc]]`, `[[subpages]]`, bookmarks (R6), callout alerts and old-style emoji quotes (R3)
-- [ ] T006 [US1] [backend] `mdToBlocks`: containers through the T002 scanner: toggles and columns, parsed recursively (R2)
-- [ ] T007 [US1] [test] Over MCP via `callTool`: `create_page` and `write_content` (replace and append) with every spelling make the blocks
+- [x] T004 [US1] [test] Import table in `server/md_spellings_test.go`: every row of contracts/spellings.md and every edge case of the spec (unknown alert type, old `> 💡` callouts, `---` under a paragraph, bare URL stays a link, `[[toc]]` in a sentence, columns 1 and 4+, widths that don't add up)
+- [x] T005 [US1] [backend] `mdToBlocks` in `server/mdimport.go`: dividers, `[[toc]]`, `[[subpages]]`, bookmarks (R6), callout alerts and old-style emoji quotes (R3)
+- [x] T006 [US1] [backend] `mdToBlocks`: containers through the T002 scanner: toggles and columns, parsed recursively (R2)
+- [x] T007 [US1] [test] Over MCP via `callTool`: `create_page` and `write_content` (replace and append) with every spelling make the blocks
 
 **Checkpoint**: agents can write every block.
 
@@ -51,10 +51,10 @@ description: "Tasks for every block an agent can see in Markdown, it can also wr
 
 **Independent Test**: a page with every block type, exported and imported, has identical blocks.
 
-- [ ] T008 [US2] [backend] `renderBlocksMarked` in `server/export.go`: the spellings of contracts/spellings.md for callout, toggle, toc, subpages, bookmark and columns
-- [ ] T009 [US2] [test] Round trip in `server/md_spellings_test.go`: a page with every block type, render → parse → render identical, and the same types and props (SC-002); `get_page` → `write_content` replace leaves the stored blocks unchanged (SC-003)
-- [ ] T010 [US2] [backend] `notEditable` / `editableProps` in `server/cap_edits.go`: `toc`, `subpages` leave the refused list; `emoji`, `count`, `widths` join the props (R5)
-- [ ] T011 [US2] [test] Find-and-replace edit inside a callout and in a paragraph beside a columns block: accepted, everything else kept (FR-006); the existing `cap_edits` and export tests pass unchanged (FR-005)
+- [x] T008 [US2] [backend] `renderBlocksMarked` in `server/export.go`: the spellings of contracts/spellings.md for callout, toggle, toc, subpages, bookmark and columns
+- [x] T009 [US2] [test] Round trip in `server/md_spellings_test.go`: a page with every block type, render → parse → render identical, and the same types and props (SC-002); `get_page` → `write_content` replace leaves the stored blocks unchanged (SC-003)
+- [x] T010 [US2] [backend] `notEditable` / `editableProps` in `server/cap_edits.go`: `toc`, `subpages` leave the refused list; `emoji`, `count`, `widths` join the props (R5)
+- [x] T011 [US2] [test] Find-and-replace edit inside a callout and in a paragraph beside a columns block: accepted, everything else kept (FR-006); the existing `cap_edits` and export tests pass unchanged (FR-005)
 
 **Checkpoint**: a page goes out and comes back whole.
 
