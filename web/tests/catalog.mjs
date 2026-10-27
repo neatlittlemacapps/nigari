@@ -189,14 +189,20 @@ try {
       if (!shotsOnly) await axe(`${theme}, ${open} open`);
     }
 
-    // The side panel (spec 007): not a dialog, so found by its own role.
+    // The side panel (spec 007): not a dialog, so found by its own role. The
+    // reference run draws the BASE branch's catalogue with this script, and a
+    // base from before the component has no section to open: nothing to draw
+    // there, so the pull request's shot simply has no reference yet. The run
+    // on the pull request's own catalogue stays strict.
     await page.goto(`${base}?theme=${theme}&open=side-panel`);
-    const sidePanel = page.getByRole('complementary', { name: 'Row preview' });
-    await sidePanel.waitFor();
-    await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(250);
-    await matches(`side-panel-open-${theme}`, await sidePanel.screenshot({ animations: 'disabled' }));
-    if (!shotsOnly) await axe(`${theme}, side panel open`);
+    if (!shotsOnly || (await page.locator('[data-section="side-panel"]').count()) > 0) {
+      const sidePanel = page.getByRole('complementary', { name: 'Row preview' });
+      await sidePanel.waitFor();
+      await page.evaluate(() => document.fonts.ready);
+      await page.waitForTimeout(250);
+      await matches(`side-panel-open-${theme}`, await sidePanel.screenshot({ animations: 'disabled' }));
+      if (!shotsOnly) await axe(`${theme}, side panel open`);
+    }
   }
 
   // 3: the keyboard.
