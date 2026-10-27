@@ -320,8 +320,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const addRowFromTemplate = async (templateId: string) => {
     setTplOpen(false);
     try {
-      await api.rowFromTemplate(collectionId, { templateId });
+      const row = await api.rowFromTemplate(collectionId, { templateId, viewId: rowViewId() });
       onPagesChanged();
+      announceIfHidden(row);
     } catch {
       toast(t('The template could not be used'));
     }
@@ -593,8 +594,24 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     // No title, like a page made anywhere else: the word "Untitled" is what the
     // interface shows for that, in the reader's language. Stored, it stayed
     // English in every language and turned up in search and exports.
-    await api.createPage(collectionId, '', 'doc', presetProps);
+    // In the view the person is looking at (spec 005): the server fills in
+    // what its filters pin down, under presetProps (a board column's value).
+    const row = await api.createPage(collectionId, '', 'doc', presetProps, undefined, rowViewId());
     onPagesChanged();
+    announceIfHidden(row);
+  };
+
+  // The view a new row is made in. A form has no filters, and its fields are
+  // what the person fills in.
+  const rowViewId = () => (view && view.type !== 'form' ? view.id : undefined);
+  // A row the view's filters still leave out (Estimate > 3, "contains") would
+  // vanish without a word; say so and offer the way to it.
+  const announceIfHidden = (row: { id: string; matchesView?: boolean }) => {
+    if (row.matchesView !== false) return;
+    toast(t("The new row doesn't match this view's filters, so it isn't shown here."), {
+      label: t('Open'),
+      run: () => onNavigate(row.id),
+    });
   };
 
   // Persist an inline change to a select/multiselect property's options (create,

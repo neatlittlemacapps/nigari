@@ -5027,6 +5027,15 @@ body.is-col-resizing {
   max-width: 90vw;
 }
 
+/* A toast with an action (spec 005): the message and its button on one line,
+   and clickable, which the toaster itself is not. */
+.toast-with-action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-200);
+  pointer-events: auto;
+}
+
 /* ---------- Scrollbars ---------- */
 
 /* Hidden entirely — scrolling still works via wheel, trackpad, touch and

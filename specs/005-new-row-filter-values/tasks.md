@@ -40,8 +40,8 @@ No setup: no dependency, no schema change (plan, Technical Context).
 - [x] T004 [US1] [test] Tests in `server/viewpins_test.go` for `POST /api/pages` with `viewId`: pins stored; explicit `props` win; no `viewId` is unchanged; a view of another database is refused with nothing created; no write access is refused (existing gate)
 - [x] T005 [US1] [backend] `handleCreatePage` in `server/pages.go`: optional `viewId` (only with a database parent), pins merged under `props` and normalised by `normalizePropValues`, `matchesView` in the answer
 - [x] T006 [US1] [backend] `rowFromTemplate` and its handler in `server/db_templates.go`: optional `viewId`; template, then pins, then props, in one `mcpSetProperties` call (research R5), with a test that a pin beats the template's value
-- [ ] T007 [US1] [ui] `web/src/api.ts` and `CollectionView.tsx`: `addRow` and `addRowFromTemplate` pass the active view's id (not a form view); a board column's value stays explicit
-- [ ] T008 [US1] [test] Playwright `web/tests/new-row-filters.mjs`: a view filtered to *Status is To do*; **New**; the row shows with that status; added to `web/tests/package.json`
+- [x] T007 [US1] [ui] `web/src/api.ts` and `CollectionView.tsx`: `addRow` and `addRowFromTemplate` pass the active view's id (not a form view); a board column's value stays explicit
+- [x] T008 [US1] [test] Playwright `web/tests/new-row-filters.mjs`: a view filtered to *Status is To do*; **New**; the row shows with that status; added to `web/tests/package.json`
 
 **Checkpoint**: US1 works in the interface.
 
@@ -53,10 +53,10 @@ No setup: no dependency, no schema change (plan, Technical Context).
 
 **Independent Test**: a view filtered to *Estimate > 3*; **New**; a notice with **Open**.
 
-- [ ] T009 [US2] [ui] `web/src/toast.ts` and its host: an optional action (`ui/Button`, reachable by Tab, light and dark); a toast with an action stays longer
-- [ ] T010 [US2] [ui] `CollectionView.tsx`: on `matchesView === false`, toast "The new row doesn't match this view's filters, so it isn't shown here." with **Open**
-- [ ] T011 [P] [US2] [i18n] German (required) and Spanish for the new string; `view_not_in_database` in `web/src/serverErrors.ts`
-- [ ] T012 [US2] [test] Extend `web/tests/new-row-filters.mjs`: *Estimate > 3*, **New**, the notice appears and **Open** opens the row; no notice in an unfiltered view
+- [x] T009 [US2] [ui] `web/src/toast.ts` and its host: an optional action (`ui/Button`, reachable by Tab, light and dark); a toast with an action stays longer
+- [x] T010 [US2] [ui] `CollectionView.tsx`: on `matchesView === false`, toast "The new row doesn't match this view's filters, so it isn't shown here." with **Open**
+- [x] T011 [P] [US2] [i18n] German (required) and Spanish for the new string; `view_not_in_database` in `web/src/serverErrors.ts`
+- [x] T012 [US2] [test] Extend `web/tests/new-row-filters.mjs`: *Estimate > 3*, **New**, the notice appears and **Open** opens the row; no notice in an unfiltered view
 
 **Checkpoint**: US1 and US2 work in the interface.
 
@@ -79,7 +79,7 @@ No setup: no dependency, no schema change (plan, Technical Context).
 
 ## Phase 6: Polish and cross-cutting
 
-- [ ] T017 [P] [wiki] `wiki/collections.md` § Rows are pages, `wiki/mcp-tools.md` §§ create_page and create_rows, `wiki/api.md` the `viewId` field, `docs/what-it-does.md` one line; retake any screenshot `check-wiki.mjs` lists
+- [x] T017 [P] [wiki] `wiki/collections.md` § Rows are pages, `wiki/mcp-tools.md` §§ create_page and create_rows, `wiki/api.md` the `viewId` field, `docs/what-it-does.md` one line; retake any screenshot `check-wiki.mjs` lists
 - [ ] T018 [P] [perf] `BenchmarkCreateRowWithView` beside a plain create on the seeded workspace; `EXPLAIN QUERY PLAN` of the match check recorded in the pull request
 - [ ] T019 [test] Run `scripts/agent-gate.sh`; mutation-check T002, T004 and T012 (each fails with its fix undone)
 

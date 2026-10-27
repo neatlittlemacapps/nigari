@@ -88,6 +88,21 @@ board, the **＋ New** at the foot of a column does the same and presets the
 grouping property to that column's value, so a card added under *In progress*
 arrives in progress.
 
+**A new row takes what the view's filters pin down.** In a view filtered to
+*Status is To do*, **New** makes a row whose Status is already *To do*, so it
+stays where you made it instead of vanishing. Every filter that names exactly
+one answer fills its property: a select option, a ticked or unticked box, a
+number, a person, a date. A relative day such as *today* is stored as the date
+it means. The same goes for **New from a template**: the view's values win over
+the template's, and a board column's value wins over the view's.
+
+Filters with no single answer fill nothing: *is not*, *contains*, *greater
+than*, a range, or *is* with several values. Neither do two filters that name
+different answers for one property, or a property that is calculated (formula,
+rollup). A row made in such a view may not match it. Then a notice says the new
+row isn't shown here, and its **Open** takes you to the row. A form view is not
+affected; its fields are what you fill in.
+
 A row is a page in every other respect: title, icon, cover, tags, a body of
 blocks, comments, attached files, revision history, its own raw note trail, and
 sub-pages of its own. This is why a task can hold its own meeting notes and a

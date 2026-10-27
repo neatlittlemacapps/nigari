@@ -409,6 +409,7 @@ which is also what you get for a page you may not read.
 | `cover` | string | no |
 | `description` | string | no |
 | `tags` | array of string | no |
+| `view_id` | string | no |
 
 Three things decide where the page lands. `parent_id` puts it under that page,
 and if that page is a **database**, the new page is a **row** in it. With no
@@ -438,6 +439,18 @@ to instantiating the template and every other argument is ignored. One
 exception: a template of a database (see `database_templates`) makes a **row**
 in that database, `properties` apply on top of the template's values, and
 `parent_id` may be left out. If it is given it must be that database.
+
+**`view_id` makes the row "in" a view of the database** (ids from
+`get_collection`). The row gets every value that view's filters pin to a single
+answer, the same values a person pressing **New** in that view gets: *Status is
+To do* stores Status = To do. A relative day is stored as the date it means.
+`properties` you pass win over them, and with a database template the order is
+template, then view, then `properties`. The answer adds `matches_view: true`,
+or `matches_view: false` plus a sentence saying the row will not show in that
+view. That happens with filters no single value satisfies (*is not*, ranges,
+several values) or when your own `properties` contradict them. A `view_id`
+that is not a view of the database, or one given without a database as
+`parent_id`, is refused before anything is created.
 
 Returns `Created page "Title" with id <id> (path: /p/<id>)`, or
 `Created page <id> from template <id>`, or for a database's template
@@ -836,6 +849,7 @@ Errors: `page "…" is not a database`.
 | --- | --- | --- |
 | `page_id` | string | yes |
 | `rows` | array | yes |
+| `view_id` | string | no |
 
 Up to **200** rows in one call, each `{title, icon?, properties?}`. For 40 rows
 this is one call rather than forty, each of which could fail and leave half a
@@ -848,6 +862,11 @@ no schema and no view to put them in. The error text says `database "…" not
 found`, which only ever means the id is wrong or out of reach. Confirm the
 target with `get_collection` first if the id came from somewhere other than a
 listing.
+
+`view_id` works as on `create_page`, for every row: the view's single-answer
+filters fill each row under its own `properties`, and the answer gains
+`"not_matching":[…]`, the ids of rows that will not show in that view. A view
+of another database is refused before the first row is created.
 
 Returns `{"created":n,"ids":[…]}`. Errors: `rows must be a list of {title,
 icon?, properties?}`; `rows is empty`; `at most 200 rows per call (got N) —
