@@ -81,7 +81,7 @@ function newestPanel(): Element | null {
   );
   const overlay = overlays[overlays.length - 1];
   if (!overlay) return null;
-  return overlay.querySelector('[role="dialog"], .dialog') ?? overlay;
+  return overlay.querySelector('[aria-modal="true"], .dialog') ?? overlay;
 }
 
 // The last few elements that had focus. A modal opened from a menu item
