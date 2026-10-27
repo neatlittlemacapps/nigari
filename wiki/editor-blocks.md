@@ -502,7 +502,7 @@ included; for a whole tree see [Import and export](import-export.md).
 | --- | --- |
 | Paragraph, headings 1–6 | as themselves |
 | Bullet / numbered / check list | `-`, `1.`, `- [ ]` / `- [x]`, children indented four spaces |
-| Toggle list | a plain list item; the children follow |
+| Toggle list | `<details><summary>title</summary>`, the children inside, `</details>` |
 | Toggle heading | an ordinary heading of its level; the children follow, indented |
 | Quote | `> ` |
 | Code block | a fenced block carrying its language |
@@ -510,12 +510,12 @@ included; for a whole tree see [Import and export](import-export.md).
 | Table | a Markdown table with a separator row after the first line |
 | Image | `![name](url)` |
 | Video, audio, file | `[name](url)` |
-| Callout | `> 💡 text` (a quote led by its emoji) |
-| Bookmark | a link to the address |
+| Callout | `> [!TIP]` then `> text`, the alert type following the emoji (see below) |
+| Bookmark | `<address>` |
 | Embedded collection | a link to the collection page, labelled `Collection` |
-| Table of contents | nothing |
-| Sub-pages | nothing |
-| Columns | the contents, flattened into one sequence |
+| Table of contents | `[[toc]]` |
+| Sub-pages | `[[subpages]]` |
+| Columns | `:::: columns`, one `::: column` per column (`::: {.column width="70%"}` when you set widths), each closed by `:::`, then `::::` |
 | Page link | `[label](/p/<id>)` |
 | **bold**, *italic*, ~~strike~~, `code` | the Markdown for each |
 | Underline | `<u>…</u>` (Markdown has none, HTML travels) |
@@ -538,7 +538,13 @@ print command rather than opening a print view, so it does nothing on a phone.
 **⋯ → Import (.md / .zip)** reads a Markdown file back in as a **new top-level
 page**. The importer understands headings, bullet, numbered and check lists
 (nested by indentation), quotes, fenced code with a language, images, tables,
-paragraphs, and the inline styles bold, italic, strike, code and links.
+paragraphs, and the inline styles bold, italic, strike, code and links. It also
+reads every spelling in the table above, so callouts, toggles, dividers, tables
+of contents, sub-pages lists, bookmarks and columns come back as themselves. A
+callout's alert type sets its emoji (NOTE ℹ️, TIP 💡, IMPORTANT 📌, WARNING ⚠️,
+CAUTION ❗); ✅ and 🔥 travel in front of the text and come back as they were.
+Files exported before these spellings existed come back right too: `> 💡 text`
+is read as a callout and `[address](address)` as a bookmark.
 
 A Markdown link pointing at a page of **this** instance (`/p/<id>`, or the full
 address that sharing hands out) comes back as a real page link rather than a
@@ -549,9 +555,8 @@ Four things do not survive a full round trip, and it is better to know than to
 discover:
 
 - **Headings 4, 5 and 6 come back as heading 3.** The importer clamps them.
-- **A divider comes back as a paragraph containing `---`.**
-- **Callouts, bookmarks and embedded collections come back as what they
-  exported as**: a quote and two links.
+- **A toggle heading comes back as an ordinary heading**, its children after it.
+- **An embedded collection comes back as what it exported as**: a link.
 - **The title heading stays in the body.** The first heading of an imported file
   becomes the page's title *and* remains the first block. Delete it if you do
   not want it twice.
@@ -561,7 +566,9 @@ become pages named after the file, and a Notion export's database CSVs become
 real collections. That path is [Import and export](import-export.md).
 
 Agents write into a page with the same Markdown converter, through
-`write_content`. See [MCP tools](mcp-tools.md).
+`write_content`, and read it with `get_page` in the same spellings, so an agent
+can add every block in the table above and keeps them when it writes a page back.
+See [MCP tools](mcp-tools.md).
 
 ## Limits worth knowing
 

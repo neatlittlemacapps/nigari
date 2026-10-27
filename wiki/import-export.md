@@ -142,8 +142,13 @@ Only one style at a time is recognised. `***both***` is not read as bold and
 italic together, and markup inside a link's label, `[**Handbook**](…)`, is not
 read at all; in both cases the asterisks arrive as ordinary characters.
 
-There is no divider on import: a line of `---` arrives as a paragraph
-containing three hyphens, even though the export writes a divider that way.
+A line of `---`, `***` or `___` is a divider. The blocks Markdown has no word
+for are read in the spellings the export writes (see the table below): a
+callout from `> [!NOTE]`-style alerts, a toggle from `<details>`, a table of
+contents from `[[toc]]`, a sub-pages list from `[[subpages]]`, a bookmark from
+`<https://…>`, and columns from pandoc's `:::: columns` fenced divs. A file
+exported before these spellings came back right too: `> 💡 text` is read as a
+callout and `[url](url)` as a bookmark.
 
 ### A Markdown link to a page of this instance becomes a real page link
 
@@ -483,17 +488,18 @@ a backup-shaped export. See [the API](api.md).
 | --- | --- | --- |
 | heading | `#`, `##`, `###` | `<h1>`–`<h3>` |
 | bullet / numbered / checklist | `- `, `1. `, `- [x] ` | `<ul>`, `<ol>`, with a disabled checkbox |
-| toggle list | a bullet, children below it | `<details>` |
+| toggle list | `<details><summary>…</summary>`, children inside | `<details>` |
 | quote | `> ` | `<blockquote>` |
-| callout | `> ` with the emoji in front | a tinted box |
+| callout | `> [!TIP]`-style alert; an emoji without its own type goes first in the text | a tinted box |
 | code | a fenced block with its language | `<pre><code>` |
 | divider | `---` | `<hr>` |
 | image | `![name](url)` | `<img>` |
 | file, video, audio | `[name](url)` | a link |
-| bookmark | the URL as a link | a link with a 🔖 |
+| bookmark | `<url>` | a link with a 🔖 |
 | table | a Markdown table; `\|` in a cell is escaped | `<table>` |
-| columns | flattened, side by side | side-by-side `<div>`s |
-| table of contents | nothing; it is built while reading | nothing |
+| columns | `:::: columns` with one `::: column` per column, widths as `{.column width="70%"}` | side-by-side `<div>`s |
+| table of contents | `[[toc]]`; it is built while reading | nothing |
+| sub-pages list | `[[subpages]]` | nothing |
 | embedded database | `[Collection](/p/<id>)` | a link to the database page |
 | page link | `[label](/p/<id>)` | a link to `/p/<id>` |
 | underline | `<u>text</u>`; Markdown has none | `<u>` |
@@ -505,10 +511,7 @@ of its rows: a copy would be stale the moment somebody edited a row.
 
 Export to Markdown and import the result, and these change:
 
-- A divider becomes a paragraph containing `---`.
-- A callout becomes a plain quote; the emoji stays as text.
-- A toggle list becomes a normal bullet list.
-- Columns are flattened into one column of blocks.
+- A **toggle heading** becomes an ordinary heading, its children after it.
 - Underlined text arrives as literal `<u>` tags.
 - Database rows arrive as pages, with their properties gone.
 - **Two styles on the same words** come apart. Bold and italic together are

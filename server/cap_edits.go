@@ -389,6 +389,8 @@ func carryIDsMap(o, n map[string]any) {
 var editableProps = map[string]bool{
 	"level": true, "checked": true, "language": true, "code": true,
 	"url": true, "name": true, "pageId": true, "label": true,
+	// Carried since spec 006: a callout's emoji, a columns block's layout.
+	"emoji": true, "count": true, "widths": true,
 }
 
 // Props whose value is the default: present on most blocks the editor stores,
@@ -409,7 +411,10 @@ var editableStyles = map[string]bool{
 // lets a callout through (it renders as a quote and comes back as one).
 func notEditable(raw json.RawMessage, blk mdBlock) string {
 	switch blk.Type {
-	case "columnList", "column", "toc", "subpages", "database":
+	// The table of contents and the sub-pages list have spellings since spec
+	// 006 and round-trip like any block; the old paid-tier column types and
+	// the embedded collection still do not.
+	case "columnList", "column", "database":
 		return "it is a layout or generated block"
 	}
 	var v any

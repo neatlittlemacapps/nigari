@@ -40,6 +40,8 @@ tell whether this solves their problem.
 A block editor of the kind people know from Notion. Type `/` to insert a
 heading, a list, a checklist, a quote, a code block, a table, an image or a
 callout. Drag blocks by their handle to move them. Pages nest inside pages.
+Every block has a Markdown spelling, so agents can write callouts, toggles,
+columns and the rest too, and a page survives export and import whole.
 
 Several people can type in the same document at once and see each other's
 cursors. If your connection drops, you keep typing, and your changes merge when

@@ -625,7 +625,7 @@
       ],
       "takenAt": {
         "web/src/components/AgentConnect.tsx": "e0a5a3a2e940",
-        "server/mcp.go": "40a3e93427aa",
+        "server/mcp.go": "09f4741176af",
         "web/src/tokens.css": "e1f40b165bd5",
         "web/src/theme.css": "42ead492ea94"
       },

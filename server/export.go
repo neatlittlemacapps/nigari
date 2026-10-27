@@ -161,16 +161,37 @@ func renderBlocksMarked(b *strings.Builder, blocks []mdBlock, depth int, mark fu
 			}
 			b.WriteString(indent + "- [" + mark + "] " + renderInline(blk.Content) + "\n")
 		case "toggleListItem":
-			// No native Markdown collapse; render as a list item, children follow.
-			b.WriteString(indent + "- " + renderInline(blk.Content) + "\n")
+			// Markdown has no collapse of its own; <details> is the one GitHub
+			// and most viewers render, and mdToBlocks reads it back (spec 006).
+			// The children go inside, at this depth, not after it.
+			b.WriteString(indent + "<details><summary>" + renderInline(blk.Content) + "</summary>\n\n")
+			renderBlocks(b, blk.Children, depth)
+			b.WriteString(indent + "</details>\n\n")
+			blk.Children = nil
 		case "divider":
 			b.WriteString(indent + "---\n\n")
 		case "callout":
+			// A GitHub alert (spec 006, research R3). An emoji with no alert
+			// of its own rides in front of the text, so it comes back exactly.
 			emoji := strProp(blk.Props, "emoji", "💡")
-			b.WriteString(indent + "> " + emoji + " " + renderInline(blk.Content) + "\n\n")
+			alert, ok := emojiAlert[emoji]
+			if !ok {
+				alert = "NOTE"
+			}
+			text := renderInline(blk.Content)
+			if alertEmoji[alert] != emoji {
+				text = strings.TrimSpace(emoji + " " + text)
+			}
+			b.WriteString(indent + "> [!" + alert + "]\n" + indent + "> " + text + "\n\n")
 		case "bookmark":
+			// <url>, CommonMark's autolink, which mdToBlocks reads as a
+			// bookmark. An address it would not read so keeps the old form.
 			if raw := strProp(blk.Props, "url", ""); raw != "" {
-				b.WriteString(indent + "[" + raw + "](" + safeURL(raw) + ")\n\n")
+				if autolinkRe.MatchString("<" + raw + ">") {
+					b.WriteString(indent + "<" + raw + ">\n\n")
+				} else {
+					b.WriteString(indent + "[" + raw + "](" + safeURL(raw) + ")\n\n")
+				}
 			}
 		case "database":
 			// Embedded database: the block holds only a reference, the data lives
@@ -180,9 +201,18 @@ func renderBlocksMarked(b *strings.Builder, blocks []mdBlock, depth int, mark fu
 				b.WriteString(indent + "[Collection](/p/" + id + ")\n\n")
 			}
 		case "toc":
-			// Generated client-side from headings; nothing meaningful to export.
+			// Drawn by the editor from the headings, so only its place is
+			// written: a token mdToBlocks reads back (spec 006).
+			b.WriteString(indent + tocToken + "\n\n")
 		case "subpages":
-			// Generated client-side from the page tree; nothing to export.
+			b.WriteString(indent + subpageToken + "\n\n")
+		case "columns":
+			// Pandoc's fenced divs (spec 006, research R2). Each child is a
+			// column, holding its own first block and, as children, the rest
+			// of the column: those are written at the same depth, which is
+			// how mdToBlocks puts them back under the first.
+			renderColumnsMarkdown(b, blk, indent, depth)
+			blk.Children = nil
 		case "columnList", "column":
 			// Layout containers: flatten children at the SAME depth (an indent
 			// would misread as nesting). Children handled below via the generic
@@ -216,6 +246,31 @@ func renderBlocksMarked(b *strings.Builder, blocks []mdBlock, depth int, mark fu
 			b.WriteString("\n")
 		}
 	}
+}
+
+// renderColumnsMarkdown writes a columns block as ":::: columns" with one
+// "::: column" per child, naming the widths when the block stores a layout
+// the editor would draw (the rule columnsStyle reads them with).
+func renderColumnsMarkdown(b *strings.Builder, blk mdBlock, indent string, depth int) {
+	n := len(blk.Children)
+	var widths []string
+	if raw, _ := blk.Props["widths"].(string); raw != "" && columnsStyle(blk.Props, n) != "" {
+		widths = strings.Split(raw, ",")
+	}
+	b.WriteString(indent + ":::: columns\n\n")
+	for i, col := range blk.Children {
+		if widths != nil {
+			b.WriteString(indent + `::: {.column width="` + strings.TrimSpace(widths[i]) + `%"}` + "\n\n")
+		} else {
+			b.WriteString(indent + "::: column\n\n")
+		}
+		rest := col.Children
+		col.Children = nil
+		renderBlocks(b, []mdBlock{col}, depth)
+		renderBlocks(b, rest, depth)
+		b.WriteString(indent + ":::\n\n")
+	}
+	b.WriteString(indent + "::::\n\n")
 }
 
 func renderTable(b *strings.Builder, raw json.RawMessage, indent string) {

@@ -86,6 +86,16 @@ const diagramHint = `A fenced ` + "```mermaid" + ` block becomes a real DIAGRAM,
 	`use. Prefer it over describing a flow in prose; you write the text, salt.md ` +
 	`draws it.`
 
+// blockSpellingHint tells agents how to write the blocks Markdown has no word
+// for (spec 006). Without it the spellings work only for an agent that
+// already guesses GitHub's alerts and pandoc's columns. get_page writes the
+// same spellings, so an agent that reads a page sees them too.
+const blockSpellingHint = `Blocks beyond plain Markdown, each on its own lines: ` +
+	`callout "> [!NOTE]" (or TIP, IMPORTANT, WARNING, CAUTION) then "> text"; ` +
+	`toggle "<details><summary>Title</summary>" … "</details>"; divider "---"; ` +
+	`table of contents "[[toc]]"; sub-pages list "[[subpages]]"; bookmark "<https://…>"; ` +
+	`columns ":::: columns" with "::: column" (or "::: {.column width=\"70%\"}") sections each closed by ":::", then "::::".`
+
 // parseInline converts inline markdown to BlockNote inline content.
 func parseInline(md string) []any {
 	var out []any
@@ -174,7 +184,13 @@ var (
 )
 
 func mdToBlocks(md string) []*mBlock {
-	lines := strings.Split(strings.ReplaceAll(md, "\r\n", "\n"), "\n")
+	return mdLinesToBlocks(strings.Split(strings.ReplaceAll(md, "\r\n", "\n"), "\n"))
+}
+
+// mdLinesToBlocks is mdToBlocks on lines already split. A toggle's or a
+// column's inside is parsed by calling it again (spec 006), so every block
+// that can stand on the page can stand inside them too.
+func mdLinesToBlocks(lines []string) []*mBlock {
 	var blocks []*mBlock
 	// Stack of list items per indent level for nesting.
 	listStack := []*mBlock{}
@@ -248,6 +264,89 @@ func mdToBlocks(md string) []*mBlock {
 				Content: []any{inlineText(strings.Join(code, "\n"), nil)}}, 0)
 			continue
 		}
+		// The spellings of spec 006 (md_spellings.go). After the fence, so
+		// inside code every one of them stays code (FR-004).
+		if m := detailsOpenRe.FindStringSubmatch(trimmed); m != nil {
+			end := containerEnd(lines, i, false)
+			stop := end
+			if stop > len(lines) {
+				stop = len(lines)
+			}
+			inner := append([]string{}, lines[i+1:stop]...)
+			// The summary sits on the <details> line or on the first line
+			// inside; text after </summary> belongs to the body.
+			title := ""
+			rest := m[1]
+			if rest == "" {
+				for k, l := range inner {
+					if strings.TrimSpace(l) == "" {
+						continue
+					}
+					if sm := summaryRe.FindStringSubmatch(strings.TrimSpace(l)); sm != nil {
+						title, inner[k] = sm[1], sm[2]
+					}
+					break
+				}
+			} else if sm := summaryRe.FindStringSubmatch(rest); sm != nil {
+				title = sm[1]
+				inner = append([]string{sm[2]}, inner...)
+			} else {
+				inner = append([]string{rest}, inner...)
+			}
+			appendBlock(&mBlock{Type: "toggleListItem", Content: parseInline(strings.TrimSpace(title)),
+				Children: mdLinesToBlocks(inner)}, 0)
+			listStack = listStack[:0]
+			i = end
+			continue
+		}
+		if m := divOpenRe.FindStringSubmatch(trimmed); m != nil && columnsWord.MatchString(strings.TrimSpace(m[1])) {
+			end := containerEnd(lines, i, true)
+			stop := end
+			if stop > len(lines) {
+				stop = len(lines)
+			}
+			for _, b := range columnsFromSections(columnSections(lines[i+1 : stop])) {
+				appendBlock(b, 0)
+			}
+			i = end
+			continue
+		}
+		if dividerRe.MatchString(trimmed) {
+			appendBlock(&mBlock{Type: "divider"}, 0)
+			continue
+		}
+		if strings.EqualFold(trimmed, tocToken) {
+			appendBlock(&mBlock{Type: "toc"}, 0)
+			continue
+		}
+		if strings.EqualFold(trimmed, subpageToken) {
+			appendBlock(&mBlock{Type: "subpages"}, 0)
+			continue
+		}
+		if m := autolinkRe.FindStringSubmatch(trimmed); m != nil {
+			appendBlock(&mBlock{Type: "bookmark", Props: map[string]any{"url": m[1]}}, 0)
+			continue
+		}
+		if m := alertRe.FindStringSubmatch(trimmed); m != nil {
+			emoji := alertEmoji[strings.ToUpper(m[1])]
+			var text []string
+			for i+1 < len(lines) {
+				t := strings.TrimSpace(lines[i+1])
+				if !strings.HasPrefix(t, ">") {
+					break
+				}
+				text = append(text, strings.TrimSpace(strings.TrimPrefix(t, ">")))
+				i++
+			}
+			body := strings.TrimSpace(strings.Join(text, " "))
+			// An emoji of another tone in front of the text is the callout's
+			// own (research R3): ✅ travels as a TIP with its emoji first.
+			if e, rest := leadingCalloutEmoji(body); e != "" && e != emoji {
+				emoji, body = e, rest
+			}
+			appendBlock(&mBlock{Type: "callout", Props: map[string]any{"emoji": emoji}, Content: parseInline(body)}, 0)
+			continue
+		}
 		if m := headingRe.FindStringSubmatch(trimmed); m != nil {
 			lvl := len(m[1])
 			if lvl > 3 {
@@ -276,6 +375,12 @@ func mdToBlocks(md string) []*mBlock {
 			continue
 		}
 		if strings.HasPrefix(trimmed, "> ") {
+			// "> 💡 text" is how callouts were exported before spec 006, so an
+			// older file comes back with its callouts.
+			if e, rest := leadingCalloutEmoji(trimmed[2:]); e != "" {
+				appendBlock(&mBlock{Type: "callout", Props: map[string]any{"emoji": e}, Content: parseInline(rest)}, 0)
+				continue
+			}
 			appendBlock(&mBlock{Type: "quote", Content: parseInline(trimmed[2:])}, 0)
 			continue
 		}
@@ -311,9 +416,56 @@ func mdToBlocks(md string) []*mBlock {
 				Content: map[string]any{"type": "tableContent", "rows": rows}}, 0)
 			continue
 		}
+		// A link whose label is its own address is a bookmark (research R6):
+		// that is how the export wrote one before spec 006. A bare address
+		// alone on a line stays a paragraph, as agents mean "a link" by it.
+		if m := selfLinkRe.FindStringSubmatch(trimmed); m != nil && m[1] == m[2] {
+			appendBlock(&mBlock{Type: "bookmark", Props: map[string]any{"url": m[1]}}, 0)
+			continue
+		}
 		appendBlock(&mBlock{Type: "paragraph", Content: parseInline(trimmed)}, 0)
 	}
 	return blocks
+}
+
+var selfLinkRe = regexp.MustCompile(`^\[(https?://[^\]\s]+)\]\((https?://[^)\s]+)\)$`)
+
+// columnsFromSections turns ":::: columns" sections into blocks (research
+// R2). The editor makes two or three columns, and holds each as ONE block
+// whose children are the rest of that column (blocks.tsx, ColumnsBlock), so a
+// section's first block is the column and the others go under it. One
+// section is no layout and its blocks stand on their own; past three, the
+// extra sections join the third, so nothing is lost.
+func columnsFromSections(sections [][]string, widths []float64) []*mBlock {
+	if len(sections) == 0 {
+		return nil
+	}
+	if len(sections) == 1 {
+		return mdLinesToBlocks(sections[0])
+	}
+	if len(sections) > 3 {
+		for _, extra := range sections[3:] {
+			sections[2] = append(append(sections[2], ""), extra...)
+		}
+		sections, widths = sections[:3], nil
+	}
+	cols := make([]*mBlock, 0, len(sections))
+	for _, sec := range sections {
+		blocks := mdLinesToBlocks(sec)
+		if len(blocks) == 0 {
+			blocks = []*mBlock{{Type: "paragraph", Content: []any{}}}
+		}
+		col := blocks[0]
+		col.Children = append(col.Children, blocks[1:]...)
+		cols = append(cols, col)
+	}
+	props := map[string]any{"count": len(cols)}
+	if len(widths) == len(cols) {
+		if w := columnsWidthsProp(widths); w != "" {
+			props["widths"] = w
+		}
+	}
+	return []*mBlock{{Type: "columns", Props: props, Children: cols}}
 }
 
 // mdToBlocksJSON returns the blocks as a JSON array string.
