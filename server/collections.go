@@ -169,6 +169,13 @@ type rowFilter struct {
 // ticked box as JSON true, and comparing either with the filter's text
 // matched nothing: "Qty is 5" and "Done is Checked" found no rows (#95).
 func (s *Server) typeFilters(collectionID string, filters []rowFilter) []rowFilter {
+	// Nothing to type, so no schema to load: an unfiltered read of a
+	// database's rows must not need the writer's connection (#82, the same
+	// guard as resolveSmartDates). Without it a rows read waited for any open
+	// write transaction and ran into its limit.
+	if len(filters) == 0 {
+		return filters
+	}
 	schema, _, err := s.loadCollection(collectionID)
 	if err != nil {
 		return filters
