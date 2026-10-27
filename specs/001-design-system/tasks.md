@@ -102,8 +102,8 @@ Each component is `web/src/ui/<Name>.tsx` plus `web/src/ui/<Name>.css`. It reads
 
 **Independent Test**: on a scratch branch, change `color.accent` in `web/tokens/semantic.tokens.json` and rebuild. Buttons, focus rings, selected states and the editor's slash menu all show the new colour in both themes (SC-005).
 
-- [ ] T032 [US3] [ui] Map BlockNote's Mantine theme from the tokens (FR-011). Move the `--bn-colors-*` and `--bn-border-radius` assignments of `web/src/theme.css` (lines 562–578) into component tokens in `web/tokens/component.tokens.json` (`editor.menu.background` and the like), emitted by `build-tokens.mjs` under the `--bn-*` names on `.bn-container, .bn-root`. Then remove them from `theme.css`, keeping the rules that are not custom properties
-- [ ] T033 [US3] [test] New `web/tests/editor-tokens.mjs`, registered in `web/tests/package.json`. On a throwaway instance, open the slash menu in light and in dark, and check that the menu's background and its selected item read the computed `--color-…` token values, not Mantine's defaults. Then set `--accent` on `:root` at runtime and check that the selected item follows (depends on T032)
+- [x] T032 [US3] [ui] Map BlockNote's Mantine theme from the tokens (FR-011). Move the `--bn-colors-*` and `--bn-border-radius` assignments of `web/src/theme.css` (lines 562–578) into component tokens in `web/tokens/component.tokens.json` (`editor.menu.background` and the like), emitted by `build-tokens.mjs` under the `--bn-*` names on `.bn-container, .bn-root`. Then remove them from `theme.css`, keeping the rules that are not custom properties
+- [x] T033 [US3] [test] New `web/tests/editor-tokens.mjs`, registered in `web/tests/package.json`. On a throwaway instance, open the slash menu in light and in dark, and check that the menu's background and its selected item read the computed `--color-…` token values, not Mantine's defaults. Then set `--accent` on `:root` at runtime and check that the selected item follows (depends on T032)
 
 **Checkpoint**: one token file drives the app and the editor.
 
@@ -116,16 +116,16 @@ Each component is `web/src/ui/<Name>.tsx` plus `web/src/ui/<Name>.css`. It reads
 **Independent Test**: the format check passes on the committed files and fails on a token without a `$type`.
 
 - [x] T034 [US4] [test] Format check in `web/scripts/build-tokens.mjs`. Every token has a `$value` and a `$type`, its own or inherited from a group, from the 2025.10 type list. Aliases use the `{group.token}` syntax. Only `$extensions` keys under `md.salt.*` are ours. Add a failing case for a missing `$type` to `web/scripts/check-build-tokens.mjs`
-- [ ] T035 [P] [US4] [wiki] Add a "Design tokens" section to `CONTRIBUTING.md`: where the files live, the three tiers, how to build, how to change a colour (one token, both themes), and the contrast rule. Link to the DTCG 2025.10 format
+- [x] T035 [P] [US4] [wiki] Add a "Design tokens" section to `CONTRIBUTING.md`: where the files live, the three tiers, how to build, how to change a colour (one token, both themes), and the contrast rule. Link to the DTCG 2025.10 format
 
 ---
 
 ## Phase 7: Polish & cross-cutting
 
-- [ ] T036 [wiki] Retake every wiki screenshot of the instance settings dialog, since its shell changed (`admin-*` in `web/scripts/shoot-wiki.mjs`, light and dark), through `node web/scripts/shoot-wiki.mjs admin-` on a seeded instance. `check-wiki.mjs` lists none as stale (FR-015) (depends on T023)
-- [ ] T037 [perf] Run quickstart step 6 (`npx vite build && node scripts/check-bundle.mjs`) and record the main chunk's gzip size against the 528,706 B baseline in the body of PR 2 and PR 3 (FR-019)
-- [ ] T038 [test] Run quickstart steps 1–7 end to end, `scripts/agent-gate.sh --all`, and `npm test --prefix web/tests`. Every existing browser regression stays green (spec US2 scenario 3)
-- [ ] T039 [wiki] Add today's batch-1 decisions to `docs/decisions.md` (newest first): `Checkbox` joins batch 1, and Remove stays one click
+- [x] T036 [wiki] Retake every wiki screenshot of the instance settings dialog, since its shell changed (`admin-*` in `web/scripts/shoot-wiki.mjs`, light and dark), through `node web/scripts/shoot-wiki.mjs admin-` on a seeded instance. `check-wiki.mjs` lists none as stale (FR-015) (depends on T023)
+- [x] T037 [perf] Run quickstart step 6 (`npx vite build && node scripts/check-bundle.mjs`) and record the main chunk's gzip size against the 528,706 B baseline in the body of PR 2 and PR 3 (FR-019)
+- [x] T038 [test] Run quickstart steps 1–7 end to end, `scripts/agent-gate.sh --all`, and `npm test --prefix web/tests`. Every existing browser regression stays green (spec US2 scenario 3)
+- [x] T039 [wiki] Add today's batch-1 decisions to `docs/decisions.md` (newest first): `Checkbox` joins batch 1, and Remove stays one click
 
 ---
 

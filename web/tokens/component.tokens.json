@@ -119,5 +119,107 @@
         }
       }
     }
+  },
+  "editor": {
+    "$description": "BlockNote's Mantine theme (FR-011). Its menus read --bn-* custom properties on .bn-container; set from these, the slash menu, the formatting bar and their dropdowns are the same panel as every other menu and follow the tokens. Written under [data-theme], which outranks BlockNote's own [data-color-scheme] rules.",
+    "menu": {
+      "background": {
+        "$type": "color",
+        "$value": "{color.surface.glass}",
+        "$extensions": {
+          "md.salt.css": "--bn-colors-menu-background",
+          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+        }
+      },
+      "text": {
+        "$type": "color",
+        "$value": "{color.text.default}",
+        "$extensions": {
+          "md.salt.css": "--bn-colors-menu-text",
+          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+        }
+      }
+    },
+    "tooltip": {
+      "background": {
+        "$type": "color",
+        "$value": "{color.surface.raised}",
+        "$extensions": {
+          "md.salt.css": "--bn-colors-tooltip-background",
+          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+        },
+        "$description": "BlockNote uses its tooltip pair for three things at once: the icon box beside each slash-menu entry, the shortcut badge and the real tooltip. Ink here turned the slash menu into a column of black squares, so the pair stays quiet; theme.css gives the real tooltip its ink on its own."
+      },
+      "text": {
+        "$type": "color",
+        "$value": "{color.text.default}",
+        "$extensions": {
+          "md.salt.css": "--bn-colors-tooltip-text",
+          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+        }
+      }
+    },
+    "hovered": {
+      "background": {
+        "$type": "color",
+        "$value": "{color.active}",
+        "$extensions": {
+          "md.salt.css": "--bn-colors-hovered-background",
+          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+        }
+      },
+      "text": {
+        "$type": "color",
+        "$value": "{color.text.default}",
+        "$extensions": {
+          "md.salt.css": "--bn-colors-hovered-text",
+          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+        }
+      }
+    },
+    "selected": {
+      "background": {
+        "$type": "color",
+        "$value": "{color.active}",
+        "$extensions": {
+          "md.salt.css": "--bn-colors-selected-background",
+          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+        }
+      },
+      "text": {
+        "$type": "color",
+        "$value": "{color.text.default}",
+        "$extensions": {
+          "md.salt.css": "--bn-colors-selected-text",
+          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+        }
+      }
+    },
+    "disabled": {
+      "text": {
+        "$type": "color",
+        "$value": "{color.text.muted}",
+        "$extensions": {
+          "md.salt.css": "--bn-colors-disabled-text",
+          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+        }
+      }
+    },
+    "border": {
+      "$type": "color",
+      "$value": "{color.border.default}",
+      "$extensions": {
+        "md.salt.css": "--bn-colors-border",
+        "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+      }
+    },
+    "radius": {
+      "$type": "dimension",
+      "$value": "{radius.legacy.md}",
+      "$extensions": {
+        "md.salt.css": "--bn-border-radius",
+        "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+      }
+    }
   }
 }

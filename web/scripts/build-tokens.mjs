@@ -27,7 +27,9 @@
 // What it writes: each token as --<path> (color.surface.default →
 // --color-surface-default), plus the name styles.css already reads
 // (md.salt.css: --bg, --fg, …) as a var() of it, so the old stylesheet follows
-// the tokens without a line of it changing.
+// the tokens without a line of it changing. A token with md.salt.selector
+// writes its legacy name on that selector instead of :root: BlockNote reads its
+// --bn-* properties on .bn-container.
 
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
@@ -228,6 +230,11 @@ function block(selector, lines, indent = '') {
   return `${indent}${selector} {\n${lines.map((l) => `${indent}  ${l}`).join('\n')}\n${indent}}\n`;
 }
 
+// Legacy names that belong on another element than :root, by selector: the
+// editor's --bn-* properties, which BlockNote reads on .bn-container
+// (md.salt.selector). Filled by declarations('light').
+const scoped = new Map();
+
 function declarations(theme) {
   const lines = [];
   // Two tokens writing one custom property: the later one silently wins. The
@@ -246,7 +253,13 @@ function declarations(theme) {
       const legacy = t.ext['md.salt.css'];
       if (theme === 'light' && legacy) {
         claim(legacy, t.name);
-        lines.push(`${legacy}: var(${prop(t.name)});`);
+        const selector = t.ext['md.salt.selector'];
+        if (selector) {
+          if (!scoped.has(selector)) scoped.set(selector, []);
+          scoped.get(selector).push(`${legacy}: var(${prop(t.name)});`);
+        } else {
+          lines.push(`${legacy}: var(${prop(t.name)});`);
+        }
       }
       // styles.css builds translucent accents with rgba(var(--accent-rgb), a),
       // which needs the colour as a bare triplet. Derived, so it cannot drift.
@@ -307,7 +320,8 @@ const text =
   '\n' +
   // Before the app sets data-theme (and on a page that never does), follow the
   // system. Both the app and public pages set it, so this is the fallback.
-  `@media (prefers-color-scheme: dark) {\n${block(":root:not([data-theme='light'])", dark, '  ')}}\n`;
+  `@media (prefers-color-scheme: dark) {\n${block(":root:not([data-theme='light'])", dark, '  ')}}\n` +
+  [...scoped].map(([selector, lines]) => '\n' + block(selector, lines)).join('');
 
 const shown = relative(process.cwd(), out) || out;
 if (check) {

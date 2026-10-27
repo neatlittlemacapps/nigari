@@ -42,6 +42,33 @@ check fails the build. That is deliberate.
 Source text is English and doubles as the translation key. Comments are English
 too.
 
+## Design tokens and components
+
+The look lives in one place: design tokens in `web/tokens/`, in the
+[W3C Design Tokens Format (DTCG 2025.10)](https://www.w3.org/community/reports/design-tokens/CG-FINAL-format-20251028/),
+so a design tool such as Figma or Penpot can read the same files.
+
+- **Three tiers.**
+  - `primitives.tokens.json`: raw scales (palette, type sizes, radii, spacing, layers).
+  - `semantic.tokens.json`: roles such as `color.surface.default` or `color.text.muted`,
+    each with its light value in `$value` and its dark value in
+    `$extensions["md.salt.dark"]`.
+  - `component.tokens.json`: values only one component needs.
+- **Build.** `cd web && node scripts/build-tokens.mjs` writes `web/src/tokens.css`.
+  Never edit that file; `npm run check` fails when it and the tokens disagree.
+- **Changing a colour.** Change its token, once for both themes, and rebuild. Every
+  screen and the editor's menus follow. Old CSS reads the same values under the names it
+  always used (`--bg`, `--fg`, `--accent` …).
+- **Contrast.** A text colour that declares `md.salt.contrast` must reach WCAG AA on
+  each surface it names, in both themes, or the build fails and names the pair.
+- **No new literals.** `check-tokens.mjs` counts hard-coded colours, font sizes, radii,
+  shadows and z-indexes, raw `<button>`s and hand-built dialogs against
+  `web/tokens/budgets.json`. The counts may only go down, and a lower count must be
+  written into the budget in the same change.
+- **Components.** New screens are built from `web/src/ui/` (see its `README.md`). The
+  catalogue shows them all: `npx vite --config vite.catalog.config.ts`, then
+  `/catalog.html`.
+
 ## The CLA, and why
 
 A pull request needs a signed [Contributor License Agreement](CLA.md). A bot
