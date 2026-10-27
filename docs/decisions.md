@@ -19,6 +19,9 @@ settings dialog, Webhooks tab included. That brings in:
 - **The catalogue lives in `web/catalog/`**, outside `src/`.
 - **Today's dialog values (radius 16px, title 24px, layer 100) are component
   tokens.** They are not moved onto the scales yet.
+- **The catalogue's screenshots are compared with the base branch, drawn on
+  the same CI runner, and a difference is a warning.** No baselines are
+  committed (spec FR-013 amended).
 
 **Why**:
 - **The screen.** The spec named "the webhook dialog" for US1. In the code it is
@@ -34,6 +37,10 @@ settings dialog, Webhooks tab included. That brings in:
   while the migration runs, so the old values stay until every dialog has moved.
 - **What it fixed.** The migrated dialog fixed two bugs the old markup had: Tab
   walked out of it into the page, and closing it left focus on nothing.
+- **The screenshots.** Committed baselines differed from CI's runner by about a
+  thousand pixels per section with nothing changed: the runner draws text
+  differently from any other machine. A reference drawn on the same runner
+  differs only where something changed.
 
 **Rejected**:
 - **`Select` or `Switch` for the events** (the screen does not use them; they
@@ -43,6 +50,10 @@ settings dialog, Webhooks tab included. That brings in:
 - **Moving the dialog onto the type and radius scales now** (old and new
   dialogs would differ side by side).
 - **The catalogue in `web/src/catalog/` with an exemption for each check.**
+- **A looser pixel tolerance** (it cannot tell another machine's text from a
+  real change).
+- **Baselines committed by a CI bot** (its commits carry no CLA signature
+  upstream).
 
 ## 2026-10-27 — Design tokens: light muted text darkened for AA, and the bundle baseline corrected
 
