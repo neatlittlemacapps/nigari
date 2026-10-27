@@ -1,0 +1,13 @@
+{
+  "$comment": "Ratchets for spec 001 (research P9). literals, rawButtons and handDialogs may only go down: check-tokens.mjs fails above a budget and also below one, until the budget is lowered to match. bundleGzip is the cap for the main chunk in gzip bytes (528,706 measured on main at 2a28bc4 + 60 KB; research P8, corrected), checked by check-bundle.mjs after a build.",
+  "literals": {
+    "color": 399,
+    "fontSize": 379,
+    "radius": 256,
+    "shadow": 94,
+    "zIndex": 45
+  },
+  "rawButtons": 337,
+  "handDialogs": 24,
+  "bundleGzip": 590146
+}

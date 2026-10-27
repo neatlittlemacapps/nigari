@@ -11,9 +11,15 @@ paths:
 - **Dates, numbers, sorting** go through `format.ts`: no `toLocale*`, no
   `Intl.*`, no `localeCompare`, no hardcoded locale tags elsewhere.
   `check-i18n.mjs` fails the build on each.
-- **Look.** Colours, surfaces and hairlines come from the tokens in `theme.css`
-  (`--bg`, `--fg`, `--muted`, …), never literal values. Every change is checked
-  in light and dark. `theme.css` re-states the look; it adds no features.
+- **Look.** Colours, surfaces, hairlines, radii and layers come from the
+  design tokens: `web/tokens/*.tokens.json`, built into `web/src/tokens.css`
+  by `node scripts/build-tokens.mjs` (never edit the generated file). New code
+  reads the token names (`--color-surface-default`, `--radius-scale-md`, …);
+  the old names (`--bg`, `--fg`, `--muted`, …) still work. No literal values:
+  `check-tokens.mjs` counts them against budgets in `web/tokens/budgets.json`
+  that only go down, and a value that must stay literal carries
+  `/* token-ok: <reason> */`. Every change is checked in light and dark.
+  `theme.css` re-states the look; it adds no features.
 - **Components.** Mantine for controls, BlockNote for the editor, Yjs for live
   documents. Reuse what `dialog.tsx`, `modal.ts`, `toast.ts` and `keys.ts`
   already provide instead of a new pattern.

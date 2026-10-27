@@ -73,6 +73,11 @@ if touches '^web/|^wiki/|^capabilities\.json$|^server/(mcp.*|server)\.go$|^specs
   if [[ -d web/node_modules ]] && ! out="$(npm run check --prefix web 2>&1)"; then
     report "npm run check failed:"; echo "$out" | grep -vE '^\s*(ok|note)\b' | tail -60 >&2
   fi
+  # The bundle cap needs a build, which the gate does not run (too slow to run
+  # at every stop): it checks the web/dist that is there. CI builds and checks.
+  if [[ -d web/dist/assets ]] && ! out="$(node web/scripts/check-bundle.mjs 2>&1)"; then
+    report "bundle over its cap (rebuild with: cd web && npx vite build, if web/dist is stale):"; echo "$out" >&2
+  fi
 fi
 
 if [[ $failed -ne 0 ]]; then

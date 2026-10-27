@@ -36,7 +36,7 @@ later batches, each with its own tasks.
 
 **Target Platform**: One static binary (`CGO_ENABLED=0`), Linux/macOS/Windows; browser, desktop shell, MCP clients.
 
-**Performance Goals**: the main chunk grows by at most 60 KB gzip over the 790,888 B baseline at `c4de997` (research P8). No layout or interaction gets slower; Base UI portals replace hand-positioned popovers.
+**Performance Goals**: the main chunk grows by at most 60 KB gzip over the 528,706 B baseline on `main` at `2a28bc4` (research P8, corrected). No layout or interaction gets slower; Base UI portals replace hand-positioned popovers.
 
 **Constraints**: no external services; no Tailwind or CSS framework; English source with `t()`; components hold no text of their own.
 

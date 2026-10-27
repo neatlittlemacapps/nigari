@@ -114,7 +114,7 @@ Measured: 34 literal sizes; 75% of uses are 11–14 px in half-pixel steps.
 
 ### P4. Radius and layer scales
 
-- Radius: `radius.xs 2px`, `sm 4px`, `md 6px`, `lg 8px`, `xl 12px`, `full 999px` (5, 7, 9, 10 round to the nearest).
+- Radius: `radius.xs 2px`, `sm 4px`, `md 6px`, `lg 8px`, `xl 12px`, `full 999px` (5, 7, 9, 10 round to the nearest). Built as `radius.scale.*` (`--radius-scale-sm`): `--radius-sm` and `--radius-lg` already name today's 7px and 14px, which `theme.css` and the public pages read.
 - Layers (`z-index`), named instead of 24 numbers: `layer.raised 10`, `sticky 50`, `dropdown 200`, `overlay 300`, `modal 400`, `toast 900`, `tooltip 1000`, `top 1200`. Base UI portals render menus and dialogs at body level, which removes most stacking fights the high numbers were patching.
 
 ### P5. Contrast check without a dependency
@@ -135,6 +135,7 @@ Measured: 34 literal sizes; 75% of uses are 11–14 px in half-pixel steps.
 ### P8. Bundle budget
 
 - Baseline at `c4de997`: main chunk 1,802,733 B raw, 790,888 B gzip.
+- **Corrected 2026-10-27, when `check-bundle.mjs` first ran:** the gzip figure above was never reproduced. On `main` at `2a28bc4` the main chunk is 1,803,270 B raw and **528,706 B** gzip (level 9; Vite reports 530.18 kB at its own level). The raw size matches, so the 790,888 B was a measuring mistake, not growth. The cap is that baseline + 60 KB: **590,146 B**.
 - **Budget**: +60 KB gzip for the whole feature, checked by `check-bundle.mjs` against `web/tokens/budgets.json` after `vite build` (CI), not in `npm run check` (which does not build).
 
 ### P9. Ratchets live in one file

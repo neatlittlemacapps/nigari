@@ -1,0 +1,57 @@
+{
+  "$description": "Only where a component needs a value of its own (data-model.md).",
+  "dialog": {
+    "width": {
+      "$type": "dimension",
+      "sm": {
+        "$value": {
+          "value": 400,
+          "unit": "px"
+        }
+      },
+      "md": {
+        "$value": {
+          "value": 520,
+          "unit": "px"
+        },
+        "$description": "Today's .dialog."
+      },
+      "lg": {
+        "$value": {
+          "value": 680,
+          "unit": "px"
+        },
+        "$description": "Today's .dialog.wide."
+      }
+    }
+  },
+  "button": {
+    "height": {
+      "$type": "dimension",
+      "sm": {
+        "$value": {
+          "value": 26,
+          "unit": "px"
+        },
+        "$description": "Today's .btn-sm: 5px padding, 12.5px text, hairline."
+      },
+      "md": {
+        "$value": {
+          "value": 32,
+          "unit": "px"
+        },
+        "$description": "Today's .btn: 7px padding, 13.5px text, hairline."
+      }
+    }
+  },
+  "control": {
+    "height": {
+      "$type": "dimension",
+      "$value": {
+        "value": 32,
+        "unit": "px"
+      },
+      "$description": "Inputs and selects line up with a medium button."
+    }
+  }
+}

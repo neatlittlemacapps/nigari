@@ -1,0 +1,550 @@
+{
+  "$description": "Roles. Each holds its light value in $value and its dark value in $extensions[\"md.salt.dark\"]: one token, two themes (FR-002). md.salt.css keeps the name styles.css already reads.",
+  "color": {
+    "$type": "color",
+    "surface": {
+      "default": {
+        "$value": "{color.paper.50}",
+        "$extensions": {
+          "md.salt.css": "--bg",
+          "md.salt.dark": "{color.night.900}"
+        },
+        "$description": "The document."
+      },
+      "sidebar": {
+        "$value": "{color.paper.100}",
+        "$extensions": {
+          "md.salt.css": "--sidebar-bg",
+          "md.salt.dark": "{color.night.950}"
+        },
+        "$description": "The sidebar: one step off the document."
+      },
+      "raised": {
+        "$value": "{color.paper.0}",
+        "$extensions": {
+          "md.salt.css": "--card",
+          "md.salt.dark": "{color.night.850}"
+        },
+        "$description": "Cards, dialogs, menus."
+      },
+      "glass": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1,
+            1,
+            1
+          ],
+          "alpha": 0.97,
+          "hex": "#ffffff"
+        },
+        "$extensions": {
+          "md.salt.css": "--glass",
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0745,
+              0.0745,
+              0.0941
+            ],
+            "alpha": 0.95,
+            "hex": "#131318"
+          }
+        },
+        "$description": "Nearly opaque on purpose: at 82% a menu over a code block showed a smudge of it through the blur."
+      }
+    },
+    "text": {
+      "default": {
+        "$value": "{color.ink.900}",
+        "$extensions": {
+          "md.salt.css": "--fg",
+          "md.salt.dark": "{color.mist.100}",
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 4.5
+            },
+            {
+              "on": "{color.surface.sidebar}",
+              "min": 4.5
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 4.5
+            }
+          ]
+        }
+      },
+      "muted": {
+        "$value": "{color.ink.500}",
+        "$extensions": {
+          "md.salt.css": "--muted",
+          "md.salt.dark": "{color.mist.500}",
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 4.5
+            },
+            {
+              "on": "{color.surface.sidebar}",
+              "min": 4.5
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 4.5
+            }
+          ]
+        },
+        "$description": "Solid, never alpha: an emoji is drawn in the text colour's alpha."
+      }
+    },
+    "accent": {
+      "default": {
+        "$value": "{color.pink.700}",
+        "$extensions": {
+          "md.salt.css": "--accent",
+          "md.salt.dark": "{color.pink.400}",
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 4.5
+            },
+            {
+              "on": "{color.surface.sidebar}",
+              "min": 4.5
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 4.5
+            }
+          ],
+          "md.salt.rgb": "--accent-rgb"
+        },
+        "$description": "Text-safe on its surfaces in both themes."
+      },
+      "soft": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.702,
+            0.0706,
+            0.2471
+          ],
+          "alpha": 0.085,
+          "hex": "#b3123f"
+        },
+        "$extensions": {
+          "md.salt.css": "--accent-soft",
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              1,
+              0.3608,
+              0.502
+            ],
+            "alpha": 0.13,
+            "hex": "#ff5c80"
+          }
+        },
+        "$description": "A wash of the accent behind selected things."
+      }
+    },
+    "danger": {
+      "$value": "{color.orange.700}",
+      "$extensions": {
+        "md.salt.css": "--danger",
+        "md.salt.dark": "{color.orange.400}",
+        "md.salt.contrast": [
+          {
+            "on": "{color.surface.default}",
+            "min": 4.5
+          },
+          {
+            "on": "{color.surface.sidebar}",
+            "min": 4.5
+          },
+          {
+            "on": "{color.surface.raised}",
+            "min": 4.5
+          }
+        ]
+      }
+    },
+    "focus": {
+      "$value": "{color.accent.default}",
+      "$extensions": {},
+      "$description": "The focus ring. The accent today; a token of its own so it can change without the accent."
+    },
+    "hover": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.1098,
+          0.102,
+          0.0824
+        ],
+        "alpha": 0.045,
+        "hex": "#1c1a15"
+      },
+      "$extensions": {
+        "md.salt.css": "--hover",
+        "md.salt.dark": {
+          "colorSpace": "srgb",
+          "components": [
+            1,
+            1,
+            1
+          ],
+          "alpha": 0.045,
+          "hex": "#ffffff"
+        }
+      },
+      "$description": "Pointing: a faint wash over whatever is underneath."
+    },
+    "active": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.1098,
+          0.102,
+          0.0824
+        ],
+        "alpha": 0.075,
+        "hex": "#1c1a15"
+      },
+      "$extensions": {
+        "md.salt.css": "--active",
+        "md.salt.dark": {
+          "colorSpace": "srgb",
+          "components": [
+            1,
+            1,
+            1
+          ],
+          "alpha": 0.075,
+          "hex": "#ffffff"
+        }
+      },
+      "$description": "Pressed or chosen."
+    },
+    "border": {
+      "default": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.1098,
+            0.102,
+            0.0824
+          ],
+          "alpha": 0.11,
+          "hex": "#1c1a15"
+        },
+        "$extensions": {
+          "md.salt.css": "--border",
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              1,
+              1,
+              1
+            ],
+            "alpha": 0.08,
+            "hex": "#ffffff"
+          }
+        },
+        "$description": "Hairlines, not borders: alpha, so one value reads right on paper, sidebar and card."
+      },
+      "strong": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.1098,
+            0.102,
+            0.0824
+          ],
+          "alpha": 0.2,
+          "hex": "#1c1a15"
+        },
+        "$extensions": {
+          "md.salt.css": "--border-strong",
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              1,
+              1,
+              1
+            ],
+            "alpha": 0.15,
+            "hex": "#ffffff"
+          }
+        }
+      }
+    },
+    "pill": {
+      "default": {
+        "$value": "{color.ink.900}",
+        "$extensions": {
+          "md.salt.css": "--pill-dark",
+          "md.salt.dark": "{color.mist.50}"
+        },
+        "$description": "The primary action is ink, as on the site: a filled pill in the text colour."
+      },
+      "hover": {
+        "$value": "{color.ink.800}",
+        "$extensions": {
+          "md.salt.css": "--pill-dark-hover",
+          "md.salt.dark": "{color.paper.0}"
+        }
+      }
+    }
+  },
+  "shadow": {
+    "$type": "shadow",
+    "overlay": {
+      "$value": [
+        {
+          "color": {
+            "colorSpace": "srgb",
+            "components": [
+              0.1098,
+              0.102,
+              0.0824
+            ],
+            "alpha": 0.07,
+            "hex": "#1c1a15"
+          },
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 0,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 0,
+            "unit": "px"
+          },
+          "spread": {
+            "value": 1,
+            "unit": "px"
+          }
+        },
+        {
+          "color": {
+            "colorSpace": "srgb",
+            "components": [
+              0.1098,
+              0.102,
+              0.0824
+            ],
+            "alpha": 0.04,
+            "hex": "#1c1a15"
+          },
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 1,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 2,
+            "unit": "px"
+          },
+          "spread": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        {
+          "color": {
+            "colorSpace": "srgb",
+            "components": [
+              0.1098,
+              0.102,
+              0.0824
+            ],
+            "alpha": 0.32,
+            "hex": "#1c1a15"
+          },
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 22,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 48,
+            "unit": "px"
+          },
+          "spread": {
+            "value": -24,
+            "unit": "px"
+          }
+        }
+      ],
+      "$extensions": {
+        "md.salt.css": "--shadow",
+        "md.salt.dark": [
+          {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [
+                1,
+                1,
+                1
+              ],
+              "alpha": 0.07,
+              "hex": "#ffffff"
+            },
+            "offsetX": {
+              "value": 0,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 0,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 0,
+              "unit": "px"
+            },
+            "spread": {
+              "value": 1,
+              "unit": "px"
+            },
+            "inset": true
+          },
+          {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [
+                0,
+                0,
+                0
+              ],
+              "alpha": 0.9,
+              "hex": "#000000"
+            },
+            "offsetX": {
+              "value": 0,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 24,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 56,
+              "unit": "px"
+            },
+            "spread": {
+              "value": -28,
+              "unit": "px"
+            }
+          }
+        ]
+      },
+      "$description": "Menus, popovers, dialogs."
+    }
+  },
+  "gradient": {
+    "$type": "gradient",
+    "accent": {
+      "$value": [
+        {
+          "color": "{color.pink.600}",
+          "position": 0
+        },
+        {
+          "color": "{color.pink.700}",
+          "position": 1
+        }
+      ],
+      "$extensions": {
+        "md.salt.css": "--grad-accent",
+        "md.salt.dark": [
+          {
+            "color": "{color.pink.400}",
+            "position": 0
+          },
+          {
+            "color": "{color.pink.500}",
+            "position": 1
+          }
+        ],
+        "md.salt.angle": 120
+      }
+    },
+    "rainbow": {
+      "horizontal": {
+        "$value": "{gradient.rainbow}",
+        "$extensions": {
+          "md.salt.css": "--rainbow",
+          "md.salt.angle": 90
+        }
+      },
+      "vertical": {
+        "$value": "{gradient.rainbow}",
+        "$extensions": {
+          "md.salt.css": "--rainbow-v",
+          "md.salt.angle": 180
+        }
+      },
+      "up": {
+        "$value": "{gradient.rainbow}",
+        "$extensions": {
+          "md.salt.css": "--rainbow-up",
+          "md.salt.angle": 0
+        }
+      }
+    }
+  },
+  "radius": {
+    "$type": "dimension",
+    "legacy": {
+      "$description": "Today's radii, kept exactly so nothing moves in this batch. Each joins the scale (research P4) when the batch that owns it migrates.",
+      "sm": {
+        "$value": {
+          "value": 7,
+          "unit": "px"
+        },
+        "$extensions": {
+          "md.salt.css": "--radius-sm"
+        }
+      },
+      "md": {
+        "$value": {
+          "value": 10,
+          "unit": "px"
+        },
+        "$extensions": {
+          "md.salt.css": "--radius"
+        }
+      },
+      "lg": {
+        "$value": {
+          "value": 14,
+          "unit": "px"
+        },
+        "$extensions": {
+          "md.salt.css": "--radius-lg"
+        }
+      }
+    }
+  },
+  "easing": {
+    "$type": "cubicBezier",
+    "out": {
+      "$value": "{motion.easing.out}",
+      "$extensions": {
+        "md.salt.css": "--ease-out"
+      }
+    }
+  }
+}
