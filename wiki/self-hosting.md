@@ -298,7 +298,8 @@ same bytes uploaded twice are two files on disk. The name a person gave the file
 lives in the database, not on disk. See [Files](files.md).
 
 The database runs in WAL mode with a **single writer connection**, plus a few
-read-only connections for long reads (a large database's rows, rollups), so
+read-only connections for long reads (a large database's rows, rollups,
+search), so
 that a long read does not make every save wait. That is why `fix-notion-rows`
 and `restore` want the server stopped while `backup` can run beside it, and why
 a recent change may be sitting in `salt.db-wal` rather than in `salt.db`. See [Backing up](#backing-up).

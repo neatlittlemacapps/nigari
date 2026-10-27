@@ -11,8 +11,8 @@ paths:
   connection that never comes, and the whole server stops. Drain and close a
   cursor before any per-row work, including `canRead` checks.
 - **A small read-only pool** (`s.rdb`, `openReadDB` in `db.go`) for long
-  analytical reads only: a database's rows, rollups, grouped counts. They run
-  under `withReadLimit` (`cap_limits.go`). Writes, reads inside a transaction
+  analytical reads only: a database's rows, rollups, grouped counts, search.
+  The first three run under `withReadLimit` (`cap_limits.go`). Writes, reads inside a transaction
   and short lookups stay on `s.db`. The cursor rule applies inside the pool
   too: it has `readPoolSize` connections, not unlimited ones.
 - **Schema changes** go into the `schema` constant in `db.go` as

@@ -206,3 +206,41 @@ func TestTheReadPoolRefusesWrites(t *testing.T) {
 		t.Fatal("the read pool accepted a write")
 	}
 }
+
+// Search runs on the read pool too: with the writer held inside an open
+// transaction, a search still answers. A word that matches nothing is used so
+// no permission check (which stays on the writer) is needed. Both the passage
+// search and the page fallback it falls through to must get by without the
+// writer; on the writer this call waited until the transaction ended.
+func TestASearchDoesNotNeedTheWriter(t *testing.T) {
+	s := testServer(t)
+	uid, _ := signedIn(t, s, "search-pool@example.test")
+	ws := s.firstWorkspaceOf(t, uid)
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`UPDATE workspaces SET name = name WHERE id = ?`, ws); err != nil {
+		t.Fatal(err)
+	}
+
+	done := make(chan []searchResult, 1)
+	go func() {
+		match := ftsMatch("nowhereinthisworkspace")
+		res := s.searchChunks(uid, match, []string{ws}, 20)
+		if len(res) == 0 {
+			res = s.searchPagesFallback(uid, match, []string{ws}, 20)
+		}
+		done <- res
+	}()
+	select {
+	case res := <-done:
+		if len(res) != 0 {
+			t.Fatalf("a word that is nowhere found %d results", len(res))
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("search waited for the writer's transaction")
+	}
+}
