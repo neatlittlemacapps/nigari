@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -208,7 +209,30 @@ func (s *Server) mcpGetLinks(u *user, pageID, wsID string, kinds []string, inclu
 // than referenced: workspace admins only, a name that is not blank, and an icon
 // of at most a couple of characters — the field is for an emoji, not for text
 // somebody smuggles into the sidebar.
-func (s *Server) mcpWorkspace(u *user, wsID, name, icon, from string) (string, error) {
+func (s *Server) mcpWorkspace(u *user, wsID, name, icon, from, tag, color string) (string, error) {
+	// Recolouring a tag lives here because the colour belongs to the
+	// workspace, and the tool list is kept small on purpose (mcp_merged.go).
+	// It has its own rule, not the admin rule below: any member who may write
+	// can recolour, exactly as in the interface, through the same function.
+	if tag != "" {
+		if wsID == "" {
+			return "", fmt.Errorf("pass workspace_id with tag: a tag colour belongs to one workspace")
+		}
+		if name != "" || icon != "" || from != "" {
+			return "", fmt.Errorf("recolour a tag on its own: tag cannot be combined with name, icon or from_workspace")
+		}
+		cleared, err := s.setTagColor(u, wsID, tag, color)
+		if errors.Is(err, errTagWorkspaceNotFound) {
+			return "", fmt.Errorf("workspace %q not found", wsID)
+		}
+		if err != nil {
+			return "", err
+		}
+		if cleared {
+			return fmt.Sprintf("Tag %q is back to its automatic colour in workspace %s", tag, wsID), nil
+		}
+		return fmt.Sprintf("Tag %q is now %s in workspace %s", tag, strings.ToLower(strings.TrimSpace(color)), wsID), nil
+	}
 	if wsID == "" {
 		if narrowedToWorkspaces(u) {
 			return "", fmt.Errorf("this connection is limited to particular workspaces, so it cannot create new ones. It would not be able to open them")

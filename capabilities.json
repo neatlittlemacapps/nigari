@@ -8,7 +8,7 @@
     "       infrastructure not a capability: sign-in flows, transport, public share pages, the SPA itself",
     "wiki: the page that documents it. The check verifies the file exists."
   ],
-  "gapBudget": 11,
+  "gapBudget": 10,
   "capabilities": {
     "pages.tree": {
       "summary": "See the page tree and the templates",
@@ -82,9 +82,10 @@
     },
     "tags.color": {
       "summary": "Give a tag a colour",
-      "agent": "gap",
-      "note": "set_tag_color was folded away in the tool consolidation and nothing took it over: mcpSetTagColor is never called.",
+      "agent": "allowed",
+      "note": "workspace with workspace_id, tag and color; both doors call setTagColor (#2).",
       "rest": ["PUT /api/tag-colors"],
+      "mcp": ["workspace"],
       "wiki": "wiki/pages.md"
     },
     "search": {

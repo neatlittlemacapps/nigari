@@ -422,36 +422,6 @@ func (s *Server) mcpWorkspaceScope(u *user, wsID string) ([]string, error) {
 	return ws, nil
 }
 
-// mcpSetTagColor sets the colour of a tag (per workspace). An agent could
-// hand out tags but not colour them — the interface can. Palette and
-// normalisation are deliberately the same as in the REST handler (tags.go), or
-// an agent could set a colour nobody is able to render.
-func (s *Server) mcpSetTagColor(u *user, wsID, tag, color string) (string, error) {
-	ws, err := s.mcpCreateWorkspaceTarget(u, wsID)
-	if err != nil {
-		return "", err
-	}
-	tag = strings.ToLower(strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(tag), "#")))
-	if tag == "" {
-		return "", fmt.Errorf("tag is required")
-	}
-	color = strings.ToLower(strings.TrimSpace(color))
-	if color == "" || color == "default" {
-		if _, err := s.db.Exec(`DELETE FROM tag_colors WHERE workspace_id = ? AND tag = ?`, ws, tag); err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("Reset colour of tag %q to automatic", tag), nil
-	}
-	if !tagColorPalette[color] {
-		return "", fmt.Errorf("unknown colour %q — use gray, brown, orange, yellow, green, blue, purple, pink, red, or \"default\" to reset", color)
-	}
-	if _, err := s.db.Exec(`INSERT INTO tag_colors (workspace_id, tag, color) VALUES (?, ?, ?)
-		ON CONFLICT(workspace_id, tag) DO UPDATE SET color = excluded.color`, ws, tag, color); err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("Tag %q is now %s in workspace %s", tag, color, ws), nil
-}
-
 // mcpCreateWorkspaceTarget decides the workspace for something NEW that has no
 // parent page. Unlike mcpWorkspaceScope exactly one has to come out, and write
 // permission is mandatory — read access is not enough to create.

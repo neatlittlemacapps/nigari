@@ -233,7 +233,8 @@ lower-cased for comparison, spaces turned into hyphens, duplicates dropped, at
 most 40 characters and 30 tags. Tags are shared across a workspace: any member
 can recolour one by clicking the tag chip on a page and picking from nine
 colours plus **Default**, and a tag with no colour of its own gets a stable
-automatic one derived from its name. The sidebar filters by tag.
+automatic one derived from its name. An agent recolours a tag with the
+[`workspace`](mcp-tools.md#workspace) tool. The sidebar filters by tag.
 
 ### Template
 

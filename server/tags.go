@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
 	"strings"
@@ -80,10 +81,50 @@ func (s *Server) handleTagColors(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, out)
 }
 
-// handleSetTagColor sets (or, for an empty/"default" colour, clears) the colour
-// override for a tag in a workspace. Any member may recolour — tags are shared.
+// Refusals of setTagColor, so each door can answer in its own terms (a status
+// code for REST, a sentence for MCP) from the same decision.
+var (
+	errTagWorkspaceNotFound = errors.New("workspace not found")
+	errTagWorkspaceReadOnly = errors.New("You can only read this workspace, so its tag colours cannot be changed.")
+	errTagRequired          = errors.New("tag is required")
+	errTagColorUnknown      = errors.New(`unknown colour — use gray, brown, orange, yellow, green, blue, purple, pink, red, or "default" to reset`)
+)
+
+// setTagColor sets (or, for an empty/"default" colour, clears) the colour
+// override for a tag in a workspace. Any member who may write may recolour —
+// tags are shared — but not a viewer.
+//
+// REST and MCP both call this. They used to have a copy each, and the copies
+// had drifted: the MCP one checked "may create pages here" instead of the
+// viewer rule, and then nothing called it at all once set_tag_color was folded
+// into other tools (#2).
+func (s *Server) setTagColor(u *user, ws, tag, color string) (cleared bool, err error) {
+	if ws == "" || !s.isMember(u.ID, ws) || !s.credentialMayEnter(u, ws) {
+		return false, errTagWorkspaceNotFound
+	}
+	if s.workspaceRole(u.ID, ws) == "viewer" {
+		return false, errTagWorkspaceReadOnly
+	}
+	// The tag key is normalized like normalizeTags (lower-case, first spelling).
+	tag = strings.ToLower(strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(tag), "#")))
+	if tag == "" {
+		return false, errTagRequired
+	}
+	color = strings.ToLower(strings.TrimSpace(color))
+	if color == "" || color == "default" {
+		_, err := s.db.Exec(`DELETE FROM tag_colors WHERE workspace_id = ? AND tag = ?`, ws, tag)
+		return true, err
+	}
+	if !tagColorPalette[color] {
+		return false, errTagColorUnknown
+	}
+	_, err = s.db.Exec(`INSERT INTO tag_colors (workspace_id, tag, color) VALUES (?, ?, ?)
+		ON CONFLICT(workspace_id, tag) DO UPDATE SET color = excluded.color`, ws, tag, color)
+	return false, err
+}
+
+// handleSetTagColor is the REST door to setTagColor.
 func (s *Server) handleSetTagColor(w http.ResponseWriter, r *http.Request) {
-	userID := requestUser(r).ID
 	var body struct {
 		WorkspaceID string `json:"workspaceId"`
 		Tag         string `json:"tag"`
@@ -93,34 +134,21 @@ func (s *Server) handleSetTagColor(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 400, "invalid JSON")
 		return
 	}
-	ws := body.WorkspaceID
-	if !s.isMember(userID, ws) || !s.credentialMayEnter(requestUser(r), ws) {
+	_, err := s.setTagColor(requestUser(r), body.WorkspaceID, body.Tag, body.Color)
+	switch {
+	case errors.Is(err, errTagWorkspaceNotFound):
 		httpError(w, 404, "workspace not found")
-		return
-	}
-	if s.workspaceRole(userID, ws) == "viewer" {
-		httpErrorCode(w, 403, "workspace_read_only", "You can only read this workspace, so its tag colours cannot be changed.")
-		return
-	}
-	// The tag key is normalized like normalizeTags (lower-case, first spelling).
-	tag := strings.ToLower(strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(body.Tag), "#")))
-	if tag == "" {
+	case errors.Is(err, errTagWorkspaceReadOnly):
+		httpErrorCode(w, 403, "workspace_read_only", err.Error())
+	case errors.Is(err, errTagRequired):
 		httpError(w, 400, "tag is required")
-		return
-	}
-	color := strings.ToLower(strings.TrimSpace(body.Color))
-	if color == "" || color == "default" {
-		s.db.Exec(`DELETE FROM tag_colors WHERE workspace_id = ? AND tag = ?`, ws, tag)
-		writeJSON(w, map[string]bool{"ok": true})
-		return
-	}
-	if !tagColorPalette[color] {
+	case errors.Is(err, errTagColorUnknown):
 		httpError(w, 400, "invalid color")
-		return
+	case err != nil:
+		httpError(w, 500, err.Error())
+	default:
+		writeJSON(w, map[string]bool{"ok": true})
 	}
-	s.db.Exec(`INSERT INTO tag_colors (workspace_id, tag, color) VALUES (?, ?, ?)
-		ON CONFLICT(workspace_id, tag) DO UPDATE SET color = excluded.color`, ws, tag, color)
-	writeJSON(w, map[string]bool{"ok": true})
 }
 
 // handleListTags returns every tag in the caller's readable pages with a usage
