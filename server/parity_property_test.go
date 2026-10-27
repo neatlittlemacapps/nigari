@@ -57,6 +57,13 @@ var parityActs = []parityAct{
 	{"edit", "POST", "/api/pages/%s/edits", `{"edits":[{"old":"x","new":"y"}]}`, "write_content", `{"page_id":"%s","mode":"edit","edits":[{"old":"x","new":"y"}]}`},
 }
 
+// parityWorkspaceActs are acts on a workspace rather than a page: %s is the
+// workspace the case's pages live in, in the path, the body and the arguments.
+var parityWorkspaceActs = []parityAct{
+	// The interface and the workspace tool both go through setTagColor (#2).
+	{"tag colour", "PUT", "/api/tag-colors", `{"workspaceId":"%s","tag":"urgent","color":"red"}`, "workspace", `{"workspace_id":"%s","tag":"urgent","color":"red"}`},
+}
+
 type parityWorld struct {
 	s                          *Server
 	owner, colleague, outsider string
@@ -120,9 +127,17 @@ func (w parityWorld) credential(t *testing.T, holder, kind, scope, workspaces st
 	return tok
 }
 
+// fill puts id into a template that has a %s, and leaves one without alone.
+func fill(template, id string) string {
+	if !strings.Contains(template, "%s") {
+		return template
+	}
+	return fmt.Sprintf(template, id)
+}
+
 func (w parityWorld) viaREST(tok string, act parityAct, page string) (bool, string) {
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(act.method, fmt.Sprintf(act.path, page), strings.NewReader(act.body))
+	req := httptest.NewRequest(act.method, fill(act.path, page), strings.NewReader(fill(act.body, page)))
 	req.Header.Set("Authorization", "Bearer "+tok)
 	req.Header.Set("Content-Type", "application/json")
 	w.s.ServeHTTP(rec, req)
@@ -192,7 +207,14 @@ func TestAgentParityHoldsForEveryCredentialShape(t *testing.T) {
 		narrowTo := pick(r, "", w.team, w.other)
 		access := pick(r, "", agentAccessClosed, agentAccessStrict)
 		private := r.Intn(3) == 0
-		act := parityActs[r.Intn(len(parityActs))]
+		n := r.Intn(len(parityActs) + len(parityWorkspaceActs))
+		onWorkspace := n >= len(parityActs)
+		var act parityAct
+		if onWorkspace {
+			act = parityWorkspaceActs[n-len(parityActs)]
+		} else {
+			act = parityActs[n]
+		}
 
 		if _, err := w.s.db.Exec(`UPDATE workspaces SET agent_access = ? WHERE id = ?`, access, target); err != nil {
 			t.Fatalf("agent_access: %v", err)
@@ -210,8 +232,12 @@ func TestAgentParityHoldsForEveryCredentialShape(t *testing.T) {
 		}
 		tok := w.credential(t, holder, kind, scope, narrowTo)
 
-		restOK, restSaid := w.viaREST(tok, act, pages[0])
-		mcpOK, mcpSaid := w.viaMCP(tok, act, pages[1])
+		ids := pages
+		if onWorkspace {
+			ids = [2]string{target, target}
+		}
+		restOK, restSaid := w.viaREST(tok, act, ids[0])
+		mcpOK, mcpSaid := w.viaMCP(tok, act, ids[1])
 		if os.Getenv("PARITY_TRACE") != "" {
 			t.Logf("trace %d holder=%s kind=%s scope=%s narrowed=%v target=%s access=%q private=%v %s rest=%v mcp=%v", i, map[string]string{w.owner: "admin", w.colleague: "member", w.outsider: "outsider"}[holder], kind, scope, narrowTo != "", map[string]string{w.team: "team", w.other: "other"}[target], access, private, act.name, restOK, mcpOK)
 		}

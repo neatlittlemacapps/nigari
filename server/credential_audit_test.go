@@ -635,3 +635,26 @@ func TestEditsStayOutOfOtherWorkspaces(t *testing.T) {
 		}
 	}
 }
+
+// Tag colours (#2): recolouring a tag in a workspace the credential may not
+// enter is refused through both doors, and nothing is stored.
+func TestAnAgentRecoloursNoTagInAWorkspaceItMayNotEnter(t *testing.T) {
+	f := newScopeFixture(t)
+	stored := func() int {
+		var n int
+		f.s.db.QueryRow(`SELECT COUNT(*) FROM tag_colors WHERE workspace_id = ?`, f.other).Scan(&n)
+		return n
+	}
+	for _, c := range f.outsiders(t) {
+		c.setup()
+		if rec := f.bearer(c.tok, "PUT", "/api/tag-colors", `{"workspaceId":"`+f.other+`","tag":"urgent","color":"red"}`); rec.Code < 400 {
+			t.Errorf("%s: REST recoloured a tag: %d %s", c.name, rec.Code, rec.Body.String())
+		}
+		if out, err := callTool(t, f.s, c.u, "workspace", `{"workspace_id":"`+f.other+`","tag":"urgent","color":"red"}`); err == nil {
+			t.Errorf("%s: MCP recoloured a tag: %s", c.name, out)
+		}
+		if n := stored(); n != 0 {
+			t.Fatalf("%s: %d tag colours stored in a workspace the credential may not enter", c.name, n)
+		}
+	}
+}

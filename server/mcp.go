@@ -399,14 +399,17 @@ var mcpTools = []map[string]any{
 			"required": []string{"page_id"}},
 	},
 	{
-		"name":        "workspace",
-		"description": "Create a workspace, or rename one. Without workspace_id it creates and you become its admin; with one it renames it or sets its icon — workspace admins only. Pass from_workspace to start from an existing one's STRUCTURE instead of from nothing: its rules, its databases, their property schemas with the option ids, and their views — but no rows and no documents. There is no separate template object on purpose; the workspace you point at is the blueprint, so it cannot drift out of step with how you actually work. Use update_page with workspace_id afterwards to move existing pages into it.",
+		"name": "workspace",
+		"description": "Create a workspace, or rename one. Without workspace_id it creates and you become its admin; with one it renames it or sets its icon — workspace admins only. Pass from_workspace to start from an existing one's STRUCTURE instead of from nothing: its rules, its databases, their property schemas with the option ids, and their views — but no rows and no documents. There is no separate template object on purpose; the workspace you point at is the blueprint, so it cannot drift out of step with how you actually work. Use update_page with workspace_id afterwards to move existing pages into it. " +
+			"With workspace_id and tag it recolours that tag in the workspace instead (color, or \"default\" to go back to the automatic colour); any member who may write can do that, not only admins, and tag cannot be combined with a rename.",
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{
 				"workspace_id":   map[string]any{"type": "string", "description": "Omit to create a new workspace, pass it to change an existing one."},
 				"from_workspace": map[string]any{"type": "string", "description": "Creating only: copy this workspace's structure (rules, databases, schemas, views) into the new one. No rows, no documents."},
 				"name":           map[string]any{"type": "string", "description": "The name. Required when creating."},
 				"icon":           map[string]any{"type": "string", "description": "Changing only: an emoji for the sidebar."},
+				"tag":            map[string]any{"type": "string", "description": "Recolour this tag (with or without #) in workspace_id. Tags are shared by the whole workspace."},
+				"color":          map[string]any{"type": "string", "description": "With tag: gray, brown, orange, yellow, green, blue, purple, pink, red, or \"default\" to reset."},
 			}},
 	},
 	{
@@ -1263,7 +1266,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		case "note":
 			return s.mcpNote(u, args.PageID, args.Text, args.Agent, args.Label)
 		case "workspace":
-			return s.mcpWorkspace(u, args.WorkspaceID, args.Name, args.Icon, args.FromWorkspace)
+			return s.mcpWorkspace(u, args.WorkspaceID, args.Name, args.Icon, args.FromWorkspace, args.Tag, args.Color)
 		default:
 			return "", fmt.Errorf("unknown tool %q", name)
 		}

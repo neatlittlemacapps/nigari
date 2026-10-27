@@ -166,3 +166,64 @@ func TestCatalogueNamesNoVanishedTool(t *testing.T) {
 		}
 	}
 }
+
+// set_tag_color was folded into the workspace tool (#2). It is listed here
+// because TestFoldedCapabilitiesSurvived promised that every folded
+// capability survives, and this one had not: nothing called it any more.
+func TestAgentsCanColourTagsAgain(t *testing.T) {
+	s := testServer(t)
+	uid, _ := signedIn(t, s, "tags@example.test")
+	u := &user{ID: uid, Name: "Test", TokenKind: tokenKindAPI, TokenScope: "write"}
+	ws := s.firstWorkspaceOf(t, uid)
+	color := func() string {
+		var c string
+		s.db.QueryRow(`SELECT color FROM tag_colors WHERE workspace_id = ? AND tag = 'urgent'`, ws).Scan(&c)
+		return c
+	}
+
+	if _, err := callTool(t, s, u, "workspace", `{"workspace_id":"`+ws+`","tag":"#Urgent","color":"Red"}`); err != nil {
+		t.Fatalf("recolour: %v", err)
+	}
+	if c := color(); c != "red" {
+		t.Fatalf("stored colour %q, want red (tag and colour normalised as in the interface)", c)
+	}
+	if _, err := callTool(t, s, u, "workspace", `{"workspace_id":"`+ws+`","tag":"urgent","color":"default"}`); err != nil {
+		t.Fatalf("reset: %v", err)
+	}
+	if c := color(); c != "" {
+		t.Fatalf("after reset the colour is %q, want none", c)
+	}
+
+	// The refusals, each with nothing stored.
+	for name, args := range map[string]string{
+		"unknown colour":         `{"workspace_id":"` + ws + `","tag":"urgent","color":"teal"}`,
+		"no workspace":           `{"tag":"urgent","color":"red"}`,
+		"mixed with a rename":    `{"workspace_id":"` + ws + `","tag":"urgent","color":"red","name":"New"}`,
+		"workspace not a member": `{"workspace_id":"` + newID() + `","tag":"urgent","color":"red"}`,
+	} {
+		if _, err := callTool(t, s, u, "workspace", args); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+		if c := color(); c != "" {
+			t.Errorf("%s: stored %q", name, c)
+		}
+	}
+	readOnly := &user{ID: uid, Name: "Test", TokenKind: tokenKindAPI, TokenScope: "read"}
+	if _, err := callTool(t, s, readOnly, "workspace", `{"workspace_id":"`+ws+`","tag":"urgent","color":"red"}`); err == nil {
+		t.Error("a read-scope token recoloured a tag")
+	}
+
+	// A viewer may read the workspace but not recolour its tags — over MCP as
+	// over REST, because both ask setTagColor.
+	viewer := parityAccount(t, s, "viewer@example.test")
+	if _, err := s.db.Exec(`INSERT INTO workspace_members (workspace_id, user_id, role) VALUES (?, ?, 'viewer')`, ws, viewer); err != nil {
+		t.Fatal(err)
+	}
+	vu := &user{ID: viewer, Name: "Viewer", TokenKind: tokenKindAPI, TokenScope: "write"}
+	if _, err := callTool(t, s, vu, "workspace", `{"workspace_id":"`+ws+`","tag":"urgent","color":"red"}`); err == nil || !strings.Contains(err.Error(), "only read") {
+		t.Errorf("viewer: err = %v, want the read-only refusal", err)
+	}
+	if c := color(); c != "" {
+		t.Errorf("viewer stored %q", c)
+	}
+}
