@@ -25,8 +25,12 @@ make frontend
 CGO_ENABLED=0 go build -trimpath -o salt .
 
 # setsid + nohup: the codespace runs this as a lifecycle command and would
-# otherwise take the server down with it when the command returns.
-SALT_DATA="$data" SALT_ADDR=:8420 setsid nohup ./salt >"$log" 2>&1 < /dev/null &
+# otherwise take the server down with it when the command returns. macOS has
+# no setsid, and there the script runs from a terminal that stays open, so
+# nohup alone is enough (it failed with "setsid: command not found").
+detach=(nohup)
+command -v setsid >/dev/null && detach=(setsid nohup)
+SALT_DATA="$data" SALT_ADDR=:8420 "${detach[@]}" ./salt >"$log" 2>&1 < /dev/null &
 echo $! >"$pidfile"
 
 for _ in $(seq 1 60); do
