@@ -6,10 +6,15 @@ paths:
 
 # Go server
 
-- **One SQLite connection** (`db.SetMaxOpenConns(1)` in `db.go`). A query run
-  inside an open `rows` cursor or an open transaction waits for a connection
-  that never comes, and the whole server stops. Drain and close a cursor before
-  any per-row work, including `canRead` checks.
+- **One writer connection** (`s.db`, `SetMaxOpenConns(1)` in `db.go`). A
+  query on `s.db` run inside an open `s.db` cursor or transaction waits for a
+  connection that never comes, and the whole server stops. Drain and close a
+  cursor before any per-row work, including `canRead` checks.
+- **A small read-only pool** (`s.rdb`, `openReadDB` in `db.go`) for long
+  analytical reads only: a database's rows, rollups, grouped counts. They run
+  under `withReadLimit` (`cap_limits.go`). Writes, reads inside a transaction
+  and short lookups stay on `s.db`. The cursor rule applies inside the pool
+  too: it has `readPoolSize` connections, not unlimited ones.
 - **Schema changes** go into the `schema` constant in `db.go` as
   `CREATE TABLE/INDEX IF NOT EXISTS`, and new columns on existing tables through
   `ensureColumn`. There is no migration framework; an existing instance must

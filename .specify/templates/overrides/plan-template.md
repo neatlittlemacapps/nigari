@@ -23,7 +23,7 @@ not ready for `/speckit-tasks`.
 
 **Primary Dependencies**: Go standard library + pure-Go SQLite; Mantine, BlockNote, Yjs in the frontend. New dependencies: [none, or name + reason]
 
-**Storage**: One SQLite file, one connection (`SetMaxOpenConns(1)`), schema in `server/db.go`. Schema change: [none, or tables/columns/indexes + how an existing instance gets them]
+**Storage**: One SQLite file; one writer connection (`s.db`) plus a read-only pool for long reads (`s.rdb`); schema in `server/db.go`. Schema change: [none, or tables/columns/indexes + how an existing instance gets them]
 
 **Testing**: `go test ./...` (`testServer`, `callTool`, scope fixtures), `npm run check` (tsc + check scripts), Playwright in `web/tests/`
 

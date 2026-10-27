@@ -337,7 +337,7 @@ func (s *Server) relatedRows(ctx context.Context, u *user, relationProp string, 
 		ids := allowed[start:min(start+batch, len(allowed))]
 		q := `SELECT id, props FROM pages WHERE trashed_at IS NULL AND id IN (` +
 			strings.TrimSuffix(strings.Repeat("?,", len(ids)), ",") + `)`
-		rs, err := s.db.QueryContext(ctx, q, ids...)
+		rs, err := s.rdb.QueryContext(ctx, q, ids...)
 		if err != nil {
 			break
 		}
@@ -394,11 +394,13 @@ func (s *Server) backrelationIDs(ctx context.Context, u *user, def propDef, rows
 		return out
 	}
 	// Candidate rows: children of the source collection that are not trashed.
-	// Drain the cursor before doing per-row work — with SetMaxOpenConns(1) a
-	// query inside an open cursor blocks the whole server.
+	// Drain the cursor before doing per-row work. The cursor is on the read
+	// pool and canRead on the writer, so this no longer deadlocks outright,
+	// but a cursor held across per-row queries ties up a read connection for
+	// all of them (see readPoolSize).
 	type cand struct{ id, props, ws string }
 	var cands []cand
-	rowsQ, err := s.db.QueryContext(ctx,
+	rowsQ, err := s.rdb.QueryContext(ctx,
 		`SELECT id, props, workspace_id FROM pages WHERE parent_id = ? AND trashed_at IS NULL`,
 		def.BackrelationCollection)
 	if err != nil {

@@ -97,7 +97,7 @@ A budget may only be raised in a PR that says why.
 - **Decision**: a `bench` job in `.github/workflows/ci.yml` runs on PRs that touch `server/**`. It runs the storage benchmarks on the base and on the head (`-count=6`) and compares them with `benchstat` (`go run golang.org/x/perf/cmd/benchstat@v0.0.0-20261009192801-be2c69fb417e`, pinned; a CI tool, not a module dependency).
 - **Threshold**: a significant change (p < 0.05) of more than **+15%** in `p95-ns` is reported in the job summary and as a warning. It does not fail the job: shared runners are noisy, and a red build that is wrong half the time gets ignored. A regression above **+50%** fails the job.
 
-### P5. Bounded reads, one connection kept for now
+### P5. Bounded reads, and a read-only pool beside the writer
 
 - **Decision**: analytical reads (`query_rows`, rollups, the coming chart aggregation) run with `QueryContext` under a 5 s limit. They answer `query_timeout` instead of holding the single connection.
 - A second, read-only WAL connection is **measured, not built**: a benchmark variant opens `mode=ro` beside the writer and runs the burst-write test with a concurrent 100k-row query. It is built only if the single-connection p95 for writes during a long read exceeds its budget (spec revisit trigger 2 is about this).
@@ -113,7 +113,7 @@ A budget may only be raised in a PR that says why.
 
 - **The trigger is met.** With one connection, write p95 during long reads is about 2.7 s against an 8 ms budget. A read-only connection beside the writer brings it back to the no-read figure: WAL lets the reader and the writer run at once.
 - **Worse than one read's length.** A single sorted 100k read takes ~100 ms here, but writes waited for seconds. `database/sql` does not hand a freed connection to the longest waiter (its queue is a map), so a reader that asks again at once can win repeatedly. Back-to-back reads are the worst case, but an agent paging a large database looks like that.
-- **Not built in this pass (#82).** Building it moves the one-connection rule that `.claude/rules/go-server.md` and every cursor-handling comment rely on, so it is its own change with its own review. Until then the 5 s limit bounds each read, not the queue: a single runaway read can no longer hold writes for longer than 5 s, but a steady stream of shorter reads still can, as measured above.
+- **Built in #82** (owner's call, 2026-10-26). `s.rdb`, a `mode=ro` pool of `readPoolSize` (4) connections opened by `openReadDB`, carries the rows, rollup, backrelation and grouped-count reads. With it, `conn=readpool` in the same benchmark gives write p95 **4.6–5.9 ms** during back-to-back 100k reads (`conn=writer`, the old path: 2.6–3.0 s). Writes, transactions and short lookups stay on the writer; `.claude/rules/go-server.md` says which goes where.
 
 ### P6. The decision is recorded in the repository
 

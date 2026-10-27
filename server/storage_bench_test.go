@@ -2,12 +2,10 @@ package server
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"math"
 	"math/rand/v2"
 	"net/http/httptest"
-	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -238,15 +236,13 @@ func writeBurst(b *testing.B, w *benchWorld, l *latencies) {
 	wg.Wait()
 }
 
-// The measurement behind research P5: what a long read costs the writes queued
-// behind it, and what a second, read-only connection would buy back. 100k rows,
-// BENCH_LARGE=1 only.
+// The measurement behind research P5 and #82: what a long read costs the
+// writes queued behind it. 100k rows, BENCH_LARGE=1 only.
 //
-//   - conn=single: the long read goes through the server's one connection, as
-//     every read does today. Writes wait for it to finish.
-//   - conn=readonly: the same SQL on a separate mode=ro connection beside the
-//     writer, which WAL lets run concurrently. This is the design P5 measures
-//     before building; nothing outside this benchmark opens such a connection.
+//   - conn=writer: the long read runs on the writer's one connection, as every
+//     read did before #82. Writes wait for it.
+//   - conn=readpool: the same read through collectionRowsQuery, which runs on
+//     the read-only pool (openReadDB). Writes should not notice it.
 //
 // The reader loops until the writes are done, so every write meets a read in
 // progress, as it would behind a chart or an agent paging a large database.
@@ -257,18 +253,23 @@ func BenchmarkStorageWriteDuringLongRead(b *testing.B) {
 	w := sharedBenchWorld(b, 0, 100000)
 	const longRead = `SELECT id, props FROM pages WHERE parent_id = ? AND trashed_at IS NULL
 		ORDER BY json_extract(props, '$.amount') DESC LIMIT 500`
-	for _, mode := range []string{"single", "readonly"} {
-		b.Run("conn="+mode, func(b *testing.B) {
-			db := w.s.db
-			if mode == "readonly" {
-				ro, err := sql.Open("sqlite", "file:"+filepath.Join(w.dir, DBFile)+"?mode=ro&_pragma=busy_timeout(5000)")
-				if err != nil {
-					b.Fatal(err)
-				}
-				defer ro.Close()
-				ro.SetMaxOpenConns(1)
-				db = ro
+	read := map[string]func() error{
+		"writer": func() error {
+			rows, err := w.s.db.Query(longRead, w.rowsDB)
+			if err != nil {
+				return err
 			}
+			for rows.Next() {
+			}
+			return rows.Close()
+		},
+		"readpool": func() error {
+			_, _, err := w.s.collectionRowsQuery(context.Background(), w.member(), w.rowsDB, nil, nil, "amount:desc", 500, 0, benchDay)
+			return err
+		},
+	}
+	for _, mode := range []string{"writer", "readpool"} {
+		b.Run("conn="+mode, func(b *testing.B) {
 			stop := make(chan struct{})
 			done := make(chan struct{})
 			reads := 0
@@ -280,14 +281,10 @@ func BenchmarkStorageWriteDuringLongRead(b *testing.B) {
 						return
 					default:
 					}
-					rows, err := db.Query(longRead, w.rowsDB)
-					if err != nil {
+					if err := read[mode](); err != nil {
 						b.Errorf("long read: %v", err)
 						return
 					}
-					for rows.Next() {
-					}
-					rows.Close()
 					reads++
 				}
 			}()

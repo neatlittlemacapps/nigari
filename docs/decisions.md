@@ -7,6 +7,29 @@ entries are not edited away.
 
 ---
 
+## 2026-10-26 — A read-only pool beside the one writer connection
+
+**Decision**: long analytical reads (a database's rows, rollups,
+backrelations, grouped counts) run on `s.rdb`, a read-only pool of four
+connections opened with `mode=ro`. Every write, every read inside a
+transaction and the short permission lookups stay on `s.db`, the single writer
+connection. Reads on the pool still stop after 5 s. Spec 002 research P5
+changes from "measured, not built" to built; #82.
+
+**Why**: measured, not assumed. Five agents' writes waited ~2.7 s at p95 behind
+back-to-back 100k-row reads on the shared connection; the write budget is
+8 ms. On the read pool the same writes take ~5 ms. WAL lets readers and the
+writer run at once, and a read on the pool sees every committed write, so
+saving and reloading still shows the save. `database/sql` does not serve
+waiters in order, so a busy reader could keep winning the one connection; a
+separate pool removes the contest.
+
+**Rejected**: a read pool for every read (it would split the cursor rule
+across all code for little gain; the short lookups are fast). A pool without
+`mode=ro` (a stray write would take a second writer's lock instead of
+failing). Waiting until charts (#20) land (they are the heaviest reads, and
+the writes would already be suffering).
+
 ## 2026-10-26 — Storage budgets record today's speed; targets stay with issues
 
 **Decision**: the latency budgets in spec 002 research P3 are the CI runner's

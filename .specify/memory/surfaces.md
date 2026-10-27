@@ -17,7 +17,7 @@ concept only matters to one feature, it stays in that feature's plan.
 | Surface | What a feature checks | Tag | Since | Introduced by |
 | --- | --- | --- | --- | --- |
 | Domain logic and gates | Permission (`canRead`/`canWrite`), workspace gate (`credentialMayEnter`), validation, `audit(...)`, `fireWebhook(...)`, in one function both doors call | backend | 2026-10-25 | constitution I–III |
-| Schema and queries | `server/db.go` schema constant, `ensureColumn`, an index for every new filter or join, no query inside an open cursor | backend | 2026-10-25 | constitution VII |
+| Schema and queries | `server/db.go` schema constant, `ensureColumn`, an index for every new filter or join, no query inside an open cursor; a long read runs on the read pool (`s.rdb`) under `withReadLimit`, a write or a read that must see it on the writer (`s.db`) | backend | 2026-10-25 | constitution VII |
 | REST routes | Route in `server/server.go` behind the right middleware (`auth`, `sessionOnly`) | backend | 2026-10-25 | AGENTS.md |
 | MCP tools | Same checks as REST in the tool's own path, `wrapUntrusted` on returned content, read scope may not mutate, description says when to use it and what it refuses | mcp | 2026-10-25 | constitution II |
 | Closed-to-agents list | `not_available_via_mcp` in `server/mcp_workspace.go` and `wiki/agent-access.md` move together | mcp | 2026-10-25 | constitution II |

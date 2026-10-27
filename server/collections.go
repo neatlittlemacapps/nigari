@@ -385,11 +385,11 @@ func (s *Server) collectionRowsQuery(ctx context.Context, u *user, colID string,
 	defer cancel()
 	// The count used to ignore its error. Under a deadline that would report
 	// "0 rows" for a query that was merely stopped.
-	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pages WHERE `+whereSQL, args...).Scan(&total); err != nil {
+	if err := s.rdb.QueryRowContext(ctx, `SELECT COUNT(*) FROM pages WHERE `+whereSQL, args...).Scan(&total); err != nil {
 		return nil, 0, readErr(ctx, err)
 	}
 
-	rows, err := s.db.QueryContext(ctx, `SELECT id, title, icon, cover, position, props, tags FROM pages WHERE `+whereSQL+` ORDER BY `+orderSQL+` LIMIT ? OFFSET ?`, append(args, limit, offset)...)
+	rows, err := s.rdb.QueryContext(ctx, `SELECT id, title, icon, cover, position, props, tags FROM pages WHERE `+whereSQL+` ORDER BY `+orderSQL+` LIMIT ? OFFSET ?`, append(args, limit, offset)...)
 	if err != nil {
 		return nil, 0, readErr(ctx, err)
 	}
@@ -426,11 +426,13 @@ func (s *Server) collectionRowsQuery(ctx context.Context, u *user, colID string,
 	// From here on we query again (the schema, and inside computeDerived a
 	// canRead per target page), even though `defer rows.Close()` only fires on
 	// leaving. That works solely because the loop above runs to the end:
-	// database/sql then closes the rows itself and frees the — single —
-	// connection. Anyone adding a `break` here keeps the cursor open and brings
-	// the whole server to a standstill.
+	// database/sql then closes the rows itself and frees its connection. These
+	// reads run on the read pool (s.rdb), so a `break` above would no longer
+	// stop the writer, but every request that kept a cursor open like that
+	// would hold one of readPoolSize connections, and a few of them at once
+	// stop every analytical read. Drain first.
 	var schemaJSON string
-	if err := s.db.QueryRowContext(ctx, `SELECT schema FROM collections WHERE page_id = ?`, colID).Scan(&schemaJSON); err == nil {
+	if err := s.rdb.QueryRowContext(ctx, `SELECT schema FROM collections WHERE page_id = ?`, colID).Scan(&schemaJSON); err == nil {
 		if err := s.computeDerived(ctx, u, parseSchema(schemaJSON), list); err != nil {
 			return nil, 0, readErr(ctx, err)
 		}

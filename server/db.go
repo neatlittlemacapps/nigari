@@ -346,6 +346,51 @@ func ensureColumn(db *sql.DB, table, column, ddl string) error {
 	return err
 }
 
+// readPoolSize is how many analytical reads may run at once beside the
+// writer. Small on purpose: each holds a SQLite connection and its page cache,
+// and the reads it serves are bounded by readLimit anyway.
+const readPoolSize = 4
+
+// openReadDB opens the read-only pool for long analytical reads: a database's
+// rows, rollups and grouped counts (#82).
+//
+// Why a second pool, after years of one connection: every read and write
+// shared that connection, so a long read made every write wait. Measured in
+// spec 002 (research P5), five agents' writes waited ~2.7 s at p95 behind
+// back-to-back 100k-row reads, against an 8 ms budget; on a read-only
+// connection beside the writer they took ~4 ms. WAL is what makes that safe:
+// a reader works from a snapshot, and reader and writer never block each
+// other.
+//
+// What stays on db, the writer:
+//   - every write, and every read inside a transaction;
+//   - short lookups (permissions, a page by id), so the rules about them do
+//     not split in two;
+//   - anything that must see a write the same request made before committing.
+//
+// A read here sees every committed write, so a client that saves and then
+// reloads its rows sees its save. mode=ro makes a stray write fail instead of
+// taking a second writer's lock; query_only makes that explicit per
+// connection.
+//
+// The cursor rule still applies inside this pool: a query here while holding
+// another of its cursors can exhaust readPoolSize under load. Drain first, as
+// on the writer.
+func openReadDB(path string) (*sql.DB, error) {
+	dsn := fmt.Sprintf("file:%s?mode=ro&_pragma=busy_timeout(5000)&_pragma=query_only(1)", path)
+	db, err := sql.Open("sqlite", dsn)
+	if err != nil {
+		return nil, err
+	}
+	db.SetMaxOpenConns(readPoolSize)
+	// Fail at startup, not at the first chart.
+	if err := db.Ping(); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("open read pool: %w", err)
+	}
+	return db, nil
+}
+
 func openDB(path string) (*sql.DB, error) {
 	dsn := fmt.Sprintf("file:%s?_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)&_pragma=synchronous(NORMAL)", path)
 	db, err := sql.Open("sqlite", dsn)

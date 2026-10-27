@@ -233,6 +233,11 @@ func isUnfinishedRelativeDay(s string) bool {
 // the option, not the date. now is the day relative days are resolved
 // against: the viewer's day when the caller knows it, the server's otherwise.
 func (s *Server) resolveSmartDates(collectionID string, filters []rowFilter, now time.Time) []rowFilter {
+	// Nothing to resolve, so no schema to load: an unfiltered read of a
+	// database's rows should not need the writer's connection at all (#82).
+	if len(filters) == 0 {
+		return filters
+	}
 	schema, _, err := s.loadCollection(collectionID)
 	if err != nil {
 		return filters
