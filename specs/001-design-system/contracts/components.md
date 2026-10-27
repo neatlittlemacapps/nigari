@@ -9,6 +9,7 @@ Batch 1 builds the components User Story 1 needs; later batches follow FR-016's 
 | `Dialog` | `@base-ui/react/dialog` | `title: string`, `description?: string`, `open`, `onOpenChange`, `footer?: ReactNode`, `size: "sm" \| "md" \| "lg"` | focus trap, Escape closes, focus returns to trigger, `aria-labelledby` the title |
 | `AlertDialog` | `@base-ui/react/alert-dialog` | `title`, `description`, `confirmLabel`, `cancelLabel`, `danger?: boolean`, `onConfirm` | initial focus on cancel when `danger`; no close on outside click |
 | `Field` + `Input` | `@base-ui/react/field`, `input` | `label`, `hint?`, `error?` | label linked; error announced (`aria-describedby`) |
+| `Checkbox` | `@base-ui/react/checkbox` | `label`, `checked`, `onCheckedChange`, `description?: ReactNode` | Space toggles; `data-checked` |
 | `Select` | `@base-ui/react/select` | `label`, `options: {value, label}[]`, `value`, `onValueChange` | typeahead; arrow keys |
 | `Switch` | `@base-ui/react/switch` | `label`, `checked`, `onCheckedChange` | Space toggles |
 
