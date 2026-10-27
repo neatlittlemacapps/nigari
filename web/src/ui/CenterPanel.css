@@ -37,6 +37,6 @@
 
   .ui-center-panel {
     width: 100vw;
-    border-radius: 0;
+    border-radius: initial; /* square edges when it fills a phone screen */
   }
 }
