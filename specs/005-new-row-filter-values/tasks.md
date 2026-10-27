@@ -23,9 +23,9 @@ No setup: no dependency, no schema change (plan, Technical Context).
 
 ## Phase 2: Foundational (blocks every story)
 
-- [ ] T001 [backend] Add `pinsFromFilters(schema, filters, now)` to new `server/viewpins.go`: armed `is` with one value, on a writable property, in the stored form per research R1; two filters disagreeing on one property pin nothing; relative days resolved with `resolveSmartDate`
-- [ ] T002 [P] [test] Table test in `server/viewpins_test.go` for T001: every row of research R1, plus unarmed filter, `is_empty`, several values, a vanished select option, a number that does not parse, two agreeing and two disagreeing filters, a formula property, the title
-- [ ] T003 [backend] Add `(s) rowPinsForView(colID, viewID)` and `(s) rowMatchesView(rowID, colID, viewID)` to `server/viewpins.go`: load the view with `loadCollection`, refuse a view of another database (`view_not_in_database`); match through `resolveSmartDates`, `typeFilters` and `rowFilter.where()` on the writer (research R3)
+- [x] T001 [backend] Add `pinsFromFilters(schema, filters, now)` to new `server/viewpins.go`: armed `is` with one value, on a writable property, in the stored form per research R1; two filters disagreeing on one property pin nothing; relative days resolved with `resolveSmartDate`
+- [x] T002 [P] [test] Table test in `server/viewpins_test.go` for T001: every row of research R1, plus unarmed filter, `is_empty`, several values, a vanished select option, a number that does not parse, two agreeing and two disagreeing filters, a formula property, the title
+- [x] T003 [backend] Add `(s) rowPinsForView(colID, viewID)` and `(s) rowMatchesView(rowID, colID, viewID)` to `server/viewpins.go`: load the view with `loadCollection`, refuse a view of another database (`view_not_in_database`); match through `resolveSmartDates`, `typeFilters` and `rowFilter.where()` on the writer (research R3)
 
 **Checkpoint**: given a view, the server knows the pins and can tell whether a row matches.
 
@@ -37,9 +37,9 @@ No setup: no dependency, no schema change (plan, Technical Context).
 
 **Independent Test**: a view filtered to one value of a select; **New**; the row is in the view with that value.
 
-- [ ] T004 [US1] [test] Tests in `server/viewpins_test.go` for `POST /api/pages` with `viewId`: pins stored; explicit `props` win; no `viewId` is unchanged; a view of another database is refused with nothing created; no write access is refused (existing gate)
-- [ ] T005 [US1] [backend] `handleCreatePage` in `server/pages.go`: optional `viewId` (only with a database parent), pins merged under `props` and normalised by `normalizePropValues`, `matchesView` in the answer
-- [ ] T006 [US1] [backend] `rowFromTemplate` and its handler in `server/db_templates.go`: optional `viewId`; template, then pins, then props, in one `mcpSetProperties` call (research R5), with a test that a pin beats the template's value
+- [x] T004 [US1] [test] Tests in `server/viewpins_test.go` for `POST /api/pages` with `viewId`: pins stored; explicit `props` win; no `viewId` is unchanged; a view of another database is refused with nothing created; no write access is refused (existing gate)
+- [x] T005 [US1] [backend] `handleCreatePage` in `server/pages.go`: optional `viewId` (only with a database parent), pins merged under `props` and normalised by `normalizePropValues`, `matchesView` in the answer
+- [x] T006 [US1] [backend] `rowFromTemplate` and its handler in `server/db_templates.go`: optional `viewId`; template, then pins, then props, in one `mcpSetProperties` call (research R5), with a test that a pin beats the template's value
 - [ ] T007 [US1] [ui] `web/src/api.ts` and `CollectionView.tsx`: `addRow` and `addRowFromTemplate` pass the active view's id (not a form view); a board column's value stays explicit
 - [ ] T008 [US1] [test] Playwright `web/tests/new-row-filters.mjs`: a view filtered to *Status is To do*; **New**; the row shows with that status; added to `web/tests/package.json`
 
