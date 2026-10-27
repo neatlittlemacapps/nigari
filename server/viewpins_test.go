@@ -331,3 +331,37 @@ func TestAPersonAndAnAgentInTheSameViewStoreTheSameRow(t *testing.T) {
 		t.Errorf("person stored %s, agent stored %s; want both {\"est\":2,\"status\":\"doing\"}", a, b)
 	}
 }
+
+// What naming a view adds to making a row (spec 005, SC-004): one read of the
+// view and one primary-key check of the new row. Measured beside a plain
+// create on the seeded 1k-row database, through the REST door the interface
+// uses.
+func BenchmarkCreateRowWithView(b *testing.B) {
+	w := sharedBenchWorld(b, 0, 1000)
+	views := `[{"id":"v-bench","name":"Stage 2","type":"table","filters":[{"property":"stage","op":"is","value":"s2"}]}]`
+	if _, err := w.s.db.Exec(`UPDATE collections SET views = ? WHERE page_id = ?`, views, w.rowsDB); err != nil {
+		b.Fatal(err)
+	}
+	for _, c := range []struct{ name, body string }{
+		{"plain", `{"parentId":"` + w.rowsDB + `","title":""}`},
+		{"view", `{"parentId":"` + w.rowsDB + `","title":"","viewId":"v-bench"}`},
+	} {
+		b.Run(c.name, func(b *testing.B) {
+			var l latencies
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				l.time(func() {
+					req := httptest.NewRequest("POST", "/api/pages", strings.NewReader(c.body))
+					req.Header.Set("Content-Type", "application/json")
+					req.Header.Set("Cookie", w.memberCookie())
+					rec := httptest.NewRecorder()
+					w.s.ServeHTTP(rec, req)
+					if rec.Code != 200 {
+						b.Fatalf("create: %d %s", rec.Code, rec.Body.String())
+					}
+				})
+			}
+			l.report(b)
+		})
+	}
+}

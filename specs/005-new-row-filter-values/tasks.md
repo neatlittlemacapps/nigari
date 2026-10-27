@@ -80,8 +80,8 @@ No setup: no dependency, no schema change (plan, Technical Context).
 ## Phase 6: Polish and cross-cutting
 
 - [x] T017 [P] [wiki] `wiki/collections.md` § Rows are pages, `wiki/mcp-tools.md` §§ create_page and create_rows, `wiki/api.md` the `viewId` field, `docs/what-it-does.md` one line; retake any screenshot `check-wiki.mjs` lists
-- [ ] T018 [P] [perf] `BenchmarkCreateRowWithView` beside a plain create on the seeded workspace; `EXPLAIN QUERY PLAN` of the match check recorded in the pull request
-- [ ] T019 [test] Run `scripts/agent-gate.sh`; mutation-check T002, T004 and T012 (each fails with its fix undone)
+- [x] T018 [P] [perf] `BenchmarkCreateRowWithView` beside a plain create on the seeded workspace; `EXPLAIN QUERY PLAN` of the match check recorded in the pull request
+- [x] T019 [test] Run `scripts/agent-gate.sh`; mutation-check T002, T004 and T012 (each fails with its fix undone)
 
 ---
 
