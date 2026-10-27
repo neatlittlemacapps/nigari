@@ -7,8 +7,9 @@
 // should cost little, but "should" is how bundles grow: the main chunk was
 // 528,706 B gzip on main at 2a28bc4, and spec 001 allows the whole feature
 // 60 KB on top (research P8, FR-019). The plan's first baseline, 790,888 B,
-// was a measuring mistake that this script, run for the first time, exposed. Run after a build, so not part of npm run check,
-// which does not build; CI and the gate run it when web/dist exists.
+// was a measuring mistake that this script, run for the first time, exposed.
+// Run after a build, so not part of npm run check, which does not build; CI and
+// the gate run it when web/dist exists.
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
