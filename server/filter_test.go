@@ -212,3 +212,22 @@ func TestParseFilterGroups(t *testing.T) {
 		t.Errorf("second group is %#v, want the datum range", groups[1])
 	}
 }
+
+// The total comes from a window count on the page's own rows (#79), so a page
+// with no rows has none to carry it. An offset past the end must still report
+// how many rows there are, or a client paging backwards would think the
+// database had emptied.
+func TestTotalSurvivesAnOffsetPastTheEnd(t *testing.T) {
+	s, col := filterFixture(t)
+	list, total, err := s.collectionRowsQuery(context.Background(), &user{ID: "u"}, col, nil, nil, "", 2, 100, time.Time{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) != 0 || total != 4 {
+		t.Fatalf("got %d rows, total %d; want 0 rows, total 4", len(list), total)
+	}
+	list, total, _ = s.collectionRowsQuery(context.Background(), &user{ID: "u"}, col, []rowFilter{{Prop: "klasse", Op: "is", Value: "a"}}, nil, "", 1, 1, time.Time{})
+	if len(list) != 1 || total != 2 {
+		t.Fatalf("filtered second page: %d rows, total %d; want 1 row, total 2", len(list), total)
+	}
+}

@@ -1174,12 +1174,22 @@ func (s *Server) searchChunks(userID, match string, ws []string, want int) []sea
 	}
 	for offset, round := 0, 0; len(out) < want && round < 8; round++ {
 		qArgs := append([]any{}, args...)
-		rows, err := s.db.Query(`
+		// On the read pool (#84): a search over a common word ranks every hit,
+		// and on the writer's connection that held up every save meanwhile.
+		//
+		// Joined by the FTS rowid that page_chunks records, through its index,
+		// and in this order. Joined by chunk_id instead, every hit read its
+		// UNINDEXED chunk_id back out of the index's content table: a common
+		// word at 20k pages spent 118 ms of 141 on that join alone (#78). The
+		// CROSS JOIN pins the order, because left to itself the planner started
+		// from page_chunks and ran the MATCH once per passage, which took
+		// minutes.
+		rows, err := s.rdb.Query(`
 			SELECT c.page_id, p.title, p.icon, c.heading,
 			       snippet(chunks_fts, 3, char(1), char(2), '…', 18)
 			FROM chunks_fts
-			JOIN page_chunks c ON c.id = chunks_fts.chunk_id
-			JOIN pages p ON p.id = c.page_id
+			CROSS JOIN page_chunks c ON c.fts_rowid = chunks_fts.rowid
+			CROSS JOIN pages p ON p.id = c.page_id
 			WHERE chunks_fts MATCH ? AND p.trashed_at IS NULL
 			  AND c.workspace_id IN (`+placeholders(len(ws))+`)
 			ORDER BY bm25(chunks_fts, 0.0, 5.0, 3.0, 1.0)
@@ -1187,8 +1197,9 @@ func (s *Server) searchChunks(userID, match string, ws []string, want int) []sea
 		if err != nil {
 			return out
 		}
-		// Drain the cursor BEFORE any canRead query — with a single DB connection, a
-		// query inside an open cursor blocks the server.
+		// Drain the cursor BEFORE any canRead query. canRead runs on the writer,
+		// so this no longer deadlocks, but a cursor held across 60 permission
+		// checks would tie up a read connection for all of them.
 		var cand []searchResult
 		for rows.Next() {
 			var res searchResult
@@ -1227,7 +1238,8 @@ func (s *Server) searchPagesFallback(userID, match string, ws []string, want int
 	}
 	for offset, round := 0, 0; len(out) < want && round < 8; round++ {
 		qArgs := append([]any{}, args...)
-		rows, err := s.db.Query(`
+		// On the read pool, like the passage search above.
+		rows, err := s.rdb.Query(`
 			SELECT p.id, p.title, p.icon, snippet(pages_fts, 2, char(1), char(2), '…', 14)
 			FROM pages_fts JOIN pages p ON p.id = pages_fts.id
 			WHERE pages_fts MATCH ? AND p.trashed_at IS NULL AND p.workspace_id IN (`+placeholders(len(ws))+`)

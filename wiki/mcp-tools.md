@@ -1110,7 +1110,7 @@ More on what a visitor sees in [Sharing](sharing.md).
 
 ### workspace
 
-Create a workspace, or change one.
+Create a workspace, change one, or recolour one of its tags.
 
 | Parameter | Type | Required |
 | --- | --- | --- |
@@ -1118,6 +1118,8 @@ Create a workspace, or change one.
 | `from_workspace` | string | creating only |
 | `name` | string | required when creating |
 | `icon` | string | changing only |
+| `tag` | string | recolouring only |
+| `color` | string | with `tag` |
 
 Creating makes you the workspace's **admin**. Changing needs you to be one
 already, and accepts a new `name` (80 characters at most) or an `icon`. The
@@ -1141,6 +1143,18 @@ reminder still names a tool that no longer exists** (`move_page`, folded into
 blueprint returns `Created workspace "N" with id … from the structure of …: N
 database(s) with their schemas and views, no rows.` Changing returns
 `Updated workspace <id>`.
+
+**Recolouring a tag** takes `workspace_id`, `tag` (with or without `#`) and
+`color`: `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`,
+`red`, or `default` to go back to the automatic colour. It follows the
+interface's rule, not the admin rule above: tags are shared, so any member may
+recolour one, but a viewer may not. It cannot be combined with `name`, `icon` or
+`from_workspace`. It returns `Tag "urgent" is now red in workspace …`, or `Tag
+"urgent" is back to its automatic colour in workspace …`. Errors: `pass
+workspace_id with tag: a tag colour belongs to one workspace`; `recolour a tag on
+its own: tag cannot be combined with name, icon or from_workspace`; `You can
+only read this workspace, so its tag colours cannot be changed.`; `unknown
+colour — use gray, brown, …`; `tag is required`; `workspace "…" not found`.
 
 Errors: `name is required`; `name is too long`; `creating workspaces is disabled
 on this instance`; `this connection is limited to particular workspaces, so it
