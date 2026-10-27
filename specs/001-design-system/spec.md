@@ -147,7 +147,7 @@ build them without edits.
 **Catalogue, tests, documentation**
 
 - **FR-012**: A component catalogue page MUST render every component in every state, in light and dark. It is a separate Vite entry used in development and tests, and MUST NOT be served by the production binary.
-- **FR-013**: Playwright MUST screenshot the catalogue in both themes, compare against committed baselines, and run automated accessibility checks on it; both run in CI.
+- **FR-013**: Playwright MUST screenshot the catalogue in both themes, compare against baselines (amended in PR 2: drawn on the same machine, in CI from the base branch, never committed; see tasks.md), and run automated accessibility checks on it; both run in CI.
 - **FR-014**: `web/src/ui/README.md` MUST document each component's props, states and when to use it; `.claude/rules/frontend.md` MUST point to it.
 - **FR-015**: Each migrated screen MUST keep its wiki screenshots current (`shoot-wiki.mjs`); migration batches retake them together.
 
