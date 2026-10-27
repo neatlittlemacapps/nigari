@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { PeekMode } from '../peek';
 import {
   useCreateBlockNote,
   SuggestionMenuController,
@@ -70,7 +71,7 @@ export interface EditorProps {
   peekEnd?: ReactNode;
   /** How a database view opens a row in a peek beside it (spec 007). Absent:
    *  a peek view falls back to navigating. */
-  onPeek?: (id: string) => void;
+  onPeek?: (id: string, mode: PeekMode) => void;
   onCreatePage: (parentId: string | null, type?: 'doc' | 'collection') => void;
   // Deleting was reachable from the sidebar tree only. A database ROW — and any
   // page filed under one — never appears there as a tree item, so nothing in the
@@ -1639,7 +1640,7 @@ interface CollabProps {
   tagColors: Record<string, string>;
   onNavigate: (id: string | null) => void;
   onOpenInNewTab: (id: string) => void;
-  onPeek?: (id: string) => void;
+  onPeek?: (id: string, mode: PeekMode) => void;
   onCreatePage: (parentId: string | null, type?: 'doc' | 'collection') => void;
   onPagesChanged: () => void;
   onReset: () => void;
@@ -1770,7 +1771,7 @@ function BlockContent({
   tagColors: Record<string, string>;
   onNavigate: (id: string | null) => void;
   onOpenInNewTab: (id: string) => void;
-  onPeek?: (id: string) => void;
+  onPeek?: (id: string, mode: PeekMode) => void;
   onCreatePage: (parentId: string | null, type?: 'doc' | 'collection') => void;
   onPagesChanged: () => void;
 }) {

@@ -100,13 +100,13 @@ follow-up pull request (centre peek).
 
 **Independent Test**: a view set to Center peek; click a row; the page opens centred over the view.
 
-- [ ] T027 [US4] [backend] `centerPeekShipped = true` in `server/viewopen.go`; update the T003 table test
-- [ ] T028 [US4] [ui] `PeekPanel.tsx`: draw `center` with `ui/Dialog` (wide, modal, focus trap and return through `useExclusiveModal`); `peek.ts`: narrow side peek → center; update `check-peek.mjs`
-- [ ] T029 [US4] [ui] `ViewOpenMenu.tsx`: **Center peek** radio item
-- [ ] T030 [P] [US4] [i18n] German and Spanish for "Center peek"
-- [ ] T031 [US4] [mcp] `set_view` description lists `center_peek`
-- [ ] T032 [US4] [test] Playwright: centre peek opens, traps focus, closes on Escape, outside click, close button and Back; phone width side peek opens as centre; Go/MCP tests accept `center_peek`
-- [ ] T033 [P] [US4] [wiki] `wiki/collections.md` and `wiki/mcp-tools.md` describe Center peek; stale screenshots retaken
+- [x] T027 [US4] [backend] `centerPeekShipped = true` in `server/viewopen.go`; update the T003 table test
+- [x] T028 [US4] [ui] `PeekPanel.tsx`: draw `center` with a new `ui/CenterPanel` (modal, own focus trap, not `useExclusiveModal`, research R7; catalogue section and README); `peek.ts`: narrow side peek → center; the address adds `&as=center`; update `check-peek.mjs`
+- [x] T029 [US4] [ui] `ViewOpenMenu.tsx`: **Center peek** radio item
+- [x] T030 [P] [US4] [i18n] German and Spanish for "Center peek"
+- [x] T031 [US4] [mcp] `set_view` description lists `center_peek`
+- [x] T032 [US4] [test] Playwright: centre peek opens, traps focus, closes on Escape, outside click, close button and Back; phone width side peek opens as centre; Go/MCP tests accept `center_peek`
+- [x] T033 [P] [US4] [wiki] `wiki/collections.md` and `wiki/mcp-tools.md` describe Center peek; stale screenshots retaken
 
 ---
 

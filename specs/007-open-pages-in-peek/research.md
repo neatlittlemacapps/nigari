@@ -127,13 +127,21 @@ be inert, against FR-003).
 
 ## R7. Center peek (follow-up pull request)
 
-**Decision**: Same `PeekPanel`, drawn with `ui/Dialog` (modal, centred, wide), which
-already traps focus and returns it (`useExclusiveModal`, #134). Shipping it flips
-`centerPeekShipped`, adds the option to the menu, and widens the narrow-screen rule in
-`rowOpenAction` from navigate to center.
+**Decision (changed 2026-10-27, owner chose option A)**: a design-system component of
+its own, `ui/CenterPanel`: centred over the dimmed view, modal (`role="dialog"`,
+`aria-modal`, Tab kept inside, a click on the dimmed view closes it), sharing focus and
+Escape with `SidePanel` through `ui/panelBehaviour.ts`. Shipping it flipped
+`centerPeekShipped` and `CENTER_PEEK_SHIPPED`, added the menu option, and turned a side
+peek on a narrow screen into a centre peek. The address adds `&as=center`.
 
-**Rationale**: Agreed split (2026-10-27). Everything that decides behaviour is shared,
-so the follow-up is a renderer and a flag.
+**Rationale**: the plan said `ui/Dialog`. Dialog joins the modal coordinator
+(`useExclusiveModal`), which closes every other modal when one opens, and the page inside
+a peek opens its own (version history, share): each would have closed the peek that
+opened it. `side-peek.mjs` opens Version history from a centre peek and fails with
+Dialog's behaviour.
+
+**Alternatives considered**: B, `ui/Dialog` plus letting coordinated modals stack
+(changes the one-modal rule of #134 for the whole app); C, no centre peek.
 
 ## R8. The setting in the interface
 

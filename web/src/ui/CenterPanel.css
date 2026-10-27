@@ -1,0 +1,42 @@
+/* CenterPanel: a panel over the middle of the screen, the page behind it
+   dimmed (spec 007). On a phone it fills the screen. */
+
+.ui-center-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-400);
+  background: var(--dialog-backdrop);
+  z-index: var(--center-panel-layer);
+}
+
+.ui-center-panel {
+  width: min(var(--center-panel-width), 100%);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--color-surface-default);
+  color: var(--color-text-default);
+  border-radius: var(--dialog-radius);
+  box-shadow: var(--shadow-overlay);
+  outline: none;
+}
+
+.ui-center-panel:focus-visible {
+  box-shadow: var(--shadow-overlay), inset 0 0 0 2px var(--color-focus);
+}
+
+@media (max-width: 900px) {
+  .ui-center-panel-backdrop {
+    padding: 0;
+  }
+
+  .ui-center-panel {
+    width: 100vw;
+    border-radius: initial; /* square edges when it fills a phone screen */
+  }
+}

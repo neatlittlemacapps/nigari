@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { PeekMode } from '../peek';
 import { api } from '../api';
 import { onRefresh } from '../pwa';
 import Portal from './Portal';
@@ -124,7 +125,7 @@ interface Props {
   onOpenInNewTab?: (id: string) => void;
   /** Opens a row in a peek beside the view, for a view set to one (spec 007).
    *  Without it such a view navigates. */
-  onPeek?: (id: string) => void;
+  onPeek?: (id: string, mode: PeekMode) => void;
   onPagesChanged: () => void;
   /** Opens one of this database's templates for editing, in a dialog. Without
    *  it (an embedded view) the template opens as a page instead. */

@@ -10,7 +10,7 @@
 
 import { createContext, useCallback, useContext } from 'react';
 import { getPrefs } from './i18n';
-import { rowOpenAction, WIDE_QUERY, type ViewOpenIn } from './peek';
+import { rowOpenAction, WIDE_QUERY, type PeekMode, type ViewOpenIn } from './peek';
 
 export type PageOpeners = {
   onNavigate: (id: string) => void;
@@ -56,7 +56,7 @@ export const collectionRowNewTab = (): boolean => getPrefs().openRowsNewTab === 
  *  open a peek. CollectionView provides it around the view it renders, so the
  *  table, the board, the list, the gallery, the calendar and the timeline all
  *  read the same answer without each passing it down. */
-export type RowOpenCtx = { openIn?: ViewOpenIn | string; onPeek?: (id: string) => void };
+export type RowOpenCtx = { openIn?: ViewOpenIn | string; onPeek?: (id: string, mode: PeekMode) => void };
 export const RowOpenContext = createContext<RowOpenCtx>({});
 
 const wideScreen = (): boolean =>
@@ -70,7 +70,7 @@ export function openCollectionRow(
   view: RowOpenCtx = {},
 ): void {
   const action = rowOpenAction(e, view.openIn, collectionRowNewTab(), wideScreen());
-  if ((action === 'side' || action === 'center') && view.onPeek) view.onPeek(id);
+  if ((action === 'side' || action === 'center') && view.onPeek) view.onPeek(id, action);
   else if (action === 'new_tab') open(id, o);
   else o.onNavigate(id);
 }

@@ -26,10 +26,11 @@ const (
 	viewOpenCenterPeek = "center_peek"
 )
 
-// centerPeekShipped stays false until the interface can draw a centre peek
-// (spec 007, phase 7). Until then no door may store the value: a view set to
-// it would behave as a full page while an agent believed otherwise.
-var centerPeekShipped = false
+// centerPeekShipped says the interface can draw a centre peek (spec 007,
+// phase 7). While it was false no door could store the value: a view set to
+// it would have behaved as a full page while an agent believed otherwise.
+// Kept as a switch so the refusal stays tested (viewopen_test.go).
+var centerPeekShipped = true
 
 // errViewOpenIn marks a refusal of this rule, so REST can answer it with its
 // own code rather than as a generic bad request.

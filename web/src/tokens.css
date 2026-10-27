@@ -126,6 +126,8 @@
   --dialog-backdrop: rgba(0, 0, 0, 0.35);
   --side-panel-width: 720px;
   --side-panel-layer: 90;
+  --center-panel-width: 900px;
+  --center-panel-layer: 90;
   --button-height-sm: 26px;
   --button-height-md: 32px;
   --control-height: 32px;
