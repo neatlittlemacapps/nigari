@@ -7,6 +7,40 @@ entries are not edited away.
 
 ---
 
+## 2026-10-27 — Owner's answers: auto-merge, search, outside edits, column order, board drops
+
+**Decision** (the owner, 2026-10-27):
+- **Auto-merge on** for pull requests the agent opens. They merge once the
+  required checks pass.
+- **Search (#78): left as it is.** CI p95 is 122.8 ms and nobody has
+  complained in real use. If search ever feels slow, the next step is
+  `workspace_id` in `chunks_fts` (option b).
+- **Outside writes into an open page (#26):** the open editor applies the
+  change, not the server. This covers every outside write (edits, rewrites,
+  agent writes). With no editor open, today's path stays.
+- **Column order (#132): per view**, stored like column widths.
+- **Board drops (#133): no manual order inside a column.** The view's sort
+  decides, and the drop marker shows only the target column.
+- **Peek views (upstream #92):** side peek first. Centre peek follows in its
+  own pull request.
+
+**Why**:
+- **Auto-merge.** The owner works from a phone and merged within minutes
+  anyway. The required checks are the gate either way.
+- **Search.** Option a ranks fewer hits and option b changes the index. Neither
+  is worth it without a measured problem.
+- **Outside writes.** The editor already knows the document format, and the
+  server would have to learn it to apply Yjs updates itself. One path for all
+  outside writes means one behaviour to test.
+- **Column order.** Widths are already per view, and each view serves its own
+  job.
+- **Board drops.** A manual order is a feature of its own: a stored position,
+  conflicts with sort, and MCP parity. It can come later.
+- **Peek.** Smaller pull requests are easier to test and review.
+
+**Rejected**: #78 options a and b for now; a server-side Yjs apply for #26; a
+column order shared by every view; a manual card order in board columns.
+
 ## 2026-10-27 — Design system batch 1: what the first screen decided
 
 **Decision**: the first screen built from `web/src/ui/` is the instance
