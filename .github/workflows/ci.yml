@@ -51,6 +51,44 @@ jobs:
       - name: Go build
         run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o salt .
 
+  # The component catalogue (spec 001, FR-013): each section against its
+  # baseline in light and dark, axe on every component, and the keyboard
+  # contract. Not a required check until it has been green on three pull
+  # requests: its baselines were taken outside CI, and a runner's anti-aliasing
+  # is the one thing they cannot know in advance.
+  catalog:
+    name: Component catalogue
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            web/tests/package-lock.json
+
+      - name: Install
+        run: |
+          npm ci --prefix web
+          npm ci --prefix web/tests
+          npx --prefix web/tests playwright install --with-deps chromium
+
+      - name: Catalogue
+        env:
+          CATALOG_ACTUAL: ${{ runner.temp }}/catalog-actual
+        run: node web/tests/catalog.mjs
+
+      # The shots that differed, to compare by eye or to take as new baselines.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: catalog-actual
+          path: ${{ runner.temp }}/catalog-actual
+          if-no-files-found: ignore
+
   # Storage benchmarks, base against head, on pull requests that can change
   # them (spec 002, research P4). Not a required check: shared runners are
   # noisy, so a p95 change above +15% is only a warning in the summary, and

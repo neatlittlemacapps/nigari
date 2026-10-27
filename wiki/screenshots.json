@@ -27,8 +27,8 @@
       ],
       "takenAt": {
         "web/src/components/Setup.tsx": "9de35b8f5040",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       },
       "instance": "fresh",
       "element": ".login-card"
@@ -55,8 +55,8 @@
       ],
       "takenAt": {
         "web/src/components/Login.tsx": "bae6bf56b013",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       },
       "instance": "anon",
       "element": ".login-card"
@@ -87,8 +87,8 @@
         "web/src/components/Sidebar.tsx": "d6865e5e79d5",
         "web/src/components/Editor.tsx": "31ef9c884eea",
         "web/src/App.tsx": "466c89abad2e",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       }
     },
     {
@@ -115,8 +115,8 @@
       "takenAt": {
         "web/src/components/Sidebar.tsx": "d6865e5e79d5",
         "web/src/treeMode.ts": "413de5b84cd9",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       },
       "element": ".sidebar"
     },
@@ -151,8 +151,8 @@
       ],
       "takenAt": {
         "web/src/components/Editor.tsx": "31ef9c884eea",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       }
     },
     {
@@ -183,8 +183,8 @@
       ],
       "takenAt": {
         "web/src/components/StructurePanel.tsx": "47774ec631a4",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       }
     },
     {
@@ -215,8 +215,8 @@
       ],
       "takenAt": {
         "web/src/components/CommentsPanel.tsx": "1f381923d574",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       }
     },
     {
@@ -243,8 +243,8 @@
       "takenAt": {
         "web/src/components/NoteTrail.tsx": "160bdbf01513",
         "server/notelog.go": "3489d9897c58",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       },
       "element": ".trail-wrap"
     },
@@ -284,8 +284,8 @@
       "takenAt": {
         "web/src/components/SearchModal.tsx": "1d4b76382c41",
         "server/searchindex.go": "f7912b758b23",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       }
     },
     {
@@ -319,8 +319,8 @@
       ],
       "takenAt": {
         "web/src/components/CollectionView.tsx": "4ce6d6c104a3",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       }
     },
     {
@@ -356,8 +356,8 @@
       "takenAt": {
         "web/src/components/CollectionView.tsx": "4ce6d6c104a3",
         "web/src/cardLayout.ts": "eb7f92584275",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       }
     },
     {
@@ -391,8 +391,8 @@
       ],
       "takenAt": {
         "web/src/components/CollectionView.tsx": "4ce6d6c104a3",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       }
     },
     {
@@ -420,8 +420,8 @@
       ],
       "takenAt": {
         "web/src/components/IndexView.tsx": "83c7b646c75f",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       }
     },
     {
@@ -455,8 +455,8 @@
       ],
       "takenAt": {
         "web/src/components/GraphView.tsx": "31bba0536156",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       }
     },
     {
@@ -489,8 +489,8 @@
       "takenAt": {
         "server/public.go": "fa068198074b",
         "web/src/components/Editor.tsx": "31ef9c884eea",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       }
     },
     {
@@ -520,9 +520,9 @@
         }
       ],
       "takenAt": {
-        "web/src/components/UserMenu.tsx": "b5914803b8f7",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/components/UserMenu.tsx": "59d033a2266f",
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       },
       "element": ".dialog"
     },
@@ -555,9 +555,9 @@
       ],
       "takenAt": {
         "server/users.go": "2fa3d9b82071",
-        "web/src/components/UserMenu.tsx": "b5914803b8f7",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/components/UserMenu.tsx": "59d033a2266f",
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       },
       "element": ".dialog"
     },
@@ -591,8 +591,8 @@
       "takenAt": {
         "web/src/components/LanguageTime.tsx": "274ac44244e0",
         "server/prefs.go": "ced87d00a869",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       },
       "element": ".dialog"
     },
@@ -626,8 +626,8 @@
       "takenAt": {
         "web/src/components/AgentConnect.tsx": "e0a5a3a2e940",
         "server/mcp.go": "2bf2fbb60d4a",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       },
       "element": ".dialog"
     },
@@ -659,8 +659,8 @@
       ],
       "takenAt": {
         "server/users.go": "2fa3d9b82071",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       },
       "element": ".dialog"
     },
@@ -672,7 +672,12 @@
         "web/src/components/AdminSettings.tsx",
         "server/instance.go",
         "web/src/tokens.css",
-        "web/src/theme.css"
+        "web/src/theme.css",
+        "web/src/ui/Dialog.tsx",
+        "web/src/ui/Dialog.css",
+        "web/src/ui/Button.css",
+        "web/src/ui/Field.css",
+        "web/src/ui/Checkbox.css"
       ],
       "steps": [
         {
@@ -685,25 +690,30 @@
           "click": ".menu >> text=Instance settings"
         },
         {
-          "waitFor": ".dialog"
+          "waitFor": ".ui-dialog"
         },
         {
           "wait": 700
         },
         {
-          "click": ".dialog >> text=\"General\""
+          "click": ".ui-dialog >> text=\"General\""
         },
         {
           "wait": 600
         }
       ],
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "62ab18d78308",
+        "web/src/components/AdminSettings.tsx": "afed1c8cf410",
         "server/instance.go": "2dafc80f532d",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa",
+        "web/src/ui/Dialog.tsx": "d294a80fd0b7",
+        "web/src/ui/Dialog.css": "e7b7600573e9",
+        "web/src/ui/Button.css": "f18fd51b21c3",
+        "web/src/ui/Field.css": "27405010c413",
+        "web/src/ui/Checkbox.css": "6334484548ec"
       },
-      "element": ".dialog"
+      "element": ".ui-dialog"
     },
     {
       "id": "admin-access",
@@ -713,7 +723,12 @@
         "web/src/components/AdminSettings.tsx",
         "server/oauth.go",
         "web/src/tokens.css",
-        "web/src/theme.css"
+        "web/src/theme.css",
+        "web/src/ui/Dialog.tsx",
+        "web/src/ui/Dialog.css",
+        "web/src/ui/Button.css",
+        "web/src/ui/Field.css",
+        "web/src/ui/Checkbox.css"
       ],
       "steps": [
         {
@@ -726,25 +741,30 @@
           "click": ".menu >> text=Instance settings"
         },
         {
-          "waitFor": ".dialog"
+          "waitFor": ".ui-dialog"
         },
         {
           "wait": 700
         },
         {
-          "click": ".dialog >> text=\"Access\""
+          "click": ".ui-dialog >> text=\"Access\""
         },
         {
           "wait": 600
         }
       ],
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "62ab18d78308",
+        "web/src/components/AdminSettings.tsx": "afed1c8cf410",
         "server/oauth.go": "a368868d9144",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa",
+        "web/src/ui/Dialog.tsx": "d294a80fd0b7",
+        "web/src/ui/Dialog.css": "e7b7600573e9",
+        "web/src/ui/Button.css": "f18fd51b21c3",
+        "web/src/ui/Field.css": "27405010c413",
+        "web/src/ui/Checkbox.css": "6334484548ec"
       },
-      "element": ".dialog"
+      "element": ".ui-dialog"
     },
     {
       "id": "admin-email",
@@ -755,7 +775,12 @@
         "server/mail_oauth.go",
         "server/admin.go",
         "web/src/tokens.css",
-        "web/src/theme.css"
+        "web/src/theme.css",
+        "web/src/ui/Dialog.tsx",
+        "web/src/ui/Dialog.css",
+        "web/src/ui/Button.css",
+        "web/src/ui/Field.css",
+        "web/src/ui/Checkbox.css"
       ],
       "steps": [
         {
@@ -768,26 +793,31 @@
           "click": ".menu >> text=Instance settings"
         },
         {
-          "waitFor": ".dialog"
+          "waitFor": ".ui-dialog"
         },
         {
           "wait": 700
         },
         {
-          "click": ".dialog >> text=\"Email\""
+          "click": ".ui-dialog >> text=\"Email\""
         },
         {
           "wait": 600
         }
       ],
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "62ab18d78308",
+        "web/src/components/AdminSettings.tsx": "afed1c8cf410",
         "server/mail_oauth.go": "7613e2c78ba8",
         "server/admin.go": "925b39472a8e",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa",
+        "web/src/ui/Dialog.tsx": "d294a80fd0b7",
+        "web/src/ui/Dialog.css": "e7b7600573e9",
+        "web/src/ui/Button.css": "f18fd51b21c3",
+        "web/src/ui/Field.css": "27405010c413",
+        "web/src/ui/Checkbox.css": "6334484548ec"
       },
-      "element": ".dialog"
+      "element": ".ui-dialog"
     },
     {
       "id": "admin-domain",
@@ -796,7 +826,12 @@
       "shows": [
         "web/src/components/AdminSettings.tsx",
         "web/src/tokens.css",
-        "web/src/theme.css"
+        "web/src/theme.css",
+        "web/src/ui/Dialog.tsx",
+        "web/src/ui/Dialog.css",
+        "web/src/ui/Button.css",
+        "web/src/ui/Field.css",
+        "web/src/ui/Checkbox.css"
       ],
       "steps": [
         {
@@ -809,24 +844,29 @@
           "click": ".menu >> text=Instance settings"
         },
         {
-          "waitFor": ".dialog"
+          "waitFor": ".ui-dialog"
         },
         {
           "wait": 700
         },
         {
-          "click": ".dialog >> text=\"Domain & proxy\""
+          "click": ".ui-dialog >> text=\"Domain & proxy\""
         },
         {
           "wait": 600
         }
       ],
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "62ab18d78308",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/components/AdminSettings.tsx": "afed1c8cf410",
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa",
+        "web/src/ui/Dialog.tsx": "d294a80fd0b7",
+        "web/src/ui/Dialog.css": "e7b7600573e9",
+        "web/src/ui/Button.css": "f18fd51b21c3",
+        "web/src/ui/Field.css": "27405010c413",
+        "web/src/ui/Checkbox.css": "6334484548ec"
       },
-      "element": ".dialog"
+      "element": ".ui-dialog"
     },
     {
       "id": "admin-webhooks",
@@ -836,7 +876,12 @@
         "web/src/components/AdminSettings.tsx",
         "server/webhooks.go",
         "web/src/tokens.css",
-        "web/src/theme.css"
+        "web/src/theme.css",
+        "web/src/ui/Dialog.tsx",
+        "web/src/ui/Dialog.css",
+        "web/src/ui/Button.css",
+        "web/src/ui/Field.css",
+        "web/src/ui/Checkbox.css"
       ],
       "steps": [
         {
@@ -849,25 +894,30 @@
           "click": ".menu >> text=Instance settings"
         },
         {
-          "waitFor": ".dialog"
+          "waitFor": ".ui-dialog"
         },
         {
           "wait": 700
         },
         {
-          "click": ".dialog >> text=\"Webhooks\""
+          "click": ".ui-dialog >> text=\"Webhooks\""
         },
         {
           "wait": 600
         }
       ],
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "62ab18d78308",
+        "web/src/components/AdminSettings.tsx": "afed1c8cf410",
         "server/webhooks.go": "49e796d4fa6b",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa",
+        "web/src/ui/Dialog.tsx": "d294a80fd0b7",
+        "web/src/ui/Dialog.css": "e7b7600573e9",
+        "web/src/ui/Button.css": "f18fd51b21c3",
+        "web/src/ui/Field.css": "27405010c413",
+        "web/src/ui/Checkbox.css": "6334484548ec"
       },
-      "element": ".dialog"
+      "element": ".ui-dialog"
     },
     {
       "id": "admin-documents",
@@ -877,7 +927,12 @@
         "web/src/components/AdminSettings.tsx",
         "server/export_html.go",
         "web/src/tokens.css",
-        "web/src/theme.css"
+        "web/src/theme.css",
+        "web/src/ui/Dialog.tsx",
+        "web/src/ui/Dialog.css",
+        "web/src/ui/Button.css",
+        "web/src/ui/Field.css",
+        "web/src/ui/Checkbox.css"
       ],
       "steps": [
         {
@@ -890,24 +945,29 @@
           "click": ".menu >> text=Instance settings"
         },
         {
-          "waitFor": ".dialog"
+          "waitFor": ".ui-dialog"
         },
         {
           "wait": 700
         },
         {
-          "click": ".dialog >> text=\"Documents\""
+          "click": ".ui-dialog >> text=\"Documents\""
         },
         {
           "wait": 600
         }
       ],
-      "element": ".dialog",
+      "element": ".ui-dialog",
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "62ab18d78308",
+        "web/src/components/AdminSettings.tsx": "afed1c8cf410",
         "server/export_html.go": "fb7922684dca",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa",
+        "web/src/ui/Dialog.tsx": "d294a80fd0b7",
+        "web/src/ui/Dialog.css": "e7b7600573e9",
+        "web/src/ui/Button.css": "f18fd51b21c3",
+        "web/src/ui/Field.css": "27405010c413",
+        "web/src/ui/Checkbox.css": "6334484548ec"
       }
     },
     {
@@ -918,7 +978,12 @@
         "web/src/components/AdminSettings.tsx",
         "server/backup.go",
         "web/src/tokens.css",
-        "web/src/theme.css"
+        "web/src/theme.css",
+        "web/src/ui/Dialog.tsx",
+        "web/src/ui/Dialog.css",
+        "web/src/ui/Button.css",
+        "web/src/ui/Field.css",
+        "web/src/ui/Checkbox.css"
       ],
       "steps": [
         {
@@ -931,25 +996,30 @@
           "click": ".menu >> text=Instance settings"
         },
         {
-          "waitFor": ".dialog"
+          "waitFor": ".ui-dialog"
         },
         {
           "wait": 700
         },
         {
-          "click": ".dialog >> text=\"Maintenance\""
+          "click": ".ui-dialog >> text=\"Maintenance\""
         },
         {
           "wait": 600
         }
       ],
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "62ab18d78308",
+        "web/src/components/AdminSettings.tsx": "afed1c8cf410",
         "server/backup.go": "7b11cc725a0a",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa",
+        "web/src/ui/Dialog.tsx": "d294a80fd0b7",
+        "web/src/ui/Dialog.css": "e7b7600573e9",
+        "web/src/ui/Button.css": "f18fd51b21c3",
+        "web/src/ui/Field.css": "27405010c413",
+        "web/src/ui/Checkbox.css": "6334484548ec"
       },
-      "element": ".dialog"
+      "element": ".ui-dialog"
     },
     {
       "id": "admin-users",
@@ -980,11 +1050,11 @@
         }
       ],
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "62ab18d78308",
+        "web/src/components/AdminSettings.tsx": "afed1c8cf410",
         "server/admin.go": "925b39472a8e",
         "server/lifecycle_account.go": "3bbd986cbe7e",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       },
       "element": ".dialog"
     },
@@ -1016,8 +1086,8 @@
       ],
       "takenAt": {
         "server/audit.go": "a19307a3685a",
-        "web/src/tokens.css": "e000a495ee1f",
-        "web/src/theme.css": "b141be13f4f5"
+        "web/src/tokens.css": "0a94ee9043bd",
+        "web/src/theme.css": "593980870aaa"
       },
       "element": ".dialog"
     }

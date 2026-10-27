@@ -296,6 +296,13 @@
           "md.salt.css": "--pill-dark-hover",
           "md.salt.dark": "{color.paper.0}"
         }
+      },
+      "text": {
+        "$value": "{color.paper.50}",
+        "$extensions": {
+          "md.salt.dark": "{color.night.950}"
+        },
+        "$description": "Text on the ink pill: the paper in light, near-black in dark."
       }
     }
   },
@@ -451,6 +458,67 @@
         ]
       },
       "$description": "Menus, popovers, dialogs."
+    },
+    "glow": {
+      "$value": [
+        {
+          "color": {
+            "colorSpace": "srgb",
+            "components": [
+              1.0,
+              0.1765,
+              0.3765
+            ],
+            "hex": "#ff2d60",
+            "alpha": 0.45
+          },
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 8,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 22,
+            "unit": "px"
+          },
+          "spread": {
+            "value": -10,
+            "unit": "px"
+          }
+        },
+        {
+          "color": {
+            "colorSpace": "srgb",
+            "components": [
+              0.2314,
+              0.5098,
+              0.9647
+            ],
+            "hex": "#3b82f6",
+            "alpha": 0.4
+          },
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 8,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 22,
+            "unit": "px"
+          },
+          "spread": {
+            "value": -12,
+            "unit": "px"
+          }
+        }
+      ],
+      "$description": "The rainbow as a glow under the primary action on hover; the only place the rainbow touches a control."
     }
   },
   "gradient": {

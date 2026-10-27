@@ -23,6 +23,49 @@
         },
         "$description": "Today's .dialog.wide."
       }
+    },
+    "radius": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$description": "Today's dialogs. Off the radius scale on purpose until every dialog has moved to Dialog (FR-016); then it joins radius.scale."
+    },
+    "padding": {
+      "$type": "dimension",
+      "$value": {
+        "value": 22,
+        "unit": "px"
+      }
+    },
+    "layer": {
+      "$type": "number",
+      "$value": 100,
+      "$description": "Today's overlay layer. Menus that open from inside a dialog sit at 200; layer.overlay (300) would put them under it. Moves to the layer scale with the menus (batch 2)."
+    },
+    "title": {
+      "size": {
+        "$type": "dimension",
+        "$value": {
+          "value": 24,
+          "unit": "px"
+        },
+        "$description": "Today's dialog heading. Kept until every dialog uses Dialog, so old and new headings match (spec edge case: partial migration)."
+      }
+    },
+    "backdrop": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "hex": "#000000",
+        "alpha": 0.35
+      }
     }
   },
   "button": {
@@ -52,6 +95,29 @@
         "unit": "px"
       },
       "$description": "Inputs and selects line up with a medium button."
+    }
+  },
+  "input": {
+    "$description": "The settings dialog's fields (.settings-grid .prop-input).",
+    "radius": {
+      "$type": "dimension",
+      "$value": "{radius.scale.lg}"
+    },
+    "padding": {
+      "y": {
+        "$type": "dimension",
+        "$value": {
+          "value": 8,
+          "unit": "px"
+        }
+      },
+      "x": {
+        "$type": "dimension",
+        "$value": {
+          "value": 10,
+          "unit": "px"
+        }
+      }
     }
   }
 }

@@ -124,7 +124,7 @@ Measured: 34 literal sizes; 75% of uses are 11–14 px in half-pixel steps.
 
 ### P6. Catalogue as a dev-only Vite entry
 
-- **Decision**: `web/catalog.html` + `web/src/catalog/`, served by `npx vite` in development and by a second config `web/vite.catalog.config.ts` for tests. `npm run build` uses the existing config, so the catalogue never reaches `web/dist` or the binary (FR-012).
+- **Decision**: `web/catalog.html` + `web/catalog/` (amended at task time: outside `src/`, see tasks.md), served by `npx vite` in development and by a second config `web/vite.catalog.config.ts` for tests. `npm run build` uses the existing config, so the catalogue never reaches `web/dist` or the binary (FR-012).
 - **Rejected**: Storybook (a framework and hundreds of packages for one page).
 
 ### P7. Visual and accessibility tests

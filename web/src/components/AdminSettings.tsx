@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type RefObject } from 'react';
 import { api } from '../api';
 import Portal from './Portal';
 import { useExclusiveModal } from '../modal';
@@ -6,6 +6,10 @@ import { toast } from '../toast';
 import { formatBytes, formatMoment } from '../format';
 import { plural, t } from '../i18n';
 import type { Webhook } from '../types';
+import { Dialog, DialogClose } from '../ui/Dialog';
+import { Button } from '../ui/Button';
+import { Field, Input } from '../ui/Field';
+import { Checkbox } from '../ui/Checkbox';
 
 type Info = Awaited<ReturnType<typeof api.adminInfo>>;
 
@@ -48,8 +52,8 @@ function ConfBlock({ title, text }: { title: string; text: string }) {
 // beside it, so an admin who needs 45 days is not told to pick 30 or 60.
 const AUDIT_PRESETS = ['0', '30', '60', '180', '365'];
 
-export function AdminSettingsModal({ onClose }: { onClose: () => void }) {
-  useExclusiveModal(onClose);
+export function AdminSettingsModal({ onClose, returnFocus }: { onClose: () => void; returnFocus?: RefObject<HTMLElement | null> }) {
+  // Dialog takes part in useExclusiveModal itself.
   const [s, setS] = useState<Record<string, string>>({});
   const [trustProxy, setTrustProxy] = useState(false);
   // How documents from this instance print. Held as one object because the five
@@ -311,659 +315,663 @@ ingress:
   ];
 
   return (
-    <Portal>
-      <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-        <div className="dialog wide settings-dialog" role="dialog" aria-modal="true" aria-label={t('Instance settings')}>
-          <h2>{t('Instance settings')}</h2>
-          {loadErr ? (
-            <div className="login-error">{loadErr}</div>
-          ) : !loaded ? (
-            <div className="dialog-hint">{t('Loading…')}</div>
-          ) : (
-            <>
-              <div className="settings-tabs">
-                {/* `tb`, not `t` — the tab object would shadow the translate
-                    function and every label below it would break. */}
-                {TABS.map((tb) => (
-                  <button key={tb.id} className={'view-tab' + (tab === tb.id ? ' active' : '')} onClick={() => setTab(tb.id)}>
-                    {tb.label}
+    <Dialog
+      title={t('Instance settings')}
+      size="lg"
+      className="settings-dialog"
+      onClose={onClose}
+      returnFocus={returnFocus}
+      footer={
+        <>
+          <DialogClose>
+            <Button>{t('Cancel')}</Button>
+          </DialogClose>
+          <Button variant="primary" onClick={() => void save()}>
+            {t('Save')}
+          </Button>
+        </>
+      }
+    >
+      {loadErr ? (
+        <div className="login-error">{loadErr}</div>
+      ) : !loaded ? (
+        <div className="dialog-hint">{t('Loading…')}</div>
+      ) : (
+        <>
+          <div className="settings-tabs">
+            {/* `tb`, not `t` — the tab object would shadow the translate
+                function and every label below it would break. */}
+            {TABS.map((tb) => (
+              <button key={tb.id} className={'view-tab' + (tab === tb.id ? ' active' : '')} onClick={() => setTab(tb.id)}>
+                {tb.label}
+              </button>
+            ))}
+          </div>
+          <div className="settings-grid settings-body">
+            {tab === 'general' && (
+              <>
+                <label>{t('Instance name (sign-in page & title)')}</label>
+                <input className="prop-input" placeholder={t('e.g. Acme Notes')} value={s.instanceName} onChange={(e) => set('instanceName', e.target.value)} />
+                <label>{t('Public base URL (for links, mail, calendars)')}</label>
+                <input className="prop-input" placeholder="https://notes.example.com" value={s.publicBaseUrl} onChange={(e) => set('publicBaseUrl', e.target.value)} />
+                <label>{t('Max. file size per upload (MB)')}</label>
+                <input className="prop-input" type="number" min={1} max={2048} value={s.maxUploadMb} onChange={(e) => set('maxUploadMb', e.target.value)} />
+                <label>{t('Empty the trash automatically after (days, 0 = never)')}</label>
+                <input className="prop-input" type="number" min={0} max={3650} value={s.trashDays} onChange={(e) => set('trashDays', e.target.value)} />
+                <label>{t('Sign-in session length (days)')}</label>
+                <input className="prop-input" type="number" min={1} max={365} value={s.sessionDays} onChange={(e) => set('sessionDays', e.target.value)} />
+              </>
+            )}
+
+            {tab === 'access' && (
+              <>
+                <label>{t('Who may register?')}</label>
+                <select className="prop-select" value={s.signupMode} onChange={(e) => set('signupMode', e.target.value)}>
+                  <option value="invite">{t('By invitation only')}</option>
+                  <option value="domain">{t('Email domain allowed')}</option>
+                  <option value="open">{t('Open (anyone)')}</option>
+                </select>
+                {s.signupMode === 'domain' && (
+                  <>
+                    <label>{t('Allowed domains (comma separated)')}</label>
+                    <input className="prop-input" placeholder="salt.md, example.com" value={s.allowedDomains} onChange={(e) => set('allowedDomains', e.target.value)} /> {/* i18n-ok: example domains, not prose */}
+                  </>
+                )}
+                <p className="dialog-hint settings-hint">
+                  {t(
+                    'Invitations go out through “Members” in the workspace menu. For sending mail, configure SMTP on the “Email” tab.',
+                  )}
+                </p>
+
+                <label className="check-label" style={{ marginTop: 10 }}>
+                  <input
+                    type="checkbox"
+                    checked={allowUserWs}
+                    onChange={(e) => setAllowUserWs(e.target.checked)}
+                  />
+                  {t('Users may create their own workspaces')}
+                </label>
+                <p className="dialog-hint settings-hint">
+                  {t(
+                    'Off: only admins create workspaces. On (default): anyone can create one of their own and becomes its admin. They then manage the members of THEIR workspace only, not the instance.',
+                  )}
+                </p>
+
+                <h3>{t('Sign in with Google / Microsoft (OAuth)')}</h3>
+                <p className="dialog-hint settings-hint">
+                  {t(
+                    'Once client ID and secret are stored, the sign-in page shows the button automatically. New accounts follow the registration policy above (under “by invitation only”, OAuth signs in existing accounts and nothing else). Redirect URIs for the provider console:',
+                  )}
+                </p>
+                {(() => {
+                  const quickUrl = pa && pa.status === 'running' && pa.mode === 'quick' ? pa.url : '';
+                  const base = (s.publicBaseUrl || quickUrl || window.location.origin).replace(/\/$/, '');
+                  const insecure = base.startsWith('http://') && !/^http:\/\/(localhost|127\.)/.test(base);
+                  return (
+                    <>
+                      <label>Google</label>
+                      <input className="prop-input" readOnly value={base + '/api/oauth/google/callback'} onFocus={(e) => e.currentTarget.select()} />
+                      <label>Microsoft</label>
+                      <input className="prop-input" readOnly value={base + '/api/oauth/microsoft/callback'} onFocus={(e) => e.currentTarget.select()} />
+                      {insecure && (
+                        <p className="dialog-hint settings-hint pa-warn">
+                          {t(
+                            '⚠ Google and Microsoft accept HTTPS redirect URIs only (localhost aside). Start a tunnel (the “Domain & proxy” tab) or enter a public HTTPS base URL under “General”. It then appears here on its own.',
+                          )}
+                        </p>
+                      )}
+                      {!s.publicBaseUrl && quickUrl && (
+                        <p className="dialog-hint settings-hint pa-warn">
+                          {t(
+                            '⚠ This is the URL of the running quick tunnel. It changes on every start. For OAuth that lasts, use a named tunnel or your own domain and enter it as the base URL.',
+                          )}
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
+                <div className="pa-card">
+                  <strong>Google</strong>
+                  <p className="dialog-hint settings-hint">
+                    {t(
+                      'console.cloud.google.com → APIs & Services → Credentials → “OAuth client ID” (Web application) → enter the redirect URI above.',
+                    )}
+                  </p>
+                  <label>{t('Client ID')}</label>
+                  <input className="prop-input" placeholder="…apps.googleusercontent.com" value={s.googleClientId} onChange={(e) => set('googleClientId', e.target.value)} />
+                  <label>{t('Client secret')}</label>
+                  <input className="prop-input" type="password" placeholder={oauthSet.google ? t('•••••• (stored)') : 'GOCSPX-…'} value={s.googleClientSecret} onChange={(e) => set('googleClientSecret', e.target.value)} />
+                </div>
+                <div className="pa-card">
+                  <strong>Microsoft</strong>
+                  <p className="dialog-hint settings-hint">
+                    {t(
+                      'portal.azure.com → App registrations → New (supported account types: “Any org + personal accounts”) → Redirect URI (Web): as above but with',
+                    )}{' '}
+                    <code>/api/oauth/microsoft/callback</code>{' '}
+                    {t('→ Certificates & secrets → client secret.')}
+                  </p>
+                  <label>{t('Client ID (application ID)')}</label>
+                  <input className="prop-input" placeholder="00000000-0000-…" value={s.msClientId} onChange={(e) => set('msClientId', e.target.value)} />
+                  <label>{t('Client secret')}</label>
+                  <input className="prop-input" type="password" placeholder={oauthSet.ms ? t('•••••• (stored)') : t('secret value')} value={s.msClientSecret} onChange={(e) => set('msClientSecret', e.target.value)} />
+                </div>
+
+                <h3>{t('Agent keys')}</h3>
+                <label className="check-label">
+                  <input
+                    type="checkbox"
+                    checked={agentAddr.on}
+                    onChange={(e) => setAgentAddr({ ...agentAddr, on: e.target.checked })}
+                  />
+                  {t('Accept agent keys only from these addresses')}
+                </label>
+                <p className="dialog-hint settings-hint">
+                  {t(
+                    'Covers every API token and every connected agent, over MCP and over the REST API. Signing in with a browser, the desktop app, public links, forms and calendar feeds are not affected. One address or network per line; # starts a comment.',
+                  )}
+                </p>
+                <textarea
+                  className="prop-input agent-addresses"
+                  rows={4}
+                  spellCheck={false}
+                  value={agentAddr.list}
+                  placeholder={agentAddr.anthropic}
+                  onChange={(e) => setAgentAddr({ ...agentAddr, list: e.target.value })}
+                />
+                <div className="agent-addresses-actions">
+                  <button
+                    className="btn-sm"
+                    disabled={agentAddr.list.includes(agentAddr.anthropic)}
+                    onClick={() => {
+                      const line = `${agentAddr.anthropic}  # Anthropic (Claude)`;
+                      const list = agentAddr.list.trimEnd();
+                      setAgentAddr({ ...agentAddr, list: list ? `${list}\n${line}` : line });
+                    }}
+                  >
+                    {t('Add Anthropic (Claude)')}
                   </button>
-                ))}
-              </div>
-              <div className="settings-grid settings-body">
-                {tab === 'general' && (
+                  {info && (
+                    <span className="dialog-hint">
+                      {t('Your address, as the server sees it:')} <code>{info.yourIp}</code>
+                    </span>
+                  )}
+                </div>
+                <p className="dialog-hint settings-hint">
+                  {t(
+                    'Claude in the browser and in the desktop app calls from Anthropic’s addresses. Claude Code and other agents running on your own computer call from your address, so add that too if you use them.',
+                  )}
+                </p>
+              </>
+            )}
+
+            {tab === 'email' && (
+              <>
+                <h3>{t('Sending through Google / Microsoft (no SMTP)')}</h3>
+                {mail.provider ? (
                   <>
-                    <label>{t('Instance name (sign-in page & title)')}</label>
-                    <input className="prop-input" placeholder={t('e.g. Acme Notes')} value={s.instanceName} onChange={(e) => set('instanceName', e.target.value)} />
-                    <label>{t('Public base URL (for links, mail, calendars)')}</label>
-                    <input className="prop-input" placeholder="https://notes.example.com" value={s.publicBaseUrl} onChange={(e) => set('publicBaseUrl', e.target.value)} />
-                    <label>{t('Max. file size per upload (MB)')}</label>
-                    <input className="prop-input" type="number" min={1} max={2048} value={s.maxUploadMb} onChange={(e) => set('maxUploadMb', e.target.value)} />
-                    <label>{t('Empty the trash automatically after (days, 0 = never)')}</label>
-                    <input className="prop-input" type="number" min={0} max={3650} value={s.trashDays} onChange={(e) => set('trashDays', e.target.value)} />
-                    <label>{t('Sign-in session length (days)')}</label>
-                    <input className="prop-input" type="number" min={1} max={365} value={s.sessionDays} onChange={(e) => set('sessionDays', e.target.value)} />
-                  </>
-                )}
-
-                {tab === 'access' && (
-                  <>
-                    <label>{t('Who may register?')}</label>
-                    <select className="prop-select" value={s.signupMode} onChange={(e) => set('signupMode', e.target.value)}>
-                      <option value="invite">{t('By invitation only')}</option>
-                      <option value="domain">{t('Email domain allowed')}</option>
-                      <option value="open">{t('Open (anyone)')}</option>
-                    </select>
-                    {s.signupMode === 'domain' && (
-                      <>
-                        <label>{t('Allowed domains (comma separated)')}</label>
-                        <input className="prop-input" placeholder="salt.md, example.com" value={s.allowedDomains} onChange={(e) => set('allowedDomains', e.target.value)} /> {/* i18n-ok: example domains, not prose */}
-                      </>
-                    )}
-                    <p className="dialog-hint settings-hint">
-                      {t(
-                        'Invitations go out through “Members” in the workspace menu. For sending mail, configure SMTP on the “Email” tab.',
-                      )}
-                    </p>
-
-                    <label className="check-label" style={{ marginTop: 10 }}>
-                      <input
-                        type="checkbox"
-                        checked={allowUserWs}
-                        onChange={(e) => setAllowUserWs(e.target.checked)}
-                      />
-                      {t('Users may create their own workspaces')}
-                    </label>
-                    <p className="dialog-hint settings-hint">
-                      {t(
-                        'Off: only admins create workspaces. On (default): anyone can create one of their own and becomes its admin. They then manage the members of THEIR workspace only, not the instance.',
-                      )}
-                    </p>
-
-                    <h3>{t('Sign in with Google / Microsoft (OAuth)')}</h3>
-                    <p className="dialog-hint settings-hint">
-                      {t(
-                        'Once client ID and secret are stored, the sign-in page shows the button automatically. New accounts follow the registration policy above (under “by invitation only”, OAuth signs in existing accounts and nothing else). Redirect URIs for the provider console:',
-                      )}
-                    </p>
-                    {(() => {
-                      const quickUrl = pa && pa.status === 'running' && pa.mode === 'quick' ? pa.url : '';
-                      const base = (s.publicBaseUrl || quickUrl || window.location.origin).replace(/\/$/, '');
-                      const insecure = base.startsWith('http://') && !/^http:\/\/(localhost|127\.)/.test(base);
-                      return (
-                        <>
-                          <label>Google</label>
-                          <input className="prop-input" readOnly value={base + '/api/oauth/google/callback'} onFocus={(e) => e.currentTarget.select()} />
-                          <label>Microsoft</label>
-                          <input className="prop-input" readOnly value={base + '/api/oauth/microsoft/callback'} onFocus={(e) => e.currentTarget.select()} />
-                          {insecure && (
-                            <p className="dialog-hint settings-hint pa-warn">
-                              {t(
-                                '⚠ Google and Microsoft accept HTTPS redirect URIs only (localhost aside). Start a tunnel (the “Domain & proxy” tab) or enter a public HTTPS base URL under “General”. It then appears here on its own.',
-                              )}
-                            </p>
-                          )}
-                          {!s.publicBaseUrl && quickUrl && (
-                            <p className="dialog-hint settings-hint pa-warn">
-                              {t(
-                                '⚠ This is the URL of the running quick tunnel. It changes on every start. For OAuth that lasts, use a named tunnel or your own domain and enter it as the base URL.',
-                              )}
-                            </p>
-                          )}
-                        </>
-                      );
-                    })()}
-                    <div className="pa-card">
-                      <strong>Google</strong>
-                      <p className="dialog-hint settings-hint">
-                        {t(
-                          'console.cloud.google.com → APIs & Services → Credentials → “OAuth client ID” (Web application) → enter the redirect URI above.',
-                        )}
-                      </p>
-                      <label>{t('Client ID')}</label>
-                      <input className="prop-input" placeholder="…apps.googleusercontent.com" value={s.googleClientId} onChange={(e) => set('googleClientId', e.target.value)} />
-                      <label>{t('Client secret')}</label>
-                      <input className="prop-input" type="password" placeholder={oauthSet.google ? t('•••••• (stored)') : 'GOCSPX-…'} value={s.googleClientSecret} onChange={(e) => set('googleClientSecret', e.target.value)} />
-                    </div>
-                    <div className="pa-card">
-                      <strong>Microsoft</strong>
-                      <p className="dialog-hint settings-hint">
-                        {t(
-                          'portal.azure.com → App registrations → New (supported account types: “Any org + personal accounts”) → Redirect URI (Web): as above but with',
-                        )}{' '}
-                        <code>/api/oauth/microsoft/callback</code>{' '}
-                        {t('→ Certificates & secrets → client secret.')}
-                      </p>
-                      <label>{t('Client ID (application ID)')}</label>
-                      <input className="prop-input" placeholder="00000000-0000-…" value={s.msClientId} onChange={(e) => set('msClientId', e.target.value)} />
-                      <label>{t('Client secret')}</label>
-                      <input className="prop-input" type="password" placeholder={oauthSet.ms ? t('•••••• (stored)') : t('secret value')} value={s.msClientSecret} onChange={(e) => set('msClientSecret', e.target.value)} />
-                    </div>
-
-                    <h3>{t('Agent keys')}</h3>
-                    <label className="check-label">
-                      <input
-                        type="checkbox"
-                        checked={agentAddr.on}
-                        onChange={(e) => setAgentAddr({ ...agentAddr, on: e.target.checked })}
-                      />
-                      {t('Accept agent keys only from these addresses')}
-                    </label>
-                    <p className="dialog-hint settings-hint">
-                      {t(
-                        'Covers every API token and every connected agent, over MCP and over the REST API. Signing in with a browser, the desktop app, public links, forms and calendar feeds are not affected. One address or network per line; # starts a comment.',
-                      )}
-                    </p>
-                    <textarea
-                      className="prop-input agent-addresses"
-                      rows={4}
-                      spellCheck={false}
-                      value={agentAddr.list}
-                      placeholder={agentAddr.anthropic}
-                      onChange={(e) => setAgentAddr({ ...agentAddr, list: e.target.value })}
-                    />
-                    <div className="agent-addresses-actions">
-                      <button
-                        className="btn-sm"
-                        disabled={agentAddr.list.includes(agentAddr.anthropic)}
-                        onClick={() => {
-                          const line = `${agentAddr.anthropic}  # Anthropic (Claude)`;
-                          const list = agentAddr.list.trimEnd();
-                          setAgentAddr({ ...agentAddr, list: list ? `${list}\n${line}` : line });
-                        }}
-                      >
-                        {t('Add Anthropic (Claude)')}
-                      </button>
-                      {info && (
-                        <span className="dialog-hint">
-                          {t('Your address, as the server sees it:')} <code>{info.yourIp}</code>
-                        </span>
-                      )}
-                    </div>
-                    <p className="dialog-hint settings-hint">
-                      {t(
-                        'Claude in the browser and in the desktop app calls from Anthropic’s addresses. Claude Code and other agents running on your own computer call from your address, so add that too if you use them.',
-                      )}
-                    </p>
-                  </>
-                )}
-
-                {tab === 'email' && (
-                  <>
-                    <h3>{t('Sending through Google / Microsoft (no SMTP)')}</h3>
-                    {mail.provider ? (
-                      <>
-                        <div className="pa-status pa-running">
-                          <span className="pa-dot" />
-                          {t('Connected: sends as')}{' '}
-                          <strong>{s.mailFrom || mail.address || mail.provider}</strong>
-                          {' '}({mail.provider === 'google' ? 'Gmail' : 'Microsoft'})
-                          <button className="btn-sm" disabled={mailBusy} onClick={() => void mailTest()}>{t('Send test mail')}</button>
-                          <button className="btn-sm" onClick={() => void mailDisconnect()}>{t('Disconnect')}</button>
-                        </div>
-                        <label>{t('Override the sender address (optional, alias)')}</label>
-                        <input
-                          className="prop-input"
-                          placeholder={mail.address || 'noreply@example.com'}
-                          value={s.mailFrom}
-                          onChange={(e) => set('mailFrom', e.target.value)}
-                        />
-                        <p className="dialog-hint settings-hint">
-                          {t('Only needed if mail should not be sent as')} <code>{mail.address}</code>.{' '}
-                          {t(
-                            'The address has to be an alias of the connected mailbox (Gmail: verify it under “Send mail as” in the Gmail settings; Microsoft: alias or send-as permission). Want a different mailbox entirely? “Disconnect”, then pick the account you want in the sign-in dialog when reconnecting.',
-                          )}
-                        </p>
-                      </>
-                    ) : (
-                      <div className="pa-card">
-                        <p className="dialog-hint settings-hint" style={{ margin: 0 }}>
-                          {t(
-                            'Uses the OAuth apps from the Access tab: connect once and invitations go out through the chosen mailbox, no SMTP needed. Store and save the client ID and secret there first, then connect here. In the sign-in window you may pick any account at all, including a dedicated sending mailbox such as noreply@example.com; it does not have to be the account you sign in with.',
-                          )}
-                        </p>
-                        <div className="settings-row">
-                          <a
-                            className={'btn' + (oauthSet.google ? '' : ' btn-disabled')}
-                            href={oauthSet.google ? '/api/admin/mail-oauth/google/start' : undefined}
-                            onClick={(e) => { if (!oauthSet.google) { e.preventDefault(); toast(t('Set up Google OAuth on the Access tab first')); } }}
-                          >
-                            {t('Connect with Google')}
-                          </a>
-                          <a
-                            className={'btn' + (oauthSet.ms ? '' : ' btn-disabled')}
-                            href={oauthSet.ms ? '/api/admin/mail-oauth/microsoft/start' : undefined}
-                            onClick={(e) => { if (!oauthSet.ms) { e.preventDefault(); toast(t('Set up Microsoft OAuth on the Access tab first')); } }}
-                          >
-                            {t('Connect with Microsoft')}
-                          </a>
-                        </div>
-                        <p className="dialog-hint settings-hint" style={{ margin: 0 }}>
-                          {t(
-                            'Google: in the Cloud Console also enable the Gmail API (APIs & Services → Library) and move the OAuth app to “In production”, or the connection expires after 7 days.',
-                          )}
-                        </p>
-                      </div>
-                    )}
-
-                    <h3>{t('Or the classic way: SMTP')}</h3>
-                    <div className="settings-row" style={{ justifyContent: 'flex-start' }}>
+                    <div className="pa-status pa-running">
+                      <span className="pa-dot" />
+                      {t('Connected: sends as')}{' '}
+                      <strong>{s.mailFrom || mail.address || mail.provider}</strong>
+                      {' '}({mail.provider === 'google' ? 'Gmail' : 'Microsoft'})
                       <button className="btn-sm" disabled={mailBusy} onClick={() => void mailTest()}>{t('Send test mail')}</button>
+                      <button className="btn-sm" onClick={() => void mailDisconnect()}>{t('Disconnect')}</button>
                     </div>
-                    <label>{t('Host')}</label>
-                    <input className="prop-input" placeholder="smtp.example.com" value={s.smtpHost} onChange={(e) => set('smtpHost', e.target.value)} />
-                    <label>{t('Port')}</label>
-                    <input className="prop-input" placeholder="587 / 465" value={s.smtpPort} onChange={(e) => set('smtpPort', e.target.value)} />
-                    <label>{t('User')}</label>
-                    <input className="prop-input" value={s.smtpUser} onChange={(e) => set('smtpUser', e.target.value)} />
-                    <label>{t('Password')}</label>
-                    <input className="prop-input" type="password" placeholder={passSet ? t('•••••• (unchanged)') : t('not set')} value={s.smtpPass} onChange={(e) => set('smtpPass', e.target.value)} />
-                    <label>{t('Sender (From)')}</label>
-                    <input className="prop-input" placeholder="salt@example.com" value={s.smtpFrom} onChange={(e) => set('smtpFrom', e.target.value)} />
-                  </>
-                )}
-
-                {tab === 'proxy' && (
-                  <>
-                    <h3>{t('Public access (built in, no proxy of your own)')}</h3>
-                    {pa && (pa.status === 'running' || pa.status === 'starting') && (
-                      <div className={'pa-status pa-' + pa.status}>
-                        <span className="pa-dot" />
-                        {pa.status === 'starting' && t('Tunnel starting…')}
-                        {pa.status === 'running' && pa.mode === 'quick' && (
-                          <>
-                            {t('Publicly reachable:')}&nbsp;
-                            <a href={pa.url} target="_blank" rel="noreferrer">{pa.url}</a>
-                            <button className="btn-sm" onClick={() => { void navigator.clipboard?.writeText(pa.url); toast(t('Link copied')); }}>{t('Copy')}</button>
-                          </>
-                        )}
-                        {pa.status === 'running' && pa.mode === 'token' && (
-                          <>{t('Tunnel connected, reachable under the hostname set in the Cloudflare dashboard.')}</>
-                        )}
-                        <button className="btn-sm" disabled={tunnelBusy} onClick={() => void tunnel('stop')}>{t('Stop')}</button>
-                      </div>
-                    )}
-                    {pa && pa.status === 'error' && (
-                      <div className="pa-status pa-error">
-                        <span className="pa-dot" />
-                        {pa.lastError || t('Tunnel error')}
-                        <button className="btn-sm" disabled={tunnelBusy} onClick={() => void tunnel('stop')}>{t('Reset')}</button>
-                      </div>
-                    )}
-
-                    <div className="pa-card">
-                      <strong>{t('1 · Try it right away (quick tunnel)')}</strong>
-                      <p className="dialog-hint settings-hint">
-                        {t('One click, no account: creates a temporary')} <code>trycloudflare.com</code>{' '}
-                        {t(
-                          'URL pointing at this instance. The URL changes on every start. Ideal for trying things out and sharing quickly.',
-                        )}{' '}
-                        {!pa?.cloudflaredHere && t('On first start salt.md downloads the official cloudflared automatically.')}
-                      </p>
-                      <div className="settings-row">
-                        <button
-                          className="btn primary"
-                          disabled={tunnelBusy || pa?.status === 'running' || pa?.status === 'starting'}
-                          onClick={() => void tunnel('start-quick')}
-                        >
-                          {tunnelBusy ? t('Please wait…') : t('Start quick tunnel')}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="pa-card">
-                      <strong>{t('2 · Permanently, with your own domain (Cloudflare Tunnel)')}</strong>
-                      <p className="dialog-hint settings-hint">
-                        {t('A free Cloudflare account is required: dashboard →')}{' '}
-                        <em>Zero Trust → Networks → Tunnels → Create tunnel</em>{' '}{/* i18n-ok: the Cloudflare dashboard is English whatever we render in */}
-                        {t('→ copy the token and paste it here. You set the hostname (e.g.')}{' '}
-                        <code>{domain}</code> → <code>http://localhost:80</code>){' '}
-                        {t(
-                          'in the dashboard. salt.md keeps the tunnel running, restarts included. No port forwarding needed.',
-                        )}
-                      </p>
-                      <div className="settings-row">
-                        <input
-                          className="prop-input"
-                          style={{ flex: 1 }}
-                          type="password"
-                          placeholder={pa?.tokenSet ? t('•••••• (token stored)') : t('eyJhIjoi… (tunnel token)')}
-                          value={tunnelToken}
-                          onChange={(e) => setTunnelToken(e.target.value)}
-                        />
-                        <button
-                          className="btn primary"
-                          disabled={tunnelBusy || pa?.status === 'running' || pa?.status === 'starting' || (!tunnelToken.trim() && !pa?.tokenSet)}
-                          onClick={() => void tunnel('start-token', tunnelToken.trim() || undefined)}
-                        >
-                          {t('Connect')}
-                        </button>
-                      </div>
-                    </div>
-
-                    {pa?.cloudflaredHere && (
-                      <div className="pa-card">
-                        <strong>{t('cloudflared')}</strong>
-                        <p className="dialog-hint settings-hint">
-                          {pa.cloudflaredVersion
-                            ? t('Version {version} in use.', { version: pa.cloudflaredVersion })
-                            : t('The version in use could not be read.')}{' '}
-                          {pa.cloudflaredBehind &&
-                            t('{latest} is available.', { latest: pa.cloudflaredLatest })}
-                          {!pa.cloudflaredBehind && pa.cloudflaredLatest && t('That is the newest release.')}
-                          {!pa.cloudflaredManaged &&
-                            ' ' +
-                              t(
-                                'This copy was installed on the system, not by salt.md, so it is updated by whatever installed it.',
-                              )}
-                        </p>
-                        {pa.cloudflaredCheckError && (
-                          <p className="dialog-hint settings-hint pa-warn">{pa.cloudflaredCheckError}</p>
-                        )}
-                        {pa.cloudflaredManaged && (
-                          <div className="settings-row">
-                            <label className="settings-check">
-                              <input
-                                type="checkbox"
-                                checked={pa.cloudflaredAutoUpdate}
-                                disabled={tunnelBusy}
-                                onChange={(e) => void tunnel('cloudflared-autoupdate', undefined, e.target.checked)}
-                              />
-                              <span>{t('Keep it up to date automatically (checked daily, checksum verified)')}</span>
-                            </label>
-                            <button
-                              className="btn-sm"
-                              disabled={tunnelBusy || pa.cloudflaredUpdating}
-                              onClick={() => void tunnel('update-cloudflared')}
-                            >
-                              {tunnelBusy ? t('Please wait…') : t('Check now')}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="pa-card">
-                      <strong>{t('3 · Straight to HTTPS (no Cloudflare, e.g. a VPS)')}</strong>
-                      <p className="dialog-hint settings-hint">
-                        {t(
-                          'salt.md fetches its own Let’s Encrypt certificate and listens on 80/443, no Caddy or nginx needed. Requirements: the domain’s DNS A record points at this server and ports 80 and 443 are reachable. Restart after saving.',
-                        )}
-                      </p>
-                      <div className="settings-row">
-                        <input
-                          className="prop-input"
-                          style={{ flex: 1 }}
-                          placeholder="notes.example.com"
-                          value={s.httpsDomain}
-                          onChange={(e) => set('httpsDomain', e.target.value)}
-                        />
-                        <label className="settings-check" style={{ whiteSpace: 'nowrap' }}>
-                          <input type="checkbox" checked={httpsEnabled} onChange={(e) => setHttpsEnabled(e.target.checked)} />
-                          <span>{t('Active')}</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <h3>{t('Manual (your own reverse proxy)')}</h3>
-                    <label className="settings-check">
-                      <input type="checkbox" checked={trustProxy} onChange={(e) => setTrustProxy(e.target.checked)} />
-                      <span>
-                        {t('Run behind a reverse proxy (trust')} <code>X-Forwarded-For</code>)
-                      </span>
-                    </label>
-                    <p className="dialog-hint settings-hint">
-                      {t(
-                        'Only switch this on when salt.md runs behind Caddy, nginx or a Cloudflare tunnel. The instance then sees real client IPs (sign-in protection, audit log). Leave it off without a proxy, or an attacker could forge their IP.',
-                      )}
-                    </p>
-                    <label>{t('Internal address of the instance (upstream)')}</label>
-                    <input className="prop-input" value={upstream} onChange={(e) => setUpstream(e.target.value)} />
-                    <p className="dialog-hint settings-hint">
-                      {t('The domain in the examples comes from the public base URL (the “General” tab):')}{' '}
-                      <strong>{domain}</strong>
-                    </p>
-                    <ConfBlock title={t('Caddy (automatic HTTPS)')} text={caddyConf} />
-                    <ConfBlock title={t('Cloudflare Tunnel (no open port needed)')} text={cloudflaredConf} />
-                    <ConfBlock title="nginx" text={nginxConf} />
-                    <p className="dialog-hint settings-hint">
-                      {t(
-                        'Cloudflare: leave the DNS record “Proxied” (orange cloud); WebSockets are on by default. Caddy handles certificates and WebSockets by itself. Alternatively, direct TLS without a proxy via',
-                      )}{' '}
-                      <code>SALT_TLS_CERT</code>/<code>SALT_TLS_KEY</code>.
-                    </p>
-                  </>
-                )}
-
-                {tab === 'webhooks' && (
-                  <>
-                    <h3>{t('Tell other tools when something changes')}</h3>
-                    <p className="dialog-hint settings-hint">
-                      {t(
-                        'Instead of other programs asking over and over whether anything is new, salt.md calls an address of your choosing when a page is created, changed or thrown away. That is what Zapier, Make and n8n need, and through them, everything else.',
-                      )}
-                    </p>
-                    <p className="dialog-hint settings-hint">
-                      {t(
-                        'The message says WHICH page and what happened to it, never the content. So a URL entered by mistake cannot turn into a steady export of what people write.',
-                      )}
-                    </p>
-
-                    <label>{t('Address to call')}</label>
+                    <label>{t('Override the sender address (optional, alias)')}</label>
                     <input
                       className="prop-input"
-                      placeholder="https://hooks.example.com/salt"
-                      value={hookURL}
-                      onChange={(e) => setHookURL(e.target.value)}
+                      placeholder={mail.address || 'noreply@example.com'}
+                      value={s.mailFrom}
+                      onChange={(e) => set('mailFrom', e.target.value)}
                     />
-                    <label>{t('When should we call?')}</label>
-                    <div className="hook-events">
-                      {(['page.created', 'page.updated', 'page.trashed'] as const).map((ev) => (
-                        <label key={ev} className="hook-event">
-                          <input
-                            type="checkbox"
-                            checked={hookEvents.includes(ev)}
-                            onChange={(e) =>
-                              setHookEvents((prev) =>
-                                e.target.checked ? [...prev, ev] : prev.filter((x) => x !== ev),
-                              )
-                            }
-                          />
-                          <span>
-                            {ev === 'page.created'
-                              ? t('a page is created')
-                              : ev === 'page.updated'
-                                ? t('a page is changed')
-                                : t('a page is thrown away')}
-                          </span>
-                          <code>{ev}</code>
-                        </label>
-                      ))}
+                    <p className="dialog-hint settings-hint">
+                      {t('Only needed if mail should not be sent as')} <code>{mail.address}</code>.{' '}
+                      {t(
+                        'The address has to be an alias of the connected mailbox (Gmail: verify it under “Send mail as” in the Gmail settings; Microsoft: alias or send-as permission). Want a different mailbox entirely? “Disconnect”, then pick the account you want in the sign-in dialog when reconnecting.',
+                      )}
+                    </p>
+                  </>
+                ) : (
+                  <div className="pa-card">
+                    <p className="dialog-hint settings-hint" style={{ margin: 0 }}>
+                      {t(
+                        'Uses the OAuth apps from the Access tab: connect once and invitations go out through the chosen mailbox, no SMTP needed. Store and save the client ID and secret there first, then connect here. In the sign-in window you may pick any account at all, including a dedicated sending mailbox such as noreply@example.com; it does not have to be the account you sign in with.',
+                      )}
+                    </p>
+                    <div className="settings-row">
+                      <a
+                        className={'btn' + (oauthSet.google ? '' : ' btn-disabled')}
+                        href={oauthSet.google ? '/api/admin/mail-oauth/google/start' : undefined}
+                        onClick={(e) => { if (!oauthSet.google) { e.preventDefault(); toast(t('Set up Google OAuth on the Access tab first')); } }}
+                      >
+                        {t('Connect with Google')}
+                      </a>
+                      <a
+                        className={'btn' + (oauthSet.ms ? '' : ' btn-disabled')}
+                        href={oauthSet.ms ? '/api/admin/mail-oauth/microsoft/start' : undefined}
+                        onClick={(e) => { if (!oauthSet.ms) { e.preventDefault(); toast(t('Set up Microsoft OAuth on the Access tab first')); } }}
+                      >
+                        {t('Connect with Microsoft')}
+                      </a>
                     </div>
-                    {hookErr && <div className="login-error">{hookErr}</div>}
+                    <p className="dialog-hint settings-hint" style={{ margin: 0 }}>
+                      {t(
+                        'Google: in the Cloud Console also enable the Gmail API (APIs & Services → Library) and move the OAuth app to “In production”, or the connection expires after 7 days.',
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                <h3>{t('Or the classic way: SMTP')}</h3>
+                <div className="settings-row" style={{ justifyContent: 'flex-start' }}>
+                  <button className="btn-sm" disabled={mailBusy} onClick={() => void mailTest()}>{t('Send test mail')}</button>
+                </div>
+                <label>{t('Host')}</label>
+                <input className="prop-input" placeholder="smtp.example.com" value={s.smtpHost} onChange={(e) => set('smtpHost', e.target.value)} />
+                <label>{t('Port')}</label>
+                <input className="prop-input" placeholder="587 / 465" value={s.smtpPort} onChange={(e) => set('smtpPort', e.target.value)} />
+                <label>{t('User')}</label>
+                <input className="prop-input" value={s.smtpUser} onChange={(e) => set('smtpUser', e.target.value)} />
+                <label>{t('Password')}</label>
+                <input className="prop-input" type="password" placeholder={passSet ? t('•••••• (unchanged)') : t('not set')} value={s.smtpPass} onChange={(e) => set('smtpPass', e.target.value)} />
+                <label>{t('Sender (From)')}</label>
+                <input className="prop-input" placeholder="salt@example.com" value={s.smtpFrom} onChange={(e) => set('smtpFrom', e.target.value)} />
+              </>
+            )}
+
+            {tab === 'proxy' && (
+              <>
+                <h3>{t('Public access (built in, no proxy of your own)')}</h3>
+                {pa && (pa.status === 'running' || pa.status === 'starting') && (
+                  <div className={'pa-status pa-' + pa.status}>
+                    <span className="pa-dot" />
+                    {pa.status === 'starting' && t('Tunnel starting…')}
+                    {pa.status === 'running' && pa.mode === 'quick' && (
+                      <>
+                        {t('Publicly reachable:')}&nbsp;
+                        <a href={pa.url} target="_blank" rel="noreferrer">{pa.url}</a>
+                        <button className="btn-sm" onClick={() => { void navigator.clipboard?.writeText(pa.url); toast(t('Link copied')); }}>{t('Copy')}</button>
+                      </>
+                    )}
+                    {pa.status === 'running' && pa.mode === 'token' && (
+                      <>{t('Tunnel connected, reachable under the hostname set in the Cloudflare dashboard.')}</>
+                    )}
+                    <button className="btn-sm" disabled={tunnelBusy} onClick={() => void tunnel('stop')}>{t('Stop')}</button>
+                  </div>
+                )}
+                {pa && pa.status === 'error' && (
+                  <div className="pa-status pa-error">
+                    <span className="pa-dot" />
+                    {pa.lastError || t('Tunnel error')}
+                    <button className="btn-sm" disabled={tunnelBusy} onClick={() => void tunnel('stop')}>{t('Reset')}</button>
+                  </div>
+                )}
+
+                <div className="pa-card">
+                  <strong>{t('1 · Try it right away (quick tunnel)')}</strong>
+                  <p className="dialog-hint settings-hint">
+                    {t('One click, no account: creates a temporary')} <code>trycloudflare.com</code>{' '}
+                    {t(
+                      'URL pointing at this instance. The URL changes on every start. Ideal for trying things out and sharing quickly.',
+                    )}{' '}
+                    {!pa?.cloudflaredHere && t('On first start salt.md downloads the official cloudflared automatically.')}
+                  </p>
+                  <div className="settings-row">
                     <button
                       className="btn primary"
-                      disabled={hookBusy || !hookURL.trim() || hookEvents.length === 0}
-                      onClick={() => {
-                        setHookBusy(true);
-                        setHookErr('');
-                        void api
-                          .createWebhook(hookURL.trim(), hookEvents)
-                          .then((h) => {
-                            setFreshSecret(h.secret ?? '');
-                            setHookURL('');
-                            return api.webhooks().then(setHooks);
-                          })
-                          .catch((e: unknown) => setHookErr(e instanceof Error ? e.message : String(e)))
-                          .finally(() => setHookBusy(false));
-                      }}
+                      disabled={tunnelBusy || pa?.status === 'running' || pa?.status === 'starting'}
+                      onClick={() => void tunnel('start-quick')}
                     >
-                      {hookBusy ? t('Saving…') : t('Add')}
+                      {tunnelBusy ? t('Please wait…') : t('Start quick tunnel')}
                     </button>
+                  </div>
+                </div>
 
-                    {freshSecret && (
-                      <div className="hook-secret">
-                        <strong>{t('Copy this secret now. It is shown only once.')}</strong>
-                        <p className="dialog-hint">
-                          {t(
-                            'Your receiver uses it to check that a message really came from us. We send it as a signature in the X-Salt-Signature header.',
+                <div className="pa-card">
+                  <strong>{t('2 · Permanently, with your own domain (Cloudflare Tunnel)')}</strong>
+                  <p className="dialog-hint settings-hint">
+                    {t('A free Cloudflare account is required: dashboard →')}{' '}
+                    <em>Zero Trust → Networks → Tunnels → Create tunnel</em>{' '}{/* i18n-ok: the Cloudflare dashboard is English whatever we render in */}
+                    {t('→ copy the token and paste it here. You set the hostname (e.g.')}{' '}
+                    <code>{domain}</code> → <code>http://localhost:80</code>){' '}
+                    {t(
+                      'in the dashboard. salt.md keeps the tunnel running, restarts included. No port forwarding needed.',
+                    )}
+                  </p>
+                  <div className="settings-row">
+                    <input
+                      className="prop-input"
+                      style={{ flex: 1 }}
+                      type="password"
+                      placeholder={pa?.tokenSet ? t('•••••• (token stored)') : t('eyJhIjoi… (tunnel token)')}
+                      value={tunnelToken}
+                      onChange={(e) => setTunnelToken(e.target.value)}
+                    />
+                    <button
+                      className="btn primary"
+                      disabled={tunnelBusy || pa?.status === 'running' || pa?.status === 'starting' || (!tunnelToken.trim() && !pa?.tokenSet)}
+                      onClick={() => void tunnel('start-token', tunnelToken.trim() || undefined)}
+                    >
+                      {t('Connect')}
+                    </button>
+                  </div>
+                </div>
+
+                {pa?.cloudflaredHere && (
+                  <div className="pa-card">
+                    <strong>{t('cloudflared')}</strong>
+                    <p className="dialog-hint settings-hint">
+                      {pa.cloudflaredVersion
+                        ? t('Version {version} in use.', { version: pa.cloudflaredVersion })
+                        : t('The version in use could not be read.')}{' '}
+                      {pa.cloudflaredBehind &&
+                        t('{latest} is available.', { latest: pa.cloudflaredLatest })}
+                      {!pa.cloudflaredBehind && pa.cloudflaredLatest && t('That is the newest release.')}
+                      {!pa.cloudflaredManaged &&
+                        ' ' +
+                          t(
+                            'This copy was installed on the system, not by salt.md, so it is updated by whatever installed it.',
                           )}
-                        </p>
-                        <code className="hook-secret-value">{freshSecret}</code>
-                        <button className="btn-sm" onClick={() => setFreshSecret('')}>
-                          {t('I have it')}
-                        </button>
-                      </div>
+                    </p>
+                    {pa.cloudflaredCheckError && (
+                      <p className="dialog-hint settings-hint pa-warn">{pa.cloudflaredCheckError}</p>
                     )}
-
-                    <h3>{t('Configured')}</h3>
-                    {hooks === null && <div className="dialog-hint">{t('Loading…')}</div>}
-                    {hooks?.length === 0 && (
-                      <div className="dialog-hint">{t('Nothing yet. Nobody is being called.')}</div>
-                    )}
-                    {hooks?.map((h) => (
-                      <div key={h.id} className="hook-row">
-                        <div className="hook-row-main">
-                          <code>{h.url}</code>
-                          <span className="dialog-hint">{h.events.split(',').join(' · ')}</span>
-                        </div>
-                        <span className="dialog-hint hook-status">
-                          {h.lastAt
-                            ? `${t('last call')}: ${h.lastStatus} · ${formatMoment(h.lastAt)}`
-                            : t('not called yet')}
-                        </span>
-                        <button
-                          className="btn-sm danger"
-                          onClick={() => {
-                            void api.deleteWebhook(h.id).then(() => api.webhooks().then(setHooks));
-                          }}
-                        >
-                          {t('Remove')}
-                        </button>
-                      </div>
-                    ))}
-                  </>
-                )}
-                {tab === 'documents' && (
-                  <>
-                    <label>{t('When a document is printed or saved as PDF')}</label>
-                    <div className="settings-checks">
-                      {([
-                        ['cover', t('A title page of its own')],
-                        ['icon', t("Show the document's icon")],
-                        ['footer', t('Title and date at the foot of every page')],
-                        ['pageNums', t('Page numbers')],
-                        ['workspace', t('Name the workspace and the instance')],
-                        ['comments', t('The comments, after the document')],
-                        ['links', t('Links as links, not as plain text')],
-                        ['landscape', t('Landscape, for documents made of wide tables')],
-                      ] as const).map(([key, label]) => (
-                        <label key={key} className="settings-check">
+                    {pa.cloudflaredManaged && (
+                      <div className="settings-row">
+                        <label className="settings-check">
                           <input
                             type="checkbox"
-                            checked={pdf[key]}
-                            onChange={(e) => setPdf({ ...pdf, [key]: e.target.checked })}
+                            checked={pa.cloudflaredAutoUpdate}
+                            disabled={tunnelBusy}
+                            onChange={(e) => void tunnel('cloudflared-autoupdate', undefined, e.target.checked)}
                           />
-                          {label}
+                          <span>{t('Keep it up to date automatically (checked daily, checksum verified)')}</span>
                         </label>
-                      ))}
-                    </div>
-                    <p className="dialog-hint settings-hint">
-                      {t('salt.md lays the pages out itself and the browser only puts them on paper, so nothing of the browser gets printed along: no address, no date in the corner.')}
-                    </p>
-                    <p className="dialog-hint settings-hint">
-                      {t('These are the defaults. The panel beside a print view can deviate for one document, and that choice travels in the link.')}
-                    </p>
-                  </>
-                )}
-
-                {tab === 'maintenance' && (
-                  <>
-                    <label>{t('Backup')}</label>
-                    <div className="settings-row">
-                      <button className="btn primary" onClick={() => api.download('/api/admin/backup')}>
-                        {t('Download backup (.tar.gz)')}
-                      </button>
-                    </div>
-                    <p className="dialog-hint settings-hint">
-                      {t('Contains the whole database (a consistent snapshot) and every upload. To restore:')}{' '}
-                      <code>./salt restore backup.tar.gz</code>.{' '}
-                      {t('For automatic backups, run')} <code>./salt backup</code> {t('from cron.')}
-                    </p>
-                    <label>{t('Keep the activity log for')}</label>
-                    <div className="settings-row">
-                      <select
-                        className="prop-select"
-                        value={AUDIT_PRESETS.includes(s.auditDays) ? s.auditDays : 'custom'}
-                        onChange={(e) => {
-                          setPruned(null);
-                          set('auditDays', e.target.value === 'custom' ? '90' : e.target.value);
-                        }}
-                      >
-                        <option value="0">{t('Forever')}</option>
-                        <option value="30">{plural(30, '{n} day', '{n} days')}</option>
-                        <option value="60">{plural(60, '{n} day', '{n} days')}</option>
-                        <option value="180">{plural(180, '{n} day', '{n} days')}</option>
-                        <option value="365">{plural(365, '{n} day', '{n} days')}</option>
-                        <option value="custom">{t('Custom period')}</option>
-                      </select>
-                      {!AUDIT_PRESETS.includes(s.auditDays) && (
-                        <input
-                          className="prop-input settings-days"
-                          type="number"
-                          min={1}
-                          max={3650}
-                          value={s.auditDays}
-                          onChange={(e) => set('auditDays', e.target.value)}
-                        />
-                      )}
-                      <button
-                        className="btn"
-                        disabled={s.auditDays === '0' || pruning}
-                        onClick={() => void prune()}
-                      >
-                        {t('Clean up now')}
-                      </button>
-                    </div>
-                    <p className="dialog-hint settings-hint">
-                      {pruned !== null
-                        ? plural(pruned, '{n} entry removed', '{n} entries removed')
-                        : s.auditDays === '0'
-                          ? t('Nothing is ever removed. Roughly 300 bytes per change.')
-                          : t('Older entries are removed once a day. Taking a change back stops working once its entry is gone.')}
-                    </p>
-                    <label>{t('Open-source licences')}</label>
-                    <p className="dialog-hint settings-hint">
-                      {t('Everything salt.md is built on, with its licence in full.')}{' '}
-                      <a href="/licenses" target="_blank" rel="noopener noreferrer">{t('Open')}</a>
-                    </p>
-                    <label>{t('Instance')}</label>
-                    {!info ? (
-                      <p className="dialog-hint">{t('Loading…')}</p>
-                    ) : (
-                      <div className="info-grid">
-                        <span>{t('Version')}</span><strong>{info.version} · {info.goVersion} · {info.os}</strong>
-                        <span>{t('Uptime')}</span><strong>{fmtUptime(info.uptimeSec)}</strong>
-                        <span>{t('Users / workspaces')}</span><strong>{info.users} / {info.workspaces}</strong>
-                        <span>{t('Pages (trashed)')}</span><strong>{info.pages} ({info.trashed})</strong>
-                        <span>{t('Database')}</span><strong>{fmtBytes(info.dbSize)}</strong>
-                        <span>{t('Uploads')}</span><strong>{fmtBytes(info.uploadsSize)}</strong>
-                        <span>{t('Data directory')}</span><strong>{info.dataDir}</strong>
-                        <span>{t('Your IP (as the server sees it)')}</span><strong>{info.yourIp}{info.trustProxy ? ' · ' + t('proxy headers active') : ''}</strong>
+                        <button
+                          className="btn-sm"
+                          disabled={tunnelBusy || pa.cloudflaredUpdating}
+                          onClick={() => void tunnel('update-cloudflared')}
+                        >
+                          {tunnelBusy ? t('Please wait…') : t('Check now')}
+                        </button>
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
-              </div>
-            </>
-          )}
-          <div className="dialog-buttons">
-            <button className="btn" onClick={onClose}>{t('Cancel')}</button>
-            <button className="btn primary" onClick={() => void save()}>{t('Save')}</button>
+
+                <div className="pa-card">
+                  <strong>{t('3 · Straight to HTTPS (no Cloudflare, e.g. a VPS)')}</strong>
+                  <p className="dialog-hint settings-hint">
+                    {t(
+                      'salt.md fetches its own Let’s Encrypt certificate and listens on 80/443, no Caddy or nginx needed. Requirements: the domain’s DNS A record points at this server and ports 80 and 443 are reachable. Restart after saving.',
+                    )}
+                  </p>
+                  <div className="settings-row">
+                    <input
+                      className="prop-input"
+                      style={{ flex: 1 }}
+                      placeholder="notes.example.com"
+                      value={s.httpsDomain}
+                      onChange={(e) => set('httpsDomain', e.target.value)}
+                    />
+                    <label className="settings-check" style={{ whiteSpace: 'nowrap' }}>
+                      <input type="checkbox" checked={httpsEnabled} onChange={(e) => setHttpsEnabled(e.target.checked)} />
+                      <span>{t('Active')}</span>
+                    </label>
+                  </div>
+                </div>
+
+                <h3>{t('Manual (your own reverse proxy)')}</h3>
+                <label className="settings-check">
+                  <input type="checkbox" checked={trustProxy} onChange={(e) => setTrustProxy(e.target.checked)} />
+                  <span>
+                    {t('Run behind a reverse proxy (trust')} <code>X-Forwarded-For</code>)
+                  </span>
+                </label>
+                <p className="dialog-hint settings-hint">
+                  {t(
+                    'Only switch this on when salt.md runs behind Caddy, nginx or a Cloudflare tunnel. The instance then sees real client IPs (sign-in protection, audit log). Leave it off without a proxy, or an attacker could forge their IP.',
+                  )}
+                </p>
+                <label>{t('Internal address of the instance (upstream)')}</label>
+                <input className="prop-input" value={upstream} onChange={(e) => setUpstream(e.target.value)} />
+                <p className="dialog-hint settings-hint">
+                  {t('The domain in the examples comes from the public base URL (the “General” tab):')}{' '}
+                  <strong>{domain}</strong>
+                </p>
+                <ConfBlock title={t('Caddy (automatic HTTPS)')} text={caddyConf} />
+                <ConfBlock title={t('Cloudflare Tunnel (no open port needed)')} text={cloudflaredConf} />
+                <ConfBlock title="nginx" text={nginxConf} />
+                <p className="dialog-hint settings-hint">
+                  {t(
+                    'Cloudflare: leave the DNS record “Proxied” (orange cloud); WebSockets are on by default. Caddy handles certificates and WebSockets by itself. Alternatively, direct TLS without a proxy via',
+                  )}{' '}
+                  <code>SALT_TLS_CERT</code>/<code>SALT_TLS_KEY</code>.
+                </p>
+              </>
+            )}
+
+            {tab === 'webhooks' && (
+              <>
+                <h3>{t('Tell other tools when something changes')}</h3>
+                <p className="dialog-hint settings-hint">
+                  {t(
+                    'Instead of other programs asking over and over whether anything is new, salt.md calls an address of your choosing when a page is created, changed or thrown away. That is what Zapier, Make and n8n need, and through them, everything else.',
+                  )}
+                </p>
+                <p className="dialog-hint settings-hint">
+                  {t(
+                    'The message says WHICH page and what happened to it, never the content. So a URL entered by mistake cannot turn into a steady export of what people write.',
+                  )}
+                </p>
+
+                <Field label={t('Address to call')}>
+                  <Input
+                    placeholder="https://hooks.example.com/salt"
+                    value={hookURL}
+                    onValueChange={setHookURL}
+                  />
+                </Field>
+                <div className="hook-events" role="group" aria-label={t('When should we call?')}>
+                  <span className="ui-field-label">{t('When should we call?')}</span>
+                  {(['page.created', 'page.updated', 'page.trashed'] as const).map((ev) => (
+                    <Checkbox
+                      key={ev}
+                      checked={hookEvents.includes(ev)}
+                      onCheckedChange={(on) =>
+                        setHookEvents((prev) => (on ? [...prev, ev] : prev.filter((x) => x !== ev)))
+                      }
+                      label={
+                        ev === 'page.created'
+                          ? t('a page is created')
+                          : ev === 'page.updated'
+                            ? t('a page is changed')
+                            : t('a page is thrown away')
+                      }
+                      description={ev}
+                    />
+                  ))}
+                </div>
+                {hookErr && <div className="login-error">{hookErr}</div>}
+                <Button
+                  variant="primary"
+                  disabled={hookBusy || !hookURL.trim() || hookEvents.length === 0}
+                  onClick={() => {
+                    setHookBusy(true);
+                    setHookErr('');
+                    void api
+                      .createWebhook(hookURL.trim(), hookEvents)
+                      .then((h) => {
+                        setFreshSecret(h.secret ?? '');
+                        setHookURL('');
+                        return api.webhooks().then(setHooks);
+                      })
+                      .catch((e: unknown) => setHookErr(e instanceof Error ? e.message : String(e)))
+                      .finally(() => setHookBusy(false));
+                  }}
+                >
+                  {hookBusy ? t('Saving…') : t('Add')}
+                </Button>
+
+                {freshSecret && (
+                  <div className="hook-secret">
+                    <strong>{t('Copy this secret now. It is shown only once.')}</strong>
+                    <p className="dialog-hint">
+                      {t(
+                        'Your receiver uses it to check that a message really came from us. We send it as a signature in the X-Salt-Signature header.',
+                      )}
+                    </p>
+                    <code className="hook-secret-value">{freshSecret}</code>
+                    <Button size="sm" onClick={() => setFreshSecret('')}>
+                      {t('I have it')}
+                    </Button>
+                  </div>
+                )}
+
+                <h3>{t('Configured')}</h3>
+                {hooks === null && <div className="dialog-hint">{t('Loading…')}</div>}
+                {hooks?.length === 0 && (
+                  <div className="dialog-hint">{t('Nothing yet. Nobody is being called.')}</div>
+                )}
+                {hooks?.map((h) => (
+                  <div key={h.id} className="hook-row">
+                    <div className="hook-row-main">
+                      <code>{h.url}</code>
+                      <span className="dialog-hint">{h.events.split(',').join(' · ')}</span>
+                    </div>
+                    <span className="dialog-hint hook-status">
+                      {h.lastAt
+                        ? `${t('last call')}: ${h.lastStatus} · ${formatMoment(h.lastAt)}`
+                        : t('not called yet')}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => {
+                        void api.deleteWebhook(h.id).then(() => api.webhooks().then(setHooks));
+                      }}
+                    >
+                      {t('Remove')}
+                    </Button>
+                  </div>
+                ))}
+              </>
+            )}
+            {tab === 'documents' && (
+              <>
+                <label>{t('When a document is printed or saved as PDF')}</label>
+                <div className="settings-checks">
+                  {([
+                    ['cover', t('A title page of its own')],
+                    ['icon', t("Show the document's icon")],
+                    ['footer', t('Title and date at the foot of every page')],
+                    ['pageNums', t('Page numbers')],
+                    ['workspace', t('Name the workspace and the instance')],
+                    ['comments', t('The comments, after the document')],
+                    ['links', t('Links as links, not as plain text')],
+                    ['landscape', t('Landscape, for documents made of wide tables')],
+                  ] as const).map(([key, label]) => (
+                    <label key={key} className="settings-check">
+                      <input
+                        type="checkbox"
+                        checked={pdf[key]}
+                        onChange={(e) => setPdf({ ...pdf, [key]: e.target.checked })}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+                <p className="dialog-hint settings-hint">
+                  {t('salt.md lays the pages out itself and the browser only puts them on paper, so nothing of the browser gets printed along: no address, no date in the corner.')}
+                </p>
+                <p className="dialog-hint settings-hint">
+                  {t('These are the defaults. The panel beside a print view can deviate for one document, and that choice travels in the link.')}
+                </p>
+              </>
+            )}
+
+            {tab === 'maintenance' && (
+              <>
+                <label>{t('Backup')}</label>
+                <div className="settings-row">
+                  <button className="btn primary" onClick={() => api.download('/api/admin/backup')}>
+                    {t('Download backup (.tar.gz)')}
+                  </button>
+                </div>
+                <p className="dialog-hint settings-hint">
+                  {t('Contains the whole database (a consistent snapshot) and every upload. To restore:')}{' '}
+                  <code>./salt restore backup.tar.gz</code>.{' '}
+                  {t('For automatic backups, run')} <code>./salt backup</code> {t('from cron.')}
+                </p>
+                <label>{t('Keep the activity log for')}</label>
+                <div className="settings-row">
+                  <select
+                    className="prop-select"
+                    value={AUDIT_PRESETS.includes(s.auditDays) ? s.auditDays : 'custom'}
+                    onChange={(e) => {
+                      setPruned(null);
+                      set('auditDays', e.target.value === 'custom' ? '90' : e.target.value);
+                    }}
+                  >
+                    <option value="0">{t('Forever')}</option>
+                    <option value="30">{plural(30, '{n} day', '{n} days')}</option>
+                    <option value="60">{plural(60, '{n} day', '{n} days')}</option>
+                    <option value="180">{plural(180, '{n} day', '{n} days')}</option>
+                    <option value="365">{plural(365, '{n} day', '{n} days')}</option>
+                    <option value="custom">{t('Custom period')}</option>
+                  </select>
+                  {!AUDIT_PRESETS.includes(s.auditDays) && (
+                    <input
+                      className="prop-input settings-days"
+                      type="number"
+                      min={1}
+                      max={3650}
+                      value={s.auditDays}
+                      onChange={(e) => set('auditDays', e.target.value)}
+                    />
+                  )}
+                  <button
+                    className="btn"
+                    disabled={s.auditDays === '0' || pruning}
+                    onClick={() => void prune()}
+                  >
+                    {t('Clean up now')}
+                  </button>
+                </div>
+                <p className="dialog-hint settings-hint">
+                  {pruned !== null
+                    ? plural(pruned, '{n} entry removed', '{n} entries removed')
+                    : s.auditDays === '0'
+                      ? t('Nothing is ever removed. Roughly 300 bytes per change.')
+                      : t('Older entries are removed once a day. Taking a change back stops working once its entry is gone.')}
+                </p>
+                <label>{t('Open-source licences')}</label>
+                <p className="dialog-hint settings-hint">
+                  {t('Everything salt.md is built on, with its licence in full.')}{' '}
+                  <a href="/licenses" target="_blank" rel="noopener noreferrer">{t('Open')}</a>
+                </p>
+                <label>{t('Instance')}</label>
+                {!info ? (
+                  <p className="dialog-hint">{t('Loading…')}</p>
+                ) : (
+                  <div className="info-grid">
+                    <span>{t('Version')}</span><strong>{info.version} · {info.goVersion} · {info.os}</strong>
+                    <span>{t('Uptime')}</span><strong>{fmtUptime(info.uptimeSec)}</strong>
+                    <span>{t('Users / workspaces')}</span><strong>{info.users} / {info.workspaces}</strong>
+                    <span>{t('Pages (trashed)')}</span><strong>{info.pages} ({info.trashed})</strong>
+                    <span>{t('Database')}</span><strong>{fmtBytes(info.dbSize)}</strong>
+                    <span>{t('Uploads')}</span><strong>{fmtBytes(info.uploadsSize)}</strong>
+                    <span>{t('Data directory')}</span><strong>{info.dataDir}</strong>
+                    <span>{t('Your IP (as the server sees it)')}</span><strong>{info.yourIp}{info.trustProxy ? ' · ' + t('proxy headers active') : ''}</strong>
+                  </div>
+                )}
+              </>
+            )}
           </div>
-        </div>
-      </div>
-    </Portal>
+        </>
+      )}
+    </Dialog>
   );
 }
 

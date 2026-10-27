@@ -1,0 +1,60 @@
+/* Switch: a track and a thumb; the track fills with the accent when on. */
+
+.ui-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-200);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.ui-switch-track {
+  position: relative;
+  flex: none;
+  width: 28px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-scale-full);
+  background: var(--color-active);
+  cursor: pointer;
+  transition: background-color var(--motion-duration-base) ease;
+}
+
+.ui-switch-track[data-checked] {
+  background: var(--color-accent-default);
+  border-color: var(--color-accent-default);
+}
+
+.ui-switch-track:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.ui-switch-track[data-disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ui-switch-thumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-scale-full);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-overlay);
+  transition: transform var(--motion-duration-base) var(--motion-easing-out);
+}
+
+.ui-switch-thumb[data-checked] {
+  transform: translateX(12px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-switch-track,
+  .ui-switch-thumb {
+    transition: none;
+  }
+}

@@ -1,0 +1,111 @@
+/* Button: the look of today's .btn / .btn-sm, stated once from tokens.
+   Values are the ones the old cascade ended on (measured in the settings
+   dialog), not the ones any single old rule wrote. */
+
+.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-150);
+  /* today's .btn, so a migrated button keeps its height (34px) */
+  padding: 7px 14px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-scale-lg);
+  background: transparent;
+  color: var(--color-text-default);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-duration-base) ease,
+    border-color var(--motion-duration-base) ease,
+    box-shadow var(--motion-duration-base) ease,
+    transform var(--motion-duration-fast) ease;
+}
+
+.ui-button[data-size='sm'] {
+  padding: 5px 11px; /* today's .btn-sm */
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+}
+
+/* Labels in the brand typeface, as every .btn is (styles.css "Labels and
+   buttons in mono"). */
+[data-font='brand'] .ui-button {
+  font-family: var(--font-family-mono);
+  letter-spacing: 0.02em;
+}
+
+.ui-button:hover:not([data-disabled]) {
+  background: var(--color-hover);
+  border-color: var(--color-border-strong);
+}
+
+.ui-button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.ui-button[data-disabled],
+.ui-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Primary: the ink pill. Colour would make every dialog shout; ink is the
+   loudest thing on a page of ink on paper. */
+.ui-button[data-variant='primary'] {
+  background: var(--color-pill-default);
+  border-color: transparent;
+  border-radius: var(--radius-scale-full);
+  color: var(--color-pill-text);
+  font-weight: 600;
+}
+
+.ui-button[data-variant='primary']:hover:not([data-disabled]) {
+  background: var(--color-pill-hover);
+  border-color: transparent;
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-1px);
+}
+
+.ui-button[data-variant='primary']:active:not([data-disabled]) {
+  transform: translateY(0);
+}
+
+.ui-button[data-variant='ghost'] {
+  border-color: transparent;
+}
+
+.ui-button[data-variant='danger'] {
+  color: var(--color-danger);
+}
+
+.ui-button[data-variant='danger']:hover:not([data-disabled]) {
+  border-color: var(--color-danger);
+}
+
+.ui-button-kbd {
+  font: inherit;
+  font-size: var(--font-size-2xs);
+  color: inherit;
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-button {
+    transition: none;
+  }
+  .ui-button[data-variant='primary']:hover:not([data-disabled]) {
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+@media (hover: none) {
+  .ui-button[data-variant='primary']:hover:not([data-disabled]) {
+    transform: none;
+  }
+}

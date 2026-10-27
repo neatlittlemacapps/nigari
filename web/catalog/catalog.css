@@ -1,0 +1,74 @@
+/* The catalogue's own page: the ground the components sit on, from tokens. */
+
+body {
+  margin: 0;
+  background: var(--color-surface-default);
+  color: var(--color-text-default);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-md);
+}
+
+.cat {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--space-600);
+}
+
+.cat-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-400);
+  margin-bottom: var(--space-600);
+}
+
+.cat-head h1 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+
+.cat-theme {
+  display: flex;
+  gap: var(--space-150);
+}
+
+.cat-last {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.cat-section {
+  padding: var(--space-400) 0;
+  border-top: 1px solid var(--color-border-default);
+}
+
+.cat-section h2 {
+  margin: 0 0 var(--space-300);
+  font-size: var(--font-size-lg);
+}
+
+.cat-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: start;
+  gap: var(--space-400);
+  padding: var(--space-200) 0;
+}
+
+.cat-row-label {
+  padding-top: var(--space-150);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.cat-row-items {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-300);
+}
+
+.cat-row-items > .ui-field,
+.cat-row-items > .ui-select {
+  width: 200px;
+}

@@ -65,7 +65,7 @@ Re-checked after Phase 1 design: unchanged.
 | REST routes (`server/server.go`, middleware) | No change. Public pages already link the app stylesheet (research P2) | backend |
 | MCP tools (`server/mcp*.go`, descriptions, `wrapUntrusted`, read-scope refusal) | No change: no capability added or removed | mcp |
 | Closed-to-agents list (`not_available_via_mcp`) | No change | mcp |
-| UI components (`web/src/…`, light + dark, keyboard) | New: `web/tokens/*.tokens.json`, `web/src/tokens.css` (generated), and `web/src/ui/` with Button, IconButton, Dialog, AlertDialog, Field/Input, Select, Switch, plus a README. `theme.css` token block replaced by the generated aliases. BlockNote's Mantine theme mapped from the tokens (FR-011). The webhook dialog in `AdminSettings.tsx` is rebuilt from components. The catalogue lives in `web/catalog.html` and `web/src/catalog/` | ui |
+| UI components (`web/src/…`, light + dark, keyboard) | New: `web/tokens/*.tokens.json`, `web/src/tokens.css` (generated), and `web/src/ui/` with Button, IconButton, Dialog, AlertDialog, Field/Input, Checkbox, Select, Switch, plus a README. `theme.css` token block replaced by the generated aliases. BlockNote's Mantine theme mapped from the tokens (FR-011). The webhook dialog in `AdminSettings.tsx` is rebuilt from components. The catalogue lives in `web/catalog.html` and `web/catalog/` (amended at task time: outside `src/`, see tasks.md) | ui |
 | Translations (`t()`, `de.json` required, `es.json`) | Any new accessible names (for example a dialog's "Close") go through `t()`, with German. Most already exist | i18n |
 | Server error codes (`web/src/serverErrors.ts`) | No change | i18n |
 | Wiki (`wiki/*.md`, `mcp-tools.md`, stale screenshots) | Retake the screenshots of the migrated webhook dialog, plus any `check-wiki.mjs` lists as stale. User-facing text unchanged | wiki |
@@ -96,7 +96,7 @@ specs/001-design-system/
 - **Scripts:** `web/scripts/build-tokens.mjs`, `check-tokens.mjs`, `check-bundle.mjs`.
 - **Styles:** `web/src/tokens.css` (generated); `web/src/theme.css` (token block → generated); `web/src/main.tsx` (import order).
 - **Components:** `web/src/ui/*.tsx`, `*.css`, `README.md`.
-- **Catalogue:** `web/catalog.html`, `web/src/catalog/*`, `web/vite.catalog.config.ts`.
+- **Catalogue:** `web/catalog.html`, `web/catalog/*`, `web/vite.catalog.config.ts`.
 - **Migrated screen and package files:** `web/src/components/AdminSettings.tsx`; `web/package.json` (Base UI, `check` script); `web/package-lock.json` (through `npm install` only).
 - **Tests:** `web/tests/catalog.mjs`, `web/tests/catalog-baselines/`, `web/tests/package.json`.
 - **Rules and docs:** `.claude/rules/frontend.md`, wiki screenshots.
