@@ -195,14 +195,24 @@ func (s *Server) rowPinsForView(colID, viewID string) (map[string]any, error) {
 
 // rowMatchesView reports whether a row passes every filter of the view, by
 // the SQL the rows query fills the view with, so the answer cannot disagree
-// with what the person then sees. On the writer: the row was just written
-// and the read pool may not see it yet.
+// with what the person then sees.
 func (s *Server) rowMatchesView(rowID, colID, viewID string) (bool, error) {
 	_, filters, _, err := s.viewOf(colID, viewID)
 	if err != nil {
 		return false, err
 	}
-	filters = s.typeFilters(colID, s.resolveSmartDates(colID, filters, time.Now()))
+	return s.rowMatchesFilters(rowID, s.viewFiltersNow(colID, filters))
+}
+
+// viewFiltersNow types a view's filters and resolves their relative days, as
+// collectionRowsQuery does per query. create_rows does it once for all rows.
+func (s *Server) viewFiltersNow(colID string, filters []rowFilter) []rowFilter {
+	return s.typeFilters(colID, s.resolveSmartDates(colID, filters, time.Now()))
+}
+
+// rowMatchesFilters runs prepared filters (viewFiltersNow) against one row.
+// On the writer: the row was just written and the read pool may not see it.
+func (s *Server) rowMatchesFilters(rowID string, filters []rowFilter) (bool, error) {
 	q := `SELECT 1 FROM pages WHERE id = ?`
 	args := []any{rowID}
 	for _, f := range filters {
@@ -222,6 +232,25 @@ func (s *Server) rowMatchesView(rowID, colID, viewID string) (bool, error) {
 	default:
 		return false, err
 	}
+}
+
+// viewMatchNote is what an agent's answer adds after creating a row in a
+// view: whether it matches, and if not, that it will not show there. It names
+// the view by id, not by name: a name is text a person wrote, and returning
+// it would need wrapUntrusted for no gain.
+func (s *Server) viewMatchNote(rowID, colID, viewID string) string {
+	_, filters, _, err := s.viewOf(colID, viewID)
+	if err != nil {
+		return ""
+	}
+	ok, err := s.rowMatchesFilters(rowID, s.viewFiltersNow(colID, filters))
+	if err != nil {
+		return ""
+	}
+	if ok {
+		return "; matches_view: true"
+	}
+	return fmt.Sprintf("; matches_view: false. The row does not match the filters of view %s, so it will not show there.", viewID)
 }
 
 // mergePins lays explicit values over the pins: a value the caller typed or a

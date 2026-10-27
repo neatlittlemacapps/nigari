@@ -71,7 +71,7 @@ func (s *Server) mcpListTemplates(u *user, databaseID string) (string, error) {
 
 // mcpCreateFromTemplate instantiates a template in its source workspace.
 // The destination must be writable; duplicatePage enforces this for all callers.
-func (s *Server) mcpCreateFromTemplate(u *user, templateID, title, parentID string, props json.RawMessage) (string, error) {
+func (s *Server) mcpCreateFromTemplate(u *user, templateID, title, parentID string, props json.RawMessage, viewID string) (string, error) {
 	if templateID == "" {
 		return "", fmt.Errorf("template_id is required — call list with kind=\"templates\" for the ids")
 	}
@@ -95,6 +95,14 @@ func (s *Server) mcpCreateFromTemplate(u *user, templateID, title, parentID stri
 		if !s.canWrite(u.ID, owner) || !s.credentialMayEnter(u, s.pageWorkspace(owner)) {
 			return "", fmt.Errorf("database %q not found", owner)
 		}
+		// Template, then the view's pins, then props (spec 005, as over REST).
+		if viewID != "" {
+			merged, err := s.propsInView(owner, viewID, props)
+			if err != nil {
+				return "", err
+			}
+			props = merged
+		}
 		nid, err := s.rowFromTemplate(u.ID, owner, templateID, title, props)
 		if err == sql.ErrNoRows {
 			return "", fmt.Errorf("template %q not found", templateID)
@@ -103,7 +111,14 @@ func (s *Server) mcpCreateFromTemplate(u *user, templateID, title, parentID stri
 			return "", err
 		}
 		s.fireWebhook("page.created", nid)
-		return fmt.Sprintf("Created row %s in database %s from template %s", nid, owner, templateID), nil
+		created := fmt.Sprintf("Created row %s in database %s from template %s", nid, owner, templateID)
+		if viewID != "" {
+			return created + s.viewMatchNote(nid, owner, viewID), nil
+		}
+		return created, nil
+	}
+	if viewID != "" {
+		return "", fmt.Errorf("view_id applies to a row of a database, and template %q is not a database template", templateID)
 	}
 	if isTemplate == 0 {
 		return "", fmt.Errorf("page %q is not a template — call list with kind=\"templates\", or duplicate_page for an ordinary copy", templateID)

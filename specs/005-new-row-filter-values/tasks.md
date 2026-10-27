@@ -68,10 +68,10 @@ No setup: no dependency, no schema change (plan, Technical Context).
 
 **Independent Test**: `create_page` with `view_id`; the row has the pinned value and the answer says `matches_view`.
 
-- [ ] T013 [US3] [mcp] `create_page` in `server/mcp.go`: `view_id` in the schema and description (contracts/mcp.md), with and without `template_id`; answer adds `matches_view` and the sentence when false
-- [ ] T014 [US3] [mcp] `create_rows` (`mcpCreateRows` in `server/mcp_schema.go`): `view_id`, the view loaded once, explicit properties win, `not_matching` in the answer
-- [ ] T015 [US3] [test] Tests via `callTool`: both tools with `view_id`; explicit beats pin; a view of another database refused with nothing created; read-only token refused; `credential_audit_test.go` outsider shape with a foreign view id
-- [ ] T016 [US3] [test] SC-003: one test creates a row over REST and one over MCP in the same view and compares the stored props; a pair of acts in `parity_property_test.go`
+- [x] T013 [US3] [mcp] `create_page` in `server/mcp.go`: `view_id` in the schema and description (contracts/mcp.md), with and without `template_id`; answer adds `matches_view` and the sentence when false
+- [x] T014 [US3] [mcp] `create_rows` (`mcpCreateRows` in `server/mcp_schema.go`): `view_id`, the view loaded once, explicit properties win, `not_matching` in the answer
+- [x] T015 [US3] [test] Tests via `callTool`: both tools with `view_id`; explicit beats pin; a view of another database refused with nothing created; read-only token refused; `credential_audit_test.go` outsider shape with a foreign view id
+- [x] T016 [US3] [test] SC-003: one test creates a row over REST and one over MCP in the same view and compares the stored props; a pair of acts in `parity_property_test.go`
 
 **Checkpoint**: every story works through every door.
 

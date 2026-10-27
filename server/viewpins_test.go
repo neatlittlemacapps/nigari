@@ -229,3 +229,105 @@ func TestAViewBeatsATemplateAndPropsBeatTheView(t *testing.T) {
 		t.Errorf("unknown view on the template route: %d, want 400", rec.Code)
 	}
 }
+
+// create_page and create_rows with view_id (US3): the same pins, the same
+// precedence and the same refusals as the interface's door.
+func TestAnAgentMakingARowInAViewGetsTheSameValues(t *testing.T) {
+	s, _, col, other := viewFixture(t)
+	var uid string
+	s.db.QueryRow(`SELECT id FROM users WHERE email = 'pins@example.test'`).Scan(&uid)
+	agent := &user{ID: uid, Name: "Agent", TokenKind: tokenKindAPI, TokenScope: "write"}
+
+	out, err := callTool(t, s, agent, "create_page", `{"parent_id":"`+col+`","title":"Agent task","view_id":"v-todo"}`)
+	if err != nil || !strings.Contains(out, "matches_view: true") {
+		t.Fatalf("create_page in a view: %v %s", err, out)
+	}
+	var id string
+	s.db.QueryRow(`SELECT id FROM pages WHERE parent_id = ? AND title = 'Agent task'`, col).Scan(&id)
+	if p := s.propsOf(t, id); p["status"] != "todo" {
+		t.Errorf("create_page stored %v, want status todo", p)
+	}
+
+	// The agent's own value wins, and the answer says the row will not show.
+	out, err = callTool(t, s, agent, "create_page", `{"parent_id":"`+col+`","title":"Doing task","view_id":"v-todo","properties":{"status":"Doing"}}`)
+	if err != nil || !strings.Contains(out, "matches_view: false") || !strings.Contains(out, "will not show") {
+		t.Errorf("explicit value in a view: %v %s", err, out)
+	}
+	s.db.QueryRow(`SELECT id FROM pages WHERE parent_id = ? AND title = 'Doing task'`, col).Scan(&id)
+	if p := s.propsOf(t, id); p["status"] != "doing" {
+		t.Errorf("explicit value lost: %v", p)
+	}
+
+	// Many rows, one view: pins under each row's own properties; the rows that
+	// leave the view are named.
+	out, err = callTool(t, s, agent, "create_rows", `{"page_id":"`+col+`","view_id":"v-todo","rows":[{"title":"R1"},{"title":"R2","properties":{"status":"done"}}]}`)
+	if err != nil {
+		t.Fatalf("create_rows in a view: %v", err)
+	}
+	var rows struct {
+		IDs         []string `json:"ids"`
+		NotMatching []string `json:"not_matching"`
+	}
+	if err := json.Unmarshal([]byte(out), &rows); err != nil || len(rows.IDs) != 2 {
+		t.Fatalf("create_rows answer: %s", out)
+	}
+	if p := s.propsOf(t, rows.IDs[0]); p["status"] != "todo" {
+		t.Errorf("R1 stored %v, want status todo", p)
+	}
+	if len(rows.NotMatching) != 1 || rows.NotMatching[0] != rows.IDs[1] {
+		t.Errorf("not_matching = %v, want just R2 (%s)", rows.NotMatching, rows.IDs[1])
+	}
+
+	// Refusals, each before anything is created.
+	before := s.rowCount(t, col)
+	for _, c := range []struct{ name, tool, args string }{
+		{"a view of another database", "create_page", `{"parent_id":"` + col + `","title":"X","view_id":"v-other"}`},
+		{"a view and no database", "create_page", `{"title":"X","view_id":"v-todo"}`},
+		{"create_rows, a view of another database", "create_rows", `{"page_id":"` + col + `","view_id":"v-other","rows":[{"title":"X"}]}`},
+	} {
+		if _, err := callTool(t, s, agent, c.tool, c.args); err == nil {
+			t.Errorf("%s: accepted", c.name)
+		}
+	}
+	reader := &user{ID: uid, Name: "Reader", TokenKind: tokenKindAPI, TokenScope: "read"}
+	if _, err := callTool(t, s, reader, "create_page", `{"parent_id":"`+col+`","title":"X","view_id":"v-todo"}`); err == nil || !strings.Contains(err.Error(), "read-only") {
+		t.Errorf("a read-only token: %v, want read-only", err)
+	}
+	outsider, _ := signedIn(t, s, "outsider@example.test")
+	stranger := &user{ID: outsider, Name: "Outsider", TokenKind: tokenKindAPI, TokenScope: "write"}
+	if _, err := callTool(t, s, stranger, "create_page", `{"parent_id":"`+col+`","title":"X","view_id":"v-todo"}`); err == nil {
+		t.Errorf("an outsider created a row through a view id")
+	}
+	if n := s.rowCount(t, col); n != before {
+		t.Errorf("refused calls left %d row(s) behind", n-before)
+	}
+	_ = other
+}
+
+// SC-003: a person and an agent making a row in the same view store the same
+// values. One function decides for both (constitution III); this holds them
+// to it.
+func TestAPersonAndAnAgentInTheSameViewStoreTheSameRow(t *testing.T) {
+	s, cookie, col, _ := viewFixture(t)
+	// A second view pinning two properties, a select and a number.
+	if _, err := s.db.Exec(`UPDATE collections SET views = json_insert(views, '$[#]', json('{"id":"v-two","name":"Two","type":"table","filters":[{"property":"status","op":"is","value":"doing"},{"property":"est","op":"is","value":"2"}]}')) WHERE page_id = ?`, col); err != nil {
+		t.Fatal(err)
+	}
+	var uid string
+	s.db.QueryRow(`SELECT id FROM users WHERE email = 'pins@example.test'`).Scan(&uid)
+	rec := postJSON(t, s, cookie, "/api/pages", `{"parentId":"`+col+`","title":"By hand","viewId":"v-two"}`)
+	var person map[string]any
+	_ = json.Unmarshal(rec.Body.Bytes(), &person)
+	personID, _ := person["id"].(string)
+	if _, err := callTool(t, s, &user{ID: uid, Name: "Agent", TokenKind: tokenKindAPI, TokenScope: "write"}, "create_page",
+		`{"parent_id":"`+col+`","title":"By agent","view_id":"v-two"}`); err != nil {
+		t.Fatal(err)
+	}
+	var agentID string
+	s.db.QueryRow(`SELECT id FROM pages WHERE parent_id = ? AND title = 'By agent'`, col).Scan(&agentID)
+	a, _ := json.Marshal(s.propsOf(t, personID))
+	b, _ := json.Marshal(s.propsOf(t, agentID))
+	if string(a) != string(b) || string(a) != `{"est":2,"status":"doing"}` {
+		t.Errorf("person stored %s, agent stored %s; want both {\"est\":2,\"status\":\"doing\"}", a, b)
+	}
+}

@@ -118,6 +118,9 @@ func isMCPTool(name string) bool {
 	return false
 }
 
+// viewIDHint describes view_id on create_page and create_rows (spec 005).
+const viewIDHint = "The view the row is made in (call get_collection for view ids). The row gets every value that view's filters pin to a single answer (Status is To do → Status = To do), with properties you pass winning over them, and the answer says whether the row matches the view: one that does not will not show there. Only for rows of a database; a view of another database is refused and nothing is created."
+
 var mcpTools = []map[string]any{
 	{
 		"name":        "list",
@@ -165,6 +168,7 @@ var mcpTools = []map[string]any{
 				"cover":        map[string]any{"type": "string", "description": coverHint},
 				"description":  map[string]any{"type": "string", "description": "Optional one-line summary, shown under the title."},
 				"tags":         map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Optional tags. Call list with kind=\"tags\" first and reuse what exists instead of inventing near-duplicates."},
+				"view_id":      map[string]any{"type": "string", "description": viewIDHint},
 			},
 			"required": []string{"title"}},
 	},
@@ -314,6 +318,7 @@ var mcpTools = []map[string]any{
 					},
 					"required": []string{"title"},
 				}},
+				"view_id": map[string]any{"type": "string", "description": viewIDHint + " Applies to every row; the answer lists the ids of rows that do not match under not_matching."},
 			},
 			"required": []string{"page_id", "rows"}},
 	},
@@ -959,10 +964,13 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		case "create_page":
 			// template_id replaces create_from_template: same act, one entry point.
 			if args.TemplateID != "" {
-				return s.mcpCreateFromTemplate(u, args.TemplateID, args.Title, parentID, args.Properties)
+				return s.mcpCreateFromTemplate(u, args.TemplateID, args.Title, parentID, args.Properties, args.ViewID)
 			}
 			if strings.TrimSpace(args.Title) == "" {
 				return "", fmt.Errorf("title is required")
+			}
+			if args.ViewID != "" && parentID == "" {
+				return "", fmt.Errorf("view_id applies to a row of a database: pass the database as parent_id")
 			}
 			var parent *string
 			var workspaceID string
@@ -977,6 +985,15 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 				}
 				parent = &parentID
 				workspaceID = pws
+				// Before anything is created: a view of another database is
+				// refused here, and nothing is left behind.
+				if args.ViewID != "" {
+					props, err := s.propsInView(parentID, args.ViewID, args.Properties)
+					if err != nil {
+						return "", err
+					}
+					args.Properties = props
+				}
 			} else {
 				var err error
 				workspaceID, err = s.mcpCreateWorkspaceTarget(u, args.WorkspaceID)
@@ -1024,7 +1041,11 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 			}
 			s.pagesChanged()
 			s.fireWebhook("page.created", id)
-			return fmt.Sprintf("Created page %q with id %s (path: /p/%s)", args.Title, id, id), nil
+			created := fmt.Sprintf("Created page %q with id %s (path: /p/%s)", args.Title, id, id)
+			if args.ViewID != "" {
+				return created + s.viewMatchNote(id, parentID, args.ViewID), nil
+			}
+			return created, nil
 		case "update_page":
 			// Moving and favouriting are metadata changes and used to be tools of
 			// their own. Order matters: move first, so a failed move does not leave
@@ -1147,7 +1168,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		case "delete_view":
 			return s.mcpDeleteView(args.PageID, args.ViewID)
 		case "create_rows":
-			return s.mcpCreateRows(userID, args.PageID, args.Rows)
+			return s.mcpCreateRows(userID, args.PageID, args.Rows, args.ViewID)
 		case "embed_database":
 			return s.mcpEmbedDatabase(u, args.PageID, args.DatabaseID)
 		case "upload_file":
