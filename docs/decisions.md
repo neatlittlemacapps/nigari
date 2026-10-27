@@ -7,6 +7,40 @@ entries are not edited away.
 
 ---
 
+## 2026-10-27 — Spec 007: a view chooses how its pages open
+
+**Decision**:
+- **A setting of each view**, `openIn` in the view's JSON: full page (missing, the
+  default), side peek, centre peek. Agents set it with `set_view` `open_in` and read
+  it from `get_collection`; one server function validates it for both doors.
+- **A view's peek beats the account's "Open rows in new tab".** The account setting
+  keeps deciding for views on full page; ⌘/Ctrl always opens a new tab.
+- **The address carries the peeked row** (`?peek=`), so reload, copied links and
+  Back behave as people expect.
+- **The peek is the ordinary page editor** inside a new non-modal `ui/SidePanel`.
+- **Side peek first; centre peek in a follow-up pull request**, behind a flag so no
+  door stores a value nothing honours.
+- **New registry row "Page containers"**: later page-level features must work in
+  every container a page renders in.
+
+**Why**:
+- **Per view, not per account** (owner, 2026-10-27): a board for daily work and a
+  table for bulk edits want different behaviour.
+- **The peek beats the account preference** because someone chose it for this view
+  on purpose; leaving the preference in charge of full-page views changes nothing
+  for existing views.
+- **The ordinary editor** keeps every page feature in the peek without a copy that
+  drifts.
+
+**Rejected**:
+- The upstream maintainer's account-level side panel for saltmd/salt.md#92.
+- A modal side panel (the view behind would be inert), and shrinking the view to
+  make room (moves the columns and loses the scroll position).
+- Peek state inside the collection view (lost on reload; two embedded views could
+  each open one).
+
+---
+
 ## 2026-10-27 — Spec 005: a new row takes what its view's filters pin down
 
 **Decision**:
