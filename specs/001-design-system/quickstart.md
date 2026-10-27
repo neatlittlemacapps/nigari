@@ -8,7 +8,7 @@
 3. **Catalogue** — `cd web && npx vite --config vite.catalog.config.ts`, open `/catalog.html`
    Expect: every batch-1 component in every state, light and dark toggle.
 4. **Visual + accessibility** — `npm test --prefix web/tests -- catalog`
-   Expect: screenshots match baselines; axe reports 0 serious/critical in both themes.
+   Expect: axe reports 0 serious/critical in both themes and the keyboard checks pass; with reference shots drawn first (`UPDATE_BASELINES=1`), every section matches them.
 5. **US1 screen** — open Settings → Webhooks; the dialog is `Dialog` + `Field` + `Select` + `Switch` + `Button`. Tab, Escape and screen-reader name behave as the contract says; `git diff web/src/styles.css` shows no added lines.
 6. **Bundle** — `cd web && npx vite build && node scripts/check-bundle.mjs`: under `bundleGzip`.
 7. **Gate** — `scripts/agent-gate.sh --all` green.

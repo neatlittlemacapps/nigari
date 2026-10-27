@@ -234,6 +234,7 @@ interface Props {
 
 export default function UserMenu({ user, onLogout, onUserChanged, onOpenAgents, notesMode, onToggleNotesMode, onOpenShortcuts, fontPref = 'brand', onSetFont }: Props) {
   const [open, setOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const [modal, setModal] = useState<'users' | 'tokens' | 'activity' | 'twofa' | 'settings' | 'calendar' | 'profile' | 'langtime' | 'rowopen' | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -248,7 +249,7 @@ export default function UserMenu({ user, onLogout, onUserChanged, onOpenAgents, 
 
   return (
     <div className="user-menu" ref={ref}>
-      <button className="user-menu-btn" onClick={() => setOpen((o) => !o)}>
+      <button ref={menuButton} className="user-menu-btn" onClick={() => setOpen((o) => !o)}>
         <Avatar user={user} />
         <span className="user-name">{user.name}</span>
       </button>
@@ -339,7 +340,9 @@ export default function UserMenu({ user, onLogout, onUserChanged, onOpenAgents, 
       {modal === 'calendar' && <CalendarSubModal onClose={() => setModal(null)} />}
       {modal === 'langtime' && <LanguageTimeModal onClose={() => setModal(null)} />}
       {modal === 'rowopen' && <RowOpenModal onClose={() => setModal(null)} />}
-      {modal === 'settings' && <AdminSettingsModal onClose={() => setModal(null)} />}
+      {/* The menu item that opened it is gone by then: focus returns to the
+          menu's own button. */}
+      {modal === 'settings' && <AdminSettingsModal onClose={() => setModal(null)} returnFocus={menuButton} />}
     </div>
   );
 }

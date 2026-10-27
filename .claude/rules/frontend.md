@@ -20,9 +20,16 @@ paths:
   that only go down, and a value that must stay literal carries
   `/* token-ok: <reason> */`. Every change is checked in light and dark.
   `theme.css` re-states the look; it adds no features.
-- **Components.** Mantine for controls, BlockNote for the editor, Yjs for live
-  documents. Reuse what `dialog.tsx`, `modal.ts`, `toast.ts` and `keys.ts`
-  already provide instead of a new pattern.
+- **Components.** Build from `web/src/ui/` first (Button, IconButton, Dialog,
+  AlertDialog, Field/Input, Checkbox, Select, Switch; `web/src/ui/README.md`
+  says which for what). See them all in the catalogue: `npx vite --config
+  vite.catalog.config.ts`, then `/catalog.html`. A new component gets a README
+  entry and a catalogue section (`web/tests/catalog.mjs` checks it).
+  `check-tokens.mjs` counts raw `<button>`s and hand-built `role="dialog"`s
+  outside `web/src/ui/`, and those counts only go down. Not in the layer yet:
+  menus and toasts; reuse `dialog.tsx` (confirm/prompt), `modal.ts`,
+  `toast.ts` and `keys.ts` for those. BlockNote for the editor, Yjs for live
+  documents.
 - **Keyboard.** Shortcuts register in `keys.ts`; focus movement goes through
   `nav.ts`. Both have checks (`check-keys.mjs`, `check-nav.mjs`) — extend them
   when you change the rules.

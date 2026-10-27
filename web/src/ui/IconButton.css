@@ -1,0 +1,44 @@
+/* IconButton: a square Button holding one icon, and its tooltip. */
+
+.ui-icon-button {
+  padding: var(--space-150);
+  aspect-ratio: 1;
+}
+
+.ui-icon-button[data-size='sm'] {
+  padding: var(--space-100);
+}
+
+.ui-icon-button-icon {
+  display: inline-flex;
+}
+
+.ui-icon-button-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ui-tooltip-positioner {
+  z-index: var(--layer-tooltip);
+}
+
+.ui-tooltip {
+  padding: var(--space-100) var(--space-200);
+  border-radius: var(--radius-scale-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text-default);
+  box-shadow: var(--shadow-overlay);
+  font-size: var(--font-size-xs);
+  transition: opacity var(--motion-duration-fast) ease;
+}
+
+.ui-tooltip[data-starting-style],
+.ui-tooltip[data-ending-style] {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-tooltip {
+    transition: none;
+  }
+}

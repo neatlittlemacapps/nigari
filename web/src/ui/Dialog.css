@@ -1,0 +1,72 @@
+/* Dialog: today's .modal-overlay and .dialog, from tokens. The popup also
+   carries .ring, the running arc every dialog and the sign-in card share
+   (styles.css, ring.ts); in dark the arc gives way to a plain card, as it does
+   for .dialog. */
+
+.ui-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--dialog-backdrop);
+  z-index: var(--dialog-layer);
+}
+
+.ui-dialog-viewport {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 6dvh 12px 3dvh;
+  overflow-y: auto;
+  z-index: var(--dialog-layer);
+}
+
+/* The card behind the content, at no specificity: where .ring is loaded (the
+   app), its arc background wins; where it is not (the catalogue), this shows. */
+:where(.ui-dialog) {
+  background: var(--color-surface-raised);
+}
+
+.ui-dialog.ring {
+  position: relative;
+  width: min(var(--dialog-width-md), 94vw);
+  max-height: calc(100dvh - 9dvh);
+  overflow-y: auto;
+  padding: var(--dialog-padding);
+  border-radius: var(--dialog-radius);
+  box-shadow: var(--shadow-overlay);
+  color: var(--color-text-default);
+  outline: none;
+}
+
+.ui-dialog.ring[data-size='sm'] {
+  width: min(var(--dialog-width-sm), 94vw);
+}
+
+.ui-dialog.ring[data-size='lg'] {
+  width: min(var(--dialog-width-lg), 94vw);
+}
+
+[data-theme='dark'] .ui-dialog.ring {
+  background: var(--color-surface-raised);
+  border: none;
+}
+
+.ui-dialog-title {
+  margin: 0 0 14px;
+  font-size: var(--dialog-title-size);
+  font-weight: 700;
+}
+
+.ui-dialog-description {
+  margin: 0 0 12px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.ui-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-200);
+  margin-top: 18px;
+}

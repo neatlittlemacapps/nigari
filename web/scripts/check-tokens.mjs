@@ -42,11 +42,13 @@ const measure = args.includes('--measure');
 
 const KINDS = ['color', 'fontSize', 'radius', 'shadow', 'zIndex'];
 
+// Each lookahead carries its own \s*: a `\s*` before it can match fewer spaces
+// and let `box-shadow: var(--x)` through the lookahead as a literal.
 const RULES = {
-  color: /(?<![\w&-])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![\w-])|\b(?:rgba?|hsla?|oklch)\(\s*(?!var\()/g,
+  color: /(?<![\w&-])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![\w-])|\b(?:rgba?|hsla?|oklch)\((?!\s*var\()/g,
   fontSize: /\bfont-size\s*:\s*-?[\d.]|\bfontSize\s*:\s*['"`]?-?[\d.]/g,
   radius: /\bborder(?:-[a-z]+)*-radius\s*:\s*[\d.]|\bborder\w*Radius\s*:\s*['"`]?[\d.]/g,
-  shadow: /\bbox-shadow\s*:\s*(?!var\(|none\b|inherit\b|initial\b|unset\b)|\bboxShadow\s*:\s*['"`](?!var\(|none\b)/g,
+  shadow: /\bbox-shadow\s*:(?!\s*(?:var\(|none\b|inherit\b|initial\b|unset\b))|\bboxShadow\s*:\s*['"`](?!var\(|none\b)/g,
   zIndex: /\bz-index\s*:\s*-?\d|\bzIndex\s*:\s*['"`]?-?\d/g,
   rawButtons: /<button\b/g,
   handDialogs: /role\s*[=:]\s*\{?\s*['"]dialog['"]/g,

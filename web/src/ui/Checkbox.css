@@ -1,0 +1,65 @@
+/* Checkbox: a box in the accent when checked, as native checkboxes are here
+   (accent-color), drawn so it looks the same in every browser. */
+
+.ui-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-200);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.ui-checkbox-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-scale-sm);
+  background: var(--color-surface-raised);
+  color: var(--color-pill-text);
+  cursor: pointer;
+}
+
+.ui-checkbox-box[data-checked] {
+  background: var(--color-accent-default);
+  border-color: var(--color-accent-default);
+}
+
+.ui-checkbox-box:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.ui-checkbox-box[data-disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ui-checkbox-indicator {
+  display: inline-flex;
+}
+
+.ui-checkbox-indicator[data-unchecked] {
+  display: none;
+}
+
+.ui-checkbox-indicator svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* In the body text colour, not muted: muted text on the hover wash fell under
+   4.5:1 (axe, in the catalogue). */
+.ui-checkbox-description {
+  padding: 1px 5px;
+  color: var(--color-text-default);
+  border-radius: var(--radius-scale-sm);
+  background: var(--color-hover);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-2xs);
+}

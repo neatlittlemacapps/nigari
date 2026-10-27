@@ -124,12 +124,13 @@ Measured: 34 literal sizes; 75% of uses are 11–14 px in half-pixel steps.
 
 ### P6. Catalogue as a dev-only Vite entry
 
-- **Decision**: `web/catalog.html` + `web/src/catalog/`, served by `npx vite` in development and by a second config `web/vite.catalog.config.ts` for tests. `npm run build` uses the existing config, so the catalogue never reaches `web/dist` or the binary (FR-012).
+- **Decision**: `web/catalog.html` + `web/catalog/` (amended at task time: outside `src/`, see tasks.md), served by `npx vite` in development and by a second config `web/vite.catalog.config.ts` for tests. `npm run build` uses the existing config, so the catalogue never reaches `web/dist` or the binary (FR-012).
 - **Rejected**: Storybook (a framework and hundreds of packages for one page).
 
 ### P7. Visual and accessibility tests
 
 - **Decision**: `web/tests/catalog.mjs` screenshots each catalogue section in light and dark against baselines in `web/tests/catalog-baselines/`, and runs `@axe-core/playwright` 4.14.0 (dev dependency of `web/tests` only) failing on serious/critical.
+- **Amended 2026-10-27 (PR 2):** the baselines are not committed. CI's runner draws text differently from any other machine: committed shots differed on every section by about a thousand pixels, with nothing changed. The reference is drawn on the same machine just before the comparison: in CI from the base branch, as the storage benchmarks do; locally with `UPDATE_BASELINES=1`. A difference is a warning in the job summary, not a failure, since it may be the point of the pull request; axe and the keyboard checks still fail.
 - **Why**: reuses the existing Playwright set-up; nothing is added to the shipped app.
 
 ### P8. Bundle budget
