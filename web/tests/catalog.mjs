@@ -188,6 +188,15 @@ try {
       await matches(`${open}-open-${theme}`, await popup.screenshot({ animations: 'disabled' }));
       if (!shotsOnly) await axe(`${theme}, ${open} open`);
     }
+
+    // The side panel (spec 007): not a dialog, so found by its own role.
+    await page.goto(`${base}?theme=${theme}&open=side-panel`);
+    const sidePanel = page.getByRole('complementary', { name: 'Row preview' });
+    await sidePanel.waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(250);
+    await matches(`side-panel-open-${theme}`, await sidePanel.screenshot({ animations: 'disabled' }));
+    if (!shotsOnly) await axe(`${theme}, side panel open`);
   }
 
   // 3: the keyboard.
@@ -251,6 +260,23 @@ try {
   await page.keyboard.press('Escape');
   await dialog.waitFor({ state: 'hidden' });
   assert(await opener.evaluate((el) => el === document.activeElement), 'Dialog: focus did not return to the button that opened it');
+
+  // SidePanel (spec 007): focus goes in when it opens; the first Escape in a
+  // text field only leaves the field, the second closes the panel; focus
+  // returns to the button that opened it. No trap: the page stays usable.
+  const panelOpener = page.getByRole('button', { name: 'Open side panel' });
+  await panelOpener.focus();
+  await page.keyboard.press('Enter');
+  const sidePanel = page.getByRole('complementary', { name: 'Row preview' });
+  await sidePanel.waitFor();
+  await eventually(async () => sidePanel.evaluate((p) => p.contains(document.activeElement)));
+  await sidePanel.getByRole('textbox', { name: 'Notes' }).focus();
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(100);
+  assert(await sidePanel.isVisible(), 'SidePanel: Escape in a text field closed the panel');
+  await page.keyboard.press('Escape');
+  await sidePanel.waitFor({ state: 'hidden' });
+  assert(await panelOpener.evaluate((el) => el === document.activeElement), 'SidePanel: focus did not return to the button that opened it');
 
   // AlertDialog, destructive: Cancel has focus, a click outside does not
   // close it, Escape does.

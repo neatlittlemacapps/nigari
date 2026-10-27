@@ -1147,5 +1147,13 @@
   "Edit template": "Vorlage bearbeiten",
   "The query took longer than 5 seconds and was stopped. Narrow the filter or ask for fewer rows.": "Die Abfrage hat länger als 5 Sekunden gedauert und wurde abgebrochen. Grenze den Filter ein oder frage weniger Zeilen ab.",
   "The new row doesn't match this view's filters, so it isn't shown here.": "Die neue Zeile passt nicht zu den Filtern dieser Ansicht und wird deshalb hier nicht angezeigt.",
-  "This view does not belong to this database, so the row was not created.": "Diese Ansicht gehört nicht zu dieser Datenbank, deshalb wurde die Zeile nicht angelegt."
+  "This view does not belong to this database, so the row was not created.": "Diese Ansicht gehört nicht zu dieser Datenbank, deshalb wurde die Zeile nicht angelegt.",
+  "Open as full page": "Als ganze Seite öffnen",
+  "Page preview": "Seitenvorschau",
+  "This page is no longer available.": "Diese Seite ist nicht mehr verfügbar.",
+  "Full page": "Ganze Seite",
+  "Side peek": "Seitliche Vorschau",
+  "Center peek": "Zentrierte Vorschau",
+  "Open pages in": "Seiten öffnen als",
+  "This way of opening pages is not available for this view, so the view was not saved.": "Diese Art, Seiten zu öffnen, gibt es für diese Ansicht nicht, deshalb wurde die Ansicht nicht gespeichert."
 }

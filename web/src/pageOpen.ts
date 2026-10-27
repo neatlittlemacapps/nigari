@@ -8,7 +8,9 @@
 // embedded collection reaches it through the editor's context, but a bare
 // component in a test may not. Plain navigation is then the honest fallback.
 
+import { createContext, useCallback, useContext } from 'react';
 import { getPrefs } from './i18n';
+import { rowOpenAction, WIDE_QUERY, type ViewOpenIn } from './peek';
 
 export type PageOpeners = {
   onNavigate: (id: string) => void;
@@ -45,14 +47,40 @@ export function openPageAux(
 // ⌘/Ctrl (or the middle button) adds a tab beside it. The account can opt
 // into always opening rows in a new tab instead (server prefs, default off);
 // the modifier then changes nothing, exactly as in a browser.
+//
+// A view can choose a peek instead (spec 007): the row opens beside the view.
+// What a click does is decided in peek.ts, one rule for every kind of view.
 export const collectionRowNewTab = (): boolean => getPrefs().openRowsNewTab === 'on';
+
+/** The view whose rows are being clicked: its open setting and the way to
+ *  open a peek. CollectionView provides it around the view it renders, so the
+ *  table, the board, the list, the gallery, the calendar and the timeline all
+ *  read the same answer without each passing it down. */
+export type RowOpenCtx = { openIn?: ViewOpenIn | string; onPeek?: (id: string) => void };
+export const RowOpenContext = createContext<RowOpenCtx>({});
+
+const wideScreen = (): boolean =>
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(WIDE_QUERY).matches;
 
 /** A click on a collection row, with or without ⌘/Ctrl. */
 export function openCollectionRow(
   e: { metaKey?: boolean; ctrlKey?: boolean },
   id: string,
   o: PageOpeners,
+  view: RowOpenCtx = {},
 ): void {
-  if (collectionRowNewTab() || e.metaKey || e.ctrlKey) open(id, o);
+  const action = rowOpenAction(e, view.openIn, collectionRowNewTab(), wideScreen());
+  if ((action === 'side' || action === 'center') && view.onPeek) view.onPeek(id);
+  else if (action === 'new_tab') open(id, o);
   else o.onNavigate(id);
+}
+
+/** openCollectionRow for the view this component is drawn in. */
+export function useOpenRow(o: PageOpeners): (e: { metaKey?: boolean; ctrlKey?: boolean }, id: string) => void {
+  const view = useContext(RowOpenContext);
+  const { onNavigate, onOpenInNewTab } = o;
+  return useCallback(
+    (e, id) => openCollectionRow(e, id, { onNavigate, onOpenInNewTab }, view),
+    [onNavigate, onOpenInNewTab, view],
+  );
 }

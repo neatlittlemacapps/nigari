@@ -2,7 +2,7 @@ import type { PropDef, PropOption } from '../types';
 import PropertyValue from './PropertyValue';
 import { tagColorClass } from '../tags';
 import { PageIcon } from '../pageIcon';
-import { openCollectionRow, openPageAux } from '../pageOpen';
+import { openPageAux, useOpenRow } from '../pageOpen';
 import { t } from '../i18n';
 
 interface Row {
@@ -36,6 +36,8 @@ export default function GalleryView({
   onSetProp: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
 }) {
+  // What a click on a row does follows the view (spec 007, pageOpen.ts).
+  const openRow = useOpenRow({ onNavigate, onOpenInNewTab });
   if (rows.length === 0) {
     return <div className="db-empty">{emptyLabel}</div>;
   }
@@ -45,7 +47,7 @@ export default function GalleryView({
         <div
           key={r.id}
           className="gallery-card"
-          onClick={(e) => openCollectionRow(e, r.id, { onNavigate, onOpenInNewTab })}
+          onClick={(e) => openRow(e, r.id)}
           onAuxClick={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
         >
           <div className="gallery-cover" style={coverStyle(r.cover)}>

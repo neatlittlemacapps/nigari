@@ -21,7 +21,8 @@ import type {
   ViewDef,
 } from '../types';
 import PropertyValue, { PersonStack, idList, loadRelationOptions, type RelOption } from './PropertyValue';
-import { openCollectionRow, openPageAux } from '../pageOpen';
+import { openCollectionRow, openPageAux, RowOpenContext, useOpenRow } from '../pageOpen';
+import ViewOpenMenu from './ViewOpenMenu';
 import { readViewId, readViewScroll, writeViewId, writeViewScroll } from '../pageUiState';
 import { AgentDot } from './AgentBadge';
 import { planCard, isBlank, zoneOf, contactKind, needsLabel } from '../cardLayout';
@@ -121,6 +122,9 @@ interface Props {
   /** ⌘/Ctrl-click and middle-click on a row open a second tab; a plain click
    *  navigates the one you are in (see pageOpen). */
   onOpenInNewTab?: (id: string) => void;
+  /** Opens a row in a peek beside the view, for a view set to one (spec 007).
+   *  Without it such a view navigates. */
+  onPeek?: (id: string) => void;
   onPagesChanged: () => void;
   /** Opens one of this database's templates for editing, in a dialog. Without
    *  it (an embedded view) the template opens as a page instead. */
@@ -265,7 +269,7 @@ function applyView(rows: Row[], view: ViewDef, schema: PropDef[]): Row[] {
   return out;
 }
 
-export default function CollectionView({ collectionId, pages, tagColors, onNavigate, onOpenInNewTab, onPagesChanged, onEditTemplate, embed }: Props) {
+export default function CollectionView({ collectionId, pages, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged, onEditTemplate, embed }: Props) {
   const [config, setConfig] = useState<CollectionConfig | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   // A full page remembers its view across tab switches and reloads (see
@@ -508,6 +512,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
 
   const view = view0;
   const schema = config?.schema ?? [];
+  // How this view opens its rows (spec 007), handed to every kind of view
+  // through RowOpenContext. A form has no rows to open.
+  const viewOpenIn = view && view.type !== 'form' ? view.openIn : undefined;
+  const rowOpen = useMemo(() => ({ openIn: viewOpenIn, onPeek }), [viewOpenIn, onPeek]);
 
   // The inner horizontal scroller (the board's columns, the wide table) keeps
   // its position per view, across tab switches and reloads. The vertical
@@ -610,7 +618,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     if (row.matchesView !== false) return;
     toast(t("The new row doesn't match this view's filters, so it isn't shown here."), {
       label: t('Open'),
-      run: () => onNavigate(row.id),
+      // Opens the way this view opens its rows (spec 007): in its peek, if it
+      // has one. There is no click to read modifier keys from.
+      run: () => openCollectionRow({}, row.id, { onNavigate, onOpenInNewTab }, { openIn: view?.openIn, onPeek }),
     });
   };
 
@@ -980,6 +990,13 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
                     <Trash2 size={15} /> {t('Remove view')}
                   </button>
                 )}
+                <ViewOpenMenu
+                  view={view}
+                  onChange={(openIn) => {
+                    setViewMenuFor(null);
+                    updateView({ openIn });
+                  }}
+                />
               </div>
             </Portal>
           )}
@@ -1074,6 +1091,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       }
     >
       {viewSwitcher}
+      <RowOpenContext.Provider value={rowOpen}>
       {view.type === 'form' ? (
         <FormView
           collectionId={collectionId}
@@ -1159,6 +1177,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           onSetOptions={setPropOptions}
         />
       )}
+      </RowOpenContext.Provider>
       {schemaOpen && (
         <SchemaEditor
           config={config}
@@ -2072,6 +2091,8 @@ function BoardView({
   onTrashRow: (id: string, title: string) => Promise<void>;
   onAddInColumn: (groupBy: string, optId: string) => void;
 }) {
+  // What a click on a row does follows the view (spec 007, pageOpen.ts).
+  const openRow = useOpenRow({ onNavigate, onOpenInNewTab });
   // Keyed by "columnId:rowId" so a card that appears in multiple columns
   // (multiselect grouping) opens only the tapped copy's menu.
   const [moveMenu, setMoveMenu] = useState<string | null>(null);
@@ -2189,7 +2210,7 @@ function BoardView({
                   // Do NOT open after a drag — otherwise every move jumps
                   // straight into the card.
                   if (consumeClick()) return;
-                  openCollectionRow(e, r.id, { onNavigate, onOpenInNewTab });
+                  openRow(e, r.id);
                 }}
                 onAuxClick={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
                 // Right-click opens the card's own menu, the same one behind
@@ -2246,7 +2267,7 @@ function BoardView({
                         <button
                           onClick={() => {
                             setMoveMenu(null);
-                            openCollectionRow({}, r.id, { onNavigate, onOpenInNewTab });
+                            openRow({}, r.id);
                           }}
                         >
                           <SquareArrowOutUpRight size={15} /> {t('Open')}
@@ -2405,6 +2426,8 @@ function TableView({
   onSetProp: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
 }) {
+  // What a click on a row does follows the view (spec 007, pageOpen.ts).
+  const openRow = useOpenRow({ onNavigate, onOpenInNewTab });
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   // The width being dragged right now. Kept out of the stored widths so the
   // drag is local and instant: writing to the view on every pointermove would
@@ -2563,7 +2586,7 @@ function TableView({
                   ) : null}
                   <button
                     className="db-title-link"
-                    onClick={(e) => openCollectionRow(e, r.id, { onNavigate, onOpenInNewTab })}
+                    onClick={(e) => openRow(e, r.id)}
                     onAuxClick={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
                   >
                     {r.icon && <span className="inline-icon"><PageIcon icon={r.icon} size={14} /> </span>}
@@ -2729,6 +2752,8 @@ function TimelineView({
   onNavigate: (id: string) => void;
   onOpenInNewTab?: (id: string) => void;
 }) {
+  // What a click on a row does follows the view (spec 007, pageOpen.ts).
+  const openRow = useOpenRow({ onNavigate, onOpenInNewTab });
   if (!startProp || !schema.some((p) => p.id === startProp && p.type === 'date')) {
     return (
       <div className="board-empty">
@@ -2814,7 +2839,7 @@ function TimelineView({
                   <div
                     className="tl-label"
                     style={{ width: LABELW }}
-                    onClick={(e) => openCollectionRow(e, row.id, { onNavigate, onOpenInNewTab })}
+                    onClick={(e) => openRow(e, row.id)}
                     onAuxClick={(e) => openPageAux(e, row.id, { onNavigate, onOpenInNewTab })}
                     title={row.title}
                   >
@@ -2830,7 +2855,7 @@ function TimelineView({
                     <div
                       className="tl-bar"
                       style={{ left, width }}
-                      onClick={(e) => openCollectionRow(e, row.id, { onNavigate, onOpenInNewTab })}
+                      onClick={(e) => openRow(e, row.id)}
                       onAuxClick={(e) => openPageAux(e, row.id, { onNavigate, onOpenInNewTab })}
                       title={row.title}
                     >
@@ -2862,6 +2887,8 @@ function CalendarView({
   onNavigate: (id: string) => void;
   onOpenInNewTab?: (id: string) => void;
 }) {
+  // What a click on a row does follows the view (spec 007, pageOpen.ts).
+  const openRow = useOpenRow({ onNavigate, onOpenInNewTab });
   const [month, setMonth] = useState(() => {
     const n = new Date();
     return new Date(n.getFullYear(), n.getMonth(), 1);
@@ -2921,7 +2948,7 @@ function CalendarView({
                 <button
                   key={r.id}
                   className="calendar-event"
-                  onClick={(e) => openCollectionRow(e, r.id, { onNavigate, onOpenInNewTab })}
+                  onClick={(e) => openRow(e, r.id)}
                   onAuxClick={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
                   title={r.title}
                 >

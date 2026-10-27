@@ -3,7 +3,7 @@ import PropertyValue from './PropertyValue';
 import { tagColorClass } from '../tags';
 import { PageIcon } from '../pageIcon';
 import { t } from '../i18n';
-import { openCollectionRow, openPageAux } from '../pageOpen';
+import { openPageAux, useOpenRow } from '../pageOpen';
 
 interface Row {
   id: string;
@@ -36,6 +36,8 @@ export default function ListView({
   onSetProp: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
 }) {
+  // What a click on a row does follows the view (spec 007, pageOpen.ts).
+  const openRow = useOpenRow({ onNavigate, onOpenInNewTab });
   if (rows.length === 0) {
     return <div className="db-empty">{emptyLabel}</div>;
   }
@@ -49,7 +51,7 @@ export default function ListView({
         <div
           key={r.id}
           className="list-row"
-          onClick={(e) => openCollectionRow(e, r.id, { onNavigate, onOpenInNewTab })}
+          onClick={(e) => openRow(e, r.id)}
           onAuxClick={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
         >
           <span className="list-row-icon">

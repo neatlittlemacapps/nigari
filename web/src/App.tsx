@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, ApiError } from './api';
 import { serverMessage } from './serverErrors';
 import { WifiOff } from 'lucide-react';
@@ -37,6 +37,9 @@ import {
   writeViewId,
 } from './pageUiState';
 import ShortcutSheet from './components/ShortcutSheet';
+// Loaded when a peek first opens: most sessions never open one (spec 007).
+const PeekPanel = lazy(() => import('./components/PeekPanel'));
+import { dropPeek, peekFromLocation, peekOfEntry, pushPeek } from './peekHistory';
 import { guardDrops } from './dropFiles';
 
 /** Injected by the build; false everywhere except the website's framed demo. */
@@ -132,6 +135,9 @@ export default function App() {
   // Ref mirror so the []-deps ⌥N handler always calls the current createPage.
   const createPageRef = useRef<((parentId: string | null, type?: 'doc' | 'collection') => Promise<void>) | null>(null);
   const [currentId, setCurrentId] = useState<string | null>(pageIdFromLocation());
+  // A database row shown beside the active page (spec 007). The address carries
+  // it (?peek=), so it survives a reload and Back closes it; see peekHistory.ts.
+  const [peekId, setPeekId] = useState<string | null>(() => (pageIdFromLocation() ? peekFromLocation() : null));
   // Open document tabs (Obsidian-style): an ordered list of page ids; the active
   // one is `currentId`. Seeded from the last session and the URL.
   const [openTabs, setOpenTabs] = useState<string[]>(() => {
@@ -382,6 +388,7 @@ export default function App() {
     // snapshot (e.g. the very first load), reopening a tab only then.
     const onPop = (e: PopStateEvent) => {
       const st = e.state as { tabs?: string[]; active?: string | null } | null;
+      setPeekId(peekOfEntry(e.state));
       if (st && Array.isArray(st.tabs)) {
         setOpenTabs(st.tabs);
         setCurrentId(st.active ?? null);
@@ -399,6 +406,7 @@ export default function App() {
       const id = (e as CustomEvent<string>).detail;
       if (!id) return;
       history.pushState(null, '', `/p/${id}`);
+      setPeekId(null);
       setCurrentId(id);
       setSidebarOpen(false);
       setOpenTabs((prev) => {
@@ -740,6 +748,7 @@ export default function App() {
     pushTabHistory(nextTabs, id, replace);
     setOpenTabs(nextTabs);
     setCurrentId(id);
+    setPeekId(null); // a peek belongs to the page it was opened beside
     setSidebarOpen(false); // close the mobile drawer after picking a page
     if (id && !replace) rememberRecent(id);
   }, []);
@@ -756,8 +765,22 @@ export default function App() {
     pushTabHistory(nextTabs, id, false);
     setOpenTabs(nextTabs);
     setCurrentId(id);
+    setPeekId(null);
     setSidebarOpen(false);
     rememberRecent(id);
+  }, []);
+
+  // A row opened beside the active page (spec 007). One at a time: another
+  // row replaces it.
+  const openPeek = useCallback((rowId: string) => {
+    const active = activeRef.current;
+    if (!active) return;
+    pushPeek(active, tabsRef.current, rowId);
+    setPeekId(rowId);
+  }, []);
+  const closePeek = useCallback(() => {
+    // Going Back lets the popstate handler clear it, like any Back.
+    if (!dropPeek(activeRef.current)) setPeekId(null);
   }, []);
 
   // closeTab removes a tab; if it was active, the neighbour that slides into its
@@ -784,6 +807,7 @@ export default function App() {
       const neighbour = next[i] ?? next[i - 1] ?? null;
       pushTabHistory(next, neighbour, true);
       setCurrentId(neighbour);
+      setPeekId(null);
     }
   }, []);
 
@@ -1090,6 +1114,16 @@ export default function App() {
     return role !== 'viewer';
   }, [currentId, pagesById, workspaces]);
 
+  // A peeked row is usually not in the tree (rows never are), so its role is
+  // the page's it was opened beside: the same database, or the page that
+  // embeds it. The server decides in the end; this only keeps a reader from
+  // being shown an editable-looking page.
+  const canEditPeek = useMemo(() => {
+    const page = peekId ? pagesById.get(peekId) : undefined;
+    if (!page) return canEditCurrent;
+    return workspaces.find((w) => w.id === page.workspaceId)?.role !== 'viewer';
+  }, [peekId, pagesById, workspaces, canEditCurrent]);
+
   // Switching workspaces must not leave the editor (and the URL) pointing at a
   // document that belonged to the workspace you just left — the picker used
   // to be wired straight to setCurrentWs, so `currentId` never changed and
@@ -1313,10 +1347,36 @@ export default function App() {
               onMissing={handleMissing}
               onNavigate={navigate}
               onOpenInNewTab={openInNewTab}
+              onPeek={openPeek}
               onCreatePage={createPage}
               onTrash={trashPage}
               onPagesChanged={loadPages}
             />
+            {peekId && (
+              <Suspense fallback={null}>
+              <PeekPanel
+                peekId={peekId}
+                pagesById={pagesById}
+                user={me.user}
+                theme={theme}
+                canEdit={canEditPeek}
+                favorite={favorites.includes(peekId)}
+                tagColors={tagColors}
+                onSetTagColor={setTagColor}
+                onMenu={openSidebar}
+                onToggleFavorite={toggleFavorite}
+                onMetaChange={updateMeta}
+                onNavigate={navigate}
+                onOpenInNewTab={openInNewTab}
+                onPeek={openPeek}
+                onCreatePage={createPage}
+                onTrash={trashPage}
+                onPagesChanged={loadPages}
+                onClose={closePeek}
+                onOpenFullPage={navigate}
+              />
+              </Suspense>
+            )}
           </>
         ) : workspaces.length === 0 ? (
           // With no workspace at all this used to be a blank area: the app said

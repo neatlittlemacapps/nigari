@@ -1156,5 +1156,13 @@
   "Edit template": "Editar plantilla",
   "The query took longer than 5 seconds and was stopped. Narrow the filter or ask for fewer rows.": "La consulta tardó más de 5 segundos y se detuvo. Acota el filtro o pide menos filas.",
   "The new row doesn't match this view's filters, so it isn't shown here.": "La nueva fila no coincide con los filtros de esta vista, así que no se muestra aquí.",
-  "This view does not belong to this database, so the row was not created.": "Esta vista no pertenece a esta base de datos, así que la fila no se ha creado."
+  "This view does not belong to this database, so the row was not created.": "Esta vista no pertenece a esta base de datos, así que la fila no se ha creado.",
+  "Open as full page": "Abrir como página completa",
+  "Page preview": "Vista previa de la página",
+  "This page is no longer available.": "Esta página ya no está disponible.",
+  "Full page": "Página completa",
+  "Side peek": "Vista lateral",
+  "Center peek": "Vista centrada",
+  "Open pages in": "Abrir páginas en",
+  "This way of opening pages is not available for this view, so the view was not saved.": "Esta forma de abrir páginas no está disponible para esta vista, así que la vista no se guardó."
 }

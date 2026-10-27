@@ -14,6 +14,9 @@ export interface BlockCtx {
   /** The second tab a ⌘/Ctrl-click asks for (see pageOpen). Optional: a bare
    *  context used in isolation falls back to plain navigation. */
   onOpenInNewTab?: (id: string) => void;
+  /** Open a row in a peek beside the page (spec 007), for an embedded view
+   *  set to a peek. Absent: such a view navigates instead. */
+  onPeek?: (id: string) => void;
   onPagesChanged: () => void;
   pageId?: string;
 }

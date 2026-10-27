@@ -306,6 +306,9 @@ export interface ViewDef {
   // only the ones somebody deliberately set are pinned. Stored on the VIEW, so
   // two views of the same database can be laid out for different jobs.
   colWidths?: Record<string, number>;
+  // How a click opens one of this view's rows (spec 007): beside the view in a
+  // side peek, or (follow-up) over it in a centre peek. Missing = full page.
+  openIn?: 'side_peek' | 'center_peek';
 }
 
 export interface CollectionConfig {

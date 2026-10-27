@@ -60,7 +60,8 @@ formula.
 timeline, list and form. A board groups by any select column and its columns
 take the colour you chose for that option. A form view can be shared publicly so
 people outside the workspace can submit entries into it. A row added in a
-filtered view starts with the values that view filters on, so it stays in sight.
+filtered view starts with the values that view filters on, so it stays in sight. A view
+can open its rows in a side peek, beside the view, instead of as a full page.
 
 ### Finding things
 

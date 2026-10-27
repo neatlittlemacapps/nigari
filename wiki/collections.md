@@ -142,6 +142,41 @@ option here changes the **schema**, which means it changes for everybody looking
 at that collection, not just for this row. The same is true of the chips on a
 board card, which is where most people will do it without noticing.
 
+## How rows open
+
+A click on a row, a card, a list item or a calendar or timeline entry opens
+that row's page. How it opens is a setting of each view, under **Open pages in**
+in the view's `⋯` menu:
+
+| Setting | A click on a row |
+| --- | --- |
+| **Full page** (the default) | Opens the row in the tab you are in, as a page of its own. |
+| **Side peek** | Opens the row in a panel on the right. The view stays where it was and keeps working: click the next row and the panel shows that one. |
+
+The peek is the whole page: title, properties, content, comments and history,
+editable as on the page itself, live with whoever else has it open. Its top
+bar has **✕** to close it and **Open as full page** to leave the view for the
+row.
+
+- **Escape** closes the peek. In a text field the first Escape leaves the
+  field and the second closes the panel, so a stray key never costs you the
+  panel while typing.
+- **Back** closes it too, and the address names the peeked row, so a reload
+  or a copied link opens the view with the same row beside it.
+- **⌘-click** (Ctrl-click on Windows and Linux) and the middle button always
+  open the row in a new tab, whatever the view says.
+- Your account's **Open rows in new tab** applies to views on Full page. A
+  view set to Side peek has made its own choice and opens the peek.
+- On a phone there is no room beside the view: a Side peek view opens rows as
+  a full page.
+- A database embedded in a document follows its view's setting; the peek opens
+  beside the document.
+- A form has no rows to click, so it has no setting.
+
+Like a filter, the setting belongs to the view and so to everyone who opens
+it. Agents read it from `get_collection` and set it with `set_view`
+([`open_in`](mcp-tools.md#set_view)).
+
 ## The toolbar
 
 Above every collection sits one bar. On the left, one tab per view; on the
@@ -158,7 +193,7 @@ right, the settings for the view you are on.
 | **Group** | Board only: which property makes the columns. |
 | **Columns** | Show and hide properties. Two lists, **Shown** and **Hidden**, with **Hide all** and **Show all**. The button reads **Columns**, and `Columns (4/7)` once something is hidden. |
 | **Properties** | Opens the schema dialog (see below). |
-| `⋯` (View options) | **Rename view**, **Move left**, **Move right**, **Remove view**. The arrows grey out at the ends; with only one view left the menu offers nothing but **Rename view**. |
+| `⋯` (View options) | **Rename view**, **Move left**, **Move right**, **Remove view**, and **Open pages in** (see [How rows open](#how-rows-open)). The arrows grey out at the ends; with only one view left there is no **Move** or **Remove**. |
 | **New** | Creates a row. The view stays as it is; a click opens the row. The arrow beside it lists the database's own templates: see [Templates](templates.md#templates-that-belong-to-a-database). |
 
 On a **form** view the bar keeps only **Columns**, **Properties** and the `⋯`.

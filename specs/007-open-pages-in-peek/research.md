@@ -105,10 +105,18 @@ the element that opened it (`nav.ts`). Escape closes it when no menu or dialog i
 is open (`escapeTarget` from `modalKeys.ts`); it does not trap Tab, because the view
 behind stays usable (FR-003).
 
-New tokens: primitive `layer.panel` = 100 (above `sticky` 50, below `dropdown` 200, so
-menus opened inside the peek draw over it); component `side-panel.width` = 720px and
-`side-panel.layer` → `layer.panel`, the way `dialog.*` is built; a shadow from the
-existing scale. New catalogue section and README entry (`web/tests/catalog.mjs`).
+New tokens (component tier, the way `dialog.*` is built): `side-panel.width` = 720px and
+`side-panel.layer` = 90, above `layer.sticky` (50) and below `dialog.layer` (100) and
+`layer.dropdown` (200), so dialogs and menus opened from inside the peek draw over it. A
+primitive `layer.panel` was planned and dropped in implementation: `dialog.layer` is a
+component value too, and one layer used by one component belongs in its tier. Shadow
+`--shadow-overlay`. New catalogue section and README entry (`web/tests/catalog.mjs`).
+
+**Implementation notes**: Escape ignores popups that are mounted but hidden (a closed
+Select keeps its listbox in the DOM). The peek's Close and Open as full page buttons are
+`ui/IconButton`s passed into `Editor` by `PeekPanel`, which `App` loads lazily: the
+IconButton's tooltip would otherwise add about 13 KB gzip to the main chunk every page
+pays for.
 
 **Rationale**: The design-system surface: no hand-built panel inside `App.tsx`, no new
 literals. The layer had to be new: `overlay` (300) would hide the peek's own menus.
@@ -130,12 +138,20 @@ so the follow-up is a renderer and a flag.
 ## R8. The setting in the interface
 
 **Decision**: The view options menu (`⋯` in the toolbar, `CollectionView.tsx`) gains an
-**Open pages in** submenu with three radio items, hidden for form views and for
-readers. Built in a new module `web/src/components/ViewOpenMenu.tsx` that the big file
-imports. Saved through the existing view save (`PUT /api/collections/{id}`, views half).
+**Open pages in** group of native radios (Full page, Side peek), hidden for form views.
+Built in a new module `web/src/components/ViewOpenMenu.tsx` that the big file imports.
+Choosing closes the menu and saves through the existing view save (`PUT
+/api/collections/{id}`, views half).
 
 **Rationale**: That menu is already "settings for the current view"; the setting sits
-beside rename and move.
+beside rename and move. Radios rather than menu buttons: one choice out of a few is a
+radio group, the arrow keys come for free, and menus are not in `web/src/ui/` yet, so
+buttons would raise the raw-button count that may only go down.
+
+**Changed in implementation**: the plan said "hidden for readers". The collection view
+has no notion of the reader's role today (rename, move and remove are offered to
+everyone, and the server refuses a reader's save). The setting follows the same rule
+rather than inventing a role check for one entry.
 
 ## R9. Performance
 
