@@ -7,6 +7,54 @@ entries are not edited away.
 
 ---
 
+## 2026-10-27 — Design system batch 1: what the first screen decided
+
+**Decision**: the first screen built from `web/src/ui/` is the instance
+settings dialog, Webhooks tab included. That brings in:
+- **`Checkbox` joins batch 1**, because the tab's events are checkboxes.
+- **Removing a webhook stays one click.** No `AlertDialog` in front of it.
+- **`Dialog` has no close button of its own.** Mounted means open; the footer's
+  Cancel or Close is wrapped in `DialogClose`. A `returnFocus` ref covers a
+  dialog opened from a menu item that disappears.
+- **The catalogue lives in `web/catalog/`**, outside `src/`.
+- **Today's dialog values (radius 16px, title 24px, layer 100) are component
+  tokens.** They are not moved onto the scales yet.
+- **The catalogue's screenshots are compared with the base branch, drawn on
+  the same CI runner, and a difference is a warning.** No baselines are
+  committed (spec FR-013 amended).
+
+**Why**:
+- **The screen.** The spec named "the webhook dialog" for US1. In the code it is
+  a tab of the settings dialog, and three checkboxes are its only controls
+  besides a text field and buttons.
+- **Remove.** A confirmation would change behaviour, and this feature encodes
+  the look and the behaviour rather than redesigning them.
+- **No X.** Today's dialogs close through their footer, so an X would change
+  every migrated screen.
+- **The catalogue.** It is dev tooling: the translation check and the literal
+  ratchet scan `src/` and should not count its demo labels.
+- **Today's values.** The spec's edge case says old and new must look the same
+  while the migration runs, so the old values stay until every dialog has moved.
+- **What it fixed.** The migrated dialog fixed two bugs the old markup had: Tab
+  walked out of it into the page, and closing it left focus on nothing.
+- **The screenshots.** Committed baselines differed from CI's runner by about a
+  thousand pixels per section with nothing changed: the runner draws text
+  differently from any other machine. A reference drawn on the same runner
+  differs only where something changed.
+
+**Rejected**:
+- **`Select` or `Switch` for the events** (the screen does not use them; they
+  are built and proven in the catalogue instead).
+- **A visually hidden close button** (an invisible focus stop for keyboard
+  users).
+- **Moving the dialog onto the type and radius scales now** (old and new
+  dialogs would differ side by side).
+- **The catalogue in `web/src/catalog/` with an exemption for each check.**
+- **A looser pixel tolerance** (it cannot tell another machine's text from a
+  real change).
+- **Baselines committed by a CI bot** (its commits carry no CLA signature
+  upstream).
+
 ## 2026-10-27 — Design tokens: light muted text darkened for AA, and the bundle baseline corrected
 
 **Decision**: the token build checks every text colour against the surfaces it

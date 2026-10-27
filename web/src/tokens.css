@@ -130,6 +130,17 @@
   --input-radius: 8px;
   --input-padding-y: 8px;
   --input-padding-x: 10px;
+  --editor-menu-background: var(--color-surface-glass);
+  --editor-menu-text: var(--color-text-default);
+  --editor-tooltip-background: var(--color-surface-raised);
+  --editor-tooltip-text: var(--color-text-default);
+  --editor-hovered-background: var(--color-active);
+  --editor-hovered-text: var(--color-text-default);
+  --editor-selected-background: var(--color-active);
+  --editor-selected-text: var(--color-text-default);
+  --editor-disabled-text: var(--color-text-muted);
+  --editor-border: var(--color-border-default);
+  --editor-radius: 10px;
 }
 
 [data-theme='dark'] {
@@ -176,4 +187,18 @@
     --shadow-overlay: inset 0 0 0 1px rgba(255, 255, 255, 0.07), 0 24px 56px -28px rgba(0, 0, 0, 0.9);
     --gradient-accent: linear-gradient(120deg, #ff5c80 0%, #ff2d60 100%);
   }
+}
+
+[data-theme] .bn-container, [data-theme] .bn-root {
+  --bn-colors-menu-background: var(--editor-menu-background);
+  --bn-colors-menu-text: var(--editor-menu-text);
+  --bn-colors-tooltip-background: var(--editor-tooltip-background);
+  --bn-colors-tooltip-text: var(--editor-tooltip-text);
+  --bn-colors-hovered-background: var(--editor-hovered-background);
+  --bn-colors-hovered-text: var(--editor-hovered-text);
+  --bn-colors-selected-background: var(--editor-selected-background);
+  --bn-colors-selected-text: var(--editor-selected-text);
+  --bn-colors-disabled-text: var(--editor-disabled-text);
+  --bn-colors-border: var(--editor-border);
+  --bn-border-radius: var(--editor-radius);
 }

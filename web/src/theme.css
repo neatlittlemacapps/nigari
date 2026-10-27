@@ -478,28 +478,10 @@
   box-shadow: var(--shadow);
 }
 
-/* The editor's menus take their colours from BlockNote's own variables. Set
-   here, they follow the app's tokens instead of BlockNote's theme, so the slash
-   menu, the formatting bar and their dropdowns are the same panel as every
-   other menu — and stay in step if the tokens change. */
-[data-theme] .bn-container,
-[data-theme] .bn-root {
-  --bn-colors-menu-background: var(--glass);
-  --bn-colors-menu-text: var(--fg);
-  /* BlockNote uses its "tooltip" pair for three things at once: the icon box
-     beside each slash-menu entry, the shortcut badge and the real tooltip.
-     Ink here turned the slash menu into a column of black squares, so the
-     pair stays quiet and the tooltip is given its ink below on its own. */
-  --bn-colors-tooltip-background: var(--card);
-  --bn-colors-tooltip-text: var(--fg);
-  --bn-colors-hovered-background: var(--active);
-  --bn-colors-hovered-text: var(--fg);
-  --bn-colors-selected-background: var(--active);
-  --bn-colors-selected-text: var(--fg);
-  --bn-colors-disabled-text: var(--muted);
-  --bn-colors-border: var(--border);
-  --bn-border-radius: var(--radius);
-}
+/* The editor's menus take their colours from BlockNote's own variables
+   (--bn-colors-*), which the tokens set now: component.tokens.json, editor.*.
+   So the slash menu, the formatting bar and their dropdowns are the same panel
+   as every other menu, and follow a token change (spec 001, FR-011). */
 
 .bn-root .bn-suggestion-menu,
 .bn-root .bn-toolbar,
