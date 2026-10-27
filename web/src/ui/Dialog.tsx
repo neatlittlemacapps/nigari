@@ -33,7 +33,9 @@ export type DialogProps = {
 };
 
 export function Dialog({ title, description, onClose, size = 'md', footer, className, returnFocus, children }: DialogProps) {
-  useExclusiveModal(onClose);
+  // Base UI closes on Escape, traps focus and returns it; the coordinator
+  // only has to know this dialog is the top one.
+  useExclusiveModal(onClose, { escape: false, focus: false });
   return (
     <BaseDialog.Root
       open

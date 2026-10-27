@@ -29,7 +29,7 @@ export function FilePreview({
   url: string;
   onClose: () => void;
 }) {
-  useExclusiveModal(onClose);
+  useExclusiveModal(onClose, { escape: false }); // Escape: its own listener below
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

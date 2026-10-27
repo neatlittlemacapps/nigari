@@ -46,7 +46,7 @@ export default function TemplateGallery({
   onTrash: (id: string) => void;
   onClose: () => void;
 }) {
-  useExclusiveModal(onClose);
+  useExclusiveModal(onClose, { escape: false }); // Escape: the registry, below
   // Escape closes it, as it closes every other dialog. Through the registry
   // and in `modal` scope, like the shortcut sheet, so it also works with the
   // caret in the search box.
