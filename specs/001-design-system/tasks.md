@@ -9,7 +9,7 @@ description: "Tasks for the design system, batch 1: tokens, checks, catalogue, f
 
 **Tests**: required (salt.md). Every check script gets a failing case, every component a catalogue section under axe, the migrated screen a keyboard test.
 
-**Issues**: none yet
+**Issues**: parent #87; T001–T039 are #88–#126, in order.
 
 **Scope**: batch 1 only (plan, Summary). Menus, popovers, toasts, tabs, the remaining 23 dialogs and the button migration follow as later batches (FR-016), each with its own tasks.
 

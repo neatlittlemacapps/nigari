@@ -1,6 +1,6 @@
 # Implementation Plan: Build the interface from a design system
 
-**Branch**: `001-design-system` | **Date**: 2026-10-26 | **Spec**: [spec.md](spec.md) | **Issue**: none yet (created by `/speckit-github-taskstoissues`)
+**Branch**: `001-design-system` | **Date**: 2026-10-26 | **Spec**: [spec.md](spec.md) | **Issue**: #87
 
 **Input**: Feature specification from `/specs/001-design-system/spec.md`
 
