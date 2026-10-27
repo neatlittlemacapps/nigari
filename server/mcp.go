@@ -273,7 +273,7 @@ var mcpTools = []map[string]any{
 	},
 	{
 		"name":        "get_collection",
-		"description": "Return a database's full configuration: its property schema AND its views (table, board, gallery, calendar, timeline, list, form) with their ids. Read-only.",
+		"description": "Return a database's full configuration: its property schema AND its views (table, board, gallery, calendar, timeline, list, form) with their ids. A view's openIn says how a click on its rows opens them for people (side_peek; no key means full_page). Read-only.",
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{"page_id": map[string]any{"type": "string"}},
 			"required":   []string{"page_id"}},
@@ -426,6 +426,7 @@ var mcpTools = []map[string]any{
 				"filters":       map[string]any{"type": "array", "items": filterConditionSchema(), "description": "Conditions ANDed together, shaped like query_rows' filter. A board people actually work in usually needs one: without \"status is_not done\" the finished column grows forever and pushes the work aside. Pass [] to clear. A view keeps flat filters only, because that is all the interface shows; OR groups work in query_rows. On a date property a value can be a relative day (today, yesterday, tomorrow, today-1M), resolved on the day each query runs."},
 				"sort":          map[string]any{"type": "string", "description": "\"propertyId:asc\" or \"propertyId:desc\", the same spelling query_rows uses. Pass \"\" to clear."},
 				"hidden":        map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Property ids to hide in this view. Pass [] to show all."},
+				"open_in":       map[string]any{"type": "string", "enum": []string{"full_page", "side_peek"}, "description": "How a click on one of this view's rows opens it for people: full_page (the tab navigates to the row, the default) or side_peek (the row opens in a panel beside the view, which stays usable). Pass full_page to go back to the default. Not for form views, which show no rows. get_collection returns it on each view as openIn; no key means full_page."},
 			},
 			"required": []string{"page_id"}},
 	},
@@ -767,8 +768,10 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		// sort shares the `sort` field above and its "propertyId:asc" spelling.
 		Filters *[]map[string]any `json:"filters"`
 		Hidden  *[]string         `json:"hidden"`
-		Rows    json.RawMessage   `json:"rows"`
-		Updates json.RawMessage   `json:"updates"`
+		// set_view: how a click opens the view's rows (spec 007).
+		OpenIn  *string         `json:"open_in"`
+		Rows    json.RawMessage `json:"rows"`
+		Updates json.RawMessage `json:"updates"`
 		// Agent parity A3.
 		RevisionID string `json:"revision_id"`
 		CommentID  string `json:"comment_id"`
@@ -1156,7 +1159,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 			spec := viewSpec{
 				Name: args.Name, Type: args.Type, GroupBy: args.GroupBy,
 				DateProp: args.DateProp, EndDateProp: args.EndDateProp,
-				Filters: args.Filters, Sort: args.Sort, Hidden: args.Hidden}
+				Filters: args.Filters, Sort: args.Sort, Hidden: args.Hidden, OpenIn: args.OpenIn}
 			if args.ViewID == "" {
 				return s.mcpCreateView(args.PageID, spec)
 			}

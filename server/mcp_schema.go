@@ -396,6 +396,10 @@ type viewSpec struct {
 	// agent learns one form and not two. "" clears the sort.
 	Sort   *string   `json:"sort"`
 	Hidden *[]string `json:"hidden"`
+	// How a click on one of the view's rows opens it (spec 007): full_page,
+	// side_peek. Checked by checkViewOpenIn, the rule PUT /api/collections
+	// applies too.
+	OpenIn *string `json:"open_in"`
 }
 
 var validFilterOps = map[string]bool{
@@ -575,6 +579,12 @@ func applyViewSpec(view map[string]any, spec viewSpec, schema []map[string]any) 
 			out = append(out, id)
 		}
 		view["hidden"] = out
+	}
+	if spec.OpenIn != nil {
+		view["openIn"] = *spec.OpenIn
+		if err := checkViewOpenIn(view); err != nil {
+			return err
+		}
 	}
 	return nil
 }

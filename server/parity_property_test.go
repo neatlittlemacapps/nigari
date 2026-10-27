@@ -61,6 +61,10 @@ var parityActs = []parityAct{
 	// A row made in a view (spec 005): the view id must open nothing the
 	// database's own write gate does not.
 	{"row in view", "POST", "/api/pages", `{"parentId":"%s","title":"Row","viewId":"v-parity"}`, "create_page", `{"parent_id":"%s","title":"Row","view_id":"v-parity"}`, true},
+	// How a view opens its rows (spec 007): a view setting, so the database's
+	// write gate decides on both doors, whichever spelling reaches it.
+	{"view open mode", "PUT", "/api/collections/%s", `{"views":[{"id":"v-parity","name":"To do","type":"table","openIn":"side_peek","filters":[{"property":"status","op":"is","value":"todo"}]}]}`,
+		"set_view", `{"page_id":"%s","view_id":"v-parity","open_in":"side_peek"}`, true},
 }
 
 // parityWorkspaceActs are acts on a workspace rather than a page: %s is the

@@ -68,6 +68,21 @@
       }
     }
   },
+  "side-panel": {
+    "width": {
+      "$type": "dimension",
+      "$value": {
+        "value": 720,
+        "unit": "px"
+      },
+      "$description": "The side peek (spec 007): wide enough for a page's text column, capped at half the window by the component so the view stays usable."
+    },
+    "layer": {
+      "$type": "number",
+      "$value": 90,
+      "$description": "Above sticky headers (layer.sticky 50) so the view's headers pass under it; below dialogs (dialog.layer 100) and menus (layer.dropdown 200), because both open from inside the peek and must draw over it."
+    }
+  },
   "button": {
     "height": {
       "$type": "dimension",
