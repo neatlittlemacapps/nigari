@@ -9,7 +9,7 @@ description: "Tasks for a view chooses how its pages open"
 
 **Tests**: required (salt.md). Refusal paths for every gate.
 
-**Issues**: none yet
+**Issues**: parent #177; T001–T033 are #179–#211, in order.
 
 **Delivery**: Phases 1–6 are the first pull request (side peek). Phase 7 is the
 follow-up pull request (centre peek).
