@@ -39,6 +39,7 @@ positioning. The look comes only from the design tokens (`web/tokens/` →
 | `Select` | one value from a short, fixed list | a long or searchable list (Combobox, later batch) | `select` |
 | `Switch` | an on/off setting that applies at once | a choice saved with a form (`Checkbox`) | `switch` |
 | `SidePanel` | content beside a screen that must stay usable (a row's peek) | a task that takes over the screen (`Dialog`) | `side-panel` |
+| `CenterPanel` | content over a dimmed screen that may open dialogs of its own (a row's centre peek) | a task with a footer of actions (`Dialog`) | `center-panel` |
 
 ## Button
 
@@ -132,4 +133,21 @@ States: `data-checked`, `data-disabled`.
   the first Escape leaves the field and the second closes the panel.
 
 **Used by:** the side peek (spec 007, `components/PeekPanel.tsx`).
+
+## CenterPanel
+
+**Props:** `label` (translated accessible name), `onClose`, `className?`, `children` (the
+content brings its own bar and close button).
+
+**Behaviour**
+- Mounted means open. Centred over the dimmed page, `min(--center-panel-width, 100%)`
+  wide and as tall as the window allows; full screen below 901px.
+- Modal (`role="dialog"`, `aria-modal`): Tab stays inside it, and a click on the dimmed
+  page closes it. The app's focus-moving shortcuts stand down while it is open.
+- Not `Dialog`: it does not join `useExclusiveModal`, so dialogs the content opens
+  (history, share) draw over it instead of closing it. Its layer
+  (`--center-panel-layer`, the side panel's) is under dialogs and menus for that reason.
+- Focus and Escape as `SidePanel` (shared in `panelBehaviour.ts`).
+
+**Used by:** the centre peek (spec 007, `components/PeekPanel.tsx`).
 

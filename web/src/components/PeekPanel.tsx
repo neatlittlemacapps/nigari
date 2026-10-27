@@ -1,5 +1,7 @@
 import { Maximize2, X } from 'lucide-react';
 import { SidePanel } from '../ui/SidePanel';
+import { CenterPanel } from '../ui/CenterPanel';
+import type { PeekMode } from '../peek';
 import { IconButton } from '../ui/IconButton';
 import { toast } from '../toast';
 import { t } from '../i18n';
@@ -19,13 +21,16 @@ import Editor, { type EditorProps } from './Editor';
 
 type Props = Omit<EditorProps, 'pageId' | 'container' | 'peekStart' | 'peekEnd' | 'onMissing'> & {
   peekId: string;
+  /** Beside the view, or over it (spec 007). */
+  mode: PeekMode;
   onClose: () => void;
   onOpenFullPage: (id: string) => void;
 };
 
-export default function PeekPanel({ peekId, onClose, onOpenFullPage, onTrash, ...editorProps }: Props) {
+export default function PeekPanel({ peekId, mode, onClose, onOpenFullPage, onTrash, ...editorProps }: Props) {
+  const Panel = mode === 'center' ? CenterPanel : SidePanel;
   return (
-    <SidePanel label={t('Page preview')} onClose={onClose} className="peek-panel">
+    <Panel label={t('Page preview')} onClose={onClose} className="peek-panel">
       <Editor
         {...editorProps}
         key={peekId}
@@ -46,6 +51,6 @@ export default function PeekPanel({ peekId, onClose, onOpenFullPage, onTrash, ..
           if (id === peekId) onClose();
         }}
       />
-    </SidePanel>
+    </Panel>
   );
 }

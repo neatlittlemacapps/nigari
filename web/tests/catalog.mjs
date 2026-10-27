@@ -203,6 +203,18 @@ try {
       await matches(`side-panel-open-${theme}`, await sidePanel.screenshot({ animations: 'disabled' }));
       if (!shotsOnly) await axe(`${theme}, side panel open`);
     }
+
+    // The centre panel (spec 007, phase 7), skipped the same way on a base
+    // that predates it.
+    await page.goto(`${base}?theme=${theme}&open=center-panel`);
+    if (!shotsOnly || (await page.locator('[data-section="center-panel"]').count()) > 0) {
+      const centerPanel = page.getByRole('dialog', { name: 'Focused preview' });
+      await centerPanel.waitFor();
+      await page.evaluate(() => document.fonts.ready);
+      await page.waitForTimeout(250);
+      await matches(`center-panel-open-${theme}`, await centerPanel.screenshot({ animations: 'disabled' }));
+      if (!shotsOnly) await axe(`${theme}, centre panel open`);
+    }
   }
 
   // 3: the keyboard.
@@ -283,6 +295,32 @@ try {
   await page.keyboard.press('Escape');
   await sidePanel.waitFor({ state: 'hidden' });
   assert(await panelOpener.evaluate((el) => el === document.activeElement), 'SidePanel: focus did not return to the button that opened it');
+
+  // CenterPanel: focus in, Tab stays inside, the first Escape in a text field
+  // leaves the field and the second closes, focus returns; a click on the
+  // dimmed page closes it too.
+  const centerOpener = page.getByRole('button', { name: 'Open centre panel' });
+  await centerOpener.focus();
+  await page.keyboard.press('Enter');
+  const centerPanel = page.getByRole('dialog', { name: 'Focused preview' });
+  await centerPanel.waitFor();
+  await eventually(async () => centerPanel.evaluate((p) => p.contains(document.activeElement)));
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press('Tab');
+    const inside = await centerPanel.evaluate((p) => p.contains(document.activeElement));
+    assert(inside, `CenterPanel: Tab ${i + 1} left the panel`);
+  }
+  await centerPanel.getByRole('textbox', { name: 'Summary' }).focus();
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(100);
+  assert(await centerPanel.isVisible(), 'CenterPanel: Escape in a text field closed the panel');
+  await page.keyboard.press('Escape');
+  await centerPanel.waitFor({ state: 'hidden' });
+  assert(await centerOpener.evaluate((el) => el === document.activeElement), 'CenterPanel: focus did not return to the button that opened it');
+  await centerOpener.click();
+  await centerPanel.waitFor();
+  await page.mouse.click(5, 5);
+  await centerPanel.waitFor({ state: 'hidden' });
 
   // AlertDialog, destructive: Cancel has focus, a click outside does not
   // close it, Escape does.

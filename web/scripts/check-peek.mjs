@@ -64,6 +64,8 @@ try {
   check('side peek on a phone, centre shipped: center', rowOpenAction(plain, 'side_peek', false, false, true), 'center');
 
   // ---- centre peek ----
+  check('this build ships the centre peek: a side peek on a phone opens centred', rowOpenAction(plain, 'side_peek', false, false), 'center');
+  check('this build: centre peek opens centred', rowOpenAction(plain, 'center_peek', false, true), 'center');
   check('centre peek before it ships: full page', rowOpenAction(plain, 'center_peek', false, true, false), 'navigate');
   check('centre peek before it ships, account new tab: new tab', rowOpenAction(plain, 'center_peek', true, true, false), 'new_tab');
   check('centre peek once shipped: center', rowOpenAction(plain, 'center_peek', true, true, true), 'center');

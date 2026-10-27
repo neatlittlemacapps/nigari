@@ -22,9 +22,10 @@ func TestViewOpenInRule(t *testing.T) {
 		{"full page is stored as no key", `{"type":"table","openIn":"full_page"}`, "", nil},
 		{"an empty string is full page", `{"type":"table","openIn":""}`, "", nil},
 		{"null is full page", `{"type":"table","openIn":null}`, "", nil},
-		{"an unknown value", `{"type":"table","openIn":"sideways"}`, "must be full_page or side_peek", nil},
-		{"a value that is not a string", `{"type":"table","openIn":true}`, "must be full_page or side_peek", nil},
-		{"centre peek before it ships", `{"type":"table","openIn":"center_peek"}`, "not available yet", nil},
+		{"an unknown value", `{"type":"table","openIn":"sideways"}`, "must be full_page, side_peek or center_peek", nil},
+		{"a value that is not a string", `{"type":"table","openIn":true}`, "must be full_page, side_peek or center_peek", nil},
+		{"centre peek", `{"type":"table","openIn":"center_peek"}`, "", "center_peek"},
+		{"centre peek on a form", `{"type":"form","openIn":"center_peek"}`, "form view", nil},
 		{"a form shows no rows", `{"type":"form","openIn":"side_peek"}`, "form view", nil},
 		{"a form may say full page", `{"type":"form","openIn":"full_page"}`, "", nil},
 	}
@@ -100,7 +101,7 @@ func TestPutCollectionChecksTheViewOpenMode(t *testing.T) {
 	put(`{"views":[{"id":"b","name":"Board","type":"board","groupBy":"status","openIn":"side_peek"}]}`)
 	for _, bad := range []string{
 		`{"schema":[],"views":[{"id":"b","name":"Board","type":"board","groupBy":"status","openIn":"sideways"}]}`,
-		`{"schema":[],"views":[{"id":"b","name":"Board","type":"board","groupBy":"status","openIn":"center_peek"}]}`,
+		`{"schema":[],"views":[{"id":"b","name":"Board","type":"board","groupBy":"status","openIn":"peek"}]}`,
 		`{"schema":[],"views":[{"id":"f","name":"Form","type":"form","openIn":"side_peek"}]}`,
 	} {
 		code, body := put(bad)
@@ -160,7 +161,7 @@ func TestSetViewOpenIn(t *testing.T) {
 	call(`{"page_id":"` + col + `","view_id":"` + id + `","open_in":"side_peek"}`)
 	for _, bad := range []string{
 		`{"page_id":"` + col + `","view_id":"` + id + `","open_in":"sideways"}`,
-		`{"page_id":"` + col + `","view_id":"` + id + `","open_in":"center_peek"}`,
+		`{"page_id":"` + col + `","view_id":"` + id + `","open_in":"peek"}`,
 	} {
 		if err := call(bad); err == nil {
 			t.Errorf("%s was accepted", bad)
@@ -169,6 +170,15 @@ func TestSetViewOpenIn(t *testing.T) {
 	if v := viewByID(t, s, col, id); v["openIn"] != "side_peek" {
 		t.Errorf("a refused call changed the view: %v", v["openIn"])
 	}
+
+	// Centre peek is stored like side peek (spec 007, phase 7).
+	if err := call(`{"page_id":"` + col + `","view_id":"` + id + `","open_in":"center_peek"}`); err != nil {
+		t.Fatalf("center_peek: %v", err)
+	}
+	if v := viewByID(t, s, col, id); v["openIn"] != "center_peek" {
+		t.Errorf("stored %v, want center_peek", v["openIn"])
+	}
+	call(`{"page_id":"` + col + `","view_id":"` + id + `","open_in":"side_peek"}`)
 	before := len(views)
 	if err := call(`{"page_id":"` + col + `","name":"Sign-up","type":"form","open_in":"side_peek"}`); err == nil || !strings.Contains(err.Error(), "form") {
 		t.Errorf("a form with side peek: %v, want a refusal naming the form", err)
@@ -207,5 +217,17 @@ func TestViewOpenInIsTheSameThroughBothDoors(t *testing.T) {
 	rec := requestAs(t, s, cookie, "GET", "/api/collections/"+col, "")
 	if strings.Contains(rec.Body.String(), "openIn") {
 		t.Errorf("set back by an agent, the person still reads a peek: %s", rec.Body.String())
+	}
+}
+
+// The switch that kept centre peek out of storage until the interface could
+// draw it. Should a later change hide it again, the refusal must still work.
+func TestCenterPeekRefusedWhileUnshipped(t *testing.T) {
+	was := centerPeekShipped
+	centerPeekShipped = false
+	defer func() { centerPeekShipped = was }()
+	view := map[string]any{"type": "table", "openIn": "center_peek"}
+	if err := checkViewOpenIn(view); err == nil || !strings.Contains(err.Error(), "not available yet") {
+		t.Errorf("unshipped centre peek: %v, want a refusal", err)
 	}
 }

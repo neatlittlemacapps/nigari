@@ -757,8 +757,9 @@ name`; `options on "Name" must be a list`.
 | `page_id` | string | yes |
 
 Returns `{page_id, schema, views}`: the full property schema **and** every view
-with its id. A view that opens its rows in a side peek carries
-`"openIn": "side_peek"`; no key means a full page (see `set_view`). Call this before any other database tool: property ids, select
+with its id. A view that opens its rows in a peek carries
+`"openIn": "side_peek"` or `"center_peek"`; no key means a full page (see
+`set_view`). Call this before any other database tool: property ids, select
 option ids and view ids all come from here. Errors: `page "…" is not a
 database`.
 
@@ -976,8 +977,9 @@ in usually needs one: without a "status is not done" filter the finished column
 grows forever and pushes the work aside.
 
 `open_in` decides how a click on one of the view's rows opens it for people:
-`full_page` (the tab goes to the row, the default) or `side_peek` (the row
-opens in a panel beside the view, which stays usable). `full_page` is stored as
+`full_page` (the tab goes to the row, the default), `side_peek` (the row
+opens in a panel beside the view, which stays usable) or `center_peek` (a panel
+over the dimmed view). `full_page` is stored as
 no setting at all, so `get_collection` shows `openIn` only on views that peek.
 A form shows no rows and refuses it. The interface's own save
 (`PUT /api/collections/{id}`) checks the same rule, with the code
@@ -992,8 +994,8 @@ one`; `a board needs group_by (the property to make columns from)`;
 `a calendar needs date_prop (a date property id)`; `board group_by: "x" is a
 text property. A board groups by a select, a multiselect or a relation`;
 `board group_by: "x" is no longer a property of this database. Pass group_by with
-a select, a multiselect or a relation property`; `open_in must be full_page or
-side_peek, not "x"`; `a form view shows no rows, so it has no open_in`; `"x" is not a property of this
+a select, a multiselect or a relation property`; `open_in must be full_page,
+side_peek or center_peek, not "x"`; `a form view shows no rows, so it has no open_in`; `"x" is not a property of this
 database`; `filter N: unknown op "x". Use is, is_not, contains, gt, lt, between,
 is_empty or is_not_empty`; `view "…" not found — call get_collection for the
 ids`.

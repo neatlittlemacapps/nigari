@@ -39,7 +39,8 @@ import {
 import ShortcutSheet from './components/ShortcutSheet';
 // Loaded when a peek first opens: most sessions never open one (spec 007).
 const PeekPanel = lazy(() => import('./components/PeekPanel'));
-import { dropPeek, peekFromLocation, peekOfEntry, pushPeek } from './peekHistory';
+import { dropPeek, peekFromLocation, peekOfEntry, pushPeek, type Peek } from './peekHistory';
+import type { PeekMode } from './peek';
 import { guardDrops } from './dropFiles';
 
 /** Injected by the build; false everywhere except the website's framed demo. */
@@ -137,7 +138,8 @@ export default function App() {
   const [currentId, setCurrentId] = useState<string | null>(pageIdFromLocation());
   // A database row shown beside the active page (spec 007). The address carries
   // it (?peek=), so it survives a reload and Back closes it; see peekHistory.ts.
-  const [peekId, setPeekId] = useState<string | null>(() => (pageIdFromLocation() ? peekFromLocation() : null));
+  const [peek, setPeek] = useState<Peek | null>(() => (pageIdFromLocation() ? peekFromLocation() : null));
+  const peekId = peek?.id ?? null;
   // Open document tabs (Obsidian-style): an ordered list of page ids; the active
   // one is `currentId`. Seeded from the last session and the URL.
   const [openTabs, setOpenTabs] = useState<string[]>(() => {
@@ -388,7 +390,7 @@ export default function App() {
     // snapshot (e.g. the very first load), reopening a tab only then.
     const onPop = (e: PopStateEvent) => {
       const st = e.state as { tabs?: string[]; active?: string | null } | null;
-      setPeekId(peekOfEntry(e.state));
+      setPeek(peekOfEntry(e.state));
       if (st && Array.isArray(st.tabs)) {
         setOpenTabs(st.tabs);
         setCurrentId(st.active ?? null);
@@ -406,7 +408,7 @@ export default function App() {
       const id = (e as CustomEvent<string>).detail;
       if (!id) return;
       history.pushState(null, '', `/p/${id}`);
-      setPeekId(null);
+      setPeek(null);
       setCurrentId(id);
       setSidebarOpen(false);
       setOpenTabs((prev) => {
@@ -748,7 +750,7 @@ export default function App() {
     pushTabHistory(nextTabs, id, replace);
     setOpenTabs(nextTabs);
     setCurrentId(id);
-    setPeekId(null); // a peek belongs to the page it was opened beside
+    setPeek(null); // a peek belongs to the page it was opened beside
     setSidebarOpen(false); // close the mobile drawer after picking a page
     if (id && !replace) rememberRecent(id);
   }, []);
@@ -765,22 +767,23 @@ export default function App() {
     pushTabHistory(nextTabs, id, false);
     setOpenTabs(nextTabs);
     setCurrentId(id);
-    setPeekId(null);
+    setPeek(null);
     setSidebarOpen(false);
     rememberRecent(id);
   }, []);
 
   // A row opened beside the active page (spec 007). One at a time: another
   // row replaces it.
-  const openPeek = useCallback((rowId: string) => {
+  const openPeek = useCallback((rowId: string, mode: PeekMode = 'side') => {
     const active = activeRef.current;
     if (!active) return;
-    pushPeek(active, tabsRef.current, rowId);
-    setPeekId(rowId);
+    const next = { id: rowId, mode };
+    pushPeek(active, tabsRef.current, next);
+    setPeek(next);
   }, []);
   const closePeek = useCallback(() => {
     // Going Back lets the popstate handler clear it, like any Back.
-    if (!dropPeek(activeRef.current)) setPeekId(null);
+    if (!dropPeek(activeRef.current)) setPeek(null);
   }, []);
 
   // closeTab removes a tab; if it was active, the neighbour that slides into its
@@ -807,7 +810,7 @@ export default function App() {
       const neighbour = next[i] ?? next[i - 1] ?? null;
       pushTabHistory(next, neighbour, true);
       setCurrentId(neighbour);
-      setPeekId(null);
+      setPeek(null);
     }
   }, []);
 
@@ -1352,15 +1355,16 @@ export default function App() {
               onTrash={trashPage}
               onPagesChanged={loadPages}
             />
-            {peekId && (
+            {peek && (
               <Suspense fallback={null}>
               <PeekPanel
-                peekId={peekId}
+                peekId={peek.id}
+                mode={peek.mode}
                 pagesById={pagesById}
                 user={me.user}
                 theme={theme}
                 canEdit={canEditPeek}
-                favorite={favorites.includes(peekId)}
+                favorite={favorites.includes(peek.id)}
                 tagColors={tagColors}
                 onSetTagColor={setTagColor}
                 onMenu={openSidebar}

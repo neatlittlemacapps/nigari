@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react';
+import type { PeekMode } from './peek';
 import type { PageMeta } from './types';
 
 // Custom blocks render INSIDE the editor but have no access to its props. The
@@ -16,7 +17,7 @@ export interface BlockCtx {
   onOpenInNewTab?: (id: string) => void;
   /** Open a row in a peek beside the page (spec 007), for an embedded view
    *  set to a peek. Absent: such a view navigates instead. */
-  onPeek?: (id: string) => void;
+  onPeek?: (id: string, mode: PeekMode) => void;
   onPagesChanged: () => void;
   pageId?: string;
 }

@@ -14,15 +14,16 @@
 //   3. A view on a peek beats the account preference: somebody chose the peek
 //      for this view on purpose.
 //   4. On a narrow screen there is no room beside the view, so a side peek
-//      opens as a centre peek, which fills the screen. Until the centre peek
-//      ships it opens as a full page instead.
+//      opens as a centre peek, which fills the screen.
 
 export type ViewOpenIn = 'side_peek' | 'center_peek' | undefined;
 export type RowOpenAction = 'navigate' | 'new_tab' | 'side' | 'center';
+/** How a peek is drawn: beside the page or over it. */
+export type PeekMode = 'side' | 'center';
 
 /** Flipped by the centre peek's follow-up (spec 007, phase 7), together with
  *  `centerPeekShipped` in server/viewopen.go. */
-export const CENTER_PEEK_SHIPPED = false;
+export const CENTER_PEEK_SHIPPED = true;
 
 export function rowOpenAction(
   click: { metaKey?: boolean; ctrlKey?: boolean; middle?: boolean },

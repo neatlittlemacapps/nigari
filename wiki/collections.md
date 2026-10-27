@@ -152,6 +152,7 @@ in the view's `⋯` menu:
 | --- | --- |
 | **Full page** (the default) | Opens the row in the tab you are in, as a page of its own. |
 | **Side peek** | Opens the row in a panel on the right. The view stays where it was and keeps working: click the next row and the panel shows that one. |
+| **Center peek** | Opens the row in a panel in the middle of the screen, the view dimmed behind it: a focused way to read or edit one row. A click on the dimmed view closes it. |
 
 The peek is the whole page: title, properties, content, comments and history,
 editable as on the page itself, live with whoever else has it open. Its top
@@ -168,7 +169,10 @@ row.
 - Your account's **Open rows in new tab** applies to views on Full page. A
   view set to Side peek has made its own choice and opens the peek.
 - On a phone there is no room beside the view: a Side peek view opens rows as
-  a full page.
+  a centre peek, which fills the screen.
+- In a centre peek, Tab stays inside the panel. Dialogs the page opens, such
+  as **Version history** or **Share**, open over the peek and close back to
+  it.
 - A database embedded in a document follows its view's setting; the peek opens
   beside the document.
 - A form has no rows to click, so it has no setting.

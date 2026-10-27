@@ -14,6 +14,7 @@ import { Checkbox } from '../src/ui/Checkbox';
 import { Select } from '../src/ui/Select';
 import { Switch } from '../src/ui/Switch';
 import { SidePanel } from '../src/ui/SidePanel';
+import { CenterPanel } from '../src/ui/CenterPanel';
 
 // The component catalogue (spec 001, FR-012). Every component in web/src/ui/,
 // every state the contract names, on nothing but tokens.css: no styles.css, so
@@ -57,6 +58,7 @@ function Catalog() {
   const [dialog, setDialog] = useState(params.get('open') === 'dialog');
   const [alert, setAlert] = useState(params.get('open') === 'alert');
   const [panel, setPanel] = useState(params.get('open') === 'side-panel');
+  const [center, setCenter] = useState(params.get('open') === 'center-panel');
   const [checks, setChecks] = useState({ a: false, b: true });
   const [sw, setSw] = useState({ a: false, b: true });
   const [fruitValue, setFruitValue] = useState('banana');
@@ -184,6 +186,26 @@ function Catalog() {
             </Field>
           </div>
         </SidePanel>
+      )}
+
+      <Section id="center-panel" title="CenterPanel">
+        <Row label="open">
+          <Button onClick={() => setCenter(true)}>Open centre panel</Button>
+        </Row>
+      </Section>
+
+      {center && (
+        <CenterPanel label="Focused preview" onClose={() => setCenter(false)}>
+          <div className="cat-panel-bar">
+            <IconButton label="Close" icon={<X size={18} />} onClick={() => setCenter(false)} />
+          </div>
+          <div className="cat-panel-body">
+            <h2>Quarterly review</h2>
+            <Field label="Summary">
+              <Input defaultValue="The page behind it is dimmed." />
+            </Field>
+          </div>
+        </CenterPanel>
       )}
 
       {dialog && (

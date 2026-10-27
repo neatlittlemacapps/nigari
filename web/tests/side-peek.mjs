@@ -116,7 +116,45 @@ await withFixture(async ({ page, api, base, path }) => {
   const plain = (await api('GET', path)).views.find((v) => v.id === 'board');
   assert.equal('openIn' in plain, false, `full page stored ${JSON.stringify(plain.openIn)}`);
 
-  console.log('Side peek: opens beside the view, swaps, closes with Escape and Back, survives a reload; full-page views unchanged; set per view.');
+  // ---- US4: centre peek ----
+  const centre = page.getByRole('dialog', { name: 'Page preview' });
+  const cfg = await api('GET', path);
+  cfg.views.find((v) => v.id === 'board').openIn = 'center_peek';
+  await api('PUT', path, { views: cfg.views });
+  await page.goto(`${base}/p/${collectionId}`);
+  await page.locator('.view-tab', { hasText: 'Board' }).click();
+  await page.locator('.board-card-title', { hasText: 'Second row' }).click();
+  await centre.waitFor();
+  assert.equal(new URL(page.url()).searchParams.get('as'), 'center', 'the address does not say the peek is centred');
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press('Tab');
+    assert(await centre.evaluate((p) => p.contains(document.activeElement)), `centre peek: Tab ${i + 1} left the panel`);
+  }
+  // The reason it is not ui/Dialog: a dialog the page opens draws over the
+  // peek instead of closing it.
+  await centre.getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('button', { name: 'Version history' }).click();
+  const history = page.getByRole('dialog', { name: 'Version history' });
+  await history.waitFor();
+  assert(await centre.isVisible(), 'opening Version history closed the centre peek');
+  await page.keyboard.press('Escape');
+  await history.waitFor({ state: 'hidden' });
+  assert(await centre.isVisible(), 'closing Version history closed the centre peek too');
+  await page.reload();
+  await centre.waitFor();
+  await page.mouse.click(5, 5);
+  await centre.waitFor({ state: 'hidden' });
+  assert.equal(new URL(page.url()).searchParams.get('peek'), null, 'a click outside left the peek in the address');
+
+  // A phone has no room beside the view: a side peek opens centred.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${base}/p/${collectionId}`);
+  await page.getByText('Task 5', { exact: true }).click();
+  await centre.waitFor();
+  assert.equal(await panel.count(), 0, 'a side panel opened on a phone');
+  await page.setViewportSize({ width: 1200, height: 900 });
+
+  console.log('Peeks: side opens beside the view, swaps, closes with Escape and Back, survives a reload; centre traps Tab and lets the page open its own dialogs; phones open centred; full-page views unchanged; set per view.');
 });
 
 async function eventuallyEqual(read, want, message) {

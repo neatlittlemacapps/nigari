@@ -7,6 +7,24 @@ entries are not edited away.
 
 ---
 
+## 2026-10-27 — Spec 007: the centre peek is a panel of its own, not a Dialog
+
+**Decision**: the centre peek is drawn by a new `ui/CenterPanel` (option A): modal, with
+its own focus trap and Escape, sharing that behaviour with `ui/SidePanel`. It does not
+join `useExclusiveModal`.
+
+**Why**: the page inside a peek opens dialogs of its own (version history, share), and
+the coordinator closes every other modal when one opens, so with `ui/Dialog` each of
+them would have closed the peek. A separate panel keeps the app-wide one-modal rule
+(#134) as it is.
+
+**Rejected**:
+- B: `ui/Dialog` and letting coordinated modals stack: changes that rule for every
+  dialog in the app.
+- C: no centre peek: story 4 of the spec undelivered.
+
+---
+
 ## 2026-10-27 — Spec 007: a view chooses how its pages open
 
 **Decision**:
