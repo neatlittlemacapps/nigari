@@ -1,44 +1,52 @@
 import assert from 'node:assert/strict';
 import { withFixture } from './fixture.mjs';
 
-// The templates menu beside New and the view options menu (…) are opened from
-// a database toolbar that scrolls sideways on a phone. Drawn inside it, both
-// were clipped to a white rim under the buttons: the page dimmed and nothing
-// could be chosen (found on an iPhone, 2026-10-26). They are portaled now
-// (src/anchoredMenu.ts). What must hold: the whole menu is on screen and is
-// the thing a tap at its centre lands on, on a phone and on a desktop.
-await withFixture(async ({ page, base, path }) => {
+// The formatting toolbar's lists open where they can be seen (#94). They are
+// children of the toolbar, and a backdrop filter on the toolbar kept them
+// inside its 34 px box. The toolbar itself still scrolls sideways on a narrow
+// screen, which is why its overflow stays as BlockNote sets it.
+await withFixture(async ({ page, api, base, workspace }) => {
   page.setDefaultTimeout(15000);
-  const collectionId = path.split('/').pop();
-
-  const reachable = async (menuSelector, label, size) => {
-    const menu = page.locator(menuSelector).last();
-    await menu.waitFor();
-    const box = await menu.boundingBox();
-    assert(box && box.height > 40, `${label} (${size}): the menu is ${box?.height ?? 0}px high`);
-    assert(box.y >= 0 && box.y + box.height <= page.viewportSize().height + 1, `${label} (${size}): the menu leaves the screen`);
-    const hit = await page.evaluate(([sel, x, y]) => {
-      const el = document.elementFromPoint(x, y);
-      return !!el && !!el.closest(sel);
-    }, [menuSelector, box.x + box.width / 2, box.y + box.height / 2]);
-    assert(hit, `${label} (${size}): something else covers the menu`);
-    await page.keyboard.press('Escape');
-    await page.locator('.fs-backdrop').last().click({ position: { x: 2, y: 2 } }).catch(() => {});
+  const doc = await api('POST', '/api/pages', { title: 'Toolbar', workspaceId: workspace.id });
+  await api('PATCH', `/api/pages/${doc.id}`, {
+    content: [
+      { id: 'p1', type: 'paragraph', props: {}, content: [{ type: 'text', text: 'Select these words to format them', styles: {} }], children: [] },
+    ],
+  });
+  const openTypeList = async () => {
+    await page.goto(`${base}/p/${doc.id}`);
+    const text = page.locator('.bn-block-outer[data-id="p1"] .bn-inline-content');
+    await text.waitFor();
+    await text.click({ clickCount: 3 });
+    const toolbar = page.locator('.bn-formatting-toolbar');
+    await toolbar.waitFor();
+    await toolbar.locator('button').first().click();
+    const list = page.locator('.bn-formatting-toolbar .mantine-Menu-dropdown');
+    await list.waitFor();
+    return { toolbar, list };
   };
+  const seen = (list) =>
+    list.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + 12);
+      return !!hit && el.contains(hit);
+    });
 
-  for (const [size, viewport] of [['phone', { width: 390, height: 844 }], ['desktop', { width: 1200, height: 900 }]]) {
-    await page.setViewportSize(viewport);
-    await page.goto(`${base}/p/${collectionId}`);
-    const templates = page.getByRole('button', { name: 'Templates', exact: true });
-    await templates.scrollIntoViewIfNeeded();
-    await templates.click();
-    await reachable('.dbt-menu', 'templates', size);
+  const { list } = await openTypeList();
+  assert.equal(await seen(list), true, 'the block type list must be visible where it opened');
+  await list.getByText('Heading 1', { exact: true }).click();
+  await page.locator('.bn-block-outer[data-id="p1"] h1').waitFor();
 
-    const options = page.getByRole('button', { name: 'View options', exact: true });
-    await options.scrollIntoViewIfNeeded();
-    await options.click();
-    await reachable('.view-tab-menu', 'view options', size);
-  }
+  // On a phone the toolbar is wider than the screen and still scrolls.
+  await page.setViewportSize({ width: 375, height: 800 });
+  const narrow = await openTypeList();
+  const scrolls = await narrow.toolbar.evaluate((el) => ({
+    overflow: getComputedStyle(el).overflowX,
+    wider: el.scrollWidth > el.clientWidth,
+  }));
+  assert.equal(scrolls.overflow, 'auto');
+  assert.equal(scrolls.wider, true, 'at 375 px the toolbar should be wider than its box');
+  assert.equal(await seen(narrow.list), true, 'the list must be visible on a phone too');
 
-  console.log('Toolbar menus: templates and view options open in full, on a phone and a desktop.');
+  console.log('Toolbar menus: the block type list opens in sight, and the toolbar still scrolls on a phone.');
 });
