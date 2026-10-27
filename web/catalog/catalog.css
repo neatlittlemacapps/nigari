@@ -72,3 +72,14 @@ body {
 .cat-row-items > .ui-select {
   width: 200px;
 }
+
+/* The side panel's demo content: a bar with the close button, then a body. */
+.cat-panel-bar {
+  display: flex;
+  padding: var(--space-200);
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.cat-panel-body {
+  padding: var(--space-400);
+}

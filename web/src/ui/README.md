@@ -38,6 +38,7 @@ positioning. The look comes only from the design tokens (`web/tokens/` →
 | `Checkbox` | a choice that is saved later, alone or in a group | a setting that applies at once (`Switch`) | `checkbox` |
 | `Select` | one value from a short, fixed list | a long or searchable list (Combobox, later batch) | `select` |
 | `Switch` | an on/off setting that applies at once | a choice saved with a form (`Checkbox`) | `switch` |
+| `SidePanel` | content beside a screen that must stay usable (a row's peek) | a task that takes over the screen (`Dialog`) | `side-panel` |
 
 ## Button
 
@@ -111,3 +112,24 @@ States: `data-popup-open` (trigger), `data-highlighted` and `data-selected` (ite
 
 `label`, `checked`, `onCheckedChange`, `disabled?`. Space toggles.
 States: `data-checked`, `data-disabled`.
+
+## SidePanel
+
+**Props**
+- `label`: the panel's accessible name, already translated.
+- `onClose`
+- `className?`
+- `children`: the panel draws no bar or close button of its own; the content brings them.
+
+**Behaviour**
+- Mounted means open. Fixed to the right edge, `min(--side-panel-width, 50vw)` wide, full
+  width below 901px. Layer `--side-panel-layer`: over the page's sticky headers, under
+  dialogs and menus, which open from inside it.
+- Not modal: no backdrop, no focus trap, and the page beside it stays usable. It
+  overlays rather than squeezes, so the page's layout and scroll position do not move.
+- Focus moves into it on open and back to the opener on close.
+- Escape closes it unless a menu, dialog or confirmation is open on top. In a text field
+  the first Escape leaves the field and the second closes the panel.
+
+**Used by:** the side peek (spec 007, `components/PeekPanel.tsx`).
+

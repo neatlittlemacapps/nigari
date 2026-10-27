@@ -1,6 +1,6 @@
 import { StrictMode, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import '../src/tokens.css';
@@ -13,6 +13,7 @@ import { Field, Input } from '../src/ui/Field';
 import { Checkbox } from '../src/ui/Checkbox';
 import { Select } from '../src/ui/Select';
 import { Switch } from '../src/ui/Switch';
+import { SidePanel } from '../src/ui/SidePanel';
 
 // The component catalogue (spec 001, FR-012). Every component in web/src/ui/,
 // every state the contract names, on nothing but tokens.css: no styles.css, so
@@ -55,6 +56,7 @@ function Catalog() {
   const [theme, setTheme] = useState(document.documentElement.dataset.theme);
   const [dialog, setDialog] = useState(params.get('open') === 'dialog');
   const [alert, setAlert] = useState(params.get('open') === 'alert');
+  const [panel, setPanel] = useState(params.get('open') === 'side-panel');
   const [checks, setChecks] = useState({ a: false, b: true });
   const [sw, setSw] = useState({ a: false, b: true });
   const [fruitValue, setFruitValue] = useState('banana');
@@ -163,6 +165,26 @@ function Catalog() {
           </Button>
         </Row>
       </Section>
+
+      <Section id="side-panel" title="SidePanel">
+        <Row label="open">
+          <Button onClick={() => setPanel(true)}>Open side panel</Button>
+        </Row>
+      </Section>
+
+      {panel && (
+        <SidePanel label="Row preview" onClose={() => setPanel(false)}>
+          <div className="cat-panel-bar">
+            <IconButton label="Close" icon={<X size={18} />} onClick={() => setPanel(false)} />
+          </div>
+          <div className="cat-panel-body">
+            <h2>Quarterly review</h2>
+            <Field label="Notes">
+              <Input defaultValue="The page beside it stays usable." />
+            </Field>
+          </div>
+        </SidePanel>
+      )}
 
       {dialog && (
         <Dialog

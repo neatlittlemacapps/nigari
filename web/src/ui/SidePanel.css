@@ -1,0 +1,33 @@
+/* SidePanel: a panel over the right edge that leaves the screen usable
+   (spec 007). Half the window at most, so the view beside it keeps room. */
+
+.ui-side-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(var(--side-panel-width), 50vw);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--color-surface-default);
+  color: var(--color-text-default);
+  border-left: 1px solid var(--color-border-default);
+  box-shadow: var(--shadow-overlay);
+  z-index: var(--side-panel-layer);
+  outline: none;
+}
+
+.ui-side-panel:focus-visible {
+  box-shadow: var(--shadow-overlay), inset 0 0 0 2px var(--color-focus);
+}
+
+/* No room beside a view on a phone. A peek reached there anyway (a link with
+   ?peek=, a window made narrow) fills the screen, with its close button. */
+@media (max-width: 900px) {
+  .ui-side-panel {
+    width: 100vw;
+    border-left: none;
+  }
+}

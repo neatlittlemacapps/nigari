@@ -72,6 +72,17 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 400, "schema and views must be valid JSON")
 		return
 	}
+	// The views half is stored as sent, but the one rule MCP set_view applies
+	// to a view's open mode applies here too (spec 007): a value the interface
+	// cannot honour would otherwise be stored by any script that can PUT.
+	if hasViews {
+		views, err := normalizeViewsOpenIn(body.Views)
+		if err != nil {
+			httpErrorCode(w, 400, "invalid_view_open_in", err.Error())
+			return
+		}
+		body.Views = views
+	}
 	var exists int
 	if err := s.db.QueryRow(`SELECT COUNT(*) FROM pages WHERE id = ?`, id).Scan(&exists); err != nil || exists == 0 {
 		httpError(w, 404, "page not found")

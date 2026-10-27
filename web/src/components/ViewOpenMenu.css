@@ -1,0 +1,29 @@
+/* "Open pages in" inside the view options menu: radio rows that sit like the
+   menu's own entries (.menu button in styles.css), from tokens. */
+
+.view-open-menu {
+  border: none;
+  margin: var(--space-100) 0 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.view-open-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-200);
+  padding: 7px 10px;
+  border-radius: var(--radius-scale-md);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.view-open-option:hover {
+  background: var(--hover);
+}
+
+.view-open-option input {
+  margin: 0;
+  accent-color: var(--accent);
+}

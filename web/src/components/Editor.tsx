@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   useCreateBlockNote,
   SuggestionMenuController,
@@ -55,9 +55,22 @@ export interface EditorProps {
   onMissing: (id: string) => void;
   onNavigate: (id: string | null) => void;
   onOpenInNewTab: (id: string) => void;
-  /** Shown inside a dialog (editing a database's template): no top bar, and the
-   *  dialog's own Done button replaces the way back to the database. */
-  inDialog?: boolean;
+  /** Where the page is drawn (spec 007, "Page containers" in the surfaces
+   *  registry). 'page' is the tab itself. 'dialog' is a database's template
+   *  edited over the database: no top bar, and the dialog's own Done button
+   *  replaces the way back. 'peek' is a row opened beside its view: the top
+   *  bar keeps the page's controls and trades the sidebar button for Close and
+   *  Open as full page. A new page-level control must work in each. */
+  container?: 'page' | 'dialog' | 'peek';
+  /** container 'peek': the controls its top bar carries instead of the
+   *  sidebar button (Close) and before the page's own (Open as full page).
+   *  Passed in by PeekPanel, which is loaded only when a peek opens, so the
+   *  page every tab shows does not carry their code. */
+  peekStart?: ReactNode;
+  peekEnd?: ReactNode;
+  /** How a database view opens a row in a peek beside it (spec 007). Absent:
+   *  a peek view falls back to navigating. */
+  onPeek?: (id: string) => void;
   onCreatePage: (parentId: string | null, type?: 'doc' | 'collection') => void;
   // Deleting was reachable from the sidebar tree only. A database ROW — and any
   // page filed under one — never appears there as a tree item, so nothing in the
@@ -192,7 +205,7 @@ export default function Editor(props: EditorProps) {
         (structureOpen || (commentsOpen && canComment) ? ' with-structure' : '') +
         (narrow ? ' is-narrow' : '') +
         (page.type === 'doc' && page.props?._fullWidth === true ? ' page-wide' : '') +
-        (props.inDialog ? ' in-dialog' : '') +
+        (props.container === 'dialog' ? ' in-dialog' : props.container === 'peek' ? ' in-peek' : '') +
         (arriving ? ' panel-arriving' : '')
       }
     >
@@ -213,8 +226,9 @@ export default function Editor(props: EditorProps) {
             tagColors={props.tagColors}
             onNavigate={props.onNavigate}
             onOpenInNewTab={props.onOpenInNewTab}
+            onPeek={props.onPeek}
             onPagesChanged={props.onPagesChanged}
-            onEditTemplate={props.inDialog ? undefined : setTplEditId}
+            onEditTemplate={props.container === 'dialog' ? undefined : setTplEditId}
           />
         ) : (
           <CollabEditor
@@ -228,6 +242,7 @@ export default function Editor(props: EditorProps) {
             tagColors={props.tagColors}
             onNavigate={props.onNavigate}
             onOpenInNewTab={props.onOpenInNewTab}
+            onPeek={props.onPeek}
             onCreatePage={props.onCreatePage}
             onPagesChanged={props.onPagesChanged}
             onReset={() => setNonce((n) => n + 1)}
@@ -291,7 +306,7 @@ function TemplateEditDialog({
             <Editor
               {...editorProps}
               pageId={templateId}
-              inDialog
+              container="dialog"
               onNavigate={(id) => {
                 onClose();
                 editorProps.onNavigate(id);
@@ -522,7 +537,9 @@ function PageHeader({
   onToggleFavorite,
   onMetaChange,
   onNavigate,
-  inDialog,
+  container,
+  peekStart,
+  peekEnd,
   onTrash,
   onLocalMeta,
   onPagesChanged,
@@ -956,9 +973,15 @@ function PageHeader({
   return (
     <>
       <header className="topbar">
-        <button className="menu-btn topbar-menu" title={t('Menu')} onClick={onMenu}>
-          <Menu size={18} />
-        </button>
+        {container === 'peek' ? (
+          // In a peek the sidebar belongs to the page behind it; the way out
+          // is here instead, where the menu button would be.
+          peekStart
+        ) : (
+          <button className="menu-btn topbar-menu" title={t('Menu')} onClick={onMenu}>
+            <Menu size={18} />
+          </button>
+        )}
         <nav className="breadcrumbs">
           {breadcrumbs.map((b, i) => (
             <span key={b.id} className="crumb-wrap">
@@ -983,6 +1006,7 @@ function PageHeader({
           ))}
         </nav>
         <div className="topbar-right">
+          {container === 'peek' && peekEnd}
           {/* Which agent says it is working here. Beside the human presence,
               because it answers the same question. */}
           <AgentPresence pageId={pageId} />
@@ -1367,7 +1391,7 @@ function PageHeader({
               pagesById.get(page.templateOf)?.title || t('Untitled'),
             )}
           </span>
-          {!inDialog && (
+          {container !== 'dialog' && (
             <button className="btn-sm" onClick={() => onNavigate(page.templateOf!)}>
               {t('Back to the database')}
             </button>
@@ -1615,6 +1639,7 @@ interface CollabProps {
   tagColors: Record<string, string>;
   onNavigate: (id: string | null) => void;
   onOpenInNewTab: (id: string) => void;
+  onPeek?: (id: string) => void;
   onCreatePage: (parentId: string | null, type?: 'doc' | 'collection') => void;
   onPagesChanged: () => void;
   onReset: () => void;
@@ -1728,6 +1753,7 @@ function BlockContent({
   tagColors,
   onNavigate,
   onOpenInNewTab,
+  onPeek,
   onCreatePage,
   onPagesChanged,
   structureOpen,
@@ -1744,6 +1770,7 @@ function BlockContent({
   tagColors: Record<string, string>;
   onNavigate: (id: string | null) => void;
   onOpenInNewTab: (id: string) => void;
+  onPeek?: (id: string) => void;
   onCreatePage: (parentId: string | null, type?: 'doc' | 'collection') => void;
   onPagesChanged: () => void;
 }) {
@@ -2202,7 +2229,7 @@ function BlockContent({
       <div className="editor-inner" onClickCapture={onFileClick}>
         {/* The database block renders inside the editor and would otherwise
             not reach the page list, the tag colours or navigation. */}
-        <BlockContext.Provider value={{ pagesById, tagColors, onNavigate, onOpenInNewTab, onPagesChanged, pageId: provider.pageId }}>
+        <BlockContext.Provider value={{ pagesById, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged, pageId: provider.pageId }}>
         <BlockNoteView editor={editor} theme={theme} editable={canEdit} slashMenu={false}>
           <SuggestionMenuController triggerCharacter="/" getItems={getSlashItems} />
           <SuggestionMenuController
