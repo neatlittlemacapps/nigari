@@ -71,24 +71,26 @@ the comparison worth making is SQLite against an optional PostgreSQL server mode
 
 ### P3. Latency budgets
 
-Measured on the CI runner (`ubuntu-latest`, 4 cores, Go 1.27.3), `-bench Storage -count=6`, PR #81 run 40365065291, driver v1.34.5. Each budget is the measured p95 × 1.5, rounded up to the next whole millisecond (SC-002). The first column is the guess the spec started from.
+Measured on the CI runner (`ubuntu-latest`, 4 cores, Go 1.27.3), `-bench Storage -count=6`, PR #81 run 40365065291, driver v1.34.5. Each budget is the measured p95 × 1.5, rounded up to the next whole millisecond (SC-002). The first column is the guess the spec started from. Rows marked #85 were re-measured on the same runner in PR #85, run 40452540193, after the fixes for #79 and #78 (driver v1.60.1, read pool); their budgets were lowered in that PR, as the rule below requires.
 
 | Operation | Size | Provisional | CI p95 | p95 budget |
 |---|---|---|---|---|
 | Open a page (`GET /api/pages/{id}`) | 1k pages | — | 0.42 ms | 1 ms |
 | Open a page (`GET /api/pages/{id}`) | 20k pages | 20 ms | 0.44 ms | 1 ms |
-| `query_rows`, filter and sort | 1k rows | — | 17.2 ms | 26 ms |
-| `query_rows`, filter and sort | 10k rows | 50 ms | 74.7 ms | 113 ms (#79) |
+| `query_rows`, filter and sort | 1k rows | — | 11.7 ms (#85) | 18 ms |
+| `query_rows`, filter and sort | 10k rows | 50 ms | 33.1 ms (#85) | 50 ms |
 | `query_rows`, filter and sort | 100k rows | 300 ms | not run in CI | 300 ms, provisional |
 | Rollup over a relation | 10k rows | 100 ms | 23.8 ms | 36 ms |
-| Full-text search | 1k pages | — | 13.4 ms | 21 ms |
-| Full-text search | 20k pages | 50 ms | 200.6 ms | 301 ms (#78) |
+| Full-text search | 1k pages | — | 10.6 ms (#85) | 16 ms |
+| Full-text search | 20k pages | 50 ms | 122.8 ms (#85) | 185 ms (#78) |
+| Grouped count (chart) | 1k rows | — | 2.1 ms (#85) | 4 ms |
+| Grouped count (chart) | 10k rows | — | 19.5 ms (#85) | 30 ms |
 | Grouped count (chart) | 100k rows | 250 ms | not run in CI; 139 ms on a 4-core dev machine (T020) | 250 ms, provisional |
 | Property write during a 5-agent burst | 10k rows | 20 ms per write | 5.3 ms | 8 ms per write |
 
-- **Two budgets are looser than the guess.** Search at 20k pages and `query_rows` at 10k rows measured above the provisional 50 ms. The budget records what the code does today, so the CI job catches it getting worse; the 50 ms target stays with #78 and #79. When either is fixed, its budget is lowered in the same PR.
+- **One budget is still looser than the guess.** `query_rows` at 10k rows started at 113 ms and is now 50 ms, which meets the guess (#79, PR #85). Search at 20k pages went from 301 to 185 ms; the 50 ms target stays with #78, where the measurement says why a faster join cannot reach it (ranking 24k hits alone costs most of it).
 - **The driver bump (#80) lowers most of these** (−11% to −44% p95 on a 4-core dev machine). Measured before it, these budgets have that much headroom until the next re-baseline.
-- **The 100k sizes stay provisional:** `BENCH_LARGE=1` takes too long for every PR. The grouped count also runs at 1k and 10k (`StorageGroupedCount`), so CI tracks its trend; those sizes get budgets from the next CI baseline.
+- **The 100k sizes stay provisional:** `BENCH_LARGE=1` takes too long for every PR. The grouped count also runs at 1k and 10k (`StorageGroupedCount`), so CI tracks its trend; those two sizes got their budgets from the #85 run.
 
 A budget may only be raised in a PR that says why.
 
