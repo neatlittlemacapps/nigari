@@ -98,7 +98,7 @@ specs/001-design-system/
 - **Components:** `web/src/ui/*.tsx`, `*.css`, `README.md`.
 - **Catalogue:** `web/catalog.html`, `web/catalog/*`, `web/vite.catalog.config.ts`.
 - **Migrated screen and package files:** `web/src/components/AdminSettings.tsx`; `web/package.json` (Base UI, `check` script); `web/package-lock.json` (through `npm install` only).
-- **Tests:** `web/tests/catalog.mjs`, `web/tests/catalog-baselines/`, `web/tests/package.json`.
+- **Tests:** `web/tests/catalog.mjs` (reference shots drawn per run, not committed), `web/tests/package.json`.
 - **Rules and docs:** `.claude/rules/frontend.md`, wiki screenshots.
 
 ## Complexity Tracking

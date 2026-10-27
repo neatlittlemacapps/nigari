@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createServer } from 'node:net';
 import { dirname, join, resolve } from 'node:path';
@@ -13,8 +13,9 @@ import { eventually } from './fixture.mjs';
 // The component catalogue (web/catalog.html), checked the three ways spec 001
 // promises (FR-013, US2):
 //
-//   1. Each section, in light and dark, matches its committed baseline in
-//      catalog-baselines/. UPDATE_BASELINES=1 writes them instead.
+//   1. Each section, in light and dark, looks as it did in the reference shots
+//      (see below). A difference is reported, not failed: it may be the
+//      change the pull request is for.
 //   2. axe finds no serious or critical violation, in either theme, with the
 //      dialogs closed and open.
 //   3. The keyboard does what the contract says: arrows, typeahead and Escape
@@ -28,15 +29,28 @@ import { eventually } from './fixture.mjs';
 //
 // The catalogue is served by Vite from web/ (it needs web/node_modules), with
 // no backend: it renders on tokens.css alone.
+//
+// Reference shots are never committed. Shots taken on one machine never match
+// another's: CI's runner draws text differently enough that every section
+// differed by about a thousand pixels from shots taken elsewhere, with nothing
+// changed. So the reference is drawn on the same machine, just before:
+//
+//   UPDATE_BASELINES=1 node catalog.mjs      # draw the reference (before a change)
+//   node catalog.mjs                         # compare (after it)
+//
+// CI does the same with main: it draws the base branch's catalogue
+// (CATALOG_WEB=<base>/web), then compares the pull request's against it.
+// CATALOG_BASELINES says where the reference lives (default: a temp dir).
+// CATALOG_SHOTS_ONLY=1 takes the shots and skips axe and the keyboard.
 
-const web = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const baselines = join(dirname(fileURLToPath(import.meta.url)), 'catalog-baselines');
+const web = process.env.CATALOG_WEB ? resolve(process.env.CATALOG_WEB) : resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const baselines = process.env.CATALOG_BASELINES ?? join(tmpdir(), 'salt-catalog-baselines');
 const update = process.env.UPDATE_BASELINES === '1';
+const shotsOnly = process.env.CATALOG_SHOTS_ONLY === '1';
+const changes = [];
 // Pixels a shot may differ by after the anti-aliasing allowance in
 // changedPixels. A count, not a share: two recoloured 14px checkboxes are
-// 0.3% of their section and a share let them through. A plain per-pixel share
-// also failed on CI's runner at 2.3–2.9% with nothing changed, all of it
-// anti-aliased edges, which the allowance now forgives.
+// 0.3% of their section, and a share let them through.
 const MAX_CHANGED = 25;
 
 const listener = createServer();
@@ -126,11 +140,11 @@ try {
 
   async function matches(name, shot) {
     const file = join(baselines, `${name}.png`);
-    if (update || !existsSync(file)) {
-      if (!update) failures.push(`${name}: no baseline; run with UPDATE_BASELINES=1 and commit catalog-baselines/`);
-      else writeFileSync(file, shot);
+    if (update) {
+      writeFileSync(file, shot);
       return;
     }
+    if (!existsSync(file)) return; // no reference drawn: nothing to compare
     const changed = await changedPixels(readFileSync(file), shot);
     if (changed > MAX_CHANGED) {
       // Outside the repository, so a failed run leaves nothing to commit by
@@ -139,7 +153,7 @@ try {
       mkdirSync(actual, { recursive: true });
       writeFileSync(join(actual, `${name}.png`), shot);
       const what = changed === Infinity ? 'a different size than' : `${changed} pixels changed from`;
-      failures.push(`${name}: ${what} the baseline (this run's shot: ${join(actual, name)}.png)`);
+      changes.push(`${name}: ${what} the reference (this run's shot: ${join(actual, name)}.png)`);
     }
   }
 
@@ -163,7 +177,7 @@ try {
       const id = await section.getAttribute('data-section');
       await matches(`${id}-${theme}`, await section.screenshot({ animations: 'disabled' }));
     }
-    await axe(theme);
+    if (!shotsOnly) await axe(theme);
 
     for (const open of ['dialog', 'alert']) {
       await page.goto(`${base}?theme=${theme}&open=${open}`);
@@ -172,11 +186,12 @@ try {
       await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(250);
       await matches(`${open}-open-${theme}`, await popup.screenshot({ animations: 'disabled' }));
-      await axe(`${theme}, ${open} open`);
+      if (!shotsOnly) await axe(`${theme}, ${open} open`);
     }
   }
 
   // 3: the keyboard.
+  if (shotsOnly) throw 'done';
   await page.goto(`${base}?theme=light`);
   const last = page.getByTestId('last');
 
@@ -252,14 +267,34 @@ try {
   await alertDialog.waitFor({ state: 'hidden' });
   assert.equal(await last.textContent(), '', 'AlertDialog: closing it confirmed it');
 } catch (e) {
-  failures.push(e.stack || String(e));
+  if (e !== 'done') failures.push(e.stack || String(e));
 } finally {
   await browser?.close();
   vite.kill();
 }
 
+// A changed section is a warning: it may be exactly what the pull request
+// set out to change. In CI it goes to the job summary with the shots.
+if (changes.length) {
+  console.warn(`catalog: ${changes.length} section(s) look different from the reference\n` + changes.map((c) => '  ' + c).join('\n'));
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    appendFileSync(
+      process.env.GITHUB_STEP_SUMMARY,
+      `### Component catalogue: ${changes.length} section(s) look different from main\n\n` +
+        changes.map((c) => `- ${c.split(' (')[0]}`).join('\n') +
+        '\n\nIf the pull request is meant to change them, this is expected. The shots are in the catalog-actual artifact.\n',
+    );
+    for (const c of changes) console.log(`::warning title=Component catalogue::${c.split(' (')[0]}`);
+  }
+}
 if (failures.length) {
   console.error(`catalog: ${failures.length} problem(s)\n` + failures.map((f) => '  ' + f).join('\n'));
   process.exit(1);
 }
-console.log(update ? 'catalog: baselines written' : 'catalog: every section matches its baseline, axe is clean, the keyboard works');
+console.log(
+  update
+    ? `catalog: reference shots written to ${baselines}`
+    : shotsOnly
+      ? 'catalog: shots taken'
+      : `catalog: axe is clean and the keyboard works${changes.length ? '' : '; every section matches its reference (where one was drawn)'}`,
+);

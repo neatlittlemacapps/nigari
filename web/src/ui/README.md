@@ -21,10 +21,12 @@ positioning. The look comes only from the design tokens (`web/tokens/` →
   rendered on `tokens.css` alone.
 - **How to open it:** `npx vite --config vite.catalog.config.ts`, then
   `/catalog.html`. Source in `web/catalog/`.
-- **Its test:** `web/tests/catalog.mjs` screenshots each section against
-  `web/tests/catalog-baselines/`, runs axe, and checks the keyboard. After a
-  deliberate visual change, retake the baselines with
-  `UPDATE_BASELINES=1 node web/tests/catalog.mjs`.
+- **Its test:** `web/tests/catalog.mjs` runs axe and checks the keyboard (both
+  fail the test), and compares each section with reference shots drawn on the
+  same machine (a difference is reported, not failed). Locally:
+  `UPDATE_BASELINES=1 node web/tests/catalog.mjs` before a change, then
+  `node web/tests/catalog.mjs` after it. In CI the reference is the base
+  branch, drawn on the same runner.
 
 | Component | Use it for | Not for | Catalogue |
 | --- | --- | --- | --- |

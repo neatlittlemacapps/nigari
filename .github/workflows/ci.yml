@@ -51,39 +51,62 @@ jobs:
       - name: Go build
         run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o salt .
 
-  # The component catalogue (spec 001, FR-013): each section against its
-  # baseline in light and dark, axe on every component, and the keyboard
-  # contract. Not a required check until it has been green on three pull
-  # requests: its baselines were taken outside CI, and a runner's anti-aliasing
-  # is the one thing they cannot know in advance.
+  # The component catalogue (spec 001, FR-013): axe on every component and
+  # the keyboard contract, which fail the job; and each section compared with
+  # the same section on the base branch, drawn on this runner first, which
+  # only warns. Shots from another machine never match a runner's (text is
+  # drawn differently), so the reference is drawn here, like the storage
+  # benchmarks' base. Not a required check until it has been green on three
+  # pull requests.
   catalog:
     name: Component catalogue
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: head
+
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request'
+        with:
+          path: base
+          ref: ${{ github.event.pull_request.base.sha }}
 
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: |
-            web/package-lock.json
-            web/tests/package-lock.json
+            head/web/package-lock.json
+            head/web/tests/package-lock.json
 
       - name: Install
         run: |
-          npm ci --prefix web
-          npm ci --prefix web/tests
-          npx --prefix web/tests playwright install --with-deps chromium
+          npm ci --prefix head/web
+          npm ci --prefix head/web/tests
+          npx --prefix head/web/tests playwright install --with-deps chromium
+
+      # A base from before the catalogue existed has nothing to compare with.
+      - name: Draw the base branch's catalogue
+        if: github.event_name == 'pull_request' && hashFiles('base/web/catalog.html') != ''
+        env:
+          CATALOG_WEB: base/web
+          CATALOG_BASELINES: ${{ runner.temp }}/catalog-reference
+          CATALOG_SHOTS_ONLY: "1"
+          UPDATE_BASELINES: "1"
+        run: |
+          npm ci --prefix base/web
+          node head/web/tests/catalog.mjs
 
       - name: Catalogue
         env:
+          CATALOG_BASELINES: ${{ runner.temp }}/catalog-reference
           CATALOG_ACTUAL: ${{ runner.temp }}/catalog-actual
-        run: node web/tests/catalog.mjs
+        run: node head/web/tests/catalog.mjs
 
-      # The shots that differed, to compare by eye or to take as new baselines.
+      # The sections that look different from the base, to compare by eye.
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
           name: catalog-actual
           path: ${{ runner.temp }}/catalog-actual

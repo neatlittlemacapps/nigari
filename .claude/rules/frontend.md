@@ -24,7 +24,7 @@ paths:
   AlertDialog, Field/Input, Checkbox, Select, Switch; `web/src/ui/README.md`
   says which for what). See them all in the catalogue: `npx vite --config
   vite.catalog.config.ts`, then `/catalog.html`. A new component gets a README
-  entry, a catalogue section and baselines (`web/tests/catalog.mjs`).
+  entry and a catalogue section (`web/tests/catalog.mjs` checks it).
   `check-tokens.mjs` counts raw `<button>`s and hand-built `role="dialog"`s
   outside `web/src/ui/`, and those counts only go down. Not in the layer yet:
   menus and toasts; reuse `dialog.tsx` (confirm/prompt), `modal.ts`,
