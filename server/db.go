@@ -352,7 +352,7 @@ func ensureColumn(db *sql.DB, table, column, ddl string) error {
 const readPoolSize = 4
 
 // openReadDB opens the read-only pool for long analytical reads: a database's
-// rows, rollups and grouped counts (#82).
+// rows, rollups, grouped counts (#82) and search (#78).
 //
 // Why a second pool, after years of one connection: every read and write
 // shared that connection, so a long read made every write wait. Measured in
