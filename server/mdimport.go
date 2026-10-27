@@ -86,6 +86,16 @@ const diagramHint = `A fenced ` + "```mermaid" + ` block becomes a real DIAGRAM,
 	`use. Prefer it over describing a flow in prose; you write the text, salt.md ` +
 	`draws it.`
 
+// blockSpellingHint tells agents how to write the blocks Markdown has no word
+// for (spec 006). Without it the spellings work only for an agent that
+// already guesses GitHub's alerts and pandoc's columns. get_page writes the
+// same spellings, so an agent that reads a page sees them too.
+const blockSpellingHint = `Blocks beyond plain Markdown, each on its own lines: ` +
+	`callout "> [!NOTE]" (or TIP, IMPORTANT, WARNING, CAUTION) then "> text"; ` +
+	`toggle "<details><summary>Title</summary>" … "</details>"; divider "---"; ` +
+	`table of contents "[[toc]]"; sub-pages list "[[subpages]]"; bookmark "<https://…>"; ` +
+	`columns ":::: columns" with "::: column" (or "::: {.column width=\"70%\"}") sections each closed by ":::", then "::::".`
+
 // parseInline converts inline markdown to BlockNote inline content.
 func parseInline(md string) []any {
 	var out []any

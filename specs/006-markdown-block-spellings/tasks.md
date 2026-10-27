@@ -62,15 +62,15 @@ description: "Tasks for every block an agent can see in Markdown, it can also wr
 
 ## Phase 5: User Story 3: agents are told the spellings (P2)
 
-- [ ] T012 [US3] [mcp] `blockSpellingHint` beside `diagramHint` in `server/mcp.go`, in the `write_content`, `create_page` and `get_page` descriptions
-- [ ] T013 [P] [US3] [wiki] `wiki/editor-blocks.md`: export table, "And back again" without the removed losses, a "Writing blocks as Markdown" list; `wiki/mcp-tools.md` § write_content; `docs/what-it-does.md` one line; retake screenshots `check-wiki.mjs` lists
+- [x] T012 [US3] [mcp] `blockSpellingHint` beside `diagramHint` in `server/mcp.go`, in the `write_content`, `create_page` and `get_page` descriptions
+- [x] T013 [P] [US3] [wiki] `wiki/editor-blocks.md`: export table, "And back again" without the removed losses, a "Writing blocks as Markdown" list; `wiki/mcp-tools.md` § write_content; `docs/what-it-does.md` one line; retake screenshots `check-wiki.mjs` lists
 
 ---
 
 ## Phase 6: Polish
 
-- [ ] T014 [perf] `BenchmarkMarkdownLargePage` after, against T001: within 10% both ways (SC-004), numbers in the pull request
-- [ ] T015 [test] `scripts/agent-gate.sh`; mutation-check T004, T009 and T011 (each fails with its fix undone)
+- [x] T014 [perf] `BenchmarkMarkdownLargePage` after, against T001: within 10% both ways (SC-004), numbers in the pull request
+- [x] T015 [test] `scripts/agent-gate.sh`; mutation-check T004, T009 and T011 (each fails with its fix undone)
 
 ---
 
