@@ -17,7 +17,7 @@ description: "Tasks for every block an agent can see in Markdown, it can also wr
 
 ## Phase 1: Setup
 
-- [ ] T001 [perf] Record `BenchmarkMarkdownLargePage` (5,000 blocks, both directions) on `main` before any change, for SC-004
+- [x] T001 [perf] Record `BenchmarkMarkdownLargePage` (5,000 blocks, both directions) on `main` before any change, for SC-004
 
 ---
 
