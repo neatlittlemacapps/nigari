@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: User description: "Chart and dashboard views (issue #20). Start with a chart view: bar, line or donut over one grouping and one aggregate, drawn without a new dependency. Dashboards (several views on one page) can build on embedded databases later."
+**Input**: Issue #20 (written by Claude from a Notion comparison): "Start with a chart view: bar, line or donut over one grouping and one aggregate, drawn without a new dependency. Dashboards (several views on one page) can build on embedded databases later." The "no new dependency" part was Claude's default; the owner chose Chart.js on 2026-10-28.
 
 **Issue**: #20
 
@@ -142,7 +142,7 @@ dark; read the chart's table alternative.
 
 **Drawing and accessibility**
 
-- **FR-013**: Charts MUST be drawn without a new runtime dependency, from the design tokens (spec 001): colours, type and spacing, in light and dark.
+- **FR-013**: Charts MUST take their colours, type and spacing from the design tokens (spec 001), in light and dark, and follow a theme switch without a reload. They are drawn with Chart.js (owner's choice, 2026-10-28), loaded only when a chart is shown.
 - **FR-014**: Every chart MUST offer a table of its groups and values, have an accessible name and summary, and be navigable by keyboard group by group.
 - **FR-015**: Group colours MUST reach a 3:1 contrast against the chart background (WCAG 1.4.11, graphical objects), checked by the token build, and every group MUST carry a text label so colour is never the only cue.
 - **FR-016**: Numbers, dates and labels MUST be formatted through `format.ts` and translated through `t()`.
@@ -165,7 +165,7 @@ dark; read the chart's table alternative.
 - **SC-003**: Over a 10,000-row database, a chart draws within its storage budget (set in the plan from measurement, as spec 002 does); over 100,000 rows it either draws or shows the time-limit sentence, and never hangs.
 - **SC-004**: An agent answers "how many per X" over a 10,000-row database with one request, and its numbers equal the chart's.
 - **SC-005**: The accessibility checker reports no serious or critical violations on a chart in either theme, and the chart can be read in full from the keyboard and as a table.
-- **SC-006**: The main bundle grows by no more than a budget set in the plan, and no new runtime dependency is added.
+- **SC-006**: The main bundle grows by no more than a budget set in the plan; the chart library loads only with a chart.
 
 ## Assumptions
 

@@ -117,18 +117,43 @@ setting and what it accepts; REST answers 400 `invalid_chart`. `set_view` gains
 A chart has no rows of its own to open, so `openIn` applies to its drill-down list (R9) and
 stays allowed.
 
-## R8. Drawing without a dependency
+## R8. Drawing: Chart.js
 
-**Decision**: hand-written SVG. Geometry lives in a pure module `web/src/chartLayout.ts`:
-folding into "Other", value scale and "nice" ticks, bar rectangles, line points and
-donut arcs, label placement, and the empty-state decision. `web/scripts/check-chartlayout.mjs`
-asserts it without a browser. `web/src/components/ChartView.tsx` renders the SVG and the
-table alternative and is loaded lazily, like `PeekPanel`.
+**Decision (owner, 2026-10-28)**: Chart.js **4.5.1** (MIT), the bar, line and doughnut
+controllers registered by hand so the rest is tree-shaken. 4.5.1 rather than 4.6.1: the
+newer one was released six days before this decision, under the two-week rule for new
+versions. Measured for the three charts: **60,694 B gzip**. It lives in the lazy
+`ChartView` chunk, so the main bundle does not carry it (SC-006).
+
+What stays ours, in pure modules with checks:
+- `web/src/chartLayout.ts`: folding into "Other", the order of groups, gap filling for
+  dates, the empty state, the summary sentence, and turning an `aggResult` into Chart.js
+  data (`check-chartlayout.mjs`).
+- `web/src/chartTheme.ts`: reads the chart tokens and text, grid and surface tokens from
+  the computed style of the chart's element and builds Chart.js options from them; called
+  again when the theme changes (light/dark), so no colour is written twice.
 
 Colours: 12 semantic tokens `color.chart.1` … `color.chart.12` with light and dark values,
 each declaring `md.salt.contrast` 3:1 on `color.surface.default`, so `build-tokens.mjs`
 fails a palette a theme cannot read (FR-015). A select's own option colours are used for
-its bars when it has them (edge case); every bar and slice also carries its text label.
+its bars when it has them (edge case); every bar and slice also carries its label.
+
+**The canvas and accessibility (FR-014)**: Chart.js draws on a canvas, which offers a
+keyboard or a screen reader nothing to hold. The chart therefore gets a DOM of its own
+beside the canvas:
+- the canvas is `aria-hidden`; the `figure` carries the caption and the summary sentence;
+- a row of focusable group buttons, visually tied to the chart (the legend for a donut,
+  the axis labels for bars and lines), with roving focus through `nav.ts`: arrow keys
+  move, each button's name is its label and value, Enter opens its rows (R9). Moving
+  focus also highlights the matching bar or slice (`chart.setActiveElements`), so a
+  sighted keyboard user sees where they are;
+- **Show as table** renders the groups as a `<table>`.
+
+Animations follow `prefers-reduced-motion`. Text in the canvas uses the app's font token.
+
+**Dependency surfaces**: `web/package.json` and the lockfile through `npm install`;
+`THIRD-PARTY-NOTICES.md` through `scripts/licenses.mjs`; the reason in the pull request
+(the constitution's rule).
 
 **Alternatives considered** (measured 2026-10-28: bar, line and donut imported from each,
 bundled minified with esbuild, React left out, gzip -9):
@@ -136,14 +161,10 @@ bundled minified with esbuild, React left out, gzip -9):
 | Library | Size, gzip | Draws on | Notes |
 | --- | --- | --- | --- |
 | uPlot 1.6.31 | 22,678 B | canvas | no donut; bars through a plugin |
-| Chart.js 4.4.7 | 60,006 B | canvas | tree-shaken to the three controllers |
+| Chart.js 4.4.7 / 4.5.1 | 60,006 / 60,694 B | canvas | chosen (4.5.1) |
 | Recharts 2.15.0 | 112,446 B | SVG | plus React, already loaded |
 | ECharts 5.6.0 | 179,222 B | SVG renderer | tree-shaken core |
-
-A lazy chunk would keep any of them out of the main bundle, so size alone does not decide.
-What does: FR-013 (no new runtime dependency), canvas giving no DOM for keyboard focus or a
-screen reader (FR-014), and theming through the design tokens in light and dark (FR-015),
-which each library reimplements in its own option format.
+| Hand-drawn SVG | ours | SVG | Claude's recommendation; the owner chose Chart.js for its maturity and room to grow |
 
 ## R9. Seeing the rows behind a group
 

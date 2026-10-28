@@ -7,6 +7,25 @@ entries are not edited away.
 
 ---
 
+## 2026-10-28 — Spec 004: charts are drawn with Chart.js
+
+**Decision** (owner): Chart.js 4.5.1, loaded only with a chart view. Supersedes "hand-drawn
+SVG" in the spec 004 plan entry below.
+
+**Why**: a mature library, with room for more chart types later (area, scatter, stacked).
+The project rule is "a new dependency needs a stated reason", not "none": the "no new
+dependency" in spec 004 was Claude's default, copied from issue #20, which Claude wrote.
+
+**What it costs, and how it is met**: 60,694 B gzip (measured), kept out of the main
+bundle in a lazy chunk; a canvas gives keyboard and screen readers nothing, so the chart
+gets focusable group buttons, a summary and a table beside it (research R8); Chart.js's
+options are built from the design tokens at draw time and rebuilt on a theme switch.
+
+**Rejected**: hand-drawn SVG (Claude's recommendation), uPlot (no donut), Recharts and
+ECharts (112 and 179 KB).
+
+---
+
 ## 2026-10-28 — Spec 004 plan: charts aggregate on the server, drawn by hand
 
 **Decision**:
