@@ -7,6 +7,49 @@ entries are not edited away.
 
 ---
 
+## 2026-10-28 — Spec 004 plan: charts aggregate on the server, drawn by hand
+
+**Decision**:
+- **One function, the rows query's WHERE.** `aggregateRows` groups in one SQL query over
+  the WHERE extracted from the rows query, so a chart's numbers are the filtered table's.
+  Formulas and rollups, which exist only in Go, take a measured second path.
+- **Agents through `query_rows`** (`group_by`, `aggregate`), not a new tool.
+- **Hand-drawn SVG**, lazy-loaded, colours as 12 chart tokens with a 3:1 contrast check.
+- **At most 12 groups drawn**, the rest as "Other"; dates up to 400 periods.
+- **A group's rows** are the ordinary rows query with one more filter, shown as a list
+  that follows the view's Open pages in.
+- **New registry row "Aggregation".**
+
+**Why**: SC-002 (the chart equals the table) only holds when both read one WHERE; a
+browser-side count is stopped by the 5-second limit exactly where charts matter; a chart
+library adds 40–90 KB gzip for three shapes.
+
+**Rejected**: counting in the browser; a separate aggregate SQL builder; a new MCP tool;
+a chart library; canvas (no focus or screen reader).
+
+---
+
+## 2026-10-28 — Upstream #85 (full width as its own column): not taken
+
+**Decision**: the fork keeps full width as the page prop `_fullWidth`. Upstream
+saltmd/salt.md#85 moves it to a column of its own; we do not follow.
+
+**Why**:
+- **Nothing to gain.** Upstream moves it out of the props so it cannot mix with database
+  properties. Here only documents use it, and documents have no database properties.
+- **Already open to agents.** `update_page full_width` sets it and `get_page` reports it,
+  with tests (`mcp_appearance_test.go`, `page_width_test.go`).
+- **It already travels.** Duplicate, templates, import/export, workspace blueprints and
+  history copy props, so the setting goes with the page without any code knowing about
+  it; that was the reason for the prop in the first place (`server/public.go`).
+- **The cost would be real:** a schema column, a migration of existing values, every
+  copy path taught the new column, the wiki and the tool changed, for no visible change.
+
+**Rejected**: following upstream for its own sake (owner, 2026-10-27: implement the
+maintainers' changes only when they make sense for us).
+
+---
+
 ## 2026-10-27 — Spec 007: the centre peek is a panel of its own, not a Dialog
 
 **Decision**: the centre peek is drawn by a new `ui/CenterPanel` (option A): modal, with
