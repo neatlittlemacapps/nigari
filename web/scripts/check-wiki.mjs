@@ -99,7 +99,7 @@ for (const t of propTypes) {
   }
 }
 
-const viewTypes = ['table', 'board', 'list', 'gallery', 'calendar', 'form', 'timeline'];
+const viewTypes = ['table', 'board', 'list', 'gallery', 'calendar', 'form', 'timeline', 'chart'];
 const views = pages.get('views.md') ?? '';
 for (const v of viewTypes) {
   if (!views.includes('`' + v + '`')) errors.push(`views.md never names \`${v}\``);

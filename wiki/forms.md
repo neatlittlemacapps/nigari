@@ -1,6 +1,6 @@
 # Forms
 
-A **form** is one of the seven view types a collection can have. It draws the
+A **form** is one of the eight view types a collection can have. It draws the
 collection's properties as fields to fill in, and submitting it creates a row.
 Published as a link, it lets somebody with no account create a row in one
 collection of your instance: a contact form, a leave request, a bug report, a

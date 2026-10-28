@@ -125,9 +125,9 @@ description: "Tasks for chart views of a database, with the chart builder"
 
 ## Phase 8: Polish and cross-cutting
 
-- [ ] T041 [perf] `BenchmarkStorageAggregate` in `server/storage_bench_test.go` (sum per select, count per month, formula sum; 1k and 10k, `BENCH_LARGE=1` for 100k); budgets from the CI run × 1.5 into `specs/002-storage-engine/research.md`; `EXPLAIN QUERY PLAN` in the pull request
+- [x] T041 [perf] `BenchmarkStorageAggregate` in `server/storage_bench_test.go` (sum per select, count per month, formula sum; 1k and 10k, `BENCH_LARGE=1` for 100k); budgets from the CI run × 1.5 into `specs/002-storage-engine/research.md`; `EXPLAIN QUERY PLAN` in the pull request
 - [x] T042 [perf] Bundle: main chunk growth measured against the plan's budgets; Chart.js only in the lazy chunk (`budgets.json` `bundleGzip` unchanged or lowered)
-- [ ] T043 [P] [wiki] `wiki/collections.md` § "What the chart adds" and the eight view types; `docs/what-it-does.md` "eight ways"; `check-wiki.mjs` learns `chart`
+- [x] T043 [P] [wiki] `wiki/collections.md` § "What the chart adds" and the eight view types; `docs/what-it-does.md` "eight ways"; `check-wiki.mjs` learns `chart`
 - [x] T044 [P] [wiki] `wiki/mcp-tools.md` §§ query_rows, set_view, get_collection, embed_database; `wiki/api.md` the aggregate route
 - [ ] T045 [P] [wiki] The wiki page that lists `/` entries gains the five chart entries; `wiki/collections.md` describes the settings panel, palettes and Save chart as
 - [ ] T046 [wiki] Screenshots `collection-chart` and `chart-settings` (light and dark) in `wiki/screenshots.json` and `web/scripts/shoot-wiki.mjs`; stale shots retaken

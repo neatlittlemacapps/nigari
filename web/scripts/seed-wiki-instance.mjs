@@ -119,6 +119,9 @@ await call('PUT', `/api/collections/${tasks}`, {
     { id: 'board', name: 'Board', type: 'board', groupBy: 'status' },
     { id: 'table', name: 'Table', type: 'table' },
     { id: 'cal', name: 'Calendar', type: 'calendar', dateProp: 'due' },
+    // A chart (spec 004): the sum of the effort per status, as a donut, so the
+    // wiki shows a chart that says more than a count.
+    { id: 'chart', name: 'Chart', type: 'chart', chartKind: 'donut', groupBy: 'status', agg: 'sum', aggProp: 'effort' },
   ],
 });
 

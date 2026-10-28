@@ -224,7 +224,7 @@ handing a third party the keys.
 
 ### Trello
 
-Trello is a board. salt.md has boards, but a board here is one of seven views on
+Trello is a board. salt.md has boards, but a board here is one of eight views on
 a database, and each card is a full document rather than a card with a
 description field.
 

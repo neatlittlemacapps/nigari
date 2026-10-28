@@ -963,11 +963,6 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             ))}
           </select>
         )}
-        {view.type === 'chart' && (
-          <Suspense fallback={null}>
-            <ChartSettings view={view} schema={schema} onChange={updateView} />
-          </Suspense>
-        )}
         {view.type !== 'form' && <FilterSortControls schema={schema} view={view} onChange={updateView} />}
         {/* What the collection IS — its columns, its properties, its views —
             is edited on its own page. An embed is a window onto the rows, and
@@ -1175,6 +1170,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         />
       ) : view.type === 'chart' ? (
         <Suspense fallback={<div className="db-empty">{t('Loading…')}</div>}>
+          {/* One row of its own above the chart: in the toolbar, four labelled
+              dropdowns wrapped into a column and stretched every button
+              beside them. */}
+          <ChartSettings view={view} schema={schema} onChange={updateView} />
           <ChartView
             collectionId={collectionId}
             view={view}

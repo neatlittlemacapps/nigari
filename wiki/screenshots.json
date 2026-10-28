@@ -318,7 +318,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "7ccde2eb6101",
+        "web/src/components/CollectionView.tsx": "fc2bf603cb99",
         "web/src/tokens.css": "f93ef23358ba",
         "web/src/theme.css": "42ead492ea94"
       }
@@ -354,7 +354,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "7ccde2eb6101",
+        "web/src/components/CollectionView.tsx": "fc2bf603cb99",
         "web/src/cardLayout.ts": "eb7f92584275",
         "web/src/tokens.css": "f93ef23358ba",
         "web/src/theme.css": "42ead492ea94"
@@ -390,7 +390,57 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "7ccde2eb6101",
+        "web/src/components/CollectionView.tsx": "fc2bf603cb99",
+        "web/src/tokens.css": "f93ef23358ba",
+        "web/src/theme.css": "42ead492ea94"
+      }
+    },
+    {
+      "id": "collection-chart",
+      "page": "views.md",
+      "caption": "A chart view: the sum of the effort per status, as a donut. The buttons under it are the groups, for the keyboard and for screen readers.",
+      "shows": [
+        "web/src/components/CollectionView.tsx",
+        "web/src/components/ChartFigure.tsx",
+        "web/src/components/ChartView.css",
+        "web/src/components/ChartSettings.tsx",
+        "web/src/components/ChartSettings.css",
+        "web/src/chartLayout.ts",
+        "web/src/chartTheme.ts",
+        "web/src/tokens.css",
+        "web/src/theme.css"
+      ],
+      "steps": [
+        {
+          "goto": "/"
+        },
+        {
+          "waitFor": ".sidebar"
+        },
+        {
+          "click": ".sidebar >> text=Tasks"
+        },
+        {
+          "wait": 900
+        },
+        {
+          "click": ".view-tab >> text=Chart"
+        },
+        {
+          "waitFor": "figure.chart canvas"
+        },
+        {
+          "wait": 1200
+        }
+      ],
+      "takenAt": {
+        "web/src/components/CollectionView.tsx": "fc2bf603cb99",
+        "web/src/components/ChartFigure.tsx": "5dbb8c9e3826",
+        "web/src/components/ChartView.css": "2542ef8ac482",
+        "web/src/components/ChartSettings.tsx": "4adac748c74f",
+        "web/src/components/ChartSettings.css": "814d199f7825",
+        "web/src/chartLayout.ts": "06da7d2b2f9d",
+        "web/src/chartTheme.ts": "db323d5ca88e",
         "web/src/tokens.css": "f93ef23358ba",
         "web/src/theme.css": "42ead492ea94"
       }
