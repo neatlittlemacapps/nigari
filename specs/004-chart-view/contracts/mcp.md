@@ -47,3 +47,9 @@ of database …"). With `set_view type chart` first, this puts a chart into a do
 
 Unchanged answer; the description names the chart settings (`chartKind`, `groupBy`,
 `groupPeriod`, `agg`, `aggProp`, `showEmpty`).
+
+## Each row (FR-030)
+
+`group_by: "__row"` on `query_rows` and `set_view`: one group per row, `key` the row id and
+`label` its title; `aggregate` must be sum, avg, min or max with `aggregate_property` (each
+group is one row, so any of them gives the row's value); `count` is refused.

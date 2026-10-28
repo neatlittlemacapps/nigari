@@ -4,7 +4,7 @@ No table or column changes.
 
 - **Chart view** (`collections.views`, JSON): a view with `type: "chart"` and
   - `chartKind`: `bar` | `hbar` | `line` | `donut` | `number` (default `bar`)
-  - `groupBy`: a property id of a type that groups (research R2); absent on a number chart
+  - `groupBy`: a property id of a type that groups (research R2), or `"__row"` for Each row (one group per row, R18); absent on a number chart
   - `groupPeriod`: `day` | `week` | `month` | `year`, only with a date grouping (default `month`)
   - `agg`: `count` | `sum` | `avg` | `min` | `max` (default `count`)
   - `aggProp`: a number, formula or rollup property, required unless `agg` is `count`

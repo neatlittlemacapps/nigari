@@ -9,7 +9,7 @@ description: "Tasks for chart views of a database, with the chart builder"
 
 **Tests**: required (salt.md). Refusal paths for every gate.
 
-**Issues**: parent #20; T001–T048 are #215–#262, in order.
+**Issues**: parent #20; T001–T048 are #215–#262, in order; T049–T054 are #271–#276.
 
 **Delivery**: three pull requests, each green on its own.
 1. **Server and agents**: the server half of Phase 2, US3, the route, the benchmark and
@@ -134,6 +134,22 @@ description: "Tasks for chart views of a database, with the chart builder"
 - [x] T047 [backend] Registry row *Aggregation* (tag `backend`, Since 2026-10-29) in `.specify/memory/surfaces.md` (plan, Registry)
 - [ ] T048 [ui] Backlog issues for what the walk-through showed and this feature leaves out (spec FR-017): "Save for everyone"/"Reset" on view filters, the folding toolbar, Lock views, a second grouping with stacked bars and reference lines
 
+
+---
+
+## Phase 9: Each row and an honest settings row (FR-030, FR-031, part 3)
+
+**Goal**: one bar per row with its number; a chart never silently stays a number chart.
+
+**Independent Test**: a collection with only a name and a number: a new chart is bars, one per row; switching kinds works; with no number either, the chart says what to add.
+
+- [ ] T049 [backend] Each row in `server/aggregate.go` (research R18): `groupBy "__row"` keyed by row id and labelled by title in `aggregateSQL` and `aggregateDerived`; `checkAggSpec` / `checkChartView` accept it and refuse `count` with it; MCP descriptions of `query_rows` and `set_view` name it
+- [ ] T050 [P] [test] Go tests for Each row: values equal each row's number, private rows excluded, formula and rollup values, `count` refused, MCP `set_view` and `query_rows` with `group_by "__row"`
+- [ ] T051 [ui] `chartLayout.ts` cap of 50 for Each row (12 on a donut), default sort value high to low; `chartDefaults.ts` picks Each row and the first number when nothing groups; a row's bar opens the row; cases in `check-chartlayout.mjs` and `check-chartdefaults.mjs`
+- [ ] T052 [ui] Settings: "What to show" always shown, "Each row" first when a number exists; with Each row "Value" lists the number properties by name; every kind selectable; a grouped kind with nothing to group by shows the sentence of FR-031; German and Spanish
+- [ ] T053 [P] [test] Playwright: the owner's case, a collection with only a number, gives bars per row, kinds switch, a bar opens its row
+- [ ] T054 [P] [wiki] `wiki/views.md` § chart and `wiki/mcp-tools.md`: Each row, and the sentence when nothing groups
+
 ---
 
 ## Dependencies
@@ -142,3 +158,4 @@ description: "Tasks for chart views of a database, with the chart builder"
 - T009 → T016, T017. T010 → T016. T012 → T017, T037. T031 → T033.
 - US1 is the MVP. US2 and US4 need US1's view. US3 needs Phase 2's server half only.
 - US5 needs US1 (the view), T031, T012. The wiki follows the code it describes.
+- T049 → T050, T051 → T052 → T053. Phase 9 ships with part 3.

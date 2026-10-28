@@ -308,3 +308,26 @@ download (edge case). No SVG (FR-017).
 **Parity**: the picture is a drawing of numbers an agent already reads with `query_rows`;
 the manifest's `collections` capability says so in its note, and no route is added, so
 `check-parity.mjs` has nothing new to count.
+
+## R18. Each row (FR-030, FR-031)
+
+**Decision**: `groupBy` takes the reserved value `"__row"`. The server's key is the row's
+id and its label the row's title (`aggregateSQL` groups by `pages.id`); a row is one group,
+so a sum is the row's value, and `agg` must name a number, formula or rollup property
+(`count` is refused with Each row: every bar would be 1). Rows without a number are
+"No value" and left out like any other. The drawing caps Each row at **50** groups, sorted by
+value high to low by default, and folds the rest into "Other" (the other groupings keep 12:
+a palette of 12 colours is what made 12 the cap there, and 50 bars in one colour stay
+readable on a bar chart; a donut of Each row keeps the cap of 12). A click on a row's bar
+opens the row instead of listing it.
+
+`chartDefaults.ts`: when nothing groups but a number property exists, a new chart is bars of
+Each row valued by the first number, which is what the owner expected from a collection
+with only a number. The settings always show "What to show", with "Each row" first when
+the database has a number; a grouped kind with nothing to group by draws a sentence naming
+what to add instead of falling back to a number chart.
+
+**Rejected**: grouping by a number's distinct values (a bar per "5", per "7"), which answers
+a question nobody asked here; grouping by any text property (Notion offers it) stays out
+until someone asks: it is Each row with duplicate names merged, and Each row covers the
+case that came up.
