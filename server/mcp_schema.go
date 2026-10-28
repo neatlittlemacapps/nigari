@@ -52,7 +52,7 @@ func propTypeList() string { return strings.Join(propTypeNames, ", ") }
 
 var validViewTypes = map[string]bool{
 	"table": true, "board": true, "list": true, "gallery": true,
-	"calendar": true, "timeline": true, "form": true,
+	"calendar": true, "timeline": true, "form": true, "chart": true,
 }
 
 // normalizeSchema brings a property list supplied by an agent into the shape
@@ -400,6 +400,17 @@ type viewSpec struct {
 	// side_peek. Checked by checkViewOpenIn, the rule PUT /api/collections
 	// applies too.
 	OpenIn *string `json:"open_in"`
+	// A chart's settings (spec 004), checked by checkChartView, the rule PUT
+	// /api/collections applies too.
+	ChartKind         *string         `json:"chart_kind"`
+	Period            *string         `json:"period"`
+	Aggregate         *string         `json:"aggregate"`
+	AggregateProperty *string         `json:"aggregate_property"`
+	ShowEmpty         *bool           `json:"show_empty"`
+	ShowZero          *bool           `json:"show_zero"`
+	ChartSort         *string         `json:"chart_sort"`
+	HiddenGroups      *[]string       `json:"hidden_groups"`
+	ChartStyle        *map[string]any `json:"chart_style"`
 }
 
 var validFilterOps = map[string]bool{
@@ -586,6 +597,75 @@ func applyViewSpec(view map[string]any, spec viewSpec, schema []map[string]any) 
 			return err
 		}
 	}
+	if err := applyChartSpec(view, spec); err != nil {
+		return err
+	}
+	return checkChartView(view, schema, true)
+}
+
+// applyChartSpec merges set_view's chart arguments into a view, under the
+// keys the interface stores (data-model.md). checkChartView then judges the
+// result, so a chart that cannot work is refused whatever was passed.
+func applyChartSpec(view map[string]any, spec viewSpec) error {
+	chartArgs := spec.ChartKind != nil || spec.Period != nil || spec.Aggregate != nil ||
+		spec.AggregateProperty != nil || spec.ShowEmpty != nil || spec.ShowZero != nil ||
+		spec.ChartSort != nil || spec.HiddenGroups != nil || spec.ChartStyle != nil
+	if t, _ := view["type"].(string); t != "chart" {
+		if chartArgs {
+			return fmt.Errorf("chart_kind, period, aggregate, aggregate_property, chart_sort, hidden_groups, show_empty, show_zero and chart_style are settings of a chart view; this view is a %s", t)
+		}
+		return nil
+	}
+	for key, val := range map[string]*string{
+		"chartKind": spec.ChartKind, "groupPeriod": spec.Period, "agg": spec.Aggregate,
+		"aggProp": spec.AggregateProperty, "chartSort": spec.ChartSort,
+	} {
+		if val == nil {
+			continue
+		}
+		if *val == "" {
+			delete(view, key)
+		} else {
+			view[key] = *val
+		}
+	}
+	// A count reads no property: one left behind from a sum would only
+	// confuse whoever reads the view back.
+	if a, _ := view["agg"].(string); a == "" || a == "count" {
+		delete(view, "aggProp")
+	}
+	for key, val := range map[string]*bool{"showEmpty": spec.ShowEmpty, "showZero": spec.ShowZero} {
+		if val != nil {
+			view[key] = *val
+		}
+	}
+	if spec.HiddenGroups != nil {
+		out := make([]any, 0, len(*spec.HiddenGroups))
+		for _, k := range *spec.HiddenGroups {
+			out = append(out, k)
+		}
+		view["hiddenGroups"] = out
+	}
+	if spec.ChartStyle != nil {
+		style, _ := view["chartStyle"].(map[string]any)
+		merged := map[string]any{}
+		for k, v := range style {
+			merged[k] = v
+		}
+		for k, v := range *spec.ChartStyle {
+			// The tool's spelling is snake_case like its other arguments; the
+			// view stores the interface's camelCase.
+			if k == "center_label" {
+				k = "centerLabel"
+			}
+			if v == nil {
+				delete(merged, k)
+			} else {
+				merged[k] = v
+			}
+		}
+		view["chartStyle"] = merged
+	}
 	return nil
 }
 
@@ -593,7 +673,7 @@ func applyViewSpec(view map[string]any, spec viewSpec, schema []map[string]any) 
 // form or table. "Views are what makes a database different from a table."
 func (s *Server) mcpCreateView(pageID string, spec viewSpec) (string, error) {
 	if !validViewTypes[spec.Type] {
-		return "", fmt.Errorf("unknown view type %q — use table, board, gallery, calendar, timeline, list or form", spec.Type)
+		return "", fmt.Errorf("unknown view type %q — use table, board, gallery, calendar, timeline, list, form or chart", spec.Type)
 	}
 	schema, views, err := s.loadCollection(pageID)
 	if err != nil {

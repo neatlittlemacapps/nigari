@@ -86,11 +86,19 @@ Measured on the CI runner (`ubuntu-latest`, 4 cores, Go 1.27.3), `-bench Storage
 | Grouped count (chart) | 1k rows | — | 2.1 ms (#85) | 4 ms |
 | Grouped count (chart) | 10k rows | — | 19.5 ms (#85) | 30 ms |
 | Grouped count (chart) | 100k rows | 250 ms | not run in CI; 139 ms on a 4-core dev machine (T020) | 250 ms, provisional |
+| Chart: sum of a number per select (spec 004) | 1k rows | — | 4.06 ms (#264) | 7 ms |
+| Chart: sum of a number per select (spec 004) | 10k rows | — | 38.8 ms (#264) | 59 ms |
+| Chart: count per month, gaps filled (spec 004) | 1k rows | — | 2.68 ms (#264) | 5 ms |
+| Chart: count per month, gaps filled (spec 004) | 10k rows | — | 25.2 ms (#264) | 38 ms |
+| Chart: sum of a rollup per select (spec 004) | 1k rows | — | 92.2 ms (#264) | 139 ms |
+| Chart: sum of a rollup per select (spec 004) | 10k rows | — | 963 ms (#264) | 1,445 ms |
 | Property write during a 5-agent burst | 10k rows | 20 ms per write | 5.3 ms | 8 ms per write |
 
 - **One budget is still looser than the guess.** `query_rows` at 10k rows started at 113 ms and is now 50 ms, which meets the guess (#79, PR #85). Search at 20k pages went from 301 to 185 ms; the 50 ms target stays with #78, where the measurement says why a faster join cannot reach it (ranking 24k hits alone costs most of it).
 - **The driver bump (#80) lowers most of these** (−11% to −44% p95 on a 4-core dev machine). Measured before it, these budgets have that much headroom until the next re-baseline.
 - **The 100k sizes stay provisional:** `BENCH_LARGE=1` takes too long for every PR. The grouped count also runs at 1k and 10k (`StorageGroupedCount`), so CI tracks its trend; those two sizes got their budgets from the #85 run.
+
+- **Chart rows (#264)** were measured on the same runner in PR #264, run 40704990150 (`-count=6`, the p95 benchstat reports). The grouped count beside them did not move against its base (19.41 → 19.35 ms p95 at 10k). A rollup sum is slow by nature: rollups exist only in Go (`computeDerived`), so every row is read and computed (spec 004, research R3). At 10k rows it takes about a second; at 100k it would reach the 5-second limit and answer with the time-limit sentence, which is the documented behaviour, not a hang.
 
 A budget may only be raised in a PR that says why.
 

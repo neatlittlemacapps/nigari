@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { PeekMode } from '../peek';
 import { api } from '../api';
 import { onRefresh } from '../pwa';
@@ -30,6 +30,12 @@ import { planCard, isBlank, zoneOf, contactKind, needsLabel } from '../cardLayou
 import SchemaEditor from './SchemaEditor';
 import GalleryView from './GalleryView';
 import ListView from './ListView';
+import { defaultChartView } from '../chartDefaults';
+
+// A chart (spec 004) brings Chart.js, about 60 KB gzip: loaded only when a
+// chart view is shown, so nobody who never opens one pays for it (SC-006).
+const ChartView = lazy(() => import('./ChartView'));
+const ChartSettings = lazy(() => import('./ChartSettings'));
 import { PageIcon } from '../pageIcon';
 import { toast } from '../toast';
 import {
@@ -58,6 +64,7 @@ import {
   Send,
   Share2,
   Globe,
+  ChartPie,
   GanttChartSquare,
   MessageSquare,
   Mail,
@@ -427,7 +434,17 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // against it and not the server's. Part of the key so a tab left open
   // overnight reloads with the new day.
   const todayStr = today();
-  const fsKey = JSON.stringify([serverFilters, serverSort, todayStr]);
+  // A chart reads the server's counts, not the rows (spec 004): loading every
+  // row of a 50k-row database to draw twelve bars would be the slow path the
+  // chart exists to avoid. Part of the key, so switching to a table loads them.
+  const isChart = view0?.type === 'chart';
+  // Nothing is loaded before the views are known: a page load used to fetch
+  // every row first and learn only afterwards that the view was a chart.
+  const viewKnown = !!view0;
+  const fsKey = JSON.stringify([serverFilters, serverSort, todayStr, isChart, viewKnown]);
+  // Moves on every reload a chart should follow (rows changed elsewhere, a
+  // pull to refresh), standing in for the rows it does not load.
+  const [chartEpoch, setChartEpoch] = useState(0);
 
   // Loads ALL rows, in steps of 200 one after another. It used to stop at the
   // first page plus a "Load more" button — with the result that a board of 656
@@ -438,6 +455,11 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const epochRef = useRef(0);
   const loadRows = useCallback(async () => {
     const epoch = ++epochRef.current;
+    if (!viewKnown) return;
+    if (isChart) {
+      setChartEpoch((n) => n + 1);
+      return;
+    }
     let acc: Row[] = [];
     for (;;) {
       const res = await api.collectionRows(collectionId, {
@@ -752,8 +774,12 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       list: t('List'),
       form: t('Form'),
       timeline: t('Timeline'),
+      chart: t('Chart'),
     };
-    const nv: ViewDef = { id: 'v' + Math.random().toString(36).slice(2, 9), name: labels[type], type };
+    const id = 'v' + Math.random().toString(36).slice(2, 9);
+    // A chart starts drawn, grouped by the first select (chartDefaults.ts),
+    // never as an empty frame waiting for its first setting.
+    const nv: ViewDef = type === 'chart' ? defaultChartView('bar', schema, id, labels[type]) : { id, name: labels[type], type };
     if (type === 'board') nv.groupBy = schema.find((p) => p.type === 'select' || p.type === 'multiselect')?.id;
     if (type === 'calendar') nv.dateProp = schema.find((p) => p.type === 'date')?.id;
     if (type === 'timeline') {
@@ -780,6 +806,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     if (t === 'list') return <List size={sz} />;
     if (t === 'form') return <ClipboardList size={sz} />;
     if (t === 'timeline') return <GanttChartSquare size={sz} />;
+    if (t === 'chart') return <ChartPie size={sz} />;
     return <Table2 size={sz} />;
   };
 
@@ -872,7 +899,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           <div className="menu view-add-menu" style={addViewPos}>
             {/* `vt`, not `t` — the loop variable would shadow the translate
                 function used in the labels right below it. */}
-            {(['table', 'board', 'gallery', 'calendar', 'timeline', 'list', 'form'] as const).map((vt) => (
+            {(['table', 'board', 'gallery', 'calendar', 'timeline', 'list', 'form', 'chart'] as const).map((vt) => (
               <button key={vt} onClick={() => addView(vt)}>
                 <span className="view-tab-ic">{tabIcon(vt)}</span>
                 {{
@@ -883,6 +910,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
                   timeline: t('Timeline'),
                   list: t('List'),
                   form: t('Form'),
+                  chart: t('Chart'),
                 }[vt]}
               </button>
             ))}
@@ -1140,6 +1168,27 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           onNavigate={onNavigate}
           onOpenInNewTab={onOpenInNewTab}
         />
+      ) : view.type === 'chart' ? (
+        <Suspense fallback={<div className="db-empty">{t('Loading…')}</div>}>
+          {/* One row of its own above the chart: in the toolbar, four labelled
+              dropdowns wrapped into a column and stretched every button
+              beside them. */}
+          <ChartSettings view={view} schema={schema} onChange={updateView} />
+          <ChartView
+            collectionId={collectionId}
+            view={view}
+            schema={schema}
+            filters={serverFilters}
+            today={todayStr}
+            reloadKey={chartEpoch}
+            onUpdateView={updateView}
+            tagColors={tagColors}
+            onNavigate={onNavigate}
+            onOpenInNewTab={onOpenInNewTab}
+            onSetProp={setRowProp}
+            onSetOptions={setPropOptions}
+          />
+        </Suspense>
       ) : view.type === 'list' ? (
         <ListView
           rows={viewRows}

@@ -19,7 +19,8 @@ Body:
 }
 ```
 
-All optional except `groupBy` when no `viewId` is given. With `viewId`, the view's own
+All optional. Without `groupBy` (and without a view that has one), the answer is a single
+group with key `"*"`: the aggregate over every row the filters let through (FR-029). With `viewId`, the view's own
 settings and filters are the defaults and the fields sent override them.
 
 Answer 200:
@@ -45,5 +46,7 @@ database the caller may not read; 503/`query_timeout` past the 5-second limit.
 
 ## PUT /api/collections/{id}
 
-Unchanged shape. A view with `type: "chart"` is checked by `checkChartView`; a refusal is
+Unchanged shape. A view with `type: "chart"` is checked by `checkChartView` (every field
+of data-model.md: known kinds, sorts, palettes, heights and legends; text lengths;
+`hiddenGroups` at most 500 keys); a refusal is
 400 `invalid_chart` naming the view and the setting, and nothing is stored.

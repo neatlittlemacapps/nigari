@@ -153,6 +153,39 @@ func BenchmarkStorageGroupedCount(b *testing.B) {
 	}
 }
 
+// A chart's aggregate (spec 004): the sum of a number per select, a count per
+// month (gap filling included) and the sum of a rollup, which only Go can
+// compute (aggregateDerived reads the rows in pages and folds them). All over
+// the rows the member may see. Budgets are this benchmark's CI p95 × 1.5, in
+// specs/002-storage-engine/research.md.
+func BenchmarkStorageAggregate(b *testing.B) {
+	cases := []struct {
+		name string
+		spec aggSpec
+	}{
+		{"sum-by-select", aggSpec{GroupBy: "stage", Agg: "sum", AggProp: "amount"}},
+		{"count-by-month", aggSpec{GroupBy: "due", Period: "month"}},
+		{"rollup-sum-by-select", aggSpec{GroupBy: "stage", Agg: "sum", AggProp: "budget"}},
+	}
+	for _, n := range rowSizes() {
+		for _, c := range cases {
+			b.Run(c.name+"/rows="+sizeName(n), func(b *testing.B) {
+				w := sharedBenchWorld(b, 0, n)
+				var l latencies
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					l.time(func() {
+						if _, err := w.s.aggregateRows(context.Background(), w.member(), w.rowsDB, c.spec, nil, nil, benchDay); err != nil {
+							b.Fatalf("aggregate: %v", err)
+						}
+					})
+				}
+				l.report(b)
+			})
+		}
+	}
+}
+
 // A rollup over a relation, on its own: computeDerived for one page of 100
 // rows, each summing the budget of its related project.
 func BenchmarkStorageRollup(b *testing.B) {

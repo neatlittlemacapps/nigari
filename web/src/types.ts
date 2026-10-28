@@ -290,7 +290,7 @@ export function normalizeCollectionConfig(cfg: CollectionConfig): CollectionConf
 export interface ViewDef {
   id: string;
   name: string;
-  type: 'table' | 'board' | 'list' | 'gallery' | 'calendar' | 'form' | 'timeline';
+  type: 'table' | 'board' | 'list' | 'gallery' | 'calendar' | 'form' | 'timeline' | 'chart';
   groupBy?: string;
   dateProp?: string; // calendar/timeline view: date property (timeline: start)
   endDateProp?: string; // timeline view: optional end-date property (else 1-day bar)
@@ -309,6 +309,28 @@ export interface ViewDef {
   // How a click opens one of this view's rows (spec 007): beside the view in a
   // side peek, or (follow-up) over it in a centre peek. Missing = full page.
   openIn?: 'side_peek' | 'center_peek';
+  // A chart view (spec 004, data-model.md). groupBy above is its grouping; a
+  // number chart has none. Checked by the server's checkChartView on save.
+  chartKind?: 'bar' | 'hbar' | 'line' | 'donut' | 'number';
+  groupPeriod?: 'day' | 'week' | 'month' | 'year';
+  agg?: 'count' | 'sum' | 'avg' | 'min' | 'max';
+  aggProp?: string;
+  showEmpty?: boolean;
+  showZero?: boolean;
+  chartSort?: 'auto' | 'label_asc' | 'label_desc' | 'value_asc' | 'value_desc';
+  hiddenGroups?: string[];
+  chartStyle?: ChartStyle;
+}
+
+export interface ChartStyle {
+  palette?: 'auto' | 'colorful' | 'colorless' | 'blue' | 'yellow' | 'green' | 'purple' | 'teal' | 'orange' | 'pink' | 'red';
+  height?: 'small' | 'medium' | 'large' | 'xlarge';
+  legend?: 'bottom' | 'right' | 'none';
+  labels?: boolean;
+  center?: boolean;
+  centerLabel?: string;
+  caption?: string;
+  title?: string;
 }
 
 export interface CollectionConfig {

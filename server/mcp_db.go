@@ -67,6 +67,49 @@ func (s *Server) mcpQueryRows(u *user, pageID string, flat []rowFilter, groups [
 	return wrapUntrusted(string(out)), nil
 }
 
+// mcpAggregate is query_rows with group_by or aggregate (spec 004): the
+// chart's numbers from aggregateRows, the function the interface's chart
+// reads, so an agent and a person see the same values. filters, when the call
+// passed any, replace a chart view's own; filter_groups add to either.
+func (s *Server) mcpAggregate(u *user, pageID string, req aggRequest, filters []rowFilter, filtersGiven bool, groups [][]rowFilter, today time.Time) (string, error) {
+	var isCollection int
+	if s.db.QueryRow(`SELECT COUNT(*) FROM collections WHERE page_id = ?`, pageID).Scan(&isCollection); isCollection == 0 {
+		return "", fmt.Errorf("page %q is not a database", pageID)
+	}
+	if err := s.checkDayValues(pageID, append([][]rowFilter{filters}, groups...)...); err != nil {
+		return "", err
+	}
+	ctx := context.Background()
+	spec, flat, err := s.resolveAggRequest(ctx, pageID, req)
+	if err != nil {
+		return "", err
+	}
+	if filtersGiven {
+		flat = filters
+	}
+	resolved := make([][]rowFilter, len(groups))
+	for i, g := range groups {
+		resolved[i] = s.resolveFilterValues(pageID, g)
+	}
+	res, err := s.aggregateRows(ctx, u, pageID, spec, s.resolveFilterValues(pageID, flat), resolved, today)
+	if err != nil {
+		return "", err
+	}
+	var out []byte
+	if spec.GroupBy == "" {
+		// One value: the number chart, and "how much in total".
+		g := res.Groups[0]
+		out, err = json.Marshal(map[string]any{"value": g.Value, "rows": res.Total, "left_out": res.LeftOut})
+	} else {
+		out, err = json.Marshal(map[string]any{"groups": res.Groups, "left_out": res.LeftOut, "total": res.Total})
+	}
+	if err != nil {
+		return "", err
+	}
+	// Labels are option names, people's names and page titles: user data.
+	return wrapUntrusted(string(out)), nil
+}
+
 // mcpSetProperties field-level-merges the given property values into a row's
 // props, mirroring the REST propsPatch semantics (null clears a key).
 func (s *Server) mcpSetProperties(pageID string, properties json.RawMessage, actor *user) (string, error) {

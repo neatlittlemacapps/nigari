@@ -72,12 +72,25 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 400, "schema and views must be valid JSON")
 		return
 	}
-	// The views half is stored as sent, but the one rule MCP set_view applies
-	// to a view's open mode applies here too (spec 007): a value the interface
-	// cannot honour would otherwise be stored by any script that can PUT.
+	// The views half is stored as sent, but the rules MCP set_view applies to
+	// a view apply here too: its open mode (spec 007) and a chart's settings
+	// (spec 004). A value the interface cannot honour would otherwise be stored
+	// by any script that can PUT.
 	if hasViews {
-		views, err := normalizeViewsOpenIn(body.Views)
-		if err != nil {
+		schema, stored, _ := s.loadCollection(id)
+		if hasSchema {
+			var sent []map[string]any
+			if json.Unmarshal(body.Schema, &sent) == nil {
+				schema = sent
+			}
+		}
+		views, err := normalizeViews(body.Views, schema, stored)
+		var chartErr errChart
+		switch {
+		case errors.As(err, &chartErr):
+			httpErrorCode(w, 400, "invalid_chart", err.Error())
+			return
+		case err != nil:
 			httpErrorCode(w, 400, "invalid_view_open_in", err.Error())
 			return
 		}
@@ -445,47 +458,7 @@ func (s *Server) collectionRowsQuery(ctx context.Context, u *user, colID string,
 	if now.IsZero() {
 		now = time.Now()
 	}
-	// A relative day names a different date every day. Resolve it now, per
-	// query, so a saved view stays live, and only on date properties (see
-	// resolveSmartDates), so a status option named "Today" keeps working.
-	flat = s.typeFilters(colID, s.resolveSmartDates(colID, flat, now))
-	resolved := make([][]rowFilter, len(groups))
-	for i, g := range groups {
-		resolved[i] = s.typeFilters(colID, s.resolveSmartDates(colID, g, now))
-	}
-	groups = resolved
-	where, args := s.rowScope(u, colID)
-	// The flat list is a term of its own beside the OR of the groups. Copied
-	// into every group instead, it made an unfinished group match whatever the
-	// flat list matched, so adding a condition could widen the answer.
-	for _, f := range flat {
-		if cond, cargs := f.where(); cond != "" {
-			where = append(where, cond)
-			args = append(args, cargs...)
-		}
-	}
-	ors := make([]string, 0, len(groups))
-	for _, g := range groups {
-		ands := make([]string, 0, len(g))
-		for _, f := range g {
-			cond, cargs := f.where()
-			if cond == "" {
-				continue
-			}
-			ands = append(ands, cond)
-			args = append(args, cargs...)
-		}
-		// An empty group constrains nothing — it must not narrow the answer,
-		// or one unfinished group would blank the whole view.
-		if len(ands) == 0 {
-			continue
-		}
-		ors = append(ors, "("+strings.Join(ands, " AND ")+")")
-	}
-	if len(ors) > 0 {
-		where = append(where, "("+strings.Join(ors, " OR ")+")")
-	}
-	whereSQL := strings.Join(where, " AND ")
+	whereSQL, args := s.rowsWhere(u, colID, flat, groups, now)
 
 	orderSQL := "position, created_at"
 	if sortParam != "" {
@@ -565,6 +538,56 @@ func (s *Server) collectionRowsQuery(ctx context.Context, u *user, colID string,
 		return nil, 0, readErr(ctx, err)
 	}
 	return list, total, nil
+}
+
+// rowsWhere is the WHERE clause of a database's rows as a reader asks for
+// them: rowScope (live rows, minus other people's private ones) and the
+// filters, flat and grouped. Both the rows query and the chart's aggregate
+// (aggregate.go) read it, so a bar can never count a row the table with the
+// same filters would not show (spec 004, SC-002). A copy of the filter code
+// would drift, as the number filters once did (#95).
+func (s *Server) rowsWhere(u *user, colID string, flat []rowFilter, groups [][]rowFilter, now time.Time) (string, []any) {
+	// A relative day names a different date every day. Resolve it now, per
+	// query, so a saved view stays live, and only on date properties (see
+	// resolveSmartDates), so a status option named "Today" keeps working.
+	flat = s.typeFilters(colID, s.resolveSmartDates(colID, flat, now))
+	resolved := make([][]rowFilter, len(groups))
+	for i, g := range groups {
+		resolved[i] = s.typeFilters(colID, s.resolveSmartDates(colID, g, now))
+	}
+	groups = resolved
+	where, args := s.rowScope(u, colID)
+	// The flat list is a term of its own beside the OR of the groups. Copied
+	// into every group instead, it made an unfinished group match whatever the
+	// flat list matched, so adding a condition could widen the answer.
+	for _, f := range flat {
+		if cond, cargs := f.where(); cond != "" {
+			where = append(where, cond)
+			args = append(args, cargs...)
+		}
+	}
+	ors := make([]string, 0, len(groups))
+	for _, g := range groups {
+		ands := make([]string, 0, len(g))
+		for _, f := range g {
+			cond, cargs := f.where()
+			if cond == "" {
+				continue
+			}
+			ands = append(ands, cond)
+			args = append(args, cargs...)
+		}
+		// An empty group constrains nothing — it must not narrow the answer,
+		// or one unfinished group would blank the whole view.
+		if len(ands) == 0 {
+			continue
+		}
+		ors = append(ors, "("+strings.Join(ands, " AND ")+")")
+	}
+	if len(ors) > 0 {
+		where = append(where, "("+strings.Join(ors, " OR ")+")")
+	}
+	return strings.Join(where, " AND "), args
 }
 
 // filterJSON is one condition as it travels: the flat `filter` object and one

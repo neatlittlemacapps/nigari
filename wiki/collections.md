@@ -189,7 +189,8 @@ right, the settings for the view you are on.
 | Control | What it does |
 | --- | --- |
 | View tabs | Switch views. **Double-click** a tab to rename it. |
-| `+` (Add view) | Menu: **Table**, **Board**, **Gallery**, **Calendar**, **Timeline**, **List**, **Form**. The new view is named after its type and opens straight away. |
+| `+` (Add view) | Menu: **Table**, **Board**, **Gallery**, **Calendar**, **Timeline**, **List**, **Form**, **Chart**. The new view is named after its type and opens straight away. |
+| **Chart**, **What to show**, **Period**, **Value**, **Of** | Chart only: the kind of chart, what it groups by, a date's period, and what each group shows. See [Views](views.md#chart). |
 | **Start:** / **End:** | Timeline only: which date property draws the bars. Leaving End empty gives one-day bars. |
 | Sub-item picker | Table only, and only when a relation points back at this same collection. Choosing it draws the table as a tree; **No sub-items** turns it off. |
 | **Filter** | Conditions on properties, ANDed. The button shows the count. |
@@ -309,6 +310,14 @@ columns: one column per customer, per system, per whatever the rows point at.
 If the grouping property is missing, the board says
 *This board needs a Select property to group by. Open ⚙ Properties to add one.*
 The calendar and the timeline say the same about a date property.
+
+### What the chart adds
+
+A chart does not list rows; it counts them, on the server, over exactly the
+rows its filters let through. Each bar, slice or point is one value of the
+property it groups by, and a click on it lists the rows behind it. The settings,
+the order of the groups and how it reads without a mouse are in
+[Views](views.md#chart).
 
 ### What the form adds
 

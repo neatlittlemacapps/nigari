@@ -1,0 +1,174 @@
+/* A chart view (spec 004). Every value is a token: the chart's colours are
+   read by chartTheme.ts from the same custom properties, so the canvas and the
+   DOM around it can never disagree about the theme. */
+
+.chart {
+  margin: 0;
+  /* In line with the view tabs and the page's own text column. */
+  padding: var(--space-200) calc(2 * var(--space-600)); /* the toolbar's 48px, so the edges line up */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-150);
+}
+
+.chart-caption {
+  color: var(--color-text-default);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+
+.chart-canvas {
+  position: relative;
+  width: 100%;
+}
+
+.chart-canvas canvas {
+  display: block;
+}
+
+/* The donut's total is real text over the hole, not pixels in the canvas. */
+.chart-centre {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.chart-centre-value {
+  color: var(--color-text-default);
+  font-size: var(--font-size-display);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.chart-centre-label,
+.chart-summary,
+.chart-note,
+.chart-state {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.chart-state {
+  padding: var(--space-400) var(--space-200);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-150);
+}
+
+.chart-error {
+  color: var(--color-text-default);
+}
+
+.chart-number {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-100);
+}
+
+.chart-number-title {
+  color: var(--color-text-default);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.chart-number-value {
+  color: var(--color-text-default);
+  font-size: var(--font-size-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The groups as buttons: the legend for a donut and a line, and for every
+   kind the way a keyboard and a screen reader move through the chart. */
+.chart-groups {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-50) var(--space-150);
+}
+
+.chart-group {
+  gap: var(--space-100);
+}
+
+.chart-group[aria-pressed='true'] {
+  background: var(--color-accent-soft);
+}
+
+.chart-swatch {
+  width: var(--space-150);
+  height: var(--space-150);
+  border-radius: var(--radius-scale-xs);
+  flex: none;
+}
+
+.chart-group-value {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-table-switch {
+  align-self: flex-start;
+}
+
+.chart-table {
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-default);
+}
+
+.chart-table caption {
+  text-align: start;
+  color: var(--color-text-muted);
+  padding-bottom: var(--space-100);
+}
+
+.chart-table th,
+.chart-table td {
+  text-align: start;
+  padding: var(--space-50) var(--space-200) var(--space-50) 0;
+  border-bottom: 1px solid var(--color-border-default);
+  font-weight: 400;
+}
+
+.chart-table thead th {
+  color: var(--color-text-muted);
+}
+
+.chart-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-table tr[data-hidden] {
+  color: var(--color-text-muted);
+}
+
+.chart-rows {
+  border-top: 1px solid var(--color-border-default);
+  padding-top: var(--space-150);
+}
+
+.chart-rows-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--color-text-default);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+
+/* On a phone the toolbar keeps 14px at the sides; so does this. */
+@media (max-width: 768px) {
+  .chart {
+    padding-inline: calc(var(--space-300) + var(--space-50));
+  }
+}

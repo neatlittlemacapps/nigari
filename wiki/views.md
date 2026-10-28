@@ -7,7 +7,7 @@ views as you like and they are independent: filtering the board changes nothing
 about the table. What they never do is change the rows themselves. Every view of
 a collection reads the same rows; only the drawing differs.
 
-This page covers all seven view types, what each one needs before it can draw
+This page covers all eight view types, what each one needs before it can draw
 anything, the options each one offers, and how filters, sorting and visible
 columns work. The rows and the schema behind them are in
 [Collections](collections.md); the property types are in
@@ -18,7 +18,7 @@ stored on the collection, so a filter you add is the filter everyone sees in
 that view, on every device, the next time they open the collection. If you want
 your own cut of the data, add a view rather than change one.
 
-## The seven types
+## The eight types
 
 | Type | Draws | Needs |
 | --- | --- | --- |
@@ -29,6 +29,7 @@ your own cut of the data, add a view rather than change one.
 | `calendar` | a month grid, rows on their day | a date property |
 | `timeline` | bars across a day grid | a start date; an end date is optional |
 | `form` | fields that create a row when submitted | nothing |
+| `chart` | bars, a line, a donut or one number, counted on the server | a property to group by, except for a number chart |
 
 A collection that has just been created carries two views: **Board**, grouped by
 the Status property, and **Table**, in that order, so the board is what opens
@@ -289,6 +290,78 @@ not valid or has been switched off.*
 Hiding a property under **Columns** hides it on the public form too. More on the
 published side in [Sharing](sharing.md#public-forms).
 
+### `chart`
+
+A chart answers "how many" and "how much" at a glance: how many tasks per
+status, how many hours per person, how many sign-ups per week. It does not load
+the rows. The server counts them, over exactly the rows the view's filters let
+through and that you may see, and sends only the numbers; so a chart of fifty
+thousand rows costs about as much as a chart of fifty.
+
+![A chart view: the sum of the effort per status, as a donut. The buttons under it are the groups, for the keyboard and for screen readers.](img/collection-chart.png)
+
+**Adding one.** `+` → **Chart**. It appears drawn at once: bars, grouped by the
+collection's first select property (or the first property that can group at
+all), counting rows. A collection with nothing to group by starts as a number
+chart.
+
+**The settings** sit in the bar above it:
+
+| Setting | Choices |
+| --- | --- |
+| **Chart** | **Vertical bars**, **Horizontal bars**, **Line**, **Donut**, **Number** (one big value) |
+| **What to show** | the property each bar, point or slice stands for: a select, multi-select, person, checkbox, date or relation |
+| **Period** | for a date: **Day**, **Week**, **Month** (the default) or **Year** |
+| **Value** | **Count of rows**, or the **Sum**, **Average**, **Minimum** or **Maximum** of a number, formula or rollup property, chosen under **Of** |
+
+The order of the groups is the property's own: a select's options as they are
+listed, checked before unchecked, dates in time order; anything else largest
+first. Rows without a value make a group of their own, **No value**, drawn last.
+A row with several values (tags, several people, several related rows) counts
+once under each of them, and the chart says so under it. A sum or an average
+leaves out rows without a number, and says how many. Between the first and the
+last period of a date, empty periods are drawn at zero, so a line does not
+skip them; more than 400 periods are refused with a request for a coarser one.
+
+At most twelve groups are drawn. The rest are added up into **Other**; **No
+value** is never folded into it. **Show as table** lists every group with its
+value and its number of rows, whatever is drawn.
+
+**The rows behind a group.** Click a bar, a slice or a point, or one of the
+group buttons under the chart, and the rows behind it are listed underneath:
+the same rows a filter on that value would show in a table. A click on a row
+opens it the way the view's **Open pages in** says. **Close** puts the list
+away. At most 200 rows are listed; the count above them is the full one.
+
+**Reading it without a mouse or without the picture.** Under the chart is one
+button per group, with its name and its value: Tab reaches them, the arrow keys
+move from one to the next (they stop at the ends rather than wrap around), and
+Enter lists the rows. Moving the focus also lights up the matching bar or
+slice. The picture itself is hidden from screen readers; they read the
+caption, the summary under it (*4 groups · largest: Done, 11*) and the buttons.
+A donut's total is real text in its middle.
+
+**Colours** come from the design tokens and are readable in light and dark: a
+select's own option colours where it has them, otherwise a set of twelve that
+all reach a 3:1 contrast with the page. **No value** and **Other** are grey.
+
+**In a document** a chart keeps the document's own filters, like any embedded
+view (see [Collections inside documents](collections.md#collections-inside-documents)).
+
+**A filter on a rollup, formula or backrelation does not work on a chart.**
+Those values are worked out after the database has filtered (see
+[What a view leaves out without saying so](#what-a-view-leaves-out-without-saying-so)),
+and a table then corrects the answer in the browser; a chart has no rows in the
+browser to correct. So on a chart such a filter either matches nothing or lets
+every row through. Filter on a stored property instead.
+
+**Not built yet:** the style settings (palette, height, legend, value labels,
+caption), sorting and hiding single groups from the chart's own settings,
+inserting a chart straight from the `/` menu of a document, and saving a chart
+as a picture. They are the next part of the same feature. Agents can already
+set every one of those over MCP; see `set_view` in
+[MCP tools](mcp-tools.md).
+
 ## The settings bar
 
 The view tabs sit on the left of the collection's toolbar; everything that
@@ -452,7 +525,7 @@ The two are worth telling apart before you go looking for lost data.
 
 1. **Add a view** with the `+` at the end of the tabs (tooltip *Add view*). The
    menu offers **Table**, **Board**, **Gallery**, **Calendar**, **Timeline**,
-   **List**, **Form**. The new view is named after its type, is appended at the
+   **List**, **Form**, **Chart**. The new view is named after its type, is appended at the
    end, and opens straight away.
 2. **Rename** by double-clicking the tab, or through `⋯` → **Rename view**. A
    right-click on any tab offers renaming, moving and removing for that view,

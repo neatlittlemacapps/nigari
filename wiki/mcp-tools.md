@@ -700,6 +700,7 @@ base64`. For anything large, `/api/upload` is the better road (see
 | --- | --- | --- |
 | `page_id` | string | yes: the document |
 | `database_id` | string | yes |
+| `view_id` | string | no |
 
 Puts an existing database into a document, at the end of its content. Only a
 reference is stored: the database stays one object in one place, and the same
@@ -707,8 +708,12 @@ database can appear in several documents. Use this instead of creating a
 separate intro page beside a database: a database page cannot have a body of
 its own.
 
+`view_id` is the view of that database the document shows; without it the
+document shows the database's first view. With a chart made by `set_view` this
+puts a chart into a document, the way a person does from the `/` menu.
+
 Errors: `database "…" not found`; `page "…" is a document, not a database —
-embed only works with databases`.
+embed only works with databases`; `view "…" is not a view of database "…"`.
 
 ## Databases
 
@@ -757,7 +762,9 @@ name`; `options on "Name" must be a list`.
 | `page_id` | string | yes |
 
 Returns `{page_id, schema, views}`: the full property schema **and** every view
-with its id. A view that opens its rows in a peek carries
+with its id. A chart view carries `chartKind`, `groupBy`, `groupPeriod`, `agg`,
+`aggProp`, `showEmpty`, `showZero`, `chartSort`, `hiddenGroups` and
+`chartStyle` (see `set_view`). A view that opens its rows in a peek carries
 `"openIn": "side_peek"` or `"center_peek"`; no key means a full page (see
 `set_view`). Call this before any other database tool: property ids, select
 option ids and view ids all come from here. Errors: `page "…" is not a
@@ -809,6 +816,11 @@ properties to add/change or remove_properties`; `unknown property type "x"`;
 | `sort` | string | no |
 | `limit` | integer | no |
 | `offset` | integer | no |
+| `group_by` | string | no: counts or totals per group |
+| `period` | string | no: with a date `group_by` |
+| `aggregate` | string | no |
+| `aggregate_property` | string | no |
+| `view_id` | string | no: a chart view |
 
 Each filter is `{property, op, value}`, all ANDed together. `property` is a
 property id from `get_collection`; **the row title is not a property**, so
@@ -863,6 +875,51 @@ and the total, unless you are an **admin of the workspace**, who sees them all,
 the same rule the rest of the product applies.
 
 Errors: `page "…" is not a database`.
+
+**Counting instead of fetching.** Pass `group_by` and the answer is the numbers
+a chart view shows, in one call, not rows: the way to answer "how many per X" or
+"how much per Y" on a large database, where fetching every row would run into
+the 5-second limit. `group_by` is a select, multi-select, person, checkbox, date
+or relation property; a row with several values counts once under each. A date
+groups by `period`: `day`, `week` (ISO, starting Monday), `month` (the default)
+or `year`, and the periods between the first and the last come back at zero, so
+a trend has no holes. More than 400 periods are refused: choose a coarser one.
+
+`aggregate` is `count` (the default), `sum`, `avg`, `min` or `max`; all but
+`count` read `aggregate_property`, a number, formula or rollup property. Rows
+without a number are left out and counted in `left_out`; a number stored as
+text ("12") is left out too, as the number filters treat it. Without `group_by`
+you get one value over every row the filters let through.
+
+`view_id` takes a chart view's grouping, aggregate and filters, so you get
+exactly what that chart shows; anything you pass overrides the view's.
+`filter` replaces the view's filters, `filter_groups` adds to them. A view that
+is not a chart is refused.
+
+The answer, inside the untrusted-content wrapper (labels are option names,
+people's names and page titles):
+
+```json
+{"groups": [{"key": "doing", "label": "Doing", "value": 12, "rows": 12},
+            {"key": "", "label": "No value", "value": 3, "rows": 3}],
+ "left_out": 0, "total": 15}
+```
+
+or, without a grouping, `{"value": 1250.5, "rows": 15, "left_out": 2}`. Groups
+come in display order: a select's own option order, checked before unchecked,
+time order for dates, largest first otherwise, and No value (`key` `""`) last.
+`value` is `null` for a group with no number to aggregate. An option deleted
+since keeps its number, labelled with its id and marked `"missing": true`. A
+related page you may not read is counted (it is a value of a row you may see)
+but its title stays empty. The same numbers come from
+`POST /api/collections/{id}/aggregate` ([API](api.md)).
+
+Errors, beside the ones above: `a chart cannot group by "x", a text property; it
+groups by select, multiselect, person, checkbox, date or relation properties`;
+`aggregate sum needs aggregate_property: a number, formula or rollup property`;
+`period only applies to a date grouping`; `this grouping makes N periods, more
+than 400; choose a coarser period (week, month or year)`; `view "…" is a table
+view, not a chart; pass group_by instead`.
 
 ### create_rows
 
@@ -947,8 +1004,18 @@ Create a view, or change one.
 | `sort` | string | no |
 | `hidden` | array of string | no |
 | `open_in` | string | no |
+| `chart_kind` | string | chart |
+| `period` | string | chart, by a date |
+| `aggregate` | string | chart |
+| `aggregate_property` | string | chart, unless counting |
+| `chart_sort` | string | chart |
+| `hidden_groups` | array of string | chart |
+| `show_empty` | boolean | chart |
+| `show_zero` | boolean | chart |
+| `chart_style` | object | chart |
 
-Types: `table`, `board`, `gallery`, `calendar`, `timeline`, `list`, `form`.
+Types: `table`, `board`, `gallery`, `calendar`, `timeline`, `list`, `form`,
+`chart`.
 
 Without `view_id` it creates and `type` is required. With one it **merges**:
 what you do not pass stays as it is. A view's **type cannot be changed**: delete
@@ -984,6 +1051,30 @@ no setting at all, so `get_collection` shows `openIn` only on views that peek.
 A form shows no rows and refuses it. The interface's own save
 (`PUT /api/collections/{id}`) checks the same rule, with the code
 `invalid_view_open_in`.
+
+**A chart** is built the way a person builds one in the interface's chart
+settings. `chart_kind` is `bar` (the default), `hbar` (horizontal bars), `line`,
+`donut` or `number` (one big value). Every kind but `number` needs `group_by`, a
+select, multi-select, person, checkbox, date or relation property, and `period`
+for a date (`day`, `week`, `month`, `year`). `aggregate` and
+`aggregate_property` say what each group shows, as in `query_rows`.
+`chart_sort` is `auto` (the property's own order, time for dates),
+`label_asc`, `label_desc`, `value_asc` or `value_desc`. `hidden_groups` lists
+group keys not drawn (`""` is No value); they still come back from
+`query_rows`. `show_zero` draws select and checkbox options that have no rows
+at zero. `chart_style` merges into the stored look: `palette` (`auto`,
+`colorful`, `colorless`, `blue`, `yellow`, `green`, `purple`, `teal`,
+`orange`, `pink`, `red`), `height` (`small`, `medium`, `large`, `xlarge`),
+`legend` (`bottom`, `right`, `none`), `labels` and `center` (true/false),
+`center_label`, `caption` and `title` (text up to 60, 280 and 120
+characters); a key set to `null` is removed. Unknown keys are refused rather
+than stored. A `count` drops the `aggregate_property` it no longer reads.
+
+The interface's own save (`PUT /api/collections/{id}`) checks a chart with the
+same rule and answers a refusal with the code `invalid_chart`. To show a chart
+in a document, pass its view id to `embed_database`. Saving a chart as a
+picture is drawn by the browser from the numbers `query_rows` already gives
+you, so there is no tool for it.
 
 An unnamed view is named after its type, capitalised.
 

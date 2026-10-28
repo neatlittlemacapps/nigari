@@ -1,0 +1,28 @@
+/* The chart's settings, one row above the chart (spec 004, US2). Each label
+   sits beside its dropdown, so the row stays one line on a laptop and wraps
+   by whole settings on a phone. */
+.chart-settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-100) var(--space-300);
+  padding: var(--space-150) calc(2 * var(--space-600)) 0; /* the toolbar's 48px */
+}
+
+.chart-settings .ui-select {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-100);
+}
+
+.chart-settings .ui-select-label {
+  font-size: var(--font-size-sm);
+}
+
+
+/* On a phone the toolbar keeps 14px at the sides; so does this. */
+@media (max-width: 768px) {
+  .chart-settings {
+    padding-inline: calc(var(--space-300) + var(--space-50));
+  }
+}
