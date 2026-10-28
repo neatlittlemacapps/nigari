@@ -382,6 +382,7 @@ thing under two names.
 | `GET /api/collections/{id}` | the schema (its properties) and its saved views |
 | `PUT /api/collections/{id}` | replace `schema`, `views` or both; a half left out stays as stored |
 | `GET /api/collections/{id}/rows` | rows, filtered, sorted and paginated |
+| `POST /api/collections/{id}/aggregate` | counts or totals per group: the numbers a chart shows |
 
 `PUT` takes `schema`, `views` or both. The half you leave out stays as it is
 stored, so changing a view never puts back an older copy of the schema, and the
@@ -430,6 +431,28 @@ A saved view keeps flat filters only, because that is all the interface shows.
 whole filtered set, not the page. Rollups, formulas and backrelations are filled
 in per row. Other people's private rows are excluded before the count, so paging
 stays honest.
+
+A chart's numbers come from `POST /api/collections/{id}/aggregate`, computed
+in the database over exactly the rows the same filters would list:
+
+```json
+{"viewId": "v1", "groupBy": "status", "period": "month", "aggregate": "sum",
+ "aggregateProp": "amount", "filters": [{"property": "owner", "op": "is", "value": "u1"}],
+ "today": "2026-10-28"}
+```
+
+Every field is optional. With `viewId` (a chart view) its grouping, aggregate
+and filters are the defaults and what you send overrides them; `filters`
+replaces the view's. Without a grouping you get one group with key `"*"`, the
+aggregate over every row. The answer is
+`{"groups": [{"key", "label", "value", "rows", "missing"?}], "leftOut": n, "total": n}`,
+in display order (option order, time order, largest first; No value, key `""`,
+last). `aggregate` is `count` (the default), `sum`, `avg`, `min` or `max`;
+rows without a number are left out of the last four and counted in `leftOut`.
+A request that cannot work is a `400` with `"code": "invalid_chart"`, a date
+grouping of more than 400 periods a `400` with `"code": "too_many_periods"`. The
+gates are those of the rows: a database you may not read is a `404`. MCP's
+`query_rows` with `group_by` gives the same numbers.
 
 A rows request that takes longer than 5 seconds is stopped and answered with
 `503` and `{"error": "The query took longer than 5 seconds and was stopped.

@@ -15,7 +15,7 @@ import (
 // "full_page" is accepted on the way in and stored as no key at all, so a view
 // saved before the feature and a view set back to full page are the same bytes.
 //
-// Both doors call this: PUT /api/collections/{id} (normalizeViewsOpenIn) and
+// Both doors call this: PUT /api/collections/{id} (normalizeViews) and
 // MCP set_view (checkViewOpenIn, through applyViewSpec). REST used to store the
 // views array as sent, with only a JSON check; a rule on one side only is how
 // this repository's earlier REST/MCP gaps started.
@@ -74,16 +74,27 @@ func checkViewOpenIn(view map[string]any) error {
 	return nil
 }
 
-// normalizeViewsOpenIn runs checkViewOpenIn over a whole views array, as the
-// browser sends it. The bytes come back unchanged unless a "full_page" had to
-// be dropped, so a save that does not touch the setting stores exactly what
-// was sent.
-func normalizeViewsOpenIn(raw []byte) ([]byte, error) {
+// normalizeViews runs the rules a stored view must meet over a whole views
+// array, as the browser sends it: checkViewOpenIn on every view (spec 007) and
+// checkChartView on every chart (spec 004). The bytes come back unchanged
+// unless a "full_page" had to be dropped, so a save that does not touch a
+// setting stores exactly what was sent.
+//
+// schema is the database's properties after this save; stored is the views
+// array as it was. A chart is checked against the schema only when its chart
+// settings differ from the stored ones (checkChartView explains why).
+func normalizeViews(raw []byte, schema []map[string]any, stored []map[string]any) ([]byte, error) {
 	var views []any
 	if err := json.Unmarshal(raw, &views); err != nil {
 		// Not an array: the caller's JSON check has already accepted it, and
-		// this rule has nothing to say about a shape no view can have.
+		// these rules have nothing to say about a shape no view can have.
 		return raw, nil
+	}
+	before := map[string]string{}
+	for _, v := range stored {
+		if id, _ := v["id"].(string); id != "" {
+			before[id] = chartSignature(v)
+		}
 	}
 	changed := false
 	for i, v := range views {
@@ -91,16 +102,21 @@ func normalizeViewsOpenIn(raw []byte) ([]byte, error) {
 		if !ok {
 			continue
 		}
+		name, _ := view["name"].(string)
+		if name == "" {
+			name = fmt.Sprintf("view %d", i+1)
+		}
 		_, had := view["openIn"]
 		if err := checkViewOpenIn(view); err != nil {
-			name, _ := view["name"].(string)
-			if name == "" {
-				name = fmt.Sprintf("view %d", i+1)
-			}
 			return nil, errViewOpenIn{fmt.Sprintf("%s: %s", name, err.Error())}
 		}
 		if _, has := view["openIn"]; had && !has {
 			changed = true
+		}
+		id, _ := view["id"].(string)
+		old, known := before[id]
+		if err := checkChartView(view, schema, !known || old != chartSignature(view)); err != nil {
+			return nil, errChart{fmt.Sprintf("%s: %s", name, err.Error())}
 		}
 	}
 	if !changed {

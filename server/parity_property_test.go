@@ -65,6 +65,12 @@ var parityActs = []parityAct{
 	// write gate decides on both doors, whichever spelling reaches it.
 	{"view open mode", "PUT", "/api/collections/%s", `{"views":[{"id":"v-parity","name":"To do","type":"table","openIn":"side_peek","filters":[{"property":"status","op":"is","value":"todo"}]}]}`,
 		"set_view", `{"page_id":"%s","view_id":"v-parity","open_in":"side_peek"}`, true},
+	// A chart's numbers (spec 004): a read, so the database's read gate
+	// decides on both doors; a read-scoped credential may aggregate.
+	{"aggregate", "POST", "/api/collections/%s/aggregate", `{"groupBy":"status"}`, "query_rows", `{"page_id":"%s","group_by":"status"}`, true},
+	// A chart view: a view setting, the database's write gate on both doors.
+	{"chart view", "PUT", "/api/collections/%s", `{"views":[{"id":"v-parity","name":"To do","type":"table","filters":[{"property":"status","op":"is","value":"todo"}]},{"id":"v-chart","name":"Chart","type":"chart","chartKind":"donut","groupBy":"status"}]}`,
+		"set_view", `{"page_id":"%s","type":"chart","name":"Chart","chart_kind":"donut","group_by":"status"}`, true},
 }
 
 // parityWorkspaceActs are acts on a workspace rather than a page: %s is the

@@ -33,12 +33,12 @@ description: "Tasks for chart views of a database, with the chart builder"
 
 ## Phase 2: Foundational (blocks every story)
 
-- [ ] T003 [backend] Extract `(s) rowsWhere(u, colID, flat, groups, now) (string, []any)` from `collectionRowsQuery` in `server/collections.go`; `collectionRowsQuery` calls it, behaviour unchanged (research R1)
-- [ ] T004 [backend] New `server/aggregate.go`: `aggSpec`, `aggResult`, `(s) aggregateRows(ctx, u, colID, spec, flat, today)`: one `GROUP BY` on `s.rdb` under `withReadLimit` over `rowsWhere`; keys per research R2 (select/status option, list elements through `json_each`, person, checkbox, date day/ISO week/month/year), gap filling and the 400-period limit (`too_many_periods`), labels and `missing` (R5), left-out count (R3); without a grouping one group `"*"` (FR-029); `groupCounts` in `collections_group.go` becomes its count case
-- [ ] T005 [backend] `aggregateDerived` in `server/aggregate.go`: formula and rollup aggregates read the filtered rows in pages of 1,000 on `s.rdb`, drain each cursor before `computeDerived`, fold in Go, same limit (research R3)
-- [ ] T006 [backend] `checkChartView(view, schema)` in `server/aggregate.go` for every field of data-model.md (kinds incl. `hbar` and `number`, grouping types, period only with dates, aggregate and its property, `chartSort`, `hiddenGroups` ≤ 500, `showZero`, `chartStyle` values and text lengths; a grouped kind needs `groupBy`); `normalizeViewsOpenIn` in `server/viewopen.go` becomes `normalizeViews`, running both rules on `PUT /api/collections/{id}` (400 `invalid_chart`)
-- [ ] T007 [P] [test] `server/aggregate_test.go`: every grouping type × count; sum/avg/min/max with left-out counts and negatives; date periods with gaps and the 400 limit; multi-value counting; private rows not counted; a group's value equals the row count of the same filter through `query_rows` (SC-002); formula and rollup sums; no grouping → one value; a foreign or unreadable database refused
-- [ ] T008 [P] [test] Table test for `checkChartView` and `normalizeViews` in `server/aggregate_test.go`: each field valid and invalid, missing defaults, a grouped kind without `groupBy`, a number chart without one, over-long texts, 501 hidden groups
+- [x] T003 [backend] Extract `(s) rowsWhere(u, colID, flat, groups, now) (string, []any)` from `collectionRowsQuery` in `server/collections.go`; `collectionRowsQuery` calls it, behaviour unchanged (research R1)
+- [x] T004 [backend] New `server/aggregate.go`: `aggSpec`, `aggResult`, `(s) aggregateRows(ctx, u, colID, spec, flat, today)`: one `GROUP BY` on `s.rdb` under `withReadLimit` over `rowsWhere`; keys per research R2 (select/status option, list elements through `json_each`, person, checkbox, date day/ISO week/month/year), gap filling and the 400-period limit (`too_many_periods`), labels and `missing` (R5), left-out count (R3); without a grouping one group `"*"` (FR-029); `groupCounts` in `collections_group.go` becomes its count case
+- [x] T005 [backend] `aggregateDerived` in `server/aggregate.go`: formula and rollup aggregates read the filtered rows in pages of 1,000 on `s.rdb`, drain each cursor before `computeDerived`, fold in Go, same limit (research R3)
+- [x] T006 [backend] `checkChartView(view, schema)` in `server/aggregate.go` for every field of data-model.md (kinds incl. `hbar` and `number`, grouping types, period only with dates, aggregate and its property, `chartSort`, `hiddenGroups` ≤ 500, `showZero`, `chartStyle` values and text lengths; a grouped kind needs `groupBy`); `normalizeViewsOpenIn` in `server/viewopen.go` becomes `normalizeViews`, running both rules on `PUT /api/collections/{id}` (400 `invalid_chart`)
+- [x] T007 [P] [test] `server/aggregate_test.go`: every grouping type × count; sum/avg/min/max with left-out counts and negatives; date periods with gaps and the 400 limit; multi-value counting; private rows not counted; a group's value equals the row count of the same filter through `query_rows` (SC-002); formula and rollup sums; no grouping → one value; a foreign or unreadable database refused
+- [x] T008 [P] [test] Table test for `checkChartView` and `normalizeViews` in `server/aggregate_test.go`: each field valid and invalid, missing defaults, a grouped kind without `groupBy`, a number chart without one, over-long texts, 501 hidden groups
 - [ ] T009 [P] [ui] `web/src/types.ts`: `ViewDef` gains `'chart'` and the fields of data-model.md; `api.aggregate()` in `web/src/api.ts`; `invalid_chart` and `too_many_periods` in `web/src/serverErrors.ts`
 - [ ] T010 [P] [ui] New pure `web/src/chartLayout.ts`: sort (R15), hidden groups, empty options as zero from the schema, folding into "Other" (12 drawn, R4), the empty and all-hidden states, the summary sentence, and Chart.js data for each kind
 - [ ] T011 [P] [test] New `web/scripts/check-chartlayout.mjs` for T010 (every sort, hidden "No value", all hidden, folding with and without value sort, zeros for select and checkbox, dates untouched), added to `npm run check`
@@ -55,7 +55,7 @@ description: "Tasks for chart views of a database, with the chart builder"
 
 **Independent Test**: a chart view grouped by a select; bars match the filtered counts; a click lists the rows.
 
-- [ ] T014 [US1] [backend] Route `POST /api/collections/{id}/aggregate` in `server/server.go` behind `auth`: `canRead`, then `credentialMayEnter`, then `aggregateRows`; `viewId` defaults and overrides (contracts/rest.md)
+- [x] T014 [US1] [backend] Route `POST /api/collections/{id}/aggregate` in `server/server.go` behind `auth`: `canRead`, then `credentialMayEnter`, then `aggregateRows`; `viewId` defaults and overrides (contracts/rest.md)
 - [ ] T015 [US1] [ui] New `web/src/chartTheme.ts`: Chart.js options from the tokens read off the chart's element (colours per palette, text, grid, font), rebuilt on a theme switch; `prefers-reduced-motion`
 - [ ] T016 [US1] [ui] New lazy `web/src/components/ChartView.tsx` + `ChartView.css`: Chart.js bar, horizontal bar, line, doughnut (controllers registered by hand) and the number chart in DOM; canvas `aria-hidden`; empty, all-hidden, error and time-limit states; redraws on the rows-changed signal; keeps the last chart while reloading
 - [ ] T017 [US1] [ui] `CollectionView.tsx`: `chart` in the **+** menu with its icon, `addView` through `defaultChartView`, the render branch for `ChartView` (lazy), a chart settings button in the toolbar (hidden for a workspace viewer, FR-027)
@@ -84,12 +84,12 @@ description: "Tasks for chart views of a database, with the chart builder"
 
 **Independent Test**: `query_rows group_by` equals the chart; `set_view type chart` and `embed_database view_id` show it in the interface.
 
-- [ ] T023 [US3] [mcp] `query_rows` in `server/mcp.go` / `server/mcp_db.go`: `group_by`, `period`, `aggregate`, `aggregate_property`, `view_id`; groups (or one value without a grouping) answered as JSON in `wrapUntrusted`; description as contracts/mcp.md
-- [ ] T024 [US3] [mcp] `set_view` in `server/mcp_schema.go`: type `chart`; `chart_kind`, `period`, `aggregate`, `aggregate_property`, `show_empty`, `chart_sort`, `hidden_groups`, `show_zero`, `chart_style`; `group_by` accepts the chart's types; runs `checkChartView`; `get_collection` description names the chart settings
-- [ ] T025 [US3] [mcp] `embed_database` in `server/mcp_pages.go`: optional `view_id`, written as the block's `local.viewId`; a view of another database refused (research R14)
-- [ ] T026 [US3] [test] MCP tests through `callTool`: aggregate equals REST; one value; read scope may aggregate and may not save a chart view; workspace closed to agents refused; `embed_database view_id` own view, foreign view refused, read-only token refused
-- [ ] T027 [US3] [mcp] `capabilities.json`: the route in `collections`; the note on pictures (research R17); `gapBudget` stays 10
-- [ ] T028 [P] [US3] [test] Parity acts `aggregate`, `chart view`, `embed chart` in `server/parity_property_test.go`
+- [x] T023 [US3] [mcp] `query_rows` in `server/mcp.go` / `server/mcp_db.go`: `group_by`, `period`, `aggregate`, `aggregate_property`, `view_id`; groups (or one value without a grouping) answered as JSON in `wrapUntrusted`; description as contracts/mcp.md
+- [x] T024 [US3] [mcp] `set_view` in `server/mcp_schema.go`: type `chart`; `chart_kind`, `period`, `aggregate`, `aggregate_property`, `show_empty`, `chart_sort`, `hidden_groups`, `show_zero`, `chart_style`; `group_by` accepts the chart's types; runs `checkChartView`; `get_collection` description names the chart settings
+- [x] T025 [US3] [mcp] `embed_database` in `server/mcp_pages.go`: optional `view_id`, written as the block's `local.viewId`; a view of another database refused (research R14)
+- [x] T026 [US3] [test] MCP tests through `callTool`: aggregate equals REST; one value; read scope may aggregate and may not save a chart view; workspace closed to agents refused; `embed_database view_id` own view, foreign view refused, read-only token refused
+- [x] T027 [US3] [mcp] `capabilities.json`: the route in `collections`; the note on pictures (research R17); `gapBudget` stays 10
+- [x] T028 [P] [US3] [test] Parity acts `aggregate` and `chart view` in `server/parity_property_test.go`; `embed_database view_id` has no REST twin of its own (a person's embed is a document write, which the `edit` act covers), so its gates are tested in `server/mcp_chart_test.go`
 
 ---
 
@@ -128,10 +128,10 @@ description: "Tasks for chart views of a database, with the chart builder"
 - [ ] T041 [perf] `BenchmarkStorageAggregate` in `server/storage_bench_test.go` (sum per select, count per month, formula sum; 1k and 10k, `BENCH_LARGE=1` for 100k); budgets from the CI run × 1.5 into `specs/002-storage-engine/research.md`; `EXPLAIN QUERY PLAN` in the pull request
 - [ ] T042 [perf] Bundle: main chunk growth measured against the plan's budgets; Chart.js only in the lazy chunk (`budgets.json` `bundleGzip` unchanged or lowered)
 - [ ] T043 [P] [wiki] `wiki/collections.md` § "What the chart adds" and the eight view types; `docs/what-it-does.md` "eight ways"; `check-wiki.mjs` learns `chart`
-- [ ] T044 [P] [wiki] `wiki/mcp-tools.md` §§ query_rows, set_view, get_collection, embed_database; `wiki/api.md` the aggregate route
+- [x] T044 [P] [wiki] `wiki/mcp-tools.md` §§ query_rows, set_view, get_collection, embed_database; `wiki/api.md` the aggregate route
 - [ ] T045 [P] [wiki] The wiki page that lists `/` entries gains the five chart entries; `wiki/collections.md` describes the settings panel, palettes and Save chart as
 - [ ] T046 [wiki] Screenshots `collection-chart` and `chart-settings` (light and dark) in `wiki/screenshots.json` and `web/scripts/shoot-wiki.mjs`; stale shots retaken
-- [ ] T047 [backend] Registry row *Aggregation* (tag `backend`, Since 2026-10-29) in `.specify/memory/surfaces.md` (plan, Registry)
+- [x] T047 [backend] Registry row *Aggregation* (tag `backend`, Since 2026-10-29) in `.specify/memory/surfaces.md` (plan, Registry)
 - [ ] T048 [ui] Backlog issues for what the walk-through showed and this feature leaves out (spec FR-017): "Save for everyone"/"Reset" on view filters, the folding toolbar, Lock views, a second grouping with stacked bars and reference lines
 
 ---

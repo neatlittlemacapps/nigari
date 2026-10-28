@@ -57,15 +57,15 @@ func TestViewOpenInRule(t *testing.T) {
 // resize.
 func TestNormalizeViewsKeepsUntouchedBytes(t *testing.T) {
 	raw := []byte(`[{"name":"A","id":"a","type":"table","openIn":"side_peek"},{"type":"board","id":"b"}]`)
-	got, err := normalizeViewsOpenIn(raw)
+	got, err := normalizeViews(raw, nil, nil)
 	if err != nil || string(got) != string(raw) {
 		t.Errorf("got %s, %v; want the same bytes back", got, err)
 	}
-	got, err = normalizeViewsOpenIn([]byte(`[{"id":"a","type":"table","openIn":"full_page"}]`))
+	got, err = normalizeViews([]byte(`[{"id":"a","type":"table","openIn":"full_page"}]`), nil, nil)
 	if err != nil || strings.Contains(string(got), "openIn") {
 		t.Errorf("full_page: got %s, %v; want the key dropped", got, err)
 	}
-	if _, err := normalizeViewsOpenIn([]byte(`[{"id":"f","name":"Sign-up","type":"form","openIn":"side_peek"}]`)); err == nil || !strings.Contains(err.Error(), "Sign-up") {
+	if _, err := normalizeViews([]byte(`[{"id":"f","name":"Sign-up","type":"form","openIn":"side_peek"}]`), nil, nil); err == nil || !strings.Contains(err.Error(), "Sign-up") {
 		t.Errorf("a refusal should name the view: %v", err)
 	}
 }

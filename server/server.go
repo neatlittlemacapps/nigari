@@ -286,6 +286,7 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	m.HandleFunc("GET /api/collections/{id}", s.auth(s.handleGetCollection))
 	m.HandleFunc("PUT /api/collections/{id}", s.auth(s.handlePutCollection))
 	m.HandleFunc("GET /api/collections/{id}/rows", s.auth(s.handleCollectionRows))
+	m.HandleFunc("POST /api/collections/{id}/aggregate", s.auth(s.handleAggregate))
 	m.HandleFunc("GET /api/collections/{id}/templates", s.auth(s.handleListDatabaseTemplates))
 	m.HandleFunc("POST /api/collections/{id}/templates", s.auth(s.handleAddDatabaseTemplate))
 	m.HandleFunc("POST /api/collections/{id}/from-template", s.auth(s.handleRowFromTemplate))

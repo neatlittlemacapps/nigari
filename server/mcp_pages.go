@@ -377,7 +377,11 @@ func (s *Server) mcpSetFavorite(userID, pageID string, on bool) (string, error) 
 // text. With this block both belong to ONE document — exactly like Notion's
 // "inline database". Only the reference is stored; the database stays one
 // object in one place and can appear in several documents.
-func (s *Server) mcpEmbedDatabase(u *user, pageID, databaseID string) (string, error) {
+//
+// viewID (optional) is the view the document shows, stored as the block's
+// own view (local.viewId, #26): how an agent puts a chart into a document,
+// the way a person does from the / menu (spec 004, research R14).
+func (s *Server) mcpEmbedDatabase(u *user, pageID, databaseID, viewID string) (string, error) {
 	var typ, title string
 	if err := s.db.QueryRow(`SELECT type, title FROM pages WHERE id = ? AND trashed_at IS NULL`, databaseID).Scan(&typ, &title); err != nil {
 		return "", fmt.Errorf("database %q not found", databaseID)
@@ -388,8 +392,30 @@ func (s *Server) mcpEmbedDatabase(u *user, pageID, databaseID string) (string, e
 	if !s.canRead(u.ID, databaseID) || !s.credentialMayEnter(u, s.pageWorkspace(databaseID)) {
 		return "", fmt.Errorf("database %q not found", databaseID)
 	}
-	block := fmt.Sprintf(`{"id":%q,"type":"database","props":{"collectionId":%q},"content":[],"children":[]}`,
-		newID(), databaseID)
+	props := map[string]any{"collectionId": databaseID}
+	if viewID != "" {
+		_, views, err := s.loadCollection(databaseID)
+		if err != nil {
+			return "", err
+		}
+		found := false
+		for _, v := range views {
+			if id, _ := v["id"].(string); id == viewID {
+				found = true
+			}
+		}
+		if !found {
+			return "", errViewNotInDatabase{viewID, databaseID}
+		}
+		local, _ := json.Marshal(map[string]any{"viewId": viewID, "views": map[string]any{}})
+		props["local"] = string(local)
+	}
+	blockJSON, err := json.Marshal(map[string]any{"id": newID(), "type": "database", "props": props,
+		"content": []any{}, "children": []any{}})
+	if err != nil {
+		return "", err
+	}
+	block := string(blockJSON)
 	s.snapshotRevision(pageID, u.ID, u.Name)
 	if err := s.appendBlockJSON(pageID, block); err != nil {
 		return "", err
