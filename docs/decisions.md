@@ -7,6 +7,23 @@ entries are not edited away.
 
 ---
 
+## 2026-10-28 — Mechanical tasks go to Sonnet helpers; judgement stays on Opus
+
+**Decision** (owner: "can you hand off to sonnet if you think it is useful?" — yes, and
+"capture that behaviour for other sessions"): a Claude Code session may hand a task to a
+Sonnet subagent where that saves time or cost without risking quality. The rule is in
+`.claude/rules/claude-code.md`, which every Claude Code session loads.
+
+**Why**: nothing in the repository is tied to a model — the instructions, Spec Kit and the
+gate behave the same on any — so the choice is about judgement. Translations, wiki text after
+an existing page, screenshot retakes and test runs follow a pattern and the gate catches
+slips; specs, plans, surfaces, new server logic, new primitives and gates do not.
+
+**Turned down**: whole sessions on Sonnet for feature work (the thinking steps are where a
+miss is not caught by a check); Haiku (too weak for this repository's rules).
+
+---
+
 ## 2026-10-28 — Agents author their own commits in this fork
 
 **Decision** (owner, asked whether to keep the owner as author or switch to Claude:

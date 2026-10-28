@@ -24,3 +24,12 @@ shared instructions.
   reformat; format them in a commit of their own.
 - **Plan before large changes.** Anything spanning more than one surface starts
   in plan mode or with `/speckit-plan`, not with edits.
+- **Hand mechanical work to Sonnet.** The owner allows (2026-10-28) handing a
+  task to a subagent on Sonnet (`model: "sonnet"`) wherever that saves time or
+  cost without risking quality: translations into `de.json`/`es.json`, wiki text
+  that follows an existing page, screenshot retakes, running browser tests,
+  tasks that copy an existing pattern. Keep on the session's own model (Opus)
+  what needs judgement: specs and plans, the surfaces a feature touches, new
+  server logic, new `ui/` primitives, security and permission gates, bug fixes.
+  Review a helper's work before it is committed; the gate checks it like any
+  other. Haiku is not used here.
