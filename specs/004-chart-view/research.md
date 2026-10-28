@@ -130,9 +130,20 @@ each declaring `md.salt.contrast` 3:1 on `color.surface.default`, so `build-toke
 fails a palette a theme cannot read (FR-015). A select's own option colours are used for
 its bars when it has them (edge case); every bar and slice also carries its text label.
 
-**Alternatives considered**: a chart library (FR-013 forbids a runtime dependency; the
-smallest candidates add 40–90 KB gzip); canvas (no DOM for keyboard focus or screen
-readers).
+**Alternatives considered** (measured 2026-10-28: bar, line and donut imported from each,
+bundled minified with esbuild, React left out, gzip -9):
+
+| Library | Size, gzip | Draws on | Notes |
+| --- | --- | --- | --- |
+| uPlot 1.6.31 | 22,678 B | canvas | no donut; bars through a plugin |
+| Chart.js 4.4.7 | 60,006 B | canvas | tree-shaken to the three controllers |
+| Recharts 2.15.0 | 112,446 B | SVG | plus React, already loaded |
+| ECharts 5.6.0 | 179,222 B | SVG renderer | tree-shaken core |
+
+A lazy chunk would keep any of them out of the main bundle, so size alone does not decide.
+What does: FR-013 (no new runtime dependency), canvas giving no DOM for keyboard focus or a
+screen reader (FR-014), and theming through the design tokens in light and dark (FR-015),
+which each library reimplements in its own option format.
 
 ## R9. Seeing the rows behind a group
 
