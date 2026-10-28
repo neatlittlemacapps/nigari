@@ -26,8 +26,8 @@ description: "Tasks for chart views of a database, with the chart builder"
 
 ## Phase 1: Setup
 
-- [ ] T001 [ui] Dependency: `npm install chart.js@4.5.1` in `web/` (lockfile through npm, never by hand); `THIRD-PARTY-NOTICES.md` through `node scripts/licenses.mjs`; the reason goes in the pull request that first imports it (research R8)
-- [ ] T002 [ui] Tokens (research R8, R16): semantic `color.chart.1`–`.12`, `color.chart.gray.1`–`.3`, `color.chart.<hue>.1`–`.3` for blue, yellow, green, purple, teal, orange, pink, red, each with light and dark values and `md.salt.contrast` 3:1 on `color.surface.default`; `color.chart.background.1`–`.4` (soft, no contrast claim); component `chart.height.small|medium|large|xlarge`; rebuild `web/src/tokens.css` with `node scripts/build-tokens.mjs`
+- [x] T001 [ui] Dependency: `npm install chart.js@4.5.1` in `web/` (lockfile through npm, never by hand); `THIRD-PARTY-NOTICES.md` through `node scripts/licenses.mjs`; the reason goes in the pull request that first imports it (research R8)
+- [x] T002 [ui] Tokens (research R8, R16): semantic `color.chart.1`–`.12`, `color.chart.gray.1`–`.3`, `color.chart.<hue>.1`–`.3` for blue, yellow, green, purple, teal, orange, pink, red, each with light and dark values and `md.salt.contrast` 3:1 on `color.surface.default`; `color.chart.background.1`–`.4` (soft, no contrast claim); component `chart.height.small|medium|large|xlarge`; rebuild `web/src/tokens.css` with `node scripts/build-tokens.mjs`
 
 ---
 
@@ -39,11 +39,11 @@ description: "Tasks for chart views of a database, with the chart builder"
 - [x] T006 [backend] `checkChartView(view, schema)` in `server/aggregate.go` for every field of data-model.md (kinds incl. `hbar` and `number`, grouping types, period only with dates, aggregate and its property, `chartSort`, `hiddenGroups` ≤ 500, `showZero`, `chartStyle` values and text lengths; a grouped kind needs `groupBy`); `normalizeViewsOpenIn` in `server/viewopen.go` becomes `normalizeViews`, running both rules on `PUT /api/collections/{id}` (400 `invalid_chart`)
 - [x] T007 [P] [test] `server/aggregate_test.go`: every grouping type × count; sum/avg/min/max with left-out counts and negatives; date periods with gaps and the 400 limit; multi-value counting; private rows not counted; a group's value equals the row count of the same filter through `query_rows` (SC-002); formula and rollup sums; no grouping → one value; a foreign or unreadable database refused
 - [x] T008 [P] [test] Table test for `checkChartView` and `normalizeViews` in `server/aggregate_test.go`: each field valid and invalid, missing defaults, a grouped kind without `groupBy`, a number chart without one, over-long texts, 501 hidden groups
-- [ ] T009 [P] [ui] `web/src/types.ts`: `ViewDef` gains `'chart'` and the fields of data-model.md; `api.aggregate()` in `web/src/api.ts`; `invalid_chart` and `too_many_periods` in `web/src/serverErrors.ts`
-- [ ] T010 [P] [ui] New pure `web/src/chartLayout.ts`: sort (R15), hidden groups, empty options as zero from the schema, folding into "Other" (12 drawn, R4), the empty and all-hidden states, the summary sentence, and Chart.js data for each kind
-- [ ] T011 [P] [test] New `web/scripts/check-chartlayout.mjs` for T010 (every sort, hidden "No value", all hidden, folding with and without value sort, zeros for select and checkbox, dates untouched), added to `npm run check`
-- [ ] T012 [P] [ui] New pure `web/src/chartDefaults.ts`: `defaultChartView(kind, schema)` and the default grouping when a number chart turns into a grouped kind (FR-019, research R14)
-- [ ] T013 [P] [test] New `web/scripts/check-chartdefaults.mjs` for T012 (select first, status first, other groupable, none → number), added to `npm run check`
+- [x] T009 [P] [ui] `web/src/types.ts`: `ViewDef` gains `'chart'` and the fields of data-model.md; `api.aggregate()` in `web/src/api.ts`; `invalid_chart` and `too_many_periods` in `web/src/serverErrors.ts`
+- [x] T010 [P] [ui] New pure `web/src/chartLayout.ts`: sort (R15), hidden groups, empty options as zero from the schema, folding into "Other" (12 drawn, R4), the empty and all-hidden states, the summary sentence, and Chart.js data for each kind
+- [x] T011 [P] [test] New `web/scripts/check-chartlayout.mjs` for T010 (every sort, hidden "No value", all hidden, folding with and without value sort, zeros for select and checkbox, dates untouched), added to `npm run check`
+- [x] T012 [P] [ui] New pure `web/src/chartDefaults.ts`: `defaultChartView(kind, schema)` and the default grouping when a number chart turns into a grouped kind (FR-019, research R14)
+- [x] T013 [P] [test] New `web/scripts/check-chartdefaults.mjs` for T012 (select first, status first, other groupable, none → number), added to `npm run check`
 
 **Checkpoint**: the server counts and validates; the browser knows what to draw.
 
@@ -56,13 +56,13 @@ description: "Tasks for chart views of a database, with the chart builder"
 **Independent Test**: a chart view grouped by a select; bars match the filtered counts; a click lists the rows.
 
 - [x] T014 [US1] [backend] Route `POST /api/collections/{id}/aggregate` in `server/server.go` behind `auth`: `canRead`, then `credentialMayEnter`, then `aggregateRows`; `viewId` defaults and overrides (contracts/rest.md)
-- [ ] T015 [US1] [ui] New `web/src/chartTheme.ts`: Chart.js options from the tokens read off the chart's element (colours per palette, text, grid, font), rebuilt on a theme switch; `prefers-reduced-motion`
-- [ ] T016 [US1] [ui] New lazy `web/src/components/ChartView.tsx` + `ChartView.css`: Chart.js bar, horizontal bar, line, doughnut (controllers registered by hand) and the number chart in DOM; canvas `aria-hidden`; empty, all-hidden, error and time-limit states; redraws on the rows-changed signal; keeps the last chart while reloading
-- [ ] T017 [US1] [ui] `CollectionView.tsx`: `chart` in the **+** menu with its icon, `addView` through `defaultChartView`, the render branch for `ChartView` (lazy), a chart settings button in the toolbar (hidden for a workspace viewer, FR-027)
-- [ ] T018 [US1] [ui] New pure `web/src/chartGroups.ts` (group → filter, research R9) and the drill-down list under the chart through `ListView`, following the view's **Open pages in**
-- [ ] T019 [P] [US1] [test] Cases for `chartGroups.ts` in `web/scripts/check-chartlayout.mjs` (option, person, "No value", checkbox, date period, "Other")
-- [ ] T020 [P] [US1] [i18n] German (required) and Spanish: view name, kinds, "No value", "Other", empty and error sentences
-- [ ] T021 [US1] [test] Playwright `web/tests/chart-view.mjs` (in `web/tests/package.json`): add a chart, numbers match a filtered table, click a bar → its rows, embedded in a document
+- [x] T015 [US1] [ui] New `web/src/chartTheme.ts`: Chart.js options from the tokens read off the chart's element (colours per palette, text, grid, font), rebuilt on a theme switch; `prefers-reduced-motion`
+- [x] T016 [US1] [ui] New lazy `web/src/components/ChartView.tsx` + `ChartView.css`: Chart.js bar, horizontal bar, line, doughnut (controllers registered by hand) and the number chart in DOM; canvas `aria-hidden`; empty, all-hidden, error and time-limit states; redraws on the rows-changed signal; keeps the last chart while reloading
+- [x] T017 [US1] [ui] `CollectionView.tsx`: `chart` in the **+** menu with its icon, `addView` through `defaultChartView`, the render branch for `ChartView` (lazy), a chart settings button in the toolbar (hidden for a workspace viewer, FR-027)
+- [x] T018 [US1] [ui] New pure `web/src/chartGroups.ts` (group → filter, research R9) and the drill-down list under the chart through `ListView`, following the view's **Open pages in**
+- [x] T019 [P] [US1] [test] Cases for `chartGroups.ts` in `web/scripts/check-chartlayout.mjs` (option, person, "No value", checkbox, date period, "Other")
+- [x] T020 [P] [US1] [i18n] German (required) and Spanish: view name, kinds, "No value", "Other", empty and error sentences
+- [x] T021 [US1] [test] Playwright `web/tests/chart-view.mjs` (in `web/tests/package.json`): add a chart, numbers match a filtered table, click a bar → its rows, embedded in a document
 
 **Checkpoint**: US1 works in a database page and in a document.
 
@@ -74,7 +74,7 @@ description: "Tasks for chart views of a database, with the chart builder"
 
 **Independent Test**: sum per category, average, count per week; compare with the rows.
 
-- [ ] T022 [US2] [ui] Chart settings, data section (first form of `ChartSettings.tsx`): grouping, period (dates), aggregate and its property (number, formula, rollup); the left-out sentence and the multi-value note under the chart; German and Spanish strings
+- [x] T022 [US2] [ui] Chart settings, data section (first form of `ChartSettings.tsx`): grouping, period (dates), aggregate and its property (number, formula, rollup); the left-out sentence and the multi-value note under the chart; German and Spanish strings
 
 ---
 
@@ -99,8 +99,8 @@ description: "Tasks for chart views of a database, with the chart builder"
 
 **Independent Test**: axe in both themes, arrow keys through the groups, the table alternative.
 
-- [ ] T029 [US4] [ui] `ChartView.tsx`: `figure` with caption and summary; group buttons with roving focus through `nav.ts` (arrow keys, Enter opens rows, focus highlights the bar or slice); **Show as table**; phone width
-- [ ] T030 [P] [US4] [test] Catalogue chart section in `web/catalog/` with sample data, axe and keyboard in both themes (`web/tests/catalog.mjs`)
+- [x] T029 [US4] [ui] `ChartView.tsx`: `figure` with caption and summary; group buttons with roving focus through `nav.ts` (arrow keys, Enter opens rows, focus highlights the bar or slice); **Show as table**; phone width
+- [x] T030 [P] [US4] [test] Catalogue chart section in `web/catalog/` with sample data, axe and keyboard in both themes (`web/tests/catalog.mjs`)
 
 ---
 
@@ -126,7 +126,7 @@ description: "Tasks for chart views of a database, with the chart builder"
 ## Phase 8: Polish and cross-cutting
 
 - [ ] T041 [perf] `BenchmarkStorageAggregate` in `server/storage_bench_test.go` (sum per select, count per month, formula sum; 1k and 10k, `BENCH_LARGE=1` for 100k); budgets from the CI run × 1.5 into `specs/002-storage-engine/research.md`; `EXPLAIN QUERY PLAN` in the pull request
-- [ ] T042 [perf] Bundle: main chunk growth measured against the plan's budgets; Chart.js only in the lazy chunk (`budgets.json` `bundleGzip` unchanged or lowered)
+- [x] T042 [perf] Bundle: main chunk growth measured against the plan's budgets; Chart.js only in the lazy chunk (`budgets.json` `bundleGzip` unchanged or lowered)
 - [ ] T043 [P] [wiki] `wiki/collections.md` § "What the chart adds" and the eight view types; `docs/what-it-does.md` "eight ways"; `check-wiki.mjs` learns `chart`
 - [x] T044 [P] [wiki] `wiki/mcp-tools.md` §§ query_rows, set_view, get_collection, embed_database; `wiki/api.md` the aggregate route
 - [ ] T045 [P] [wiki] The wiki page that lists `/` entries gains the five chart entries; `wiki/collections.md` describes the settings panel, palettes and Save chart as

@@ -1,0 +1,7 @@
+/* The chart's settings in the database toolbar (spec 004, US2). */
+.chart-settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-100) var(--space-150);
+}

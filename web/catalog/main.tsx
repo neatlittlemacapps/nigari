@@ -15,6 +15,9 @@ import { Select } from '../src/ui/Select';
 import { Switch } from '../src/ui/Switch';
 import { SidePanel } from '../src/ui/SidePanel';
 import { CenterPanel } from '../src/ui/CenterPanel';
+import ChartFigure from '../src/components/ChartFigure';
+import type { PropDef, ViewDef } from '../src/types';
+import type { AggResult } from '../src/chartLayout';
 
 // The component catalogue (spec 001, FR-012). Every component in web/src/ui/,
 // every state the contract names, on nothing but tokens.css: no styles.css, so
@@ -52,6 +55,43 @@ const fruit = [
   { value: 'cherry', label: 'Cherry' },
   { value: 'damson', label: 'Damson' },
 ];
+
+// A chart with sample numbers (spec 004): ChartFigure draws what it is given,
+// so every kind can be shown here without a server. Not a ui/ primitive, but
+// the one place its canvas, its group buttons and its table are run through
+// axe and the keyboard in both themes.
+const chartSchema: PropDef[] = [
+  {
+    id: 'stage',
+    name: 'Stage',
+    type: 'select',
+    options: [
+      { id: 'idea', name: 'Idea', color: '#337ea9' },
+      { id: 'draft', name: 'Draft', color: '#cb912f' },
+      { id: 'review', name: 'Review', color: '#9065b0' },
+      { id: 'done', name: 'Done', color: '#448361' },
+    ],
+  },
+];
+const chartResult: AggResult = {
+  groups: [
+    { key: 'idea', label: 'Idea', value: 8, rows: 8 },
+    { key: 'draft', label: 'Draft', value: 5, rows: 5 },
+    { key: 'review', label: 'Review', value: 3, rows: 3 },
+    { key: 'done', label: 'Done', value: 11, rows: 11 },
+    { key: '', label: '', value: 2, rows: 2 },
+  ],
+  leftOut: 0,
+  total: 29,
+};
+const chartView = (chartKind: ViewDef['chartKind'], id: string): ViewDef => ({
+  id,
+  name: 'Chart',
+  type: 'chart',
+  chartKind,
+  groupBy: 'stage',
+  chartStyle: { height: 'small' },
+});
 
 function Catalog() {
   const [theme, setTheme] = useState(document.documentElement.dataset.theme);
@@ -187,6 +227,14 @@ function Catalog() {
           </div>
         </SidePanel>
       )}
+
+      <Section id="chart" title="Chart (ChartFigure)">
+        <div className="cat-charts">
+          {(['bar', 'hbar', 'line', 'donut', 'number'] as const).map((k) => (
+            <ChartFigure key={k} view={chartView(k, 'cat-' + k)} schema={chartSchema} result={chartResult} />
+          ))}
+        </div>
+      </Section>
 
       <Section id="center-panel" title="CenterPanel">
         <Row label="open">

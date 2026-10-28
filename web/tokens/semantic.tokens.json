@@ -304,6 +304,1387 @@
         },
         "$description": "Text on the ink pill: the paper in light, near-black in dark."
       }
+    },
+    "chart": {
+      "$description": "Chart colours (spec 004, research R8 and R16). Every drawn colour reaches 3:1 on the document and on cards in both themes (WCAG 1.4.11, graphical objects), so a bar or slice is never too faint to see; each also carries a text label, so colour is never the only cue. Generated in OKLCH at the lightness that passes, not picked by eye.",
+      "1": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.1647,
+            0.502,
+            0.8863
+          ],
+          "hex": "#2a80e2"
+        },
+        "$extensions": {
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              0.2745,
+              0.6,
+              0.9961
+            ],
+            "hex": "#4699fe"
+          },
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 3
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 3
+            }
+          ]
+        },
+        "$description": "Colourful palette, group 1 (blue)."
+      },
+      "2": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.7765,
+            0.3686,
+            0.0431
+          ],
+          "hex": "#c65e0b"
+        },
+        "$extensions": {
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9098,
+              0.4471,
+              0.1098
+            ],
+            "hex": "#e8721c"
+          },
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 3
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 3
+            }
+          ]
+        },
+        "$description": "Colourful palette, group 2 (orange)."
+      },
+      "3": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.1451,
+            0.5961,
+            0.302
+          ],
+          "hex": "#25984d"
+        },
+        "$extensions": {
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              0.2706,
+              0.6941,
+              0.3922
+            ],
+            "hex": "#45b164"
+          },
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 3
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 3
+            }
+          ]
+        },
+        "$description": "Colourful palette, group 3 (green)."
+      },
+      "4": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.5961,
+            0.3765,
+            0.8157
+          ],
+          "hex": "#9860d0"
+        },
+        "$extensions": {
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              0.6941,
+              0.4745,
+              0.9216
+            ],
+            "hex": "#b179eb"
+          },
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 3
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 3
+            }
+          ]
+        },
+        "$description": "Colourful palette, group 4 (purple)."
+      },
+      "5": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.0588,
+            0.5725,
+            0.5765
+          ],
+          "hex": "#0f9293"
+        },
+        "$extensions": {
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0353,
+              0.6824,
+              0.6824
+            ],
+            "hex": "#09aeae"
+          },
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 3
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 3
+            }
+          ]
+        },
+        "$description": "Colourful palette, group 5 (teal)."
+      },
+      "6": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.7804,
+            0.298,
+            0.5569
+          ],
+          "hex": "#c74c8e"
+        },
+        "$extensions": {
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              0.8863,
+              0.4,
+              0.6549
+            ],
+            "hex": "#e266a7"
+          },
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 3
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 3
+            }
+          ]
+        },
+        "$description": "Colourful palette, group 6 (pink)."
+      },
+      "7": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.6314,
+            0.4745,
+            0.0471
+          ],
+          "hex": "#a1790c"
+        },
+        "$extensions": {
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              0.7451,
+              0.5647,
+              0.0784
+            ],
+            "hex": "#be9014"
+          },
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 3
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 3
+            }
+          ]
+        },
+        "$description": "Colourful palette, group 7 (yellow)."
+      },
+      "8": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.8431,
+            0.2784,
+            0.2706
+          ],
+          "hex": "#d74745"
+        },
+        "$extensions": {
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9529,
+              0.3843,
+              0.3647
+            ],
+            "hex": "#f3625d"
+          },
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 3
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 3
+            }
+          ]
+        },
+        "$description": "Colourful palette, group 8 (red)."
+      },
+      "9": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.4,
+            0.4549,
+            0.8706
+          ],
+          "hex": "#6674de"
+        },
+        "$extensions": {
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              0.4902,
+              0.5529,
+              0.9765
+            ],
+            "hex": "#7d8df9"
+          },
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 3
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 3
+            }
+          ]
+        },
+        "$description": "Colourful palette, group 9 (indigo)."
+      },
+      "10": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.4235,
+            0.5569,
+            0.0118
+          ],
+          "hex": "#6c8e03"
+        },
+        "$extensions": {
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              0.5098,
+              0.6588,
+              0.1294
+            ],
+            "hex": "#82a821"
+          },
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 3
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 3
+            }
+          ]
+        },
+        "$description": "Colourful palette, group 10 (lime)."
+      },
+      "11": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.6314,
+            0.4588,
+            0.3412
+          ],
+          "hex": "#a17557"
+        },
+        "$extensions": {
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              0.7333,
+              0.5529,
+              0.4353
+            ],
+            "hex": "#bb8d6f"
+          },
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 3
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 3
+            }
+          ]
+        },
+        "$description": "Colourful palette, group 11 (brown)."
+      },
+      "12": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.0824,
+            0.5569,
+            0.6706
+          ],
+          "hex": "#158eab"
+        },
+        "$extensions": {
+          "md.salt.dark": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0902,
+              0.6627,
+              0.7961
+            ],
+            "hex": "#17a9cb"
+          },
+          "md.salt.contrast": [
+            {
+              "on": "{color.surface.default}",
+              "min": 3
+            },
+            {
+              "on": "{color.surface.raised}",
+              "min": 3
+            }
+          ]
+        },
+        "$description": "Colourful palette, group 12 (cyan)."
+      },
+      "gray": {
+        "$description": "Single-colour palette 'colorless': three shades that all pass 3:1, darkest first. Notion fades to five, but its lightest two would fail the contrast rule; more groups repeat the shades and their labels tell them apart.",
+        "1": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.2824,
+              0.2824,
+              0.2824
+            ],
+            "hex": "#484848"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.8431,
+                0.8431,
+                0.8431
+              ],
+              "hex": "#d7d7d7"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "2": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.3882,
+              0.3882,
+              0.3882
+            ],
+            "hex": "#636363"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.7176,
+                0.7176,
+                0.7176
+              ],
+              "hex": "#b7b7b7"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "3": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.502,
+              0.502,
+              0.502
+            ],
+            "hex": "#808080"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.5961,
+                0.5961,
+                0.5961
+              ],
+              "hex": "#989898"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        }
+      },
+      "blue": {
+        "$description": "Single-colour palette 'blue': three shades that all pass 3:1, darkest first. Notion fades to five, but its lightest two would fail the contrast rule; more groups repeat the shades and their labels tell them apart.",
+        "1": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0078,
+              0.2745,
+              0.5451
+            ],
+            "hex": "#02468b"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.7529,
+                0.8549,
+                0.9882
+              ],
+              "hex": "#c0dafc"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "2": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0353,
+              0.3804,
+              0.7333
+            ],
+            "hex": "#0961bb"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.5294,
+                0.7294,
+                0.9922
+              ],
+              "hex": "#87bafd"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "3": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.1647,
+              0.502,
+              0.8863
+            ],
+            "hex": "#2a80e2"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.2745,
+                0.6,
+                0.9961
+              ],
+              "hex": "#4699fe"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        }
+      },
+      "yellow": {
+        "$description": "Single-colour palette 'yellow': three shades that all pass 3:1, darkest first. Notion fades to five, but its lightest two would fail the contrast rule; more groups repeat the shades and their labels tell them apart.",
+        "1": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.3569,
+              0.2667,
+              0.0157
+            ],
+            "hex": "#5b4404"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                1.0,
+                0.8196,
+                0.4196
+              ],
+              "hex": "#ffd16b"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "2": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.4902,
+              0.3686,
+              0.0275
+            ],
+            "hex": "#7d5e07"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.8902,
+                0.6824,
+                0.1569
+              ],
+              "hex": "#e3ae28"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "3": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.6314,
+              0.4745,
+              0.0471
+            ],
+            "hex": "#a1790c"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.7451,
+                0.5647,
+                0.0784
+              ],
+              "hex": "#be9014"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        }
+      },
+      "green": {
+        "$description": "Single-colour palette 'green': three shades that all pass 3:1, darkest first. Notion fades to five, but its lightest two would fail the contrast rule; more groups repeat the shades and their labels tell them apart.",
+        "1": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0,
+              0.3412,
+              0.1451
+            ],
+            "hex": "#005725"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.5373,
+                0.9529,
+                0.6353
+              ],
+              "hex": "#89f3a2"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "2": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0314,
+              0.4667,
+              0.2118
+            ],
+            "hex": "#087736"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.4039,
+                0.8235,
+                0.5137
+              ],
+              "hex": "#67d283"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "3": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.1451,
+              0.5961,
+              0.302
+            ],
+            "hex": "#25984d"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.2706,
+                0.6941,
+                0.3922
+              ],
+              "hex": "#45b164"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        }
+      },
+      "purple": {
+        "$description": "Single-colour palette 'purple': three shades that all pass 3:1, darkest first. Notion fades to five, but its lightest two would fail the contrast rule; more groups repeat the shades and their labels tell them apart.",
+        "1": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.3686,
+              0.1294,
+              0.5608
+            ],
+            "hex": "#5e218f"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.8863,
+                0.8,
+                0.9922
+              ],
+              "hex": "#e2ccfd"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "2": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.4784,
+              0.2549,
+              0.6863
+            ],
+            "hex": "#7a41af"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.8,
+                0.6235,
+                1.0
+              ],
+              "hex": "#cc9fff"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "3": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.5961,
+              0.3765,
+              0.8157
+            ],
+            "hex": "#9860d0"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.6941,
+                0.4745,
+                0.9216
+              ],
+              "hex": "#b179eb"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        }
+      },
+      "teal": {
+        "$description": "Single-colour palette 'teal': three shades that all pass 3:1, darkest first. Notion fades to five, but its lightest two would fail the contrast rule; more groups repeat the shades and their labels tell them apart.",
+        "1": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0353,
+              0.3216,
+              0.3216
+            ],
+            "hex": "#095252"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.3961,
+                0.9412,
+                0.9412
+              ],
+              "hex": "#65f0f0"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "2": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0039,
+              0.4471,
+              0.4471
+            ],
+            "hex": "#017272"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.2314,
+                0.8118,
+                0.8118
+              ],
+              "hex": "#3bcfcf"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "3": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0588,
+              0.5725,
+              0.5765
+            ],
+            "hex": "#0f9293"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.0353,
+                0.6824,
+                0.6824
+              ],
+              "hex": "#09aeae"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        }
+      },
+      "orange": {
+        "$description": "Single-colour palette 'orange': three shades that all pass 3:1, darkest first. Notion fades to five, but its lightest two would fail the contrast rule; more groups repeat the shades and their labels tell them apart.",
+        "1": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.451,
+              0.2,
+              0.0039
+            ],
+            "hex": "#733301"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9961,
+                0.7961,
+                0.6863
+              ],
+              "hex": "#fecbaf"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "2": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.6078,
+              0.2824,
+              0.0196
+            ],
+            "hex": "#9b4805"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9961,
+                0.6078,
+                0.3804
+              ],
+              "hex": "#fe9b61"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "3": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.7765,
+              0.3686,
+              0.0431
+            ],
+            "hex": "#c65e0b"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9098,
+                0.4471,
+                0.1098
+              ],
+              "hex": "#e8721c"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        }
+      },
+      "pink": {
+        "$description": "Single-colour palette 'pink': three shades that all pass 3:1, darkest first. Notion fades to five, but its lightest two would fail the contrast rule; more groups repeat the shades and their labels tell them apart.",
+        "1": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.5059,
+              0.0118,
+              0.3294
+            ],
+            "hex": "#810354"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                1.0,
+                0.7686,
+                0.8706
+              ],
+              "hex": "#ffc4de"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "2": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.6431,
+              0.1725,
+              0.4431
+            ],
+            "hex": "#a42c71"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9961,
+                0.5529,
+                0.7725
+              ],
+              "hex": "#fe8dc5"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "3": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.7804,
+              0.298,
+              0.5569
+            ],
+            "hex": "#c74c8e"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.8863,
+                0.4,
+                0.6549
+              ],
+              "hex": "#e266a7"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        }
+      },
+      "red": {
+        "$description": "Single-colour palette 'red': three shades that all pass 3:1, darkest first. Notion fades to five, but its lightest two would fail the contrast rule; more groups repeat the shades and their labels tell them apart.",
+        "1": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.5412,
+              0.0118,
+              0.0784
+            ],
+            "hex": "#8a0314"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9922,
+                0.7882,
+                0.7686
+              ],
+              "hex": "#fdc9c4"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "2": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.702,
+              0.1333,
+              0.1569
+            ],
+            "hex": "#b32228"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9922,
+                0.5882,
+                0.5608
+              ],
+              "hex": "#fd968f"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        },
+        "3": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.8431,
+              0.2784,
+              0.2706
+            ],
+            "hex": "#d74745"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9529,
+                0.3843,
+                0.3647
+              ],
+              "hex": "#f3625d"
+            },
+            "md.salt.contrast": [
+              {
+                "on": "{color.surface.default}",
+                "min": 3
+              },
+              {
+                "on": "{color.surface.raised}",
+                "min": 3
+              }
+            ]
+          }
+        }
+      },
+      "background": {
+        "$description": "Soft backgrounds for Save chart as (research R17). No contrast claim: the chart's own colours are checked on the surfaces, and these are a frame around them.",
+        "1": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9882,
+              0.9373,
+              0.898
+            ],
+            "hex": "#fcefe5"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.149,
+                0.1137,
+                0.0863
+              ],
+              "hex": "#261d16"
+            }
+          }
+        },
+        "2": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.902,
+              0.9569,
+              0.9961
+            ],
+            "hex": "#e6f4fe"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.0667,
+                0.1294,
+                0.1725
+              ],
+              "hex": "#11212c"
+            }
+          }
+        },
+        "3": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              1.0,
+              0.9294,
+              0.9373
+            ],
+            "hex": "#ffedef"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.1725,
+                0.098,
+                0.1098
+              ],
+              "hex": "#2c191c"
+            }
+          }
+        },
+        "4": {
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9961,
+              0.9412,
+              0.8314
+            ],
+            "hex": "#fef0d4"
+          },
+          "$extensions": {
+            "md.salt.dark": {
+              "colorSpace": "srgb",
+              "components": [
+                0.1569,
+                0.1176,
+                0.0235
+              ],
+              "hex": "#281e06"
+            }
+          }
+        }
+      }
     }
   },
   "shadow": {

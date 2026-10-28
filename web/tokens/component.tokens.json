@@ -251,5 +251,38 @@
         "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
       }
     }
+  },
+  "chart": {
+    "height": {
+      "$description": "A chart's height setting (spec 004, FR-024). Medium fits a chart beside text without scrolling; extra large is for a chart that is the page.",
+      "small": {
+        "$type": "dimension",
+        "$value": {
+          "value": 200,
+          "unit": "px"
+        }
+      },
+      "medium": {
+        "$type": "dimension",
+        "$value": {
+          "value": 320,
+          "unit": "px"
+        }
+      },
+      "large": {
+        "$type": "dimension",
+        "$value": {
+          "value": 440,
+          "unit": "px"
+        }
+      },
+      "xlarge": {
+        "$type": "dimension",
+        "$value": {
+          "value": 600,
+          "unit": "px"
+        }
+      }
+    }
   }
 }

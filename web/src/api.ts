@@ -1,4 +1,5 @@
 import type { AgentWork } from './agentPresence';
+import type { AggResult } from './chartLayout';
 import type {
   ApiToken,
   Backlink,
@@ -455,6 +456,26 @@ export const api = {
       limit: number;
     }>(`/api/collections/${pageId}/rows?${p.toString()}`);
   },
+  // A chart's numbers (spec 004): counts or totals per group over the rows the
+  // filters let through, computed on the server. With viewId the chart view's
+  // own settings are the defaults; fields sent override them (an embed sends
+  // its own filters, #26).
+  aggregate: (
+    pageId: string,
+    body: {
+      viewId?: string;
+      groupBy?: string;
+      period?: string;
+      aggregate?: string;
+      aggregateProp?: string;
+      filters?: { property: string; op?: string; value: string; values?: string[]; value2?: string }[];
+      today?: string;
+    },
+  ) =>
+    req<AggResult>(`/api/collections/${pageId}/aggregate`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   // Either half alone is fine; the server keeps the other as stored.
   putCollection: (pageId: string, config: Partial<CollectionConfig>) =>
     req<CollectionConfig>(`/api/collections/${pageId}`, {
