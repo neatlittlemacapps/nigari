@@ -22,7 +22,8 @@ entries are not edited away.
 
 **Why**: SC-002 (the chart equals the table) only holds when both read one WHERE; a
 browser-side count is stopped by the 5-second limit exactly where charts matter; a chart
-library adds 40–90 KB gzip for three shapes.
+library adds 23–179 KB gzip for three shapes (measured, research R8), and the canvas
+ones give a keyboard or screen reader nothing to hold.
 
 **Rejected**: counting in the browser; a separate aggregate SQL builder; a new MCP tool;
 a chart library; canvas (no focus or screen reader).
