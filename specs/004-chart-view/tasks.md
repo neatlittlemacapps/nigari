@@ -129,8 +129,8 @@ description: "Tasks for chart views of a database, with the chart builder"
 - [x] T042 [perf] Bundle: main chunk growth measured against the plan's budgets; Chart.js only in the lazy chunk (`budgets.json` `bundleGzip` unchanged or lowered)
 - [x] T043 [P] [wiki] `wiki/collections.md` § "What the chart adds" and the eight view types; `docs/what-it-does.md` "eight ways"; `check-wiki.mjs` learns `chart`
 - [x] T044 [P] [wiki] `wiki/mcp-tools.md` §§ query_rows, set_view, get_collection, embed_database; `wiki/api.md` the aggregate route
-- [ ] T045 [P] [wiki] The wiki page that lists `/` entries gains the five chart entries; `wiki/collections.md` describes the settings panel, palettes and Save chart as
-- [ ] T046 [wiki] Screenshots `collection-chart` and `chart-settings` (light and dark) in `wiki/screenshots.json` and `web/scripts/shoot-wiki.mjs`; stale shots retaken
+- [x] T045 [P] [wiki] The wiki page that lists `/` entries gains the five chart entries; `wiki/collections.md` describes the settings panel, palettes and Save chart as
+- [x] T046 [wiki] Screenshots `collection-chart` and `chart-settings` (light and dark) in `wiki/screenshots.json` and `web/scripts/shoot-wiki.mjs`; stale shots retaken
 - [x] T047 [backend] Registry row *Aggregation* (tag `backend`, Since 2026-10-29) in `.specify/memory/surfaces.md` (plan, Registry)
 - [x] T048 [ui] Backlog issues for what the walk-through showed and this feature leaves out (spec FR-017): "Save for everyone"/"Reset" on view filters, the folding toolbar, Lock views, a second grouping with stacked bars and reference lines
 

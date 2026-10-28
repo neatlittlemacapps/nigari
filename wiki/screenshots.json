@@ -85,7 +85,7 @@
       ],
       "takenAt": {
         "web/src/components/Sidebar.tsx": "6ae23743c8a5",
-        "web/src/components/Editor.tsx": "eaa3e165e229",
+        "web/src/components/Editor.tsx": "a600ff5f62cc",
         "web/src/App.tsx": "c69409d8a367",
         "web/src/tokens.css": "ab00821c87d1",
         "web/src/theme.css": "42ead492ea94"
@@ -150,7 +150,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/Editor.tsx": "eaa3e165e229",
+        "web/src/components/Editor.tsx": "a600ff5f62cc",
         "web/src/tokens.css": "ab00821c87d1",
         "web/src/theme.css": "42ead492ea94"
       }
@@ -437,10 +437,75 @@
         "web/src/components/CollectionView.tsx": "8bad4cd864b3",
         "web/src/components/ChartFigure.tsx": "58151eb122a7",
         "web/src/components/ChartView.css": "ad6a7c9c7acf",
-        "web/src/components/ChartSettings.tsx": "60f89a2d3aa5",
+        "web/src/components/ChartSettings.tsx": "4f8c7aeacbc8",
         "web/src/components/ChartSettings.css": "16a9584f65dc",
         "web/src/chartLayout.ts": "1035a3e068ac",
         "web/src/chartTheme.ts": "7917b7a547ab",
+        "web/src/tokens.css": "ab00821c87d1",
+        "web/src/theme.css": "42ead492ea94"
+      }
+    },
+    {
+      "id": "chart-settings",
+      "page": "views.md",
+      "caption": "A chart's settings: the kind, what it shows and its style, in one panel beside the chart, which redraws as a setting changes.",
+      "shows": [
+        "web/src/components/ChartSettings.tsx",
+        "web/src/components/ChartSettings.css",
+        "web/src/components/ChartPane.tsx",
+        "web/src/components/ChartSave.tsx",
+        "web/src/ui/Popover.tsx",
+        "web/src/ui/Popover.css",
+        "web/src/ui/Select.css",
+        "web/src/ui/Switch.css",
+        "web/src/components/ChartFigure.tsx",
+        "web/src/components/ChartView.css",
+        "web/src/tokens.css",
+        "web/src/theme.css"
+      ],
+      "steps": [
+        {
+          "goto": "/"
+        },
+        {
+          "waitFor": ".sidebar"
+        },
+        {
+          "click": ".sidebar >> text=Tasks"
+        },
+        {
+          "wait": 900
+        },
+        {
+          "click": ".view-tab >> text=Chart"
+        },
+        {
+          "waitFor": "figure.chart canvas"
+        },
+        {
+          "wait": 1200
+        },
+        {
+          "click": "button:has-text(\"Chart settings\")"
+        },
+        {
+          "waitFor": "[role=\"dialog\"]"
+        },
+        {
+          "wait": 700
+        }
+      ],
+      "takenAt": {
+        "web/src/components/ChartSettings.tsx": "4f8c7aeacbc8",
+        "web/src/components/ChartSettings.css": "16a9584f65dc",
+        "web/src/components/ChartPane.tsx": "1fbe458f0d0b",
+        "web/src/components/ChartSave.tsx": "f93329e0c3dd",
+        "web/src/ui/Popover.tsx": "679c04909ecf",
+        "web/src/ui/Popover.css": "ac0bbc2fa9aa",
+        "web/src/ui/Select.css": "23b768507ead",
+        "web/src/ui/Switch.css": "b64ad5302264",
+        "web/src/components/ChartFigure.tsx": "58151eb122a7",
+        "web/src/components/ChartView.css": "ad6a7c9c7acf",
         "web/src/tokens.css": "ab00821c87d1",
         "web/src/theme.css": "42ead492ea94"
       }
@@ -538,7 +603,7 @@
       ],
       "takenAt": {
         "server/public.go": "fa068198074b",
-        "web/src/components/Editor.tsx": "eaa3e165e229",
+        "web/src/components/Editor.tsx": "a600ff5f62cc",
         "web/src/tokens.css": "ab00821c87d1",
         "web/src/theme.css": "42ead492ea94"
       }

@@ -306,14 +306,48 @@ all), counting rows. A collection with nothing to group by but a number
 property starts as bars of **Each row**, valued by the first number. One with
 neither starts as a number chart.
 
-**The settings** sit in the bar above it:
+**The settings.** Above a chart are two buttons: **Save chart as** and **Chart
+settings**. **Chart settings** opens one panel beside the chart. The chart
+redraws as each setting changes, and every change is saved with the view at
+once (text you type is saved after a short pause).
 
-| Setting | Choices |
-| --- | --- |
-| **Chart** | **Vertical bars**, **Horizontal bars**, **Line**, **Donut**, **Number** (one big value) |
-| **What to show** | what each bar, point or slice stands for: **Each row** (when the database has a number, formula or rollup property), or a select, multi-select, person, checkbox, date or relation property |
-| **Period** | for a date: **Day**, **Week**, **Month** (the default) or **Year** |
-| **Value** | **Count of rows**, or the **Sum**, **Average**, **Minimum** or **Maximum** of a number, formula or rollup property, chosen under **Of** |
+![A chart's settings: the kind, what it shows and its style, in one panel beside the chart, which redraws as a setting changes.](img/chart-settings.png)
+
+The panel has these parts, in this order:
+
+| Part | Setting | Choices |
+| --- | --- | --- |
+| **Chart** | the kind | **Vertical bars**, **Horizontal bars**, **Line**, **Donut**, **Number** (one big value), as icon buttons |
+| **Data** | **What to show** | what each bar, point or slice stands for: **Each row** (when the database has a number, formula or rollup property), or a select, multi-select, person, checkbox, date or relation property |
+| | **Period** | for a date: **Day**, **Week**, **Month** (the default) or **Year** |
+| | **Value** | **Count of rows**, or the **Sum**, **Average**, **Minimum** or **Maximum** of a number, formula or rollup property, chosen under **Of** |
+| | **Sort** | **Automatic**, **Name, A to Z**, **Name, Z to A**, **Value, high to low**, **Value, low to high** |
+| | **Show options with no rows** | for a select, status or checkbox grouping, not on a donut: draws the options nobody uses, at zero |
+| **Groups** | a switch per group | shows or hides that group; **Hide all** and **Show all** do it for every group |
+| **Style** | **Colours** | **Automatic** (a select's own option colours), **Colourful**, **Colourless**, or one of Blue, Yellow, Green, Purple, Teal, Orange, Pink, Red |
+| | **Height** | **Small**, **Medium**, **Large**, **Extra large** |
+| | **Legend** | donut and line only: **Bottom**, **Right** or **Hidden**. A hidden legend's buttons still appear when you reach them with the keyboard |
+| | **Value labels** | draws each bar's, slice's or point's number on the chart |
+| | **Total in the centre**, **Total label** | donut only: the total in the middle, and the words under it |
+| | **Caption** | text under the chart |
+| | **Title** | a number chart has a **Title** instead of the legend and the value labels |
+| | **Show as table** | lists every group as a table |
+
+If the server refuses a change (for example, you may only read the database),
+the chart goes back to what is stored and a message says why. People who can
+only view the workspace see the chart, its tooltip, the rows behind a group, the
+table and **Save chart as**, but not **Chart settings**.
+
+**The tooltip.** Hover a bar, slice or point, or reach its group button with the
+keyboard, and a small box shows its name, its value and *Click to view data*
+(with **Each row**: *Click to open*).
+
+**Save chart as.** Choose a **Background** (**Page**, **Orange**, **Blue**,
+**Pink** or **Yellow**), then **Copy as PNG** or **Download PNG**. The picture is
+drawn at twice the screen's resolution, with the chart's title, legend, the
+donut's total and the caption in it. If your browser does not let a page copy a
+picture, it is downloaded instead and a message says so. A picture can only be
+saved as PNG; there is no SVG.
 
 The order of the groups is the property's own: a select's options as they are
 listed, checked before unchecked, dates in time order; anything else largest
@@ -359,9 +393,10 @@ slice. The picture itself is hidden from screen readers; they read the
 caption, the summary under it (*4 groups · largest: Done, 11*) and the buttons.
 A donut's total is real text in its middle.
 
-**Colours** come from the design tokens and are readable in light and dark: a
-select's own option colours where it has them, otherwise a set of twelve that
-all reach a 3:1 contrast with the page. **No value** and **Other** are grey.
+**Colours** come from the design tokens and are readable in light and dark. With
+**Automatic**, a select's own option colours are used where it has them,
+otherwise a set of twelve that all reach a 3:1 contrast with the page. **No
+value** and **Other** are grey.
 
 **In a document** a chart keeps the document's own filters, like any embedded
 view (see [Collections inside documents](collections.md#collections-inside-documents)).
@@ -373,12 +408,14 @@ and a table then corrects the answer in the browser; a chart has no rows in the
 browser to correct. So on a chart such a filter either matches nothing or lets
 every row through. Filter on a stored property instead.
 
-**Not built yet:** the style settings (palette, height, legend, value labels,
-caption), sorting and hiding single groups from the chart's own settings,
-inserting a chart straight from the `/` menu of a document, and saving a chart
-as a picture. They are the next part of the same feature. Agents can already
-set every one of those over MCP; see `set_view` in
-[MCP tools](mcp-tools.md).
+**In a document.** Type `/` and "chart" to insert a chart; see
+[The slash menu](editor-blocks.md#the-slash-menu). The chart is a view of the
+database, so the same chart can be shown in several documents and looks the same
+everywhere. Changing its settings changes it everywhere.
+
+**Not built:** a second grouping (stacked bars), reference lines, axis ranges
+and saving as SVG. Agents can set the chart's settings over MCP; see
+`set_view` in [MCP tools](mcp-tools.md).
 
 ## The settings bar
 
