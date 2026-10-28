@@ -1254,5 +1254,12 @@
   "Value, high to low": "Valor, de mayor a menor",
   "Value, low to high": "Valor, de menor a mayor",
   "Click to open": "Haz clic para abrir",
-  "Click to view data": "Haz clic para ver los datos"
+  "Click to view data": "Haz clic para ver los datos",
+  "Background": "Fondo",
+  "Chart copied as a picture.": "Gráfico copiado como imagen.",
+  "Copy as PNG": "Copiar como PNG",
+  "Download PNG": "Descargar PNG",
+  "Save chart as": "Guardar gráfico como",
+  "There is no chart to save yet.": "Todavía no hay ningún gráfico que guardar.",
+  "This browser does not allow copying a picture, so it was downloaded instead.": "Este navegador no permite copiar imágenes, así que se ha descargado."
 }

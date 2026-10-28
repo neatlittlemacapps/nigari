@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChartSettingsButton } from './ChartSettings';
+import ChartSave from './ChartSave';
+import type { PictureParts } from '../savePicture';
 import ChartView, { type ChartViewProps } from './ChartView';
 import { chartSettingsFor } from '../chartDefaults';
 import type { AggResult, ChartKind } from '../chartLayout';
@@ -24,6 +26,7 @@ export default function ChartPane(props: ChartViewProps & { onChange: (patch: Pa
   const [wish, setWish] = useState<ChartKind | null>(null);
   const [result, setResult] = useState<AggResult | null>(null);
   const [showTable, setShowTable] = useState(false);
+  const pictureRef = useRef<(() => PictureParts | null) | null>(null);
 
   useEffect(() => setWish(null), [view.id]);
   useEffect(() => {
@@ -38,18 +41,21 @@ export default function ChartPane(props: ChartViewProps & { onChange: (patch: Pa
   const shown = wish ? { ...view, chartKind: wish } : view;
   return (
     <>
-      {canEdit && (
-        <ChartSettingsButton
-          view={shown}
-          schema={schema}
-          onChange={onChange}
-          onWish={setWish}
-          result={result}
-          showTable={showTable}
-          onShowTable={setShowTable}
-        />
-      )}
-      <ChartView {...props} view={shown} onResult={setResult} showTable={canEdit ? showTable : undefined} />
+      <div className="chart-settings">
+        <ChartSave name={view.name} pictureRef={pictureRef} />
+        {canEdit && (
+          <ChartSettingsButton
+            view={shown}
+            schema={schema}
+            onChange={onChange}
+            onWish={setWish}
+            result={result}
+            showTable={showTable}
+            onShowTable={setShowTable}
+          />
+        )}
+      </div>
+      <ChartView {...props} view={shown} onResult={setResult} showTable={canEdit ? showTable : undefined} pictureRef={pictureRef} />
     </>
   );
 }

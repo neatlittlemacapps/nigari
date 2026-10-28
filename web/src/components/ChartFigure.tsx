@@ -20,7 +20,8 @@ import { neighbour } from '../nav';
 import { useShortcut } from '../keys';
 import { Button } from '../ui/Button';
 import { Switch } from '../ui/Switch';
-import type { ReactNode } from 'react';
+import type { MutableRefObject, ReactNode } from 'react';
+import type { PictureParts } from '../savePicture';
 import type { PropDef, ViewDef } from '../types';
 import {
   layoutChart,
@@ -66,6 +67,8 @@ export interface ChartFigureProps {
   /** The table alternative, switched from the settings panel. Left out, the
    *  figure has its own switch (a viewer, the catalogue). */
   showTable?: boolean;
+  /** Filled with a function that hands the chart over for "Save chart as". */
+  pictureRef?: MutableRefObject<(() => PictureParts | null) | null>;
   /** The rows behind the selected group, drawn inside the figure. */
   children?: ReactNode;
 }
@@ -219,6 +222,53 @@ export default function ChartFigure(props: ChartFigureProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind, layout, tokens, themeTick, style.labels]);
+
+  // "Save chart as" (research R17): the plot redrawn at twice its pixels
+  // (Chart.js' devicePixelRatio, put back after), and the words around it.
+  if (props.pictureRef) {
+    props.pictureRef.current = () => {
+      const fig = figureRef.current;
+      if (!fig || !layout || layout.state !== 'ok') return null;
+      const ink = readInk(fig, tokens);
+      const parts: PictureParts = {
+        plot: null,
+        width: fig.clientWidth,
+        height: 0,
+        title: kind === 'number' ? style.title || numberTitle(agg, aggProp) : caption,
+        legend: [],
+        caption: style.caption,
+        ink: { text: ink.text, muted: ink.muted, font: ink.font, fontSize: ink.fontSize },
+        token: (name) => getComputedStyle(fig).getPropertyValue(name).trim(),
+      };
+      if (kind === 'number') {
+        parts.number = value(drawn[0]?.value ?? null);
+        return parts;
+      }
+      const c = chartRef.current;
+      if (!c) return null;
+      const before = c.options.devicePixelRatio;
+      c.options.devicePixelRatio = 2;
+      c.resize();
+      c.update('none');
+      const plot = document.createElement('canvas');
+      plot.width = c.canvas.width;
+      plot.height = c.canvas.height;
+      plot.getContext('2d')?.drawImage(c.canvas, 0, 0);
+      c.options.devicePixelRatio = before;
+      c.resize();
+      c.update('none');
+      parts.plot = plot;
+      parts.width = c.canvas.clientWidth;
+      parts.height = c.canvas.clientHeight;
+      if (kind === 'donut' && style.center !== false && layout.total !== null) {
+        parts.centre = { value: value(layout.total), label: style.centerLabel || t('Total') };
+      }
+      if (style.legend !== 'none' || (kind !== 'donut' && kind !== 'line')) {
+        parts.legend = drawn.map((g, i) => ({ label: label(g), value: value(g.value), colour: ink.colours[i] }));
+      }
+      return parts;
+    };
+  }
 
   // A focused group lights up its bar or slice, so a sighted keyboard user
   // sees where they are.

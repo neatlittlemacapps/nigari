@@ -345,19 +345,17 @@ function TextSetting({ label, value, placeholder, max, onSave }: { label: string
 /** The button above the chart that opens the panel. */
 export function ChartSettingsButton(props: Parameters<typeof ChartSettings>[0]) {
   return (
-    <div className="chart-settings">
-      <Popover
-        label={t('Chart settings')}
-        closeLabel={t('Close')}
-        trigger={
-          <Button size="sm" variant="ghost">
-            <SlidersHorizontal size={14} aria-hidden="true" />
-            {t('Chart settings')}
-          </Button>
-        }
-      >
-        <ChartSettings {...props} />
-      </Popover>
-    </div>
+    <Popover
+      label={t('Chart settings')}
+      closeLabel={t('Close')}
+      trigger={
+        <Button size="sm" variant="ghost">
+          <SlidersHorizontal size={14} aria-hidden="true" />
+          {t('Chart settings')}
+        </Button>
+      }
+    >
+      <ChartSettings {...props} />
+    </Popover>
   );
 }

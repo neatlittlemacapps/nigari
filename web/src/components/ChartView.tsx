@@ -3,7 +3,7 @@ import { api } from '../api';
 import { plural, t } from '../i18n';
 import { Button } from '../ui/Button';
 import ListView from './ListView';
-import ChartFigure, { groupLabel } from './ChartFigure';
+import ChartFigure, { groupLabel, type ChartFigureProps } from './ChartFigure';
 import type { Filter, PropDef, PropOption, ViewDef } from '../types';
 import type { AggResult, DrawnGroup } from '../chartLayout';
 import { groupFilter } from '../chartGroups';
@@ -43,6 +43,8 @@ export interface ChartViewProps {
   onResult?: (r: AggResult | null) => void;
   /** The table alternative, when the settings panel switches it. */
   showTable?: boolean;
+  /** For "Save chart as": filled by the figure. */
+  pictureRef?: ChartFigureProps['pictureRef'];
   onOpenInNewTab?: (id: string) => void;
   onSetProp: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
@@ -136,6 +138,7 @@ export default function ChartView(props: ChartViewProps) {
       onSelect={eachRow ? (g) => g && g.key !== OTHER && (props.onOpenRow ?? props.onNavigate)(g.key) : setSelected}
       onUpdateView={props.onUpdateView}
       showTable={props.showTable}
+      pictureRef={props.pictureRef}
     >
       {selected && (
         <section className="chart-rows" aria-label={t('Rows in {group}', { group: name })}>

@@ -3,6 +3,7 @@
 .chart-settings {
   display: flex;
   justify-content: flex-end;
+  gap: var(--space-100);
   padding: var(--space-150) calc(2 * var(--space-600)) 0; /* the toolbar's 48px */
 }
 
