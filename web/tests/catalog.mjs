@@ -310,7 +310,14 @@ try {
     const inside = await centerPanel.evaluate((p) => p.contains(document.activeElement));
     assert(inside, `CenterPanel: Tab ${i + 1} left the panel`);
   }
+  // Tabbing passed the Close button, whose tooltip opens on keyboard focus
+  // after a delay. While it is open, Escape closes the tooltip and is marked
+  // handled (Base UI's useDismiss: preventDefault, and stopPropagation), as a
+  // tooltip should. On a slow runner the delay can still be running when
+  // focus moves on, so the tooltip opens late and takes the first Escape;
+  // the second then only leaves the field (#214's CI run). Wait it out.
   await centerPanel.getByRole('textbox', { name: 'Summary' }).focus();
+  await eventually(async () => (await page.locator('.ui-tooltip').count()) === 0);
   await page.keyboard.press('Escape');
   await page.waitForTimeout(100);
   assert(await centerPanel.isVisible(), 'CenterPanel: Escape in a text field closed the panel');

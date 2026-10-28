@@ -7,6 +7,69 @@ entries are not edited away.
 
 ---
 
+## 2026-10-28 — Spec 004: charts are drawn with Chart.js
+
+**Decision** (owner): Chart.js 4.5.1, loaded only with a chart view. Supersedes "hand-drawn
+SVG" in the spec 004 plan entry below.
+
+**Why**: a mature library, with room for more chart types later (area, scatter, stacked).
+The project rule is "a new dependency needs a stated reason", not "none": the "no new
+dependency" in spec 004 was Claude's default, copied from issue #20, which Claude wrote.
+
+**What it costs, and how it is met**: 60,694 B gzip (measured), kept out of the main
+bundle in a lazy chunk; a canvas gives keyboard and screen readers nothing, so the chart
+gets focusable group buttons, a summary and a table beside it (research R8); Chart.js's
+options are built from the design tokens at draw time and rebuilt on a theme switch.
+
+**Rejected**: hand-drawn SVG (Claude's recommendation), uPlot (no donut), Recharts and
+ECharts (112 and 179 KB).
+
+---
+
+## 2026-10-28 — Spec 004 plan: charts aggregate on the server, drawn by hand
+
+**Decision**:
+- **One function, the rows query's WHERE.** `aggregateRows` groups in one SQL query over
+  the WHERE extracted from the rows query, so a chart's numbers are the filtered table's.
+  Formulas and rollups, which exist only in Go, take a measured second path.
+- **Agents through `query_rows`** (`group_by`, `aggregate`), not a new tool.
+- **Hand-drawn SVG**, lazy-loaded, colours as 12 chart tokens with a 3:1 contrast check.
+- **At most 12 groups drawn**, the rest as "Other"; dates up to 400 periods.
+- **A group's rows** are the ordinary rows query with one more filter, shown as a list
+  that follows the view's Open pages in.
+- **New registry row "Aggregation".**
+
+**Why**: SC-002 (the chart equals the table) only holds when both read one WHERE; a
+browser-side count is stopped by the 5-second limit exactly where charts matter; a chart
+library adds 23–179 KB gzip for three shapes (measured, research R8), and the canvas
+ones give a keyboard or screen reader nothing to hold.
+
+**Rejected**: counting in the browser; a separate aggregate SQL builder; a new MCP tool;
+a chart library; canvas (no focus or screen reader).
+
+---
+
+## 2026-10-28 — Upstream #85 (full width as its own column): not taken
+
+**Decision**: the fork keeps full width as the page prop `_fullWidth`. Upstream
+saltmd/salt.md#85 moves it to a column of its own; we do not follow.
+
+**Why**:
+- **Nothing to gain.** Upstream moves it out of the props so it cannot mix with database
+  properties. Here only documents use it, and documents have no database properties.
+- **Already open to agents.** `update_page full_width` sets it and `get_page` reports it,
+  with tests (`mcp_appearance_test.go`, `page_width_test.go`).
+- **It already travels.** Duplicate, templates, import/export, workspace blueprints and
+  history copy props, so the setting goes with the page without any code knowing about
+  it; that was the reason for the prop in the first place (`server/public.go`).
+- **The cost would be real:** a schema column, a migration of existing values, every
+  copy path taught the new column, the wiki and the tool changed, for no visible change.
+
+**Rejected**: following upstream for its own sake (owner, 2026-10-27: implement the
+maintainers' changes only when they make sense for us).
+
+---
+
 ## 2026-10-27 — Spec 007: the centre peek is a panel of its own, not a Dialog
 
 **Decision**: the centre peek is drawn by a new `ui/CenterPanel` (option A): modal, with
