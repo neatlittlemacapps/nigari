@@ -432,6 +432,7 @@ export const databaseSpec = createReactBlockSpec(
             onPeek={onPeek}
             onPagesChanged={onPagesChanged}
             embed={embed}
+            canEdit={editor.isEditable}
           />
         </div>
       );

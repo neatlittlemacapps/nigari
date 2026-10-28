@@ -12,6 +12,10 @@
   padding: var(--space-300);
   border-radius: var(--radius-legacy-md);
   background: var(--color-surface-glass);
+  /* The app's floating glass (theme.css' menus): without the blur, the chart
+     behind showed through the panel's few percent of transparency. */
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
   box-shadow: var(--shadow-overlay);
   color: var(--color-text-default);
   outline: none;

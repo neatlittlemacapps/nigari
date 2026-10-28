@@ -39,6 +39,10 @@ export interface ChartViewProps {
   /** Opens a row the way the view opens rows (Open pages in); Each row's bars
    *  use it. */
   onOpenRow?: (id: string) => void;
+  /** Hears every answer the chart draws, for the settings' list of groups. */
+  onResult?: (r: AggResult | null) => void;
+  /** The table alternative, when the settings panel switches it. */
+  showTable?: boolean;
   onOpenInNewTab?: (id: string) => void;
   onSetProp: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
@@ -81,6 +85,7 @@ export default function ChartView(props: ChartViewProps) {
       .then((r) => {
         if (!live) return;
         setResult(r);
+        props.onResult?.(r);
         setError('');
       })
       .catch((e: Error) => {
@@ -130,6 +135,7 @@ export default function ChartView(props: ChartViewProps) {
       // (FR-030). "Other" has no single row to open.
       onSelect={eachRow ? (g) => g && g.key !== OTHER && (props.onOpenRow ?? props.onNavigate)(g.key) : setSelected}
       onUpdateView={props.onUpdateView}
+      showTable={props.showTable}
     >
       {selected && (
         <section className="chart-rows" aria-label={t('Rows in {group}', { group: name })}>

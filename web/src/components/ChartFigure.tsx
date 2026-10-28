@@ -12,7 +12,7 @@ import {
   PointElement,
   Tooltip,
   type ActiveElement,
-  type TooltipItem,
+  type TooltipModel,
 } from 'chart.js';
 import { plural, t } from '../i18n';
 import { compare, formatDay, formatMonth, formatNumber } from '../format';
@@ -31,7 +31,7 @@ import {
   type ChartKind,
   type DrawnGroup,
 } from '../chartLayout';
-import { groupColourTokens, onThemeChange, readInk } from '../chartTheme';
+import { groupColourTokens, onThemeChange, readInk, valueLabels } from '../chartTheme';
 import { groupable, numberProps, ROW_GROUP } from '../chartDefaults';
 import './ChartView.css';
 
@@ -63,9 +63,15 @@ export interface ChartFigureProps {
   onSelect?: (g: DrawnGroup | null) => void;
   /** Hidden groups can be shown again from the chart itself. */
   onUpdateView?: (patch: Partial<ViewDef>) => void;
+  /** The table alternative, switched from the settings panel. Left out, the
+   *  figure has its own switch (a viewer, the catalogue). */
+  showTable?: boolean;
   /** The rows behind the selected group, drawn inside the figure. */
   children?: ReactNode;
 }
+
+/** Pixels a tooltip needs above or beside its point before it moves. */
+const TIP_ROOM = 72;
 
 export default function ChartFigure(props: ChartFigureProps) {
   const { view, schema, result, error = '', selectedKey = null, onSelect } = props;
@@ -77,7 +83,12 @@ export default function ChartFigure(props: ChartFigureProps) {
   const period = groupProp?.type === 'date' ? view.groupPeriod ?? 'month' : undefined;
   const style = view.chartStyle ?? {};
 
-  const [showTable, setShowTable] = useState(false);
+  const [ownTable, setOwnTable] = useState(false);
+  // The tooltip (research R17): where Chart.js would draw its own, ours, as
+  // text in the page, styled by the tokens, and the same for the mouse and
+  // for a focused group button (highlight() makes Chart.js report it).
+  const [tip, setTip] = useState<{ x: number; y: number; index: number } | null>(null);
+  const showTable = props.showTable ?? ownTable;
   const [focusIndex, setFocusIndex] = useState(0);
   const [themeTick, setThemeTick] = useState(0);
 
@@ -173,11 +184,16 @@ export default function ChartFigure(props: ChartFigureProps) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: ink.text,
-            titleColor: ink.surface,
-            bodyColor: ink.surface,
-            displayColors: true,
-            callbacks: { label: (c: TooltipItem<'bar'>) => ` ${value(c.raw as number | null)}` },
+            enabled: false,
+            external: ({ tooltip: tm }: { tooltip: TooltipModel<'bar'> }) => {
+              const index = tm.dataPoints?.[0]?.dataIndex;
+              if (tm.opacity === 0 || index === undefined) {
+                setTip(null);
+                return;
+              }
+              // Called on every mouse move: a new object only when it moved.
+              setTip((t0) => (t0 && t0.index === index && t0.x === tm.caretX && t0.y === tm.caretY ? t0 : { x: tm.caretX, y: tm.caretY, index }));
+            },
           },
         },
         scales:
@@ -187,11 +203,14 @@ export default function ChartFigure(props: ChartFigureProps) {
                 x: { ...axis, beginAtZero: true },
                 y: { ...axis, beginAtZero: true },
               },
+        // Room above the bars (and beside horizontal ones) for their numbers.
+        layout: style.labels ? { padding: kind === 'hbar' ? { right: ink.fontSize * 4 } : { top: ink.fontSize * 2 } } : undefined,
         onClick: (_e: unknown, els: ActiveElement[]) => {
           const g = els[0] ? drawnRef.current[els[0].index] : undefined;
           if (g) selectRef.current(g);
         },
       } as never,
+      plugins: style.labels ? [valueLabels(ink, kind as 'bar' | 'hbar' | 'line' | 'donut', (v) => value(v))] : [],
     });
     chartRef.current = chart;
     return () => {
@@ -199,7 +218,7 @@ export default function ChartFigure(props: ChartFigureProps) {
       chartRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kind, layout, tokens, themeTick]);
+  }, [kind, layout, tokens, themeTick, style.labels]);
 
   // A focused group lights up its bar or slice, so a sighted keyboard user
   // sees where they are.
@@ -271,10 +290,31 @@ export default function ChartFigure(props: ChartFigureProps) {
     );
   } else {
     const centre = kind === 'donut' && style.center !== false && layout.total !== null;
+    // The legend's place (FR-024) is a donut's and a line's setting; a bar
+    // names its groups on its axis, and its buttons stay under it.
+    const legend = kind === 'donut' || kind === 'line' ? style.legend ?? 'bottom' : 'bottom';
     body = (
-      <>
+      <div className="chart-plot" data-legend={legend}>
         <div className="chart-canvas" style={{ height }}>
           <canvas ref={canvasRef} aria-hidden="true" />
+          {tip && drawn[tip.index] && (
+            <div
+              className="chart-tooltip"
+              role="tooltip"
+              style={{ left: tip.x, top: tip.y }}
+              // Near the top it goes under the point, near a side it leans
+              // inward, so it never leaves the chart (a tall bar's top is the
+              // chart's top edge).
+              data-below={tip.y < TIP_ROOM ? '' : undefined}
+              data-align={tip.x < TIP_ROOM ? 'start' : tip.x > (canvasRef.current?.clientWidth ?? Infinity) - TIP_ROOM ? 'end' : undefined}
+            >
+              <span className="chart-tooltip-label">{label(drawn[tip.index])}</span>
+              <span className="chart-tooltip-value">{value(drawn[tip.index].value)}</span>
+              {onSelect && !(eachRow && drawn[tip.index].key === OTHER) && (
+                <span className="chart-tooltip-hint">{eachRow ? t('Click to open') : t('Click to view data')}</span>
+              )}
+            </div>
+          )}
           {centre && (
             <div className="chart-centre" aria-hidden="true">
               <span className="chart-centre-value">{value(layout.total)}</span>
@@ -304,7 +344,7 @@ export default function ChartFigure(props: ChartFigureProps) {
             </Button>
           ))}
         </div>
-      </>
+      </div>
     );
   }
 
@@ -329,8 +369,8 @@ export default function ChartFigure(props: ChartFigureProps) {
         </p>
       )}
       {listGrouping && <p className="chart-note">{t('A row with several values is counted under each of them.')}</p>}
-      {layout && layout.state !== 'empty' && kind !== 'number' && (
-        <Switch label={t('Show as table')} checked={showTable} onCheckedChange={setShowTable} className="chart-table-switch" />
+      {props.showTable === undefined && layout && layout.state !== 'empty' && kind !== 'number' && (
+        <Switch label={t('Show as table')} checked={ownTable} onCheckedChange={setOwnTable} className="chart-table-switch" />
       )}
       {showTable && layout && (
         <table className="chart-table">

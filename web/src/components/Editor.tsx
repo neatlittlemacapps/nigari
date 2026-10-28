@@ -230,6 +230,7 @@ export default function Editor(props: EditorProps) {
             onPeek={props.onPeek}
             onPagesChanged={props.onPagesChanged}
             onEditTemplate={props.container === 'dialog' ? undefined : setTplEditId}
+            canEdit={props.canEdit}
           />
         ) : (
           <CollabEditor

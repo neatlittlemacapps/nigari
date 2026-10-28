@@ -21,8 +21,26 @@ await withFixture(async ({ page, api, base, workspace }) => {
   };
   const figure = page.locator('figure.chart');
   const settings = page.locator('.chart-settings');
+  // The settings live in one panel (US5): the kinds are radios, the rest
+  // dropdowns.
+  const panel = page.getByRole('dialog', { name: 'Chart settings' });
+  const openPanel = async () => {
+    if (await panel.isVisible()) return;
+    await settings.getByRole('button', { name: 'Chart settings' }).click();
+    await panel.waitFor();
+  };
+  const closePanel = async () => {
+    if (!(await panel.isVisible())) return;
+    await page.keyboard.press('Escape');
+    await panel.waitFor({ state: 'hidden' });
+  };
   const choose = async (label, option) => {
-    await settings.getByRole('combobox', { name: label }).click();
+    await openPanel();
+    if (label === 'Chart') {
+      await panel.getByRole('radio', { name: option, exact: true }).check();
+      return;
+    }
+    await panel.getByRole('combobox', { name: label }).click();
     await page.getByRole('option', { name: option, exact: true }).click();
   };
 
@@ -41,7 +59,8 @@ await withFixture(async ({ page, api, base, workspace }) => {
     const v = (await api('GET', `/api/collections/${costs}`)).views.find((x) => x.type === 'chart');
     return v?.groupBy === '__row' && v.agg === 'sum' && v.aggProp === 'amount';
   });
-  assert.equal(await settings.getByRole('combobox', { name: 'What to show' }).innerText(), 'Each row', '"What to show" does not say Each row');
+  await openPanel();
+  assert.equal(await panel.getByRole('combobox', { name: 'What to show' }).innerText(), 'Each row', '"What to show" does not say Each row');
 
   // Kinds switch and keep Each row; a number chart adds the rows up.
   await choose('Chart', 'Donut');
@@ -52,6 +71,7 @@ await withFixture(async ({ page, api, base, workspace }) => {
   await eventually(async () => (await labels()).join(' ') === 'Rent Food Fun');
 
   // A row's bar opens that row (FR-030), in whatever way the view opens rows.
+  await closePanel();
   await figure.locator('.chart-group', { hasText: 'Rent' }).click();
   await eventually(async () => {
     const u = new URL(page.url());
@@ -65,10 +85,10 @@ await withFixture(async ({ page, api, base, workspace }) => {
   await figure.locator('.chart-number-value').waitFor();
   await choose('Chart', 'Vertical bars');
   await figure.getByText(/This database has nothing to group by\. Add a select/).waitFor();
-  const what = settings.getByRole('combobox', { name: 'What to show' });
+  const what = panel.getByRole('combobox', { name: 'What to show' });
   assert.equal(await what.innerText(), 'Nothing to group by');
   assert.ok(await what.isDisabled(), '"What to show" offers a choice there is none of');
-  assert.equal(await settings.getByRole('combobox', { name: 'Chart' }).innerText(), 'Vertical bars', 'the kind picked was not kept');
+  assert.ok(await panel.getByRole('radio', { name: 'Vertical bars', exact: true }).isChecked(), 'the kind picked was not kept');
   const stored = (await api('GET', `/api/collections/${names}`)).views.find((x) => x.type === 'chart');
   assert.equal(stored.chartKind, 'number', 'a chart the server cannot draw was saved');
 });
