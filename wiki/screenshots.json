@@ -435,10 +435,10 @@
       ],
       "takenAt": {
         "web/src/components/CollectionView.tsx": "8bad4cd864b3",
-        "web/src/components/ChartFigure.tsx": "af16114fc980",
+        "web/src/components/ChartFigure.tsx": "58151eb122a7",
         "web/src/components/ChartView.css": "ad6a7c9c7acf",
-        "web/src/components/ChartSettings.tsx": "de27a4ea5848",
-        "web/src/components/ChartSettings.css": "6294d7fe4fa1",
+        "web/src/components/ChartSettings.tsx": "60f89a2d3aa5",
+        "web/src/components/ChartSettings.css": "16a9584f65dc",
         "web/src/chartLayout.ts": "1035a3e068ac",
         "web/src/chartTheme.ts": "7917b7a547ab",
         "web/src/tokens.css": "ab00821c87d1",
