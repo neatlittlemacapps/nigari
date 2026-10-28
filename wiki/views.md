@@ -302,15 +302,16 @@ thousand rows costs about as much as a chart of fifty.
 
 **Adding one.** `+` → **Chart**. It appears drawn at once: bars, grouped by the
 collection's first select property (or the first property that can group at
-all), counting rows. A collection with nothing to group by starts as a number
-chart.
+all), counting rows. A collection with nothing to group by but a number
+property starts as bars of **Each row**, valued by the first number. One with
+neither starts as a number chart.
 
 **The settings** sit in the bar above it:
 
 | Setting | Choices |
 | --- | --- |
 | **Chart** | **Vertical bars**, **Horizontal bars**, **Line**, **Donut**, **Number** (one big value) |
-| **What to show** | the property each bar, point or slice stands for: a select, multi-select, person, checkbox, date or relation |
+| **What to show** | what each bar, point or slice stands for: **Each row** (when the database has a number, formula or rollup property), or a select, multi-select, person, checkbox, date or relation property |
 | **Period** | for a date: **Day**, **Week**, **Month** (the default) or **Year** |
 | **Value** | **Count of rows**, or the **Sum**, **Average**, **Minimum** or **Maximum** of a number, formula or rollup property, chosen under **Of** |
 
@@ -326,6 +327,23 @@ skip them; more than 400 periods are refused with a request for a coarser one.
 At most twelve groups are drawn. The rest are added up into **Other**; **No
 value** is never folded into it. **Show as table** lists every group with its
 value and its number of rows, whatever is drawn.
+
+**Each row.** **What to show** is always there for bars, horizontal bars, line
+and donut. With **Each row** the chart draws one bar, point or slice per row,
+labelled with the row's name; its height is that row's number. **Value** then
+lists the number properties by name, to say which number each bar shows. Rows
+without a number have no bar, and a note under the chart counts them: *3 rows
+have no number in Effort and are left out.* Rows come highest value first. Up to
+50 rows are drawn (12 on a donut); the rest are added up into **Other**. All the
+bars of **Each row** share one colour. Selecting a row's bar opens that row the
+way the view's **Open pages in** says.
+
+**When nothing groups.** A database with no select, multi-select, person,
+checkbox, date or relation property, and no number property, keeps the bars,
+line or donut you pick, and the chart says: *This database has nothing to group
+by. Add a select, multi-select, person, checkbox, date or relation property, or
+a number property to show each row.* **What to show** then reads **Nothing to
+group by**. Nothing is saved until the database has something to draw with.
 
 **The rows behind a group.** Click a bar, a slice or a point, or one of the
 group buttons under the chart, and the rows behind it are listed underneath:

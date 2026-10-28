@@ -41,7 +41,17 @@ try {
   check('a select comes first', settings(defaultChartView('donut', full, 'v', 'Chart')), { kind: 'donut', groupBy: 'stage' });
   check('else the first property that groups', settings(defaultChartView('bar', [p('due', 'date'), p('tags', 'multiselect')], 'v', 'C')), { kind: 'bar', groupBy: 'due', period: 'month' });
   check('a checkbox groups', settings(defaultChartView('hbar', [p('t', 'text'), p('done', 'checkbox')], 'v', 'C')), { kind: 'hbar', groupBy: 'done' });
-  check('nothing groups: a number chart', settings(defaultChartView('line', [p('t', 'text'), p('n', 'number')], 'v', 'C')), { kind: 'number' });
+  // FR-030: the owner's collection, a name and a number, gets one bar per
+  // row valued by the number, never a count.
+  const owner = [p('t', 'text'), p('n', 'number'), p('m', 'formula')];
+  const each = (v) => ({ kind: v.chartKind, groupBy: v.groupBy, agg: v.agg, aggProp: v.aggProp });
+  check('nothing groups but a number: each row', each(defaultChartView('line', owner, 'v', 'C')), { kind: 'line', groupBy: '__row', agg: 'sum', aggProp: 'n' });
+  check('nothing groups, nothing to count: a number chart', settings(defaultChartView('line', [p('t', 'text')], 'v', 'C')), { kind: 'number' });
+  check('a select still comes before each row', settings(defaultChartView('bar', full, 'v', 'C')), { kind: 'bar', groupBy: 'stage' });
+  check('each row survives a kind switch', each(chartSettingsFor('donut', full, { groupBy: '__row', agg: 'max', aggProp: 'n' })), { kind: 'donut', groupBy: '__row', agg: 'max', aggProp: 'n' });
+  check('each row never counts', each(chartSettingsFor('bar', owner, { groupBy: '__row', agg: 'count' })), { kind: 'bar', groupBy: '__row', agg: 'sum', aggProp: 'n' });
+  check('each row whose number was deleted takes the first one', each(chartSettingsFor('bar', owner, { groupBy: '__row', agg: 'avg', aggProp: 'gone' })), { kind: 'bar', groupBy: '__row', agg: 'avg', aggProp: 'n' });
+  check('each row without any number left: a grouping instead', settings(chartSettingsFor('bar', [p('s', 'select')], { groupBy: '__row', agg: 'sum', aggProp: 'n' })), { kind: 'bar', groupBy: 's' });
   check('an empty schema: a number chart', settings(defaultChartView('donut', [], 'v', 'C')), { kind: 'number' });
   check('a number chart asked for stays one', settings(defaultChartView('number', full, 'v', 'C')), { kind: 'number' });
   check('the view is a chart with its id and name', (({ id, name, type }) => ({ id, name, type }))(defaultChartView('bar', full, 'v1', 'Sales')), { id: 'v1', name: 'Sales', type: 'chart' });

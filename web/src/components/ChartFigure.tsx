@@ -32,6 +32,7 @@ import {
   type DrawnGroup,
 } from '../chartLayout';
 import { groupColourTokens, onThemeChange, readInk } from '../chartTheme';
+import { groupable, numberProps, ROW_GROUP } from '../chartDefaults';
 import './ChartView.css';
 
 // A chart, drawn from the numbers it is given (spec 004). ChartView fetches
@@ -71,6 +72,7 @@ export default function ChartFigure(props: ChartFigureProps) {
   const kind: ChartKind = view.chartKind ?? 'bar';
   const agg: ChartAgg = view.agg ?? 'count';
   const groupProp = kind === 'number' ? undefined : schema.find((p) => p.id === view.groupBy);
+  const eachRow = kind !== 'number' && view.groupBy === ROW_GROUP;
   const aggProp = agg === 'count' ? undefined : schema.find((p) => p.id === view.aggProp);
   const period = groupProp?.type === 'date' ? view.groupPeriod ?? 'month' : undefined;
   const style = view.chartStyle ?? {};
@@ -79,7 +81,11 @@ export default function ChartFigure(props: ChartFigureProps) {
   const [focusIndex, setFocusIndex] = useState(0);
   const [themeTick, setThemeTick] = useState(0);
 
-  const missingGrouping = kind !== 'number' && !groupProp;
+  const missingGrouping = kind !== 'number' && !groupProp && !eachRow;
+  // FR-031: a grouped kind on a database with nothing to group by and no
+  // number for Each row. Said in so many words, with what to add, rather than
+  // drawn as a number chart the person did not choose.
+  const nothingToGroup = missingGrouping && groupable(schema).length === 0 && numberProps(schema).length === 0;
 
   useEffect(() => onThemeChange(() => setThemeTick((n) => n + 1)), []);
   const select = (g: DrawnGroup) => onSelect?.(selectedKey === g.key ? null : g);
@@ -108,17 +114,18 @@ export default function ChartFigure(props: ChartFigureProps) {
               showEmpty: view.showEmpty,
               zeroOptions,
               isDate: groupProp?.type === 'date',
+              eachRow,
             },
             compare,
           )
         : null,
-    [result, kind, agg, view.chartSort, view.hiddenGroups, view.showEmpty, zeroOptions, groupProp],
+    [result, kind, agg, view.chartSort, view.hiddenGroups, view.showEmpty, zeroOptions, groupProp, eachRow],
   );
 
   const label = (g: { key: string; label: string; missing?: boolean }) => groupLabel(g, groupProp, period);
   const value = (v: number | null) => (v === null ? '—' /* i18n-ok: a dash for "no number", not a word */ : formatNumber(v, { maximumFractionDigits: 2 }));
   const drawn = layout?.state === 'ok' ? layout.drawn : [];
-  const caption = captionFor(agg, aggProp, groupProp, kind);
+  const caption = eachRow ? t('{prop} of each row', { prop: aggProp?.name ?? '' }) : captionFor(agg, aggProp, groupProp, kind);
 
   // ---- the canvas ----
   const figureRef = useRef<HTMLElement>(null);
@@ -128,7 +135,8 @@ export default function ChartFigure(props: ChartFigureProps) {
   drawnRef.current = drawn;
   const selectRef = useRef(select);
   selectRef.current = select;
-  const tokens = useMemo(() => groupColourTokens(drawn, style.palette ?? 'auto', groupProp), [drawn, style.palette, groupProp]);
+  const oneColour = eachRow && kind !== 'donut';
+  const tokens = useMemo(() => groupColourTokens(drawn, style.palette ?? 'auto', groupProp, oneColour), [drawn, style.palette, groupProp, oneColour]);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -230,7 +238,13 @@ export default function ChartFigure(props: ChartFigureProps) {
   // ---- render ----
   const height = `var(--chart-height-${style.height ?? 'medium'})`;
   let body: React.ReactNode;
-  if (missingGrouping) {
+  if (nothingToGroup) {
+    body = (
+      <p className="chart-state">
+        {t('This database has nothing to group by. Add a select, multi-select, person, checkbox, date or relation property, or a number property to show each row.')}
+      </p>
+    );
+  } else if (missingGrouping) {
     body = <p className="chart-state">{t('The property this chart groups by no longer exists. Choose another in the chart settings.')}</p>;
   } else if (!layout) {
     body = error ? <p className="chart-state" role="alert">{error}</p> : <p className="chart-state">{t('Loading…')}</p>;
@@ -303,7 +317,7 @@ export default function ChartFigure(props: ChartFigureProps) {
       {body}
       {layout?.state === 'ok' && kind !== 'number' && (
         <p className="chart-summary">
-          {plural(drawn.length, '{n} group', '{n} groups')}
+          {eachRow ? plural(drawn.length, '{n} bar', '{n} bars') : plural(drawn.length, '{n} group', '{n} groups')}
           {layout.largest ? ' · ' + t('largest: {label}, {value}', { label: label(layout.largest), value: value(layout.largest.value) }) : ''}
         </p>
       )}
@@ -323,7 +337,7 @@ export default function ChartFigure(props: ChartFigureProps) {
           <caption>{caption}</caption>
           <thead>
             <tr>
-              <th scope="col">{groupProp?.name ?? ''}</th>
+              <th scope="col">{eachRow ? t('Row') : groupProp?.name ?? ''}</th>
               <th scope="col">{numberTitle(agg, aggProp)}</th>
               <th scope="col">{t('Rows')}</th>
             </tr>

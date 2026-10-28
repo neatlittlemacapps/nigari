@@ -1219,5 +1219,14 @@
     "one": "{n} fila no tiene número en {prop} y se omite.",
     "other": "{n} filas no tienen número en {prop} y se omiten."
   },
-  "Move between the groups of a chart": "Moverse entre los grupos de un gráfico"
+  "Move between the groups of a chart": "Moverse entre los grupos de un gráfico",
+  "Each row": "Cada fila",
+  "Nothing to group by": "Nada por lo que agrupar",
+  "Row": "Fila",
+  "This database has nothing to group by. Add a select, multi-select, person, checkbox, date or relation property, or a number property to show each row.": "Esta base de datos no tiene nada por lo que agrupar. Añade una propiedad de selección, selección múltiple, persona, casilla, fecha o relación, o una propiedad numérica para mostrar cada fila.",
+  "{n} bars": {
+    "one": "{n} barra",
+    "other": "{n} barras"
+  },
+  "{prop} of each row": "{prop} de cada fila"
 }

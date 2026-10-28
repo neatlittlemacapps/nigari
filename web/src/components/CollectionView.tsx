@@ -34,8 +34,7 @@ import { defaultChartView } from '../chartDefaults';
 
 // A chart (spec 004) brings Chart.js, about 60 KB gzip: loaded only when a
 // chart view is shown, so nobody who never opens one pays for it (SC-006).
-const ChartView = lazy(() => import('./ChartView'));
-const ChartSettings = lazy(() => import('./ChartSettings'));
+const ChartPane = lazy(() => import('./ChartPane'));
 import { PageIcon } from '../pageIcon';
 import { toast } from '../toast';
 import {
@@ -1173,8 +1172,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           {/* One row of its own above the chart: in the toolbar, four labelled
               dropdowns wrapped into a column and stretched every button
               beside them. */}
-          <ChartSettings view={view} schema={schema} onChange={updateView} />
-          <ChartView
+          <ChartPane
+            onChange={updateView}
+            onOpenRow={(id) => openCollectionRow({}, id, { onNavigate, onOpenInNewTab }, { openIn: view.openIn, onPeek })}
             collectionId={collectionId}
             view={view}
             schema={schema}

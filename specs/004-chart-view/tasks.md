@@ -145,10 +145,10 @@ description: "Tasks for chart views of a database, with the chart builder"
 
 - [x] T049 [backend] Each row in `server/aggregate.go` (research R18): `groupBy "__row"` keyed by row id and labelled by title in `aggregateSQL` and `aggregateDerived`; `checkAggSpec` / `checkChartView` accept it and refuse `count` with it; MCP descriptions of `query_rows` and `set_view` name it
 - [x] T050 [P] [test] Go tests for Each row: values equal each row's number, private rows excluded, formula and rollup values, `count` refused, MCP `set_view` and `query_rows` with `group_by "__row"`
-- [ ] T051 [ui] `chartLayout.ts` cap of 50 for Each row (12 on a donut), default sort value high to low; `chartDefaults.ts` picks Each row and the first number when nothing groups; a row's bar opens the row; cases in `check-chartlayout.mjs` and `check-chartdefaults.mjs`
-- [ ] T052 [ui] Settings: "What to show" always shown, "Each row" first when a number exists; with Each row "Value" lists the number properties by name; every kind selectable; a grouped kind with nothing to group by shows the sentence of FR-031; German and Spanish
-- [ ] T053 [P] [test] Playwright: the owner's case, a collection with only a number, gives bars per row, kinds switch, a bar opens its row
-- [ ] T054 [P] [wiki] `wiki/views.md` § chart and `wiki/mcp-tools.md`: Each row, and the sentence when nothing groups
+- [x] T051 [ui] `chartLayout.ts` cap of 50 for Each row (12 on a donut), default sort value high to low; `chartDefaults.ts` picks Each row and the first number when nothing groups; a row's bar opens the row; cases in `check-chartlayout.mjs` and `check-chartdefaults.mjs`
+- [x] T052 [ui] Settings: "What to show" always shown, "Each row" first when a number exists; with Each row "Value" lists the number properties by name; every kind selectable; a grouped kind with nothing to group by shows the sentence of FR-031; German and Spanish
+- [x] T053 [P] [test] Playwright: the owner's case, a collection with only a number, gives bars per row, kinds switch, a bar opens its row
+- [x] T054 [P] [wiki] `wiki/views.md` § chart and `wiki/mcp-tools.md`: Each row, and the sentence when nothing groups
 
 ---
 

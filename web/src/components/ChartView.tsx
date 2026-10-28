@@ -7,6 +7,8 @@ import ChartFigure, { groupLabel } from './ChartFigure';
 import type { Filter, PropDef, PropOption, ViewDef } from '../types';
 import type { AggResult, DrawnGroup } from '../chartLayout';
 import { groupFilter } from '../chartGroups';
+import { ROW_GROUP } from '../chartDefaults';
+import { OTHER } from '../chartLayout';
 
 // A database drawn as a chart (spec 004). Loaded lazily with Chart.js, so the
 // main bundle does not carry the library (SC-006): CollectionView imports this
@@ -34,6 +36,9 @@ export interface ChartViewProps {
   onUpdateView?: (patch: Partial<ViewDef>) => void;
   tagColors: Record<string, string>;
   onNavigate: (id: string) => void;
+  /** Opens a row the way the view opens rows (Open pages in); Each row's bars
+   *  use it. */
+  onOpenRow?: (id: string) => void;
   onOpenInNewTab?: (id: string) => void;
   onSetProp: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
@@ -53,7 +58,8 @@ export default function ChartView(props: ChartViewProps) {
   // What to ask the server. Everything is sent explicitly rather than by view
   // id, so a setting changed in the panel redraws before it is saved, and an
   // embed's own filters replace the view's.
-  const missingGrouping = kind !== 'number' && !groupProp;
+  const eachRow = kind !== 'number' && view.groupBy === ROW_GROUP;
+  const missingGrouping = kind !== 'number' && !groupProp && !eachRow;
   const request = useMemo(
     () => ({
       groupBy: kind === 'number' ? '' : view.groupBy ?? '',
@@ -119,7 +125,10 @@ export default function ChartView(props: ChartViewProps) {
       result={missingGrouping ? null : result}
       error={error}
       selectedKey={selected?.key ?? null}
-      onSelect={setSelected}
+      // Each row: a bar is one row, and selecting it opens that row the way a
+      // row opens anywhere (Open pages in) instead of listing a list of one
+      // (FR-030). "Other" has no single row to open.
+      onSelect={eachRow ? (g) => g && g.key !== OTHER && (props.onOpenRow ?? props.onNavigate)(g.key) : setSelected}
       onUpdateView={props.onUpdateView}
     >
       {selected && (
