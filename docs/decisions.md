@@ -7,6 +7,35 @@ entries are not edited away.
 
 ---
 
+## 2026-10-28 — Spec 004 grows a chart builder, modelled on Notion's
+
+**Decision** (owner: "spec it and start the build", after a 20-screenshot walk-through of
+Notion's chart flow): charts get five kinds (bar, horizontal bar, line, donut, number), five
+`/` menu entries that put a chart into a document through the existing database block, one
+settings panel (kind, data, sort, groups, palette, style), a tooltip, and Save chart as PNG.
+Spec 004 US5, FR-018 to FR-029; research R13 to R17.
+
+**How, and why that way**:
+- A chart in a document is the database block showing a chart view (`local.viewId`, #26),
+  not a new block: one way to put a database into a page, and agents already have
+  `embed_database` (it gains `view_id`).
+- Every setting is stored on the view, not the block, so one chart looks the same wherever
+  it is embedded and an agent styles it with `set_view`.
+- The settings panel is offered inside a document's database block too, for charts only:
+  an exception to #22, because a chart inserted from the `/` menu has to be finished where
+  it was inserted.
+- Single-colour palettes have three shades per hue, not Notion's five: the lighter ones
+  fail the 3:1 contrast rule (FR-015). Labels tell repeated shades apart.
+- A new `ui/Popover` primitive carries the panel; the layer had none.
+
+**Left out, with the reason** (spec FR-017): a second grouping, reference lines and axis
+range (with stacked bars, later); Download SVG (Chart.js draws on a canvas); creating a new
+database or importing a CSV from the picker; "Save for everyone"/"Reset" on filters, the
+folding toolbar and "Lock views" (they change every view type: separate backlog items);
+"Hide negative values", "Load limit", "Show data source title".
+
+---
+
 ## 2026-10-28 — Spec 004: charts are drawn with Chart.js
 
 **Decision** (owner): Chart.js 4.5.1, loaded only with a chart view. Supersedes "hand-drawn

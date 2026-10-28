@@ -205,5 +205,106 @@ Dashboards, stacked or grouped bars, a second grouping and charts on public page
 (FR-017). Nothing here closes them: `aggSpec` takes one grouping now and a list later; a
 dashboard is a document with several embedded chart views (embeds already carry their own
 filters); public pages keep showing a database as its table (`public_collection_table.go`
-never reads views). Horizontal bars, named as a setting in the spec's assumptions, are left
-for later: they add a layout branch and no new information.
+never reads views). Horizontal bars, first left for later, came in with the chart builder
+(owner's walk-through, R13); Chart.js draws them with `indexAxis: 'y'`.
+
+## R13. The chart builder: one panel, stored on the view
+
+**Decision** (US5, FR-018 to FR-027): every builder setting is a field of the chart view
+(data-model.md), checked by `checkChartView` on both doors (R7). No new storage: the
+document's database block already stores which view it shows (`local.viewId`, #26), so a
+chart in a document is a database block showing a chart view. The settings live in one
+panel, `ChartSettings.tsx`, ordered as Notion's (owner's walk-through): kind (five icon
+buttons), Data (what to show, period, value, sort, groups), Style (palette, more style
+options folded), then Show as table and Save chart as. It opens from a settings button in
+the chart's toolbar, in the database page and in the database block alike (FR-027: an
+exception to #22 for charts only). The layer has no popover yet (`ui/README.md`: menus are not
+in it); the panel needs one, so this feature adds `ui/Popover` on Base UI's Popover (focus
+trap, Escape, outside click, anchoring), with a README entry and a catalogue section. The
+hand-dialog and raw-button budgets do not grow.
+
+Settings save through `saveConfig` (as every view change does) after a short debounce for
+typed text (caption, centre label, title), so a caption is not a write per key. The chart
+redraws from the panel's state immediately; a refusal restores the stored view and says
+why (spec 007's pattern).
+
+**Rationale**: a chart's look belongs to the view, not to the document, so the same chart
+embedded twice looks the same, and an agent sets it through `set_view` like any view.
+
+**Alternatives considered**: storing style on the database block (two documents would
+show one chart differently, and an agent would need a block editor to style it); a modal
+builder (Notion's panel lets the chart redraw beside it while settings change).
+
+## R14. Inserting from the `/` menu
+
+**Decision**: five slash entries (FR-018) insert a `database` block with a new prop
+`chartKind` (one of the five kinds; empty = an ordinary embed, every block written before).
+While the block has no `collectionId`, its picker reads "Choose a database to chart". On a
+pick, the browser asks the server for the database's config, adds a chart view built by
+`defaultChartView(kind, schema)` (`chartDefaults.ts`, FR-019), saves it with `PUT
+/api/collections/{id}` (so `checkChartView` runs), then writes `{collectionId, local:
+{viewId}}` into the block and clears `chartKind`, and asks the embed to open the settings.
+If the save is refused (the person may not change that database), the block keeps the
+database as an ordinary embed and a toast says why (US5.8).
+
+`defaultChartView` is pure, in its own module with `check-chartdefaults.mjs`: first select
+or status → first other groupable property (R2's list) → number chart; count; and when a
+grouped kind is chosen later on a number chart, the same default grouping.
+
+**Agents** (FR-028): `embed_database` gains `view_id` (optional): the block is written with
+`local: {"viewId": …}` so the document shows that view. With `set_view type chart` first,
+an agent builds the same chart a person builds from the `/` menu. The view must belong to
+that database (refused otherwise, as the block would otherwise show the first view).
+
+## R15. Sort, hidden groups, empty options
+
+**Decision**: `chartSort` (`auto` | `label_asc` | `label_desc` | `value_asc` | `value_desc`,
+default `auto` = FR-005). Sorting happens in `chartLayout.ts` before folding, so "Other"
+folds the smallest when sorted by value and the last otherwise; dates sorted by label are
+time order. `hiddenGroups` is a list of group keys (`""` = No value; `showEmpty` stays
+for agents and older views and is read as "`""` not hidden"; the panel writes
+`hiddenGroups` only). `showZero` (FR-023) adds select, status and checkbox options that have
+no rows, as zero, from the schema in the browser (the server answers only groups with rows);
+dates fill gaps regardless (R2).
+
+**Rationale**: all three change only what is drawn, not what is counted, so they stay out
+of the server's answer: agents get every group, and the table alternative lists hidden ones
+as hidden.
+
+## R16. Palettes and style, from tokens
+
+**Decision**: palettes are token sets, each colour declaring `md.salt.contrast` 3:1 on
+`color.surface.default` in light and dark (FR-015, FR-024):
+- `colorful`: `color.chart.1` … `color.chart.12` (R8);
+- `colorless`: `color.chart.gray.1` … `.3`;
+- eight single colours: `color.chart.<hue>.1` … `.3` for blue, yellow, green, purple, teal,
+  orange, pink, red (three shades that all pass 3:1; more groups repeat them, labels tell
+  them apart, edge case);
+- `auto` (default): a select's or status's own option colours (their tag colour's
+  foreground, which already passes on its tag background; mapped onto the chart hue of the
+  same name) and `colorful` for every other grouping.
+Height is a component token per step (`chart.height.small|medium|large|xlarge`). Legend,
+value labels (Chart.js' own label drawing is not shipped; values are drawn by a 1 KB
+plugin of ours in `chartTheme.ts` reading the type tokens), centre total (a DOM overlay
+centred on the donut, so its text is real text), caption (a `figcaption`) and the number
+chart's title are DOM where they can be, so they are read by screen readers and copied as
+text.
+
+**Rationale**: Notion's single-colour palettes fade to near-white; on our 3:1 rule those
+light shades would fail, so each hue has the three shades that pass, not five.
+
+## R17. Tooltip and Save chart as
+
+**Decision**: the tooltip is Chart.js' external tooltip hook rendering our own DOM element
+(token-styled, `role="tooltip"`), showing the label, the value through `format.ts`, and
+"Click to view data"; the group buttons of R8 show the same tooltip on focus, so keyboard
+and pointer see one thing. "Save chart as" draws an offscreen copy of the chart at 2× on
+the chosen background (surface, or `color.chart.background.1` … `.4`, four soft tokens),
+with the caption and legend drawn in, then `canvas.toBlob('image/png')`: **Copy as PNG**
+through `navigator.clipboard.write([new ClipboardItem(…)])`, **Download PNG** through
+an object URL and a temporary link (`savePicture.ts`, the app's first browser-made file). A refused clipboard falls back to a toast and the
+download (edge case). No SVG (FR-017).
+
+**Parity**: the picture is a drawing of numbers an agent already reads with `query_rows`;
+the manifest's `collections` capability says so in its note, and no route is added, so
+`check-parity.mjs` has nothing new to count.
