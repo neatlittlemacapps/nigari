@@ -146,12 +146,14 @@ added on the REST side and missing on the MCP side, found later one by one.
 
 ## Commits
 
-Commits are authored by the repository owner, not the agent: before the first
-commit in a session, `git config user.name neatlittlemacapps` and
-`git config user.email 60575307+neatlittlemacapps@users.noreply.github.com`.
-The agent goes in a `Co-Authored-By:` trailer. Upstream's CLA bot matches the
-commit author to a signature, and an agent's address belongs to no GitHub
-account, so its commits can never be signed for.
+Commits in this fork are authored by the agent that made them (git's own
+`user.name`/`user.email` in the session, e.g. `Claude <noreply@anthropic.com>`),
+with a `Claude-Session:` trailer, so the history shows who wrote what. The
+fork's CI skips the CLA check. Upstream's CLA bot does match the commit author
+to a signature, and an agent's address belongs to no GitHub account: anything
+offered to upstream (`saltmd/salt.md`) is re-committed with the owner as author
+first (`neatlittlemacapps`,
+`60575307+neatlittlemacapps@users.noreply.github.com`).
 
 The subject line is a sentence that says what changed, readable without the
 diff ("A board refuses a grouping it cannot make columns from"). The body says

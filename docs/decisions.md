@@ -7,6 +7,26 @@ entries are not edited away.
 
 ---
 
+## 2026-10-28 — Agents author their own commits in this fork
+
+**Decision** (owner, asked whether to keep the owner as author or switch to Claude:
+"Claude"): commits made by an agent carry the agent as author, not `neatlittlemacapps`.
+`AGENTS.md` § Commits says so. Replaces the earlier rule (owner as author, agent in a
+`Co-Authored-By:` trailer).
+
+**Why**: the owner works on this fork, not upstream ("I don't care about pushing it back
+to them"), and the fork's CI skips the CLA check, so the reason for the old rule — upstream's
+CLA bot cannot match an agent's address to a signature — no longer applies to everyday
+work. The session's own git identity is already the agent, so the history tells apart what a
+person and what an agent wrote.
+
+**Turned down**: keeping the owner as author (the history hides which work was the agent's,
+and every session has to override git's configured identity).
+
+**Still true**: anything offered to upstream is re-committed with the owner as author first.
+
+---
+
 ## 2026-10-28 — Spec 004 grows a chart builder, modelled on Notion's
 
 **Decision** (owner: "spec it and start the build", after a 20-screenshot walk-through of
