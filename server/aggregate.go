@@ -57,6 +57,16 @@ type aggResult struct {
 // aggAllKey is the one group's key when there is no grouping.
 const aggAllKey = "*"
 
+// rowGroupKey is the grouping "Each row" (FR-030, research R18): one group per
+// row, keyed by the row's id and labelled by its title, so a sum is that row's
+// own number. It is not a property id: property ids are generated and never
+// start with an underscore pair, and checkAggSpec takes it before the schema.
+const rowGroupKey = "__row"
+
+// rowGroupProp stands in for the grouping property when the grouping is Each
+// row, so the code that switches on a property's type has a case for it.
+var rowGroupProp = map[string]any{"id": rowGroupKey, "type": "row"}
+
 // maxPeriods bounds a date grouping after its gaps are filled: more than a year
 // of days. A line with more points than the chart has pixels says nothing more,
 // and the answer would grow without limit (research R4).
@@ -133,7 +143,16 @@ func checkAggSpec(spec *aggSpec, schema []map[string]any) error {
 	if !oneOf(spec.Agg, chartAggs) {
 		return errChart{fmt.Sprintf("aggregate must be count, sum, avg, min or max, not %q", spec.Agg)}
 	}
-	if spec.GroupBy != "" {
+	if spec.GroupBy == rowGroupKey {
+		// Each row: every bar would be 1 with count, a chart that says
+		// nothing, so it needs a number to show (research R18).
+		if spec.Agg == "count" {
+			return errChart{"group_by \"__row\" (each row) shows a number of each row: pass aggregate sum (or avg, min, max) with aggregate_property, not count"}
+		}
+		if spec.Period != "" {
+			return errChart{"period only applies to a date grouping, not to each row"}
+		}
+	} else if spec.GroupBy != "" {
 		p := schemaProp(schema, spec.GroupBy)
 		if p == nil {
 			return errChart{fmt.Sprintf("group_by %q is not a property of this database", spec.GroupBy)}
@@ -210,7 +229,11 @@ func (s *Server) aggregateRows(ctx context.Context, u *user, colID string, spec 
 		return aggResult{}, err
 	}
 	var groupProp map[string]any
-	if spec.GroupBy != "" {
+	switch spec.GroupBy {
+	case "":
+	case rowGroupKey:
+		groupProp = rowGroupProp
+	default:
 		groupProp = schemaProp(schema, spec.GroupBy)
 	}
 	var res aggResult
@@ -243,6 +266,8 @@ func groupKeySQL(spec aggSpec, p map[string]any) (key, join string) {
 	path := "'$." + spec.GroupBy + "'"
 	ex := "json_extract(pages.props, " + path + ")"
 	switch propType(p) {
+	case "row":
+		return "pages.id", ""
 	case "checkbox":
 		// A ticked box is JSON true. Anything else, the box never touched
 		// included, is unticked: a checkbox has no "No value".
@@ -286,7 +311,7 @@ var listTypes = map[string]bool{"multiselect": true, "relation": true, "person":
 // aggregateSQL is the one GROUP BY. withTotals asks for Total and LeftOut as
 // well; a board's column counts (groupCounts) need neither.
 func (s *Server) aggregateSQL(ctx context.Context, u *user, colID string, spec aggSpec, p map[string]any, flat []rowFilter, groups [][]rowFilter, now time.Time, withTotals bool) (aggResult, error) {
-	if (spec.GroupBy != "" && !safePropID(spec.GroupBy)) || (spec.AggProp != "" && !safePropID(spec.AggProp)) {
+	if (spec.GroupBy != "" && spec.GroupBy != rowGroupKey && !safePropID(spec.GroupBy)) || (spec.AggProp != "" && !safePropID(spec.AggProp)) {
 		return aggResult{}, errChart{"not a valid property id"}
 	}
 	whereSQL, args := s.rowsWhere(u, colID, flat, groups, now)
@@ -408,7 +433,8 @@ func (s *Server) aggregateDerived(ctx context.Context, u *user, colID string, sp
 			if !isNum {
 				res.LeftOut++
 			}
-			for _, k := range groupKeysGo(spec, p, props) {
+			id, _ := row["id"].(string)
+			for _, k := range groupKeysGo(spec, p, id, props) {
 				a := accs[k]
 				if a == nil {
 					a = &acc{}
@@ -474,12 +500,14 @@ var dayPrefix = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}`)
 // groupKeysGo is groupKeySQL in Go, for the rows aggregateDerived folds
 // itself. The two must give the same keys for the same value, or a formula
 // chart and a number chart of the same rows would disagree.
-func groupKeysGo(spec aggSpec, p map[string]any, props map[string]any) []string {
+func groupKeysGo(spec aggSpec, p map[string]any, rowID string, props map[string]any) []string {
 	if p == nil {
 		return []string{aggAllKey}
 	}
 	v := props[spec.GroupBy]
 	switch propType(p) {
+	case "row":
+		return []string{rowID}
 	case "checkbox":
 		if b, _ := v.(bool); b {
 			return []string{"true"}
@@ -577,6 +605,11 @@ func (s *Server) finishGroups(ctx context.Context, u *user, res *aggResult, spec
 		kept = append(kept, res.Groups[i])
 	}
 	switch propType(p) {
+	case "row":
+		if err := s.labelRows(ctx, kept); err != nil {
+			return err
+		}
+		highestFirst(kept)
 	case "checkbox":
 		labels := map[string]string{"true": "Checked", "false": "Unchecked"}
 		for i := range kept {
@@ -652,6 +685,63 @@ func largestFirst(gs []aggGroup) {
 		}
 		return gs[i].Label < gs[j].Label
 	})
+}
+
+// highestFirst orders Each row by value, high to low (FR-030's default sort),
+// rows without a number last: they have no bar to draw.
+func highestFirst(gs []aggGroup) {
+	sort.SliceStable(gs, func(i, j int) bool {
+		vi, vj := gs[i].Value, gs[j].Value
+		if (vi == nil) != (vj == nil) {
+			return vi != nil
+		}
+		if vi != nil && *vi != *vj {
+			return *vi > *vj
+		}
+		return gs[i].Label < gs[j].Label
+	})
+}
+
+// labelRowsBatch bounds the ids in one IN list, well under SQLite's limit on
+// bound parameters.
+const labelRowsBatch = 500
+
+// labelRows names each row of Each row by its title, a batch at a time: one
+// query per row would be thousands on a large database. The rows came through
+// rowsWhere, so the reader may see every one of them; an untitled row keeps an
+// empty label, which the browser shows as Untitled in the reader's language.
+func (s *Server) labelRows(ctx context.Context, gs []aggGroup) error {
+	at := make(map[string][]int, len(gs))
+	ids := make([]any, 0, len(gs))
+	for i := range gs {
+		if _, seen := at[gs[i].Key]; !seen {
+			ids = append(ids, gs[i].Key)
+		}
+		at[gs[i].Key] = append(at[gs[i].Key], i)
+	}
+	for start := 0; start < len(ids); start += labelRowsBatch {
+		batch := ids[start:min(start+labelRowsBatch, len(ids))]
+		rows, err := s.rdb.QueryContext(ctx, `SELECT id, title FROM pages WHERE id IN (?`+strings.Repeat(",?", len(batch)-1)+`)`, batch...)
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			var id, title string
+			if err := rows.Scan(&id, &title); err != nil {
+				rows.Close()
+				return err
+			}
+			for _, i := range at[id] {
+				gs[i].Label = title
+			}
+		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			return err
+		}
+		rows.Close()
+	}
+	return nil
 }
 
 // labelPeople names each person by their account. A person property also
@@ -856,7 +946,7 @@ func checkChartView(view map[string]any, schema []map[string]any, withSchema boo
 		return err
 	}
 	if groupBy == "" && kind != "number" {
-		return errChart{"a chart needs group_by (a " + groupableList() + " property), unless it is a number chart"}
+		return errChart{"a chart needs group_by (a " + groupableList() + " property, or \"__row\" for each row), unless it is a number chart"}
 	}
 	period, err := str("groupPeriod")
 	if err != nil {
@@ -878,6 +968,11 @@ func checkChartView(view map[string]any, schema []map[string]any, withSchema boo
 	}
 	if agg != "" && agg != "count" && aggProp == "" {
 		return errChart{fmt.Sprintf("agg %s needs aggProp: a number, formula or rollup property", agg)}
+	}
+	if groupBy == rowGroupKey && kind != "number" && (agg == "" || agg == "count") {
+		// Checked without the schema too: a saved Each row that counts would
+		// draw a bar of 1 per row.
+		return errChart{"each row (group_by \"__row\") shows a number of each row: set agg to sum (or avg, min, max) with aggProp, not count"}
 	}
 	chartSort, err := str("chartSort")
 	if err != nil {

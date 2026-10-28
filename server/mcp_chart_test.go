@@ -149,3 +149,42 @@ func TestChartGatesForAgents(t *testing.T) {
 		t.Error("a workspace closed to agents gave an agent its chart's numbers")
 	}
 }
+
+// Each row for agents (FR-030): set_view stores it, query_rows answers with
+// one group per row through the view or spelled out, and a count is refused
+// with the way out, as for people.
+func TestAgentsChartEachRow(t *testing.T) {
+	s := testServer(t)
+	uid, cookie := signedIn(t, s, "owner@example.test")
+	ws := s.firstWorkspaceOf(t, uid)
+	col := s.makeCollection(t, ws, uid, "Costs", `[{"id":"amt","name":"Amount","type":"number"}]`)
+	s.makeRow(t, ws, uid, col, "Rent", `{"amt":1200}`)
+	s.makeRow(t, ws, uid, col, "Food", `{"amt":450}`)
+	u := &user{ID: uid}
+
+	if _, err := callTool(t, s, u, "set_view", `{"page_id":"`+col+`","type":"chart","name":"Per row","group_by":"__row"}`); err == nil || !strings.Contains(err.Error(), "not count") {
+		t.Errorf("a counting Each row chart: %v, want refused with the way out", err)
+	}
+	if _, err := callTool(t, s, u, "set_view", `{"page_id":"`+col+`","type":"chart","name":"Per row","group_by":"__row","aggregate":"sum","aggregate_property":"amt"}`); err != nil {
+		t.Fatalf("set_view each row: %v", err)
+	}
+	if v := viewByID(t, s, col, "per-row"); v["groupBy"] != "__row" || v["aggProp"] != "amt" {
+		t.Errorf("stored: %v", v)
+	}
+	for _, args := range []string{
+		`{"page_id":"` + col + `","view_id":"per-row"}`,
+		`{"page_id":"` + col + `","group_by":"__row","aggregate":"sum","aggregate_property":"amt"}`,
+	} {
+		out, err := callTool(t, s, u, "query_rows", args)
+		if err != nil {
+			t.Fatalf("query_rows %s: %v", args, err)
+		}
+		if i, j := strings.Index(out, `"Rent"`), strings.Index(out, `"Food"`); i < 0 || j < i || !strings.Contains(out, `"value":1200`) {
+			t.Errorf("query_rows %s: want Rent (1200) before Food, got %s", args, out)
+		}
+	}
+	rec := requestAs(t, s, cookie, "POST", "/api/collections/"+col+"/aggregate", `{"groupBy":"__row"}`)
+	if rec.Code != 400 || !strings.Contains(rec.Body.String(), "invalid_chart") {
+		t.Errorf("REST counting each row: %d %s", rec.Code, rec.Body.String())
+	}
+}
