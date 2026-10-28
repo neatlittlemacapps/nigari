@@ -110,8 +110,8 @@ description: "Tasks for chart views of a database, with the chart builder"
 
 **Independent Test**: each `/` entry; every setting survives a reload; hover and click; save the picture.
 
-- [ ] T031 [US5] [ui] New primitive `web/src/ui/Popover.tsx` + `Popover.css` on Base UI's Popover (anchor, focus, Escape, outside click; layer above a peek); README entry in `web/src/ui/README.md`
-- [ ] T032 [P] [US5] [test] Catalogue section for `Popover` (checked by `web/tests/catalog.mjs`)
+- [x] T031 [US5] [ui] New primitive `web/src/ui/Popover.tsx` + `Popover.css` on Base UI's Popover (anchor, focus, Escape, outside click; layer above a peek); README entry in `web/src/ui/README.md`
+- [x] T032 [P] [US5] [test] Catalogue section for `Popover` (checked by `web/tests/catalog.mjs`)
 - [ ] T033 [US5] [ui] `ChartSettings.tsx` becomes the one panel of research R13 in `ui/Popover`: kind buttons (five), Data (what to show, period, value, sort, groups list with hide/show and Hide all / Show all, show empty options), Style (palette, more style options: height, legend, value labels, centre total and its label, caption; a number chart's title), Show as table, Save chart as; immediate redraw, debounced text, refusal restores the stored view
 - [ ] T034 [US5] [ui] Style in `chartTheme.ts` / `ChartView.tsx` (research R16): palettes (auto from option colours), heights, legend place, value-labels plugin, centre total as DOM, caption as `figcaption`, number title
 - [ ] T035 [US5] [ui] Tooltip (research R17): Chart.js external tooltip as a token-styled DOM element with label, value and "Click to view data"; the same on group-button focus

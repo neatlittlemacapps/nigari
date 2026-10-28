@@ -284,5 +284,20 @@
         }
       }
     }
+  },
+  "popover": {
+    "width": {
+      "$type": "dimension",
+      "$value": {
+        "value": 320,
+        "unit": "px"
+      },
+      "$description": "ui/Popover's panel (spec 004, the chart settings): Notion's panel is about this wide, room for a labelled dropdown and a row of five kind buttons. Capped at the window by the component."
+    },
+    "layer": {
+      "$type": "number",
+      "$value": 150,
+      "$description": "Above dialogs (dialog.layer 100) and the peeks (side-panel.layer 90), so a chart's settings open over a chart shown in a peek; below menus (layer.dropdown 200), because a Select inside the popover opens its list over it."
+    }
   }
 }

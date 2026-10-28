@@ -40,6 +40,7 @@ positioning. The look comes only from the design tokens (`web/tokens/` →
 | `Switch` | an on/off setting that applies at once | a choice saved with a form (`Checkbox`) | `switch` |
 | `SidePanel` | content beside a screen that must stay usable (a row's peek) | a task that takes over the screen (`Dialog`) | `side-panel` |
 | `CenterPanel` | content over a dimmed screen that may open dialogs of its own (a row's centre peek) | a task with a footer of actions (`Dialog`) | `center-panel` |
+| `Popover` | settings that apply at once, anchored to the button that opened them, with the screen still in view (a chart's settings) | a task that takes over the screen (`Dialog`); a list of commands (menus, a later batch) | `popover` |
 
 ## Button
 
@@ -151,3 +152,20 @@ content brings its own bar and close button).
 
 **Used by:** the centre peek (spec 007, `components/PeekPanel.tsx`).
 
+## Popover
+
+**Props**
+- `trigger`: the element that opens it (usually a `Button` or `IconButton`).
+- `label`: the panel's accessible name.
+- `closeLabel`: the name of its hidden close button.
+- `open?`, `onOpenChange?`: controlled use; omit both and the trigger opens and closes it.
+- `side?` (`bottom`), `align?` (`end`).
+- `className?`
+
+**Behaviour**
+- Anchored to the trigger and kept on screen. Width: `--popover-width`, capped at the window.
+- Layer `--popover-layer` (150): over dialogs and peeks, under the lists of a `Select` inside it.
+- Focus moves in and is trapped; the page behind is not made inert and keeps updating.
+- Escape and a click outside close it; focus returns to the trigger. A `Select` inside opens
+  and picks without closing it, and Escape on an open list closes only the list.
+- A visually hidden close button is rendered for touch screen readers (Base UI's requirement).
