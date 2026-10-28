@@ -10,6 +10,7 @@ import type { ChartStyle, PropDef, ViewDef } from '../types';
 import { chartSettingsFor, eachRowValue, groupable, numberProps, ROW_GROUP } from '../chartDefaults';
 import { isHidden, type AggResult, type ChartKind } from '../chartLayout';
 import { groupLabel } from './ChartFigure';
+import { takeOpenSettings } from '../chartInsert';
 import './ChartSettings.css';
 
 // A chart's settings (spec 004, FR-020 to FR-024, research R13): one panel,
@@ -344,8 +345,12 @@ function TextSetting({ label, value, placeholder, max, onSave }: { label: string
 
 /** The button above the chart that opens the panel. */
 export function ChartSettingsButton(props: Parameters<typeof ChartSettings>[0]) {
+  // Open from the start when the chart was just inserted from the / menu.
+  const [open, setOpen] = useState(() => takeOpenSettings(props.view.id));
   return (
     <Popover
+      open={open}
+      onOpenChange={setOpen}
       label={t('Chart settings')}
       closeLabel={t('Close')}
       trigger={

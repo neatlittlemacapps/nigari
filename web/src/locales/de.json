@@ -1252,5 +1252,17 @@
   "Download PNG": "PNG herunterladen",
   "Save chart as": "Diagramm speichern als",
   "There is no chart to save yet.": "Es gibt noch kein Diagramm zum Speichern.",
-  "This browser does not allow copying a picture, so it was downloaded instead.": "Dieser Browser erlaubt kein Kopieren von Bildern, deshalb wurde es stattdessen heruntergeladen."
+  "This browser does not allow copying a picture, so it was downloaded instead.": "Dieser Browser erlaubt kein Kopieren von Bildern, deshalb wurde es stattdessen heruntergeladen.",
+  "A trend over time": "Ein Verlauf über die Zeit",
+  "Bar chart": "Balkendiagramm",
+  "Bars side by side, for long names": "Balken nebeneinander, für lange Namen",
+  "Choose a database to chart": "Wähle eine Datenbank für das Diagramm",
+  "Compare groups of a database as bars": "Gruppen einer Datenbank als Balken vergleichen",
+  "Donut chart": "Ringdiagramm",
+  "Horizontal bar chart": "Horizontales Balkendiagramm",
+  "Line chart": "Liniendiagramm",
+  "No chart was added to this database: {reason}": "Dieser Datenbank wurde kein Diagramm hinzugefügt: {reason}",
+  "Number chart": "Zahlendiagramm",
+  "One total, count or average": "Eine Summe, Anzahl oder ein Durchschnitt",
+  "Parts of a whole": "Teile eines Ganzen"
 }

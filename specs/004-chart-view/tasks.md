@@ -116,10 +116,10 @@ description: "Tasks for chart views of a database, with the chart builder"
 - [x] T034 [US5] [ui] Style in `chartTheme.ts` / `ChartView.tsx` (research R16): palettes (auto from option colours), heights, legend place, value-labels plugin, centre total as DOM, caption as `figcaption`, number title
 - [x] T035 [US5] [ui] Tooltip (research R17): Chart.js external tooltip as a token-styled DOM element with label, value and "Click to view data"; the same on group-button focus
 - [x] T036 [US5] [ui] Save chart as (research R17): new `web/src/savePicture.ts` (offscreen 2× drawing on the chosen background with caption and legend, `toBlob`, Copy as PNG through the clipboard, Download PNG through an object URL; refused clipboard → toast and download)
-- [ ] T037 [US5] [ui] `blocks.tsx`: the database block takes `chartKind`; its picker reads "Choose a database to chart"; a pick adds `defaultChartView` through `PUT /api/collections/{id}`, writes `{collectionId, local: {viewId}}`, clears `chartKind`, opens the settings; a refusal keeps a plain embed with a toast (research R14)
-- [ ] T038 [US5] [ui] `Editor.tsx`: five slash entries (Bar chart, Horizontal bar chart, Line chart, Donut chart, Number chart) with search words, inserting the block of T037
-- [ ] T039 [P] [US5] [i18n] German (required) and Spanish for every builder string (plan, Translations row)
-- [ ] T040 [US5] [test] Playwright `web/tests/chart-builder.mjs` (in `web/tests/package.json`): each slash entry and the picker; every setting survives a reload (SC-007); hover tooltip; Save chart as downloads a PNG; a workspace viewer sees no settings
+- [x] T037 [US5] [ui] `blocks.tsx`: the database block takes `chartKind`; its picker reads "Choose a database to chart"; a pick adds `defaultChartView` through `PUT /api/collections/{id}`, writes `{collectionId, local: {viewId}}`, clears `chartKind`, opens the settings; a refusal keeps a plain embed with a toast (research R14)
+- [x] T038 [US5] [ui] `Editor.tsx`: five slash entries (Bar chart, Horizontal bar chart, Line chart, Donut chart, Number chart) with search words, inserting the block of T037
+- [x] T039 [P] [US5] [i18n] German (required) and Spanish for every builder string (plan, Translations row)
+- [x] T040 [US5] [test] Playwright `web/tests/chart-builder.mjs` (in `web/tests/package.json`): each slash entry and the picker; every setting survives a reload (SC-007); hover tooltip; Save chart as downloads a PNG; a workspace viewer sees no settings
 
 ---
 
@@ -132,7 +132,7 @@ description: "Tasks for chart views of a database, with the chart builder"
 - [ ] T045 [P] [wiki] The wiki page that lists `/` entries gains the five chart entries; `wiki/collections.md` describes the settings panel, palettes and Save chart as
 - [ ] T046 [wiki] Screenshots `collection-chart` and `chart-settings` (light and dark) in `wiki/screenshots.json` and `web/scripts/shoot-wiki.mjs`; stale shots retaken
 - [x] T047 [backend] Registry row *Aggregation* (tag `backend`, Since 2026-10-29) in `.specify/memory/surfaces.md` (plan, Registry)
-- [ ] T048 [ui] Backlog issues for what the walk-through showed and this feature leaves out (spec FR-017): "Save for everyone"/"Reset" on view filters, the folding toolbar, Lock views, a second grouping with stacked bars and reference lines
+- [x] T048 [ui] Backlog issues for what the walk-through showed and this feature leaves out (spec FR-017): "Save for everyone"/"Reset" on view filters, the folding toolbar, Lock views, a second grouping with stacked bars and reference lines
 
 
 ---
