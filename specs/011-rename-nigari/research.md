@@ -24,11 +24,11 @@ branch. Each decision below says what was chosen, why, and what was turned down.
 
   Both files present → refused with `rename_conflict`, nothing changed.
 - **Why**: a rename changes no byte in the database. The WAL is the risk: it holds committed pages not yet in `salt.db`, so renaming `salt.db` alone would drop them, and leaving `salt.db-wal` beside `nigari.db` would orphan them. A checkpoint first, by SQLite itself, makes the main file complete. `rename(2)` on one filesystem is atomic.
-- **No copy before (this differs from the spec's FR-004 wording, for the owner to confirm)**: spec 008's copy exists to undo a step that changes bytes; this move changes none, and can be undone by renaming back. A copy would double the disk needed on a large instance, and it could fail on a full disk for no benefit.
+- **No copy before (owner, 2026-10-29: "No copy"; FR-004 updated)**: spec 008's copy exists to undo a step that changes bytes; this move changes none, and can be undone by renaming back. A copy would double the disk needed on a large instance, and it could fail on a full disk for no benefit.
 - **Turned down**:
   - **a goose step**: a step runs inside the database and cannot rename its own file;
   - **opening `salt.db` under its old name forever**: that keeps an old name;
-  - **a copy anyway**: offered to the owner as the alternative.
+  - **a copy anyway**: offered to the owner, who declined it.
 
 ## R3. No new upgrade step
 
@@ -64,7 +64,7 @@ branch. Each decision below says what was chosen, why, and what was turned down.
 
 ## R9. The desktop app is a new app
 
-- **Decision**: app id `io.github.neatlittlemacapps.nigari`, product name `nigari`, scheme `nigari://` (with `desktopScheme` in `server/desktop_auth.go`). `desktop/package-lock.json` is regenerated with `npm install` in `desktop/`.
+- **Decision** (owner confirmed, 2026-10-29): app id `io.github.neatlittlemacapps.nigari`, product name `nigari`, scheme `nigari://` (with `desktopScheme` in `server/desktop_auth.go`). `desktop/package-lock.json` is regenerated with `npm install` in `desktop/`.
 - **Why**: FR-012. A reverse-DNS id needs a domain the owner controls; `github.io` under the owner's account is one, while `md.salt` was never the fork's. The fork never released a desktop app (no `desktop-v*` tag), so no installed app waits on `salt://`.
 - **Turned down**: `md.nigari.desktop` (no such domain is the owner's); `app.nigari` (the owner has not checked that domain).
 

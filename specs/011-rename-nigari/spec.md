@@ -14,7 +14,7 @@ basically consider this an official forked version?" Options offered: A keep
 the name, B rename the product but keep internal names, C rename everything.
 Owner: "C. Rename everything, internals too"; the name: first "salty.md",
 then, after checking it: “go with "nigari"”. Specified
-now, built after spec 008 (its data-file rename is an upgrade step).
+now, built after spec 008 (its data-file rename runs under spec 008's lock).
 
 ## Clarifications
 
@@ -27,6 +27,11 @@ now, built after spec 008 (its data-file rename is an upgrade step).
   `SALT_DATA` would start on an empty directory and look like lost data.
 - Q: Does the first nigari release continue v1.6.x or start v2.0.0? → A:
   v2.0.0 (owner: "Q2 B").
+- Q (from the plan): take spec 008's copy before renaming the database file?
+  → A: no; the rename changes no byte, and a copy doubles the disk needed
+  (owner: "No copy"). FR-004 updated.
+- Q (from the plan): desktop app id `io.github.neatlittlemacapps.nigari`, a
+  reverse domain the owner controls? → A: yes (owner).
 
 ## Context
 
@@ -101,8 +106,8 @@ database is now `nigari.db`.
 **Acceptance Scenarios**:
 
 1. **Given** a data directory with `salt.db`, **When** v2.0.0 starts,
-   **Then** an upgrade step renames it to `nigari.db` (with the copy before it,
-   spec 008), and the data is unchanged.
+   **Then** it is renamed to `nigari.db` once, before the upgrade steps and
+   under their lock (spec 008), and the data is unchanged.
 2. **Given** preferences in old browser-storage keys (theme, tabs, sidebar,
    recent pages, language…), **When** the new interface first loads, **Then**
    it moves them to the new keys once and removes the old ones.
@@ -187,7 +192,10 @@ it refuses, naming `SALT_DATA` → `NIGARI_DATA`, and touches nothing.
 - **FR-003**: The binary, the container image, the release assets, the
   installer, the desktop app and the Go module MUST carry the new name.
 - **FR-004**: The database file MUST be renamed from `salt.db` to `nigari.db`
-  by an upgrade step of spec 008, with its copy before and its refusal rules.
+  once, before spec 008's upgrade steps and under their lock, after a WAL
+  checkpoint so no committed change is left behind; with both files present,
+  start-up MUST refuse and change nothing. No copy is taken: the rename changes
+  no byte (owner, 2026-10-29: "No copy").
 - **FR-005**: No old name MUST keep working from v2.0.0: no `SALT_*`
   variable, old cookie, old webhook header or `salt` command is accepted
   (owner: no transition).

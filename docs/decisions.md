@@ -7,6 +7,34 @@ entries are not edited away.
 
 ---
 
+## 2026-10-29 — The fork becomes nigari, internals included, with no transition
+
+**Decision** (owner, spec 011): the fork takes its own name, **nigari**, everywhere,
+internals included ("C. Rename everything, internals too"). The old names stop with the
+first nigari release ("Q1 immediately"), which is **v2.0.0** ("Q2 B"). Data still moves
+once: `salt.db` becomes `nigari.db`, and browser preferences move to their new keys.
+
+**Decided with the plan** (`specs/011-rename-nigari/plan.md`, research R1–R15):
+- **A `SALT_*` variable without its `NIGARI_*` name refuses the start** with one sentence
+  naming both. Ignoring it would start an empty workspace that looks like lost data.
+- **The database file is renamed without a copy** (owner: "No copy"). The rename changes
+  no byte; a WAL checkpoint first makes the file complete. With both files present the
+  start is refused.
+- **Desktop app id `io.github.neatlittlemacapps.nigari`** (owner: "yes"): a reverse domain
+  the owner controls; `md.salt` was never the fork's.
+- **The release rule gains one case**: a version line with no tag releases its base as is,
+  so `2.0.0` ships as v2.0.0, not v2.0.1. Amends the 2026-10-29 release entry below.
+- **The repository is renamed just before the merge**: the image name follows the
+  repository, so renaming after would publish v2.0.0 under the old image name.
+- **The compose and Quadlet volume keeps the name `salt-data`**: a renamed volume is a new,
+  empty one.
+
+**Turned down**: keeping the name (A); renaming the product only (B); a transition period
+reading old names; a copy of the database before the rename; a goose step for the rename
+(a step runs inside the file and cannot rename it).
+
+---
+
 ## 2026-10-29 — Third-party notices list what the released binaries link, not the module graph
 
 **Decision** (owner chose B, while adding goose for spec 008): `scripts/licenses.mjs`
