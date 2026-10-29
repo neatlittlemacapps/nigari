@@ -1,4 +1,4 @@
-module salt
+module nigari
 
 go 1.26.0
 

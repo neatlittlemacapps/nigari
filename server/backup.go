@@ -16,7 +16,7 @@ import (
 // Version is the app/API version. Bump on any client/server contract change so
 // a stale client can detect a mismatch (audit Q42).
 // A release build sets it from the git tag via -ldflags
-// "-X salt/server.Version=..."; locally it stays at the default below.
+// "-X nigari/server.Version=..."; locally it stays at the default below.
 // The frontend is stamped from the same string (SALT_VERSION → vite define),
 // because two hand-kept numbers drift and the mismatch banner then fires
 // forever.

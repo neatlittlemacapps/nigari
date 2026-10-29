@@ -83,7 +83,7 @@ jobs:
             echo "→ $out"
             CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" \
               go build -trimpath \
-              -ldflags "-s -w -X salt/server.Version=${VERSION}" \
+              -ldflags "-s -w -X nigari/server.Version=${VERSION}" \
               -o "$out" .
           }
           build linux  amd64

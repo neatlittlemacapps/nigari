@@ -35,7 +35,7 @@ COPY --from=web /src/web/dist ./web/dist
 # CGO off + pure-Go SQLite ⇒ a fully static binary, and building on the native
 # builder while targeting $TARGETARCH avoids slow QEMU emulation of the compiler.
 RUN go mod tidy && CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -trimpath -ldflags="-s -w -X salt/server.Version=${VERSION}" -o /salt .
+    go build -trimpath -ldflags="-s -w -X nigari/server.Version=${VERSION}" -o /salt .
 
 # --- Runtime ---
 FROM alpine:3.20

@@ -16,7 +16,7 @@ import (
 
 	"golang.org/x/crypto/acme/autocert"
 
-	"salt/server"
+	"nigari/server"
 )
 
 //go:embed all:web/dist

@@ -21,7 +21,7 @@ description: "Tasks for the rename to nigari"
 
 ## Phase 1: Setup
 
-- [ ] T001 [backend] Go module: `go.mod` `module salt` → `module nigari`; every `import "salt/server"` → `"nigari/server"` (`main.go`, `server/**`); ldflags `-X salt/server.Version` → `-X nigari/server.Version` in `Makefile`, `Dockerfile`, `.github/workflows/release.yml`, `.devcontainer/*`. `go build ./... && go test ./...` green. Record the `CGO_ENABLED=0` binary size before and after. `go.sum` must not change (protected; R10)
+- [x] T001 [backend] Go module: `go.mod` `module salt` → `module nigari`; every `import "salt/server"` → `"nigari/server"` (`main.go`, `server/**`); ldflags `-X salt/server.Version` → `-X nigari/server.Version` in `Makefile`, `Dockerfile`, `.github/workflows/release.yml`, `.devcontainer/*`. `go build ./... && go test ./...` green. Record the `CGO_ENABLED=0` binary size before and after. `go.sum` must not change (protected; R10)
 - [ ] T002 [test] New `web/scripts/check-names.mjs` + `web/scripts/names-allowlist.json` (`{path: {count, reason}}`), added to `npm run check`. Patterns from plan P8: `salt.md`, `saltmd`, `SALT_`, `salt_`, `salt-`, `salt:`, `salt/`, `salt://`, and `Salt`/`salt` as words. Skipped paths: `LICENSE`, `CLA.md`, `THIRD-PARTY-NOTICES.md`, `.github/cla-signatures.json`, `specs/001`–`010`, `docs/handoffs/`, `docs/decisions.md` (entries before the rename's), `server/testdata/upgrade/step-*.db`. It **reports only** until T031 makes it fail. Its own failing cases in the same file, as `check-build-tokens.mjs` does: a new name fails; a count above the allowlist fails; a count below it says to lower the allowlist
 
 ---

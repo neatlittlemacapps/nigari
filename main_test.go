@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"salt/server"
+	"nigari/server"
 )
 
 // Run main in a child process so its exit status and startup side effects are
