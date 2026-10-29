@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Issues**: to be filed
+**Issues**: #327
 
 **Input**: Owner, 2026-10-29: "we are too far gone from the original salt to
 ever contribute back … how about entirely replacing salt with salty and

@@ -1,6 +1,6 @@
 # Implementation Plan: The fork becomes nigari
 
-**Branch**: `claude/pensive-turing-plu40r` | **Date**: 2026-10-29 | **Spec**: [spec.md](spec.md) | **Issue**: none yet (filed with the tasks)
+**Branch**: `claude/pensive-turing-plu40r` | **Date**: 2026-10-29 | **Spec**: [spec.md](spec.md) | **Issue**: #327
 
 **Input**: Feature specification from `/specs/011-rename-nigari/spec.md`
 

@@ -9,7 +9,7 @@ description: "Tasks for the rename to nigari"
 
 **Tests**: required (salt.md). The refusal paths: an old variable alone, both database files present, an old cookie, an old archive, an old browser key.
 
-**Issues**: none yet
+**Issues**: parent #327; T001–T035 are #328–#362, in order.
 
 **Delivery**: **one pull request**. Every push to `main` is a release (spec 009), so a part merged on its own would ship a half-renamed v1.6.x. The owner renames the repository just before merging (research R12).
 
