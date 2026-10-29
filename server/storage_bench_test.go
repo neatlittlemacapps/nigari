@@ -6,6 +6,8 @@ import (
 	"math"
 	"math/rand/v2"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -336,4 +338,63 @@ func BenchmarkStorageWriteDuringLongRead(b *testing.B) {
 			b.ReportMetric(float64(reads), "reads")
 		})
 	}
+}
+
+// Starting on a database that is already at the newest step: what every
+// restart pays once spec 008 is in (SC-002: within 5 ms of what it was). The
+// "before" case is what openDB did on every start until then: the whole schema
+// and every ensureColumn on the writer, now step 1 run directly. The copy of
+// step-0.db stands in for a small instance; the cost is per start, not per
+// page, so the seeded world adds nothing here.
+func BenchmarkStorageStart(b *testing.B) {
+	src, err := os.ReadFile(filepath.Join("testdata", "upgrade", "step-0.db"))
+	if err != nil {
+		b.Fatal(err)
+	}
+	path := filepath.Join(b.TempDir(), DBFile)
+	if err := os.WriteFile(path, src, 0o644); err != nil {
+		b.Fatal(err)
+	}
+	if _, err := upgradeDB(path); err != nil {
+		b.Fatal(err)
+	}
+	b.Run("upgrade-nothing-pending", func(b *testing.B) {
+		var l latencies
+		for i := 0; i < b.N; i++ {
+			l.time(func() {
+				if _, err := upgradeDB(path); err != nil {
+					b.Fatal(err)
+				}
+				db, err := openDB(path)
+				if err != nil {
+					b.Fatal(err)
+				}
+				db.Close()
+			})
+		}
+		l.report(b)
+	})
+	b.Run("before-spec-008", func(b *testing.B) {
+		var l latencies
+		for i := 0; i < b.N; i++ {
+			l.time(func() {
+				db, err := openDB(path)
+				if err != nil {
+					b.Fatal(err)
+				}
+				tx, err := db.Begin()
+				if err != nil {
+					b.Fatal(err)
+				}
+				if err := baseSchema(context.Background(), tx); err != nil {
+					b.Fatal(err)
+				}
+				if err := tx.Commit(); err != nil {
+					b.Fatal(err)
+				}
+				db.Close()
+			})
+		}
+		l.report(b)
+	})
 }

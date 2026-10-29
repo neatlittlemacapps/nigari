@@ -87,6 +87,11 @@ func main() {
 	if err == nil {
 		srv.SetNotices(noticesMD)
 	}
+	var refusal *server.UpgradeRefusal
+	if errors.As(err, &refusal) {
+		serveRefusal(refusal, addr, certFile, keyFile)
+		return
+	}
 	if err != nil {
 		log.Fatalf("startup: %v", err)
 	}
@@ -158,4 +163,30 @@ func main() {
 		}
 		log.Print("stopped cleanly")
 	}
+}
+
+// serveRefusal keeps a refused start reachable: the sentence goes to the log,
+// and the usual address answers every request with it until salt.md is
+// stopped (FR-019), instead of the process exiting and leaving a browser with
+// nothing but "connection refused".
+func serveRefusal(r *server.UpgradeRefusal, addr, certFile, keyFile string) {
+	log.Printf("salt.md %s did not start (%s): %s", server.Version, r.Code, r.Sentence)
+	httpSrv := &http.Server{Addr: addr, Handler: server.RefusalHandler(r)}
+	go func() {
+		var err error
+		if certFile != "" && keyFile != "" {
+			err = httpSrv.ListenAndServeTLS(certFile, keyFile)
+		} else {
+			err = httpSrv.ListenAndServe()
+		}
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatal(err)
+		}
+	}()
+	log.Printf("serving the refusal on %s until salt.md is stopped", addr)
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	<-stop
+	httpSrv.Close()
+	os.Exit(1)
 }

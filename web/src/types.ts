@@ -68,7 +68,7 @@ export interface SaltFile {
 export interface AuditEntry {
   id: number;
   createdAt: string;
-  actorType: 'human' | 'agent';
+  actorType: 'human' | 'agent' | 'system';
   actorName: string;
   action: string;
   pageId: string;

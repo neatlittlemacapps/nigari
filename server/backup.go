@@ -29,6 +29,11 @@ var Version = "1.6.8"
 // Backup writes a consistent gzip'd tar of the workspace: the SQLite DB
 // (snapshotted with VACUUM INTO so WAL contents are included) plus all uploads.
 // Safe to run against a live instance (WAL allows a concurrent reader).
+//
+// Only the database and files/ go in, by name, never "everything in the data
+// directory": the copies upgradeDB keeps beside the database
+// (salt.db.before-step-<n>, each the size of the database) and its lock file
+// would otherwise multiply every archive's size for nothing (spec 008, T010).
 func Backup(dataDir, dest string) error {
 	dbPath := filepath.Join(dataDir, DBFile)
 	if _, err := os.Stat(dbPath); err != nil {

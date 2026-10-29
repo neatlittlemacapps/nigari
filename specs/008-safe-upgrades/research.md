@@ -176,6 +176,14 @@ pulls in (salt.md itself has 33 today).
 | + golang-migrate v4.20.1 (sqlite + iofs) | 9,785,210 B (+0.12 MB) | 218 (+192) | yes |
 | Hand-written (a slice of Go functions) | +0 | +0 | yes |
 
+Measured again in salt.md itself when goose went in (T001, #289): the binary
+grows by 354,230 B (33,914,395 → 34,268,625 B, `CGO_ENABLED=0`), far less than
+the minimal program's +1.16 MB, because salt.md already links most of what goose
+uses. `go list -m all` goes from 33 to 112 modules, but `go version -m` shows
+only 5 of them linked (goose, mfridman/interpolate, sethvargo/go-retry,
+go.uber.org/multierr, golang.org/x/sync): the rest are goose's drivers for other
+databases, present in the module graph and never compiled in.
+
 What a library would give salt.md: a transaction per step (Miniflux does this
 with one loop over a slice, section 3), a version table (`user_version` is one pragma), a CLI
 (salt.md has its own), down migrations (rejected, section 5). What it would

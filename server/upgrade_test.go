@@ -1,0 +1,650 @@
+package server
+
+import (
+	"archive/tar"
+	"compress/gzip"
+	"context"
+	"crypto/sha256"
+	"database/sql"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"io"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"testing"
+	"testing/fstest"
+	"time"
+
+	"github.com/pressly/goose/v3"
+)
+
+// copyFixture copies a fixture from server/testdata/upgrade into a temp dir:
+// a test must never upgrade the committed file itself.
+func copyFixture(t *testing.T, name string) string {
+	t.Helper()
+	src, err := os.Open(filepath.Join("testdata", "upgrade", name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer src.Close()
+	path := filepath.Join(t.TempDir(), DBFile)
+	dst, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.Copy(dst, src); err != nil {
+		t.Fatal(err)
+	}
+	if err := dst.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+// dbShape is what a database stores, as SQLite describes it: every table,
+// index and trigger with the statement that makes it, and every column of
+// every table. goose's own table is left out; it is the step counter, not
+// salt.md's data.
+func dbShape(t *testing.T, path string) string {
+	t.Helper()
+	db, err := sql.Open("sqlite", "file:"+path+"?mode=ro")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	rows, err := db.Query(`SELECT type, name, COALESCE(sql, '') FROM sqlite_master
+		WHERE name <> 'goose_db_version' AND name NOT LIKE 'sqlite_%' ORDER BY type, name`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var lines, tables []string
+	for rows.Next() {
+		var typ, name, stmt string
+		if err := rows.Scan(&typ, &name, &stmt); err != nil {
+			t.Fatal(err)
+		}
+		// Whitespace collapsed: the search index code recreates its tables
+		// with its own indentation (searchindex.go), the same table either way.
+		lines = append(lines, typ+" "+name+": "+strings.Join(strings.Fields(stmt), " "))
+		if typ == "table" {
+			tables = append(tables, name)
+		}
+	}
+	rows.Close()
+	// ALTER TABLE ADD COLUMN rewrites the CREATE statement in sqlite_master, so
+	// the columns are in the lines above already; listed again so a difference
+	// reads as a column, not as a long statement.
+	for _, tbl := range tables {
+		cols, err := db.Query(`SELECT name, type, "notnull", COALESCE(dflt_value, '') FROM pragma_table_info(?)`, tbl)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for cols.Next() {
+			var name, typ, dflt string
+			var notnull int
+			if err := cols.Scan(&name, &typ, &notnull, &dflt); err != nil {
+				t.Fatal(err)
+			}
+			lines = append(lines, "column "+tbl+"."+name+" "+typ+" notnull="+strconv.Itoa(notnull)+" default="+dflt)
+		}
+		cols.Close()
+	}
+	return strings.Join(lines, "\n")
+}
+
+func stepOf(t *testing.T, path string) int64 {
+	t.Helper()
+	db, err := sql.Open("sqlite", "file:"+path+"?mode=ro")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	var v int64
+	if err := db.QueryRow(`SELECT COALESCE(MAX(version_id), 0) FROM goose_db_version`).Scan(&v); err != nil {
+		t.Fatal(err)
+	}
+	return v
+}
+
+// A database written before spec 008 has no step number. Step 1 is the schema
+// those releases already applied, so it must bring such a database to step 1
+// without changing anything it stores, and leave it exactly as a new database
+// comes out of step 1. A difference here means step 1 is not today's schema.
+func TestUpgradeFromNoStep(t *testing.T) {
+	old := copyFixture(t, "step-0.db")
+	before := dbShape(t, old)
+	if _, err := upgradeDB(old); err != nil {
+		t.Fatalf("upgrade step-0.db: %v", err)
+	}
+	if got := stepOf(t, old); got != 1 {
+		t.Fatalf("step-0.db after the upgrade is at step %d, want 1", got)
+	}
+	if after := dbShape(t, old); after != before {
+		t.Errorf("step 1 changed what a v1.6.10 database stores:\n%s", lineDiff(before, after))
+	}
+
+	fresh := filepath.Join(t.TempDir(), DBFile)
+	if _, err := upgradeDB(fresh); err != nil {
+		t.Fatalf("upgrade a new file: %v", err)
+	}
+	if a, b := dbShape(t, old), dbShape(t, fresh); a != b {
+		t.Errorf("an upgraded v1.6.10 database and a new one differ:\n%s", lineDiff(a, b))
+	}
+}
+
+// stepOneShape is the fingerprint of what step 1 creates on an empty file. It
+// was recorded when step 1 was written (spec 008, T006) and never changes:
+// databases that already ran step 1 will not run it again, so an edit to it
+// would reach new databases only.
+const stepOneShape = "25b99a931b53844377f1d7738661854fe9e6ab9a3cd97e80c3c30e9b194f133f"
+
+func TestUpgradeStepOneIsFrozen(t *testing.T) {
+	path := filepath.Join(t.TempDir(), DBFile)
+	db, err := sql.Open("sqlite", writerDSN(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := goose.NewProvider(goose.DialectSQLite3, db, nil,
+		goose.WithDisableGlobalRegistry(true), goose.WithGoMigrations(upgradeSteps()[0]))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := p.Up(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	db.Close()
+	sum := sha256.Sum256([]byte(dbShape(t, path)))
+	if got := hex.EncodeToString(sum[:]); got != stepOneShape {
+		t.Fatalf("step 1 now creates something else than when it was released (fingerprint %s, want %s). "+
+			"A released step is never edited: put the change in a new step in upgrade_steps.go, with a "+
+			"fixture written just before it (testdata/upgrade/README.md), and add a new step instead.",
+			got, stepOneShape)
+	}
+}
+
+// lineDiff lists the lines only one side has, so a failure names the table or
+// column instead of printing two schemas.
+func lineDiff(a, b string) string {
+	in := func(s string) map[string]bool {
+		m := map[string]bool{}
+		for _, l := range strings.Split(s, "\n") {
+			m[l] = true
+		}
+		return m
+	}
+	ma, mb := in(a), in(b)
+	var out []string
+	for _, l := range strings.Split(a, "\n") {
+		if !mb[l] {
+			out = append(out, "- "+l)
+		}
+	}
+	for _, l := range strings.Split(b, "\n") {
+		if !ma[l] {
+			out = append(out, "+ "+l)
+		}
+	}
+	return strings.Join(out, "\n")
+}
+
+// Every fixture is a database an earlier release wrote (testdata/upgrade).
+// Started on the newest release, each must keep everything upgradeFixture put
+// in it, read the way a person or agent reads it (through the MCP tools, not
+// raw SQL, so a step that keeps the rows but breaks how they are read fails
+// too), and end at the newest step. FR-012, SC-001.
+func TestUpgradeFixtures(t *testing.T) {
+	fixtures, err := filepath.Glob(filepath.Join("testdata", "upgrade", "step-*.db"))
+	if err != nil || len(fixtures) == 0 {
+		t.Fatalf("no fixtures in testdata/upgrade (%v)", err)
+	}
+	newest := upgradeSteps()[len(upgradeSteps())-1].Version
+	f := upgradeFixture
+	for _, fx := range fixtures {
+		t.Run(filepath.Base(fx), func(t *testing.T) {
+			path := copyFixture(t, filepath.Base(fx))
+			s, err := New(filepath.Dir(path), fstest.MapFS{"index.html": {Data: []byte("<html></html>")}})
+			if err != nil {
+				t.Fatalf("New on %s: %v", filepath.Base(fx), err)
+			}
+			t.Cleanup(func() { s.Close() })
+			if got := stepOf(t, path); got != newest {
+				t.Errorf("at step %d after starting, want the newest, %d", got, newest)
+			}
+
+			var uid string
+			if err := s.db.QueryRow(`SELECT id FROM users WHERE email = 'fixture@example.test'`).Scan(&uid); err != nil {
+				t.Fatalf("the fixture's account: %v", err)
+			}
+			u := &user{ID: uid, Name: "Test"}
+			tool := func(name, args string) string {
+				t.Helper()
+				res, err := callTool(t, s, u, name, args)
+				if err != nil {
+					t.Fatalf("%s: %v", name, err)
+				}
+				return res
+			}
+			js := func(v string) string { b, _ := json.Marshal(v); return string(b) }
+			idOf := func(title string) string {
+				t.Helper()
+				var id string
+				if err := s.db.QueryRow(`SELECT id FROM pages WHERE title = ?`, title).Scan(&id); err != nil {
+					t.Fatalf("page %q: %v", title, err)
+				}
+				return id
+			}
+
+			if res := tool("search", `{"query":`+js(f.SearchWord)+`}`); !strings.Contains(res, f.Page) {
+				t.Errorf("search for %q no longer finds %q: %s", f.SearchWord, f.Page, res)
+			}
+			page := idOf(f.Page)
+			if res := tool("get_page", `{"page_id":"`+page+`","include_children":true}`); !strings.Contains(res, f.SearchWord) || !strings.Contains(res, f.Child) {
+				t.Errorf("the page lost its text or its child page: %s", res)
+			}
+			if res := tool("comments", `{"page_id":"`+page+`"}`); !strings.Contains(res, f.Comment) {
+				t.Errorf("the comment is gone: %s", res)
+			}
+			var files int
+			if err := s.db.QueryRow(`SELECT COUNT(*) FROM files WHERE page_id = ? AND display_name = ?`, page, f.FileName).Scan(&files); err != nil || files != 1 {
+				t.Errorf("the file reference %q: %d rows, %v", f.FileName, files, err)
+			}
+			db := idOf(f.Database)
+			rows := tool("query_rows", `{"page_id":"`+db+`"}`)
+			for _, r := range f.Rows {
+				if !strings.Contains(rows, r) {
+					t.Errorf("row %q is gone: %s", r, rows)
+				}
+			}
+			if res := tool("get_collection", `{"page_id":"`+db+`"}`); !strings.Contains(res, f.ChartView) {
+				t.Errorf("the chart view %q is gone: %s", f.ChartView, res)
+			}
+		})
+	}
+}
+
+// testSteps is the real step list plus made-up later steps, each adding a
+// table t<n>, for tests that need more than one step to have something to do.
+func testSteps(extra ...int64) []*goose.Migration {
+	steps := upgradeSteps()
+	for _, n := range extra {
+		n := n
+		steps = append(steps, goose.NewGoMigration(n, &goose.GoFunc{RunTx: func(ctx context.Context, tx *sql.Tx) error {
+			_, err := tx.Exec(`CREATE TABLE t` + strconv.FormatInt(n, 10) + ` (n INTEGER)`)
+			return err
+		}}, nil))
+	}
+	return steps
+}
+
+func copiesOf(t *testing.T, path string) []string {
+	t.Helper()
+	m, err := filepath.Glob(path + ".before-step-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range m {
+		m[i] = strings.TrimPrefix(m[i], path)
+	}
+	return m
+}
+
+// The copy is taken before a pending step and only then, is named after the
+// first step it comes before, opens as a database at the step before it, and
+// only the newest three are kept (FR-005).
+func TestUpgradeCopyBeforePendingSteps(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	if _, err := upgradeWith(path, testSteps()); err != nil {
+		t.Fatal(err)
+	}
+	if got := copiesOf(t, path); len(got) != 1 || got[0] != ".before-step-1" {
+		t.Fatalf("after step 1: copies %v, want [.before-step-1]", got)
+	}
+	// Nothing pending: no new copy.
+	if _, err := upgradeWith(path, testSteps()); err != nil {
+		t.Fatal(err)
+	}
+	if got := copiesOf(t, path); len(got) != 1 {
+		t.Fatalf("a start with nothing pending made a copy: %v", got)
+	}
+	// Steps 2 and 3 in one start: one copy, before 2.
+	if _, err := upgradeWith(path, testSteps(2, 3)); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(copiesOf(t, path), " "); got != ".before-step-1 .before-step-2" {
+		t.Fatalf("after steps 2 and 3: copies %q", got)
+	}
+	if got := stepOf(t, path+".before-step-2"); got != 1 {
+		t.Errorf("the copy before step 2 is at step %d, want 1", got)
+	}
+	// Two more upgrades: four copies taken, the oldest (before step 1) goes.
+	if _, err := upgradeWith(path, testSteps(2, 3, 4)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := upgradeWith(path, testSteps(2, 3, 4, 5)); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(copiesOf(t, path), " "); got != ".before-step-2 .before-step-4 .before-step-5" {
+		t.Fatalf("after four upgrades: copies %q, want the newest three", got)
+	}
+}
+
+// A new, empty file has nothing to go back to: no copy.
+func TestUpgradeNoCopyOfANewFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), DBFile)
+	if _, err := upgradeDB(path); err != nil {
+		t.Fatal(err)
+	}
+	if got := copiesOf(t, path); len(got) != 0 {
+		t.Fatalf("a new database got copies: %v", got)
+	}
+}
+
+// When the copy cannot be written, no step runs: the start is refused with
+// upgrade_copy_failed, and the database is still at its old step.
+func TestUpgradeCopyFailedRunsNoStep(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	if _, err := upgradeWith(path, testSteps()); err != nil {
+		t.Fatal(err)
+	}
+	// A directory where the copy's file name should go makes VACUUM INTO fail
+	// the same way a full disk or a read-only directory does, and works as
+	// root too (a chmod does not stop root).
+	if err := os.Mkdir(path+".before-step-2", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(path+".before-step-2", "keep"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := upgradeWith(path, testSteps(2))
+	var r *UpgradeRefusal
+	if !errors.As(err, &r) || r.Code != "upgrade_copy_failed" {
+		t.Fatalf("want an upgrade_copy_failed refusal, got %v", err)
+	}
+	if !strings.Contains(r.Sentence, "No upgrade step ran") || !strings.Contains(r.Sentence, " MB)") {
+		t.Errorf("the sentence does not say what happened and how big the copy is: %s", r.Sentence)
+	}
+	if got := stepOf(t, path); got != 1 {
+		t.Errorf("step 2 ran without its copy: the database is at step %d", got)
+	}
+}
+
+// salt backup takes the database and files/, not the copies or the lock.
+func TestBackupLeavesUpgradeCopiesOut(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, DBFile)
+	src := copyFixture(t, "step-0.db")
+	b, err := os.ReadFile(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := upgradeDB(path); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "upgrade.lock"), []byte("1"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	archive := filepath.Join(t.TempDir(), "backup.tar.gz")
+	if err := Backup(dir, archive); err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.Open(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	gz, err := gzip.NewReader(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tr := tar.NewReader(gz)
+	for {
+		h, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(h.Name, "before-step") || strings.Contains(h.Name, "upgrade.lock") {
+			t.Errorf("the backup holds %s", h.Name)
+		}
+	}
+}
+
+// A step that fails after it wrote something leaves the database file
+// byte-for-byte as it was before that step (SC-003), the step number at the
+// last success, and a refusal that names the step, the reason and the copy;
+// the next start runs the step again (FR-004).
+func TestUpgradeFailedStepChangesNothing(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	if _, err := upgradeWith(path, testSteps()); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	failing := goose.NewGoMigration(2, &goose.GoFunc{RunTx: func(ctx context.Context, tx *sql.Tx) error {
+		if _, err := tx.Exec(`UPDATE pages SET title = 'changed by a failing step'`); err != nil {
+			return err
+		}
+		return errors.New("the disk said no")
+	}}, nil)
+	_, err = upgradeWith(path, append(testSteps(), failing))
+	var r *UpgradeRefusal
+	if !errors.As(err, &r) || r.Code != "upgrade_failed" {
+		t.Fatalf("want an upgrade_failed refusal, got %v", err)
+	}
+	for _, want := range []string{"Upgrade step 2 failed", "the disk said no", "at step 1", ".before-step-2"} {
+		if !strings.Contains(r.Sentence, want) {
+			t.Errorf("the sentence lacks %q: %s", want, r.Sentence)
+		}
+	}
+	after, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(after) != string(before) {
+		t.Error("the database file changed although its only pending step failed")
+	}
+	if got := stepOf(t, path); got != 1 {
+		t.Errorf("after the failure the database is at step %d, want 1", got)
+	}
+	ran, err := upgradeWith(path, testSteps(2))
+	if err != nil || len(ran) != 1 || ran[0] != 2 {
+		t.Fatalf("the next start should run step 2: ran %v, %v", ran, err)
+	}
+}
+
+// rebuildTable: a rebuild runs with foreign keys off, so rows that refer to
+// the rebuilt table survive it (with them on, the DROP would cascade), and a
+// rebuild that leaves a reference pointing at nothing fails and is rolled
+// back whole (FR-011).
+func TestUpgradeRebuildTable(t *testing.T) {
+	tables := goose.NewGoMigration(2, &goose.GoFunc{RunTx: func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.Exec(`CREATE TABLE parent (id INTEGER PRIMARY KEY, name TEXT);
+			CREATE TABLE child (id INTEGER PRIMARY KEY, parent_id INTEGER REFERENCES parent(id) ON DELETE CASCADE);
+			INSERT INTO parent VALUES (1, 'a'), (2, 'b');
+			INSERT INTO child VALUES (10, 1), (20, 2);`)
+		return err
+	}}, nil)
+	rebuild := func(n int64, copy string) *goose.Migration {
+		return goose.NewGoMigration(n, &goose.GoFunc{RunDB: func(ctx context.Context, db *sql.DB) error {
+			return rebuildTable(ctx, db, "parent",
+				`CREATE TABLE parent_new (id INTEGER PRIMARY KEY, name TEXT NOT NULL DEFAULT '')`, copy,
+				`CREATE INDEX idx_parent_name ON parent(name)`)
+		}}, nil)
+	}
+	count := func(t *testing.T, path, table string) int {
+		t.Helper()
+		db, err := sql.Open("sqlite", "file:"+path+"?mode=ro")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer db.Close()
+		var n int
+		if err := db.QueryRow(`SELECT COUNT(*) FROM ` + table).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+
+	t.Run("keeps the rows that refer to it", func(t *testing.T) {
+		path := copyFixture(t, "step-0.db")
+		if _, err := upgradeWith(path, append(testSteps(), tables, rebuild(3, `INSERT INTO parent_new SELECT id, COALESCE(name, '') FROM parent`))); err != nil {
+			t.Fatal(err)
+		}
+		if p, c := count(t, path, "parent"), count(t, path, "child"); p != 2 || c != 2 {
+			t.Errorf("after the rebuild: %d parents, %d children; want 2 and 2", p, c)
+		}
+	})
+	t.Run("a broken reference fails it", func(t *testing.T) {
+		path := copyFixture(t, "step-0.db")
+		if _, err := upgradeWith(path, append(testSteps(), tables)); err != nil {
+			t.Fatal(err)
+		}
+		_, err := upgradeWith(path, append(testSteps(), tables, rebuild(3, `INSERT INTO parent_new SELECT id, name FROM parent WHERE id = 1`)))
+		var r *UpgradeRefusal
+		if !errors.As(err, &r) || r.Code != "upgrade_failed" || !strings.Contains(r.Sentence, "broken reference") {
+			t.Fatalf("want upgrade_failed naming the broken reference, got %v", err)
+		}
+		if p, c := count(t, path, "parent"), count(t, path, "child"); p != 2 || c != 2 {
+			t.Errorf("after the failed rebuild: %d parents, %d children; want 2 and 2, as before", p, c)
+		}
+		if got := stepOf(t, path); got != 2 {
+			t.Errorf("at step %d, want 2", got)
+		}
+	})
+}
+
+// dirState is every file in dir with a hash of its contents: what "nothing in
+// the data directory was written" can be checked against.
+func dirState(t *testing.T, dir string) map[string]string {
+	t.Helper()
+	state := map[string]string{}
+	err := filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return err
+		}
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		sum := sha256.Sum256(b)
+		state[strings.TrimPrefix(p, dir)] = hex.EncodeToString(sum[:])
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return state
+}
+
+// An older release started on a database a newer one upgraded refuses it,
+// with both step numbers, its own version and the way back, and writes
+// nothing: no schema_meta stamp, no copy, no lock, not even a -wal file
+// (FR-007, SC-004). Through New, as a real start goes.
+func TestUpgradeRefusesNewerDatabase(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	dir := filepath.Dir(path)
+	if _, err := upgradeWith(path, testSteps(2)); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(dir, "files"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	before := dirState(t, dir)
+	_, err := New(dir, fstest.MapFS{"index.html": {Data: []byte("<html></html>")}})
+	var r *UpgradeRefusal
+	if !errors.As(err, &r) || r.Code != "upgrade_refused" {
+		t.Fatalf("want an upgrade_refused refusal from New, got %v", err)
+	}
+	// The copy to put back is the newest one this release can open: here the
+	// one before step 1, the only copy, since one start takes one copy, before
+	// its first pending step.
+	for _, want := range []string{"at upgrade step 2", "only knows steps up to 1", Version, "has not been changed", ".before-step-1"} {
+		if !strings.Contains(r.Sentence, want) {
+			t.Errorf("the sentence lacks %q: %s", want, r.Sentence)
+		}
+	}
+	after := dirState(t, dir)
+	for f, sum := range after {
+		if before[f] != sum {
+			t.Errorf("the refused start wrote %s", f)
+		}
+	}
+	for f := range before {
+		if _, ok := after[f]; !ok {
+			t.Errorf("the refused start removed %s", f)
+		}
+	}
+}
+
+// One process at a time runs steps on a data directory (FR-010): a second one
+// finding the lock refuses with upgrade_busy and runs nothing; a lock left
+// older than 15 minutes by a process that died is taken over; and the lock is
+// gone once the steps are done.
+func TestUpgradeLock(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	lock := filepath.Join(filepath.Dir(path), lockFile)
+	if err := os.WriteFile(lock, []byte("4242 2026-10-29T10:00:00Z\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := upgradeDB(path)
+	var r *UpgradeRefusal
+	if !errors.As(err, &r) || r.Code != "upgrade_busy" || !strings.Contains(r.Sentence, "process 4242") {
+		t.Fatalf("want upgrade_busy naming process 4242, got %v", err)
+	}
+	if _, step, _ := inspectDB(path); step != 0 {
+		t.Errorf("a step ran while another process held the lock: at step %d", step)
+	}
+	old := time.Now().Add(-staleLock - time.Minute)
+	if err := os.Chtimes(lock, old, old); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := upgradeDB(path); err != nil {
+		t.Fatalf("a stale lock was not taken over: %v", err)
+	}
+	if _, err := os.Stat(lock); !os.IsNotExist(err) {
+		t.Errorf("the lock is still there after the steps: %v", err)
+	}
+	// Nothing pending: an ordinary start does not care about a lock at all.
+	if err := os.WriteFile(lock, []byte("4242 2026-10-29T10:00:00Z\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := upgradeDB(path); err != nil {
+		t.Errorf("a start with nothing pending was stopped by a lock: %v", err)
+	}
+}
+
+// The refused start answers every request with 503 and the sentence: JSON
+// with the code for /api/ and /mcp, a page without scripts for the rest
+// (contracts/refusal.md).
+func TestRefusalHandler(t *testing.T) {
+	r := &UpgradeRefusal{Code: "upgrade_refused", Sentence: `This database is at upgrade step 3 <b>, but`}
+	h := RefusalHandler(r)
+	for _, path := range []string{"/api/me", "/mcp"} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+		var body map[string]string
+		if rec.Code != 503 || json.Unmarshal(rec.Body.Bytes(), &body) != nil || body["code"] != r.Code || body["error"] != r.Sentence {
+			t.Errorf("%s: %d %s", path, rec.Code, rec.Body.String())
+		}
+	}
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/p/abc", nil))
+	page := rec.Body.String()
+	if rec.Code != 503 || !strings.Contains(page, "upgrade step 3 &lt;b&gt;") || !strings.Contains(page, "upgrade_refused") {
+		t.Errorf("page: %d %s", rec.Code, page)
+	}
+	if strings.Contains(page, "<script") || strings.Contains(page, "<a ") {
+		t.Error("the refusal page carries a script or a link")
+	}
+}

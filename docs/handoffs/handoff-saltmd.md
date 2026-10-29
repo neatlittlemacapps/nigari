@@ -1,14 +1,15 @@
 # active-memory handoff: salt.md agentic setup and feature roadmap
 
-**Handoff #8** · 2026-10-28 · Lineage:
+**Handoff #9** · 2026-10-29 · Lineage:
 - **#1 (2026-10-25):** agentic setup (rules, gate, Spec Kit, parity manifest); four feature branches merged; 25 issues; three specs.
 - **#2 (2026-10-26):** find-and-replace edits (#13, PR #48); specs 001/002 planned; #47 fixed; surfaces registry, board sync, ruleset (PR #49).
 - **#3 (2026-10-26):** board derives its columns (PR #74); spec 002 tasks (#50–#73); storage benchmarks; fixes #75, #76; Codespaces (PR #77).
 - **#4 (2026-10-26/27):** spec 002 finished (PRs #80, #81, #83); read pool (#84); fast reads (#85); tag colours (#86).
-- **#5 (2026-10-27):** spec 001 batch 1 (tasks #87–#126, PRs #127/#128/#129); spec 004 (charts) written; local Mac test; #130 fix; feedback issues #131–#134; upstream plan agreed.
+- **#5 (2026-10-27):** spec 001 batch 1 (#87–#126, PRs #127/#128/#129); spec 004 written; local Mac test; #130 fix; feedback issues #131–#134; upstream plan agreed.
 - **#6 (2026-10-27):** owner answered all open questions; PRs #135, #137, #138, #159 (spec 005), #176 (spec 006).
 - **#7 (2026-10-27/28):** spec 007 shipped (PRs #212, #213); upstream #85 not taken; backlog prioritised; spec 004 planned with Chart.js (PR #214).
-- **#8 (2026-10-28):** owner's 20-screenshot Notion chart walk-through → spec 004 chart builder (US5, FR-018–031); charts parts 1+2 built and merged (PR #264); safe-upgrades epic #263 filed; "Each row" added to part 3 after the owner's bug report.
+- **#8 (2026-10-28):** Notion chart walk-through → spec 004 builder (US5, FR-018–031); charts parts 1+2 merged (PR #264); safe-upgrades epic #263 filed.
+- **#9 (2026-10-28/29):** charts finished (PR #283: Each row, ui/Popover, settings panel, tooltip, Save chart as, `/` entries); agents author commits; Sonnet helpers rule; #263 research (second session) → owner chose option C (goose) → spec 008 specified, clarified, planned, 26 task issues (#289–#314); #265 fork releases (spec 009, PR #288) → v1.6.9; image fix (#315, PR #316) → v1.6.10 with image.
 
 ## 0. Instructions for Claude (read first)
 
@@ -24,42 +25,44 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 ## 1. Mission
 - **Goal:** take salt.md (the user's fork) "to a higher level": many more features, built with an agentic setup that keeps the software's domains intact.
 - **In the user's words:** "proper coding, holistic adjustments (think, when I add a feature, the system should also reason and tackle the fact that the mcp functionality might also need to follow), proper UI implementation, performance and testing".
-- **Done looks like:** features flow spec → plan → tasks → board → implementation; each reaches every surface in the registry; gate and CI green.
+- **Done looks like:** features flow spec → plan → tasks → board → implementation; each reaches every surface in the registry; gate and CI green; every merge to main becomes a release.
 - **Standing way of working** (2026-10-26): "from here on out, you should indeed ensure you think about all aspects of the code in relation to my feature requests." / "When a feature request introduces some new concept (like but not excluding the design system) you should add it to the pool of things to think about when specking new features."
 - **Also:** "I want you to be able to do as much as possible yourself"; "ensure you have good board and issue hygiene".
 - **2026-10-27:** "I want you to ignore the maintainers comments unless they really make sense for us as well. I basically want to implement the functionality on our end. I don't care about pushing it back to them".
-- **2026-10-28 (current order of work):** finish charts (spec 004, part 3 left), then epic #263 (safe upgrades), then the priority-1 backlog.
+- **Current order of work (2026-10-29):** spec 008 safe upgrades (#263) build → then the priority-1 backlog.
 
 ## 2. About the user (as relevant to this work)
 - GitHub `neatlittlemacapps` (id 60575307), display name "Frank De Graeve"; email neatlittlemacapps@gmail.com; owns `neatlittlemacapps/salt.md`, a public fork of `saltmd/salt.md` (AGPL-3.0); CLA signed upstream.
-- Works mostly from a phone (Claude app, iPhone), also the Claude desktop app on a Mac. Designer/PM, not a developer. Timezone Europe/Brussels. Thinks in Notion terms (sent Notion screenshots as the reference for charts).
-- Answers each step with a terse "Ok". Asks plain-language questions about technical terms; sometimes needs a concept re-explained in simpler words (e.g. what a chart's two dropdowns mean).
-- Local Mac test install: repo at `~/Documents/Salt/salt.md`; data `~/salt-demo`; run `cd ~/Documents/Salt/salt.md && SALT_DATA=~/salt-demo SALT_ADDR=:8420 ./salt`, open `http://localhost:8420` (http, not https); stop with Ctrl+C; seed with `SALT_SEED_URL=http://127.0.0.1:8420 node web/scripts/seed-wiki-instance.mjs`. Update: `cd ~/Documents/Salt/salt.md && git checkout main && git pull && make build`. Backup before an update: `./salt backup`.
-- GitHub settings: Actions on; auto-merge enabled in the repo; `BOARD_TOKEN` secret, `BOARD_PROJECT`=5.
+- Works mostly from a phone (Claude app, iPhone), also the Claude desktop app on a Mac. Designer/PM, not a developer. Timezone Europe/Brussels. Thinks in Notion terms.
+- Answers each step with a terse "Ok"/"Yes". Asks plain-language questions; catches process slips ("Did you spec this first?").
+- Local Mac test install: repo at `~/Documents/Salt/salt.md`; data `~/salt-demo`; run `cd ~/Documents/Salt/salt.md && SALT_DATA=~/salt-demo SALT_ADDR=:8420 ./salt`, open `http://localhost:8420` (http, not https); stop with Ctrl+C; seed with `SALT_SEED_URL=http://127.0.0.1:8420 node web/scripts/seed-wiki-instance.mjs`. Backup before an update: `./salt backup`. Now also installable with `curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh` (fork releases).
+- GitHub settings: Actions on; auto-merge enabled in the repo; `BOARD_TOKEN` secret, `BOARD_PROJECT`=5. The user taps merge on every PR.
 
 ## 3. Style & communication
 - **Language:** English.
 - **Tone:** direct, plain, no filler.
 - **Reply length:** short (phone screen). Lead with the answer; detail only when asked.
 - **Formatting:** short lists and small tables; numbered steps with exact tap/click paths for anything the user does by hand; shell commands in their own fenced `bash` blocks with full paths.
-- **"Explain X":** per option: gains, costs, effort; then one recommendation.
+- **"Explain X" / options:** per option: gains, costs, effort; then one recommendation.
 - **Working style:** each step ends with "Ready to continue with <next step>?" and waits for the user's go; a short status line when the user hasn't heard from Claude in a while during a long turn.
-- **Explaining terms:** plain words for a non-developer (what it is, what it costs us, what it gives us); concrete examples ("one bar per row: Rent 1,200 · Food 450").
+- **Explaining terms:** plain words for a non-developer (what it is, what it costs us, what it gives us); concrete examples.
 - **Avoid:** recaps of steps; long explanations before the result.
 
 ## 4. Hard rules (word for word)
 1. "Use spec-kit but indeed also a board to to track the work"
 2. "Fold them into here so the functionality is in here too (those branches)"
-3. Pushing: routine pushes to the working branch are fine; opening a PR is asked for ("Ready to continue with opening the PR?"), unless the user just asked for it. PRs get auto-merge (user: "yes"), but Claude cannot switch it on (classifier denial), so the user taps merge.
-4. Repo rules in `AGENTS.md` and `.claude/rules/` apply. A Stop hook runs `scripts/agent-gate.sh` plus a git-check (uncommitted or unpushed work fails it; it forces a push even mid-feature).
+3. Pushing: routine pushes to the working branch are fine; opening a PR is asked for ("Ready to continue with opening the PR?"), unless the user just asked for it. PRs: the user taps merge (Claude cannot enable auto-merge: classifier denial).
+4. Repo rules in `AGENTS.md` and `.claude/rules/` apply. A Stop hook runs `scripts/agent-gate.sh` plus a git-check (uncommitted or unpushed work fails it). Stale wiki screenshots fail the gate: retake before stopping.
 5. "ensure you think about all aspects of the code in relation to my feature requests". A new concept goes into `.specify/memory/surfaces.md`.
-6. Never work around a classifier denial (CI bypass, self-modification, destructive git, enabling auto-merge, deleting scheduled tasks). Tell the user and give them the manual step.
-7. Commit authorship: before the first commit `git config user.name neatlittlemacapps` and `git config user.email 60575307+neatlittlemacapps@users.noreply.github.com`; trailers `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and `Claude-Session: …`.
-8. "ensure you have good board and issue hygiene": label `in-progress` when starting (remove it when done); tick tasks in `tasks.md` in the PR that does them; `Closes #N` for every finished task issue; file an issue for every bug or finding; nobody moves cards.
-9. After opening a PR: `subscribe_pr_activity`; one `send_later` check-in ~50 min later; on CI red fix and push; on merge remove `in-progress` and fast-forward the working branch (`git push origin origin/main:refs/heads/<branch>` when the branch is inside main).
+6. Never work around a classifier denial (CI bypass, self-modification, destructive git such as deleting remote branches, enabling auto-merge, deleting scheduled tasks). Tell the user and give them the manual step.
+7. Commit authorship (changed 2026-10-28, owner: "Claude"): commits are authored by the agent (git's configured `Claude <noreply@anthropic.com>`); trailers `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and `Claude-Session: …`. Anything offered upstream is re-committed with the owner as author first.
+8. "ensure you have good board and issue hygiene": label `in-progress` when starting (remove when done/merged); tick tasks in `tasks.md` in the PR that does them; `Closes #N` for every finished task issue; file an issue for every bug or finding; nobody moves cards.
+9. After opening a PR: `subscribe_pr_activity`; a `send_later` check-in ~50 min later; on CI red fix and push; on merge remove `in-progress` and fast-forward the working branch (`git push origin origin/main:refs/heads/<branch>` when the branch is inside main).
 10. "I want you to ignore the maintainers comments unless they really make sense for us as well. I basically want to implement the functionality on our end. I don't care about pushing it back to them"
 11. Every number in a doc, comment or PR is measured in the session.
-12. Upgrade epic (#263) is "the next big epic to complete after the charting", and starts with research ("at least do some research on how typically this type of software could ensure forward upgrades are indeed possible").
+12. Upgrade epic (#263) is "the next big epic to complete after the charting"; research done; owner chose option C ("No, go with c").
+13. Sonnet helpers (owner, 2026-10-28: "can you hand off to sonnet if you think it is useful?" → yes; "Capture that behaviour for other sessions please."): mechanical tasks (translations, wiki text following an existing page, screenshot retakes, test runs, copy-a-pattern tasks) may go to a `model: "sonnet"` subagent; judgement stays on Opus; review helper output before committing. Recorded in `.claude/rules/claude-code.md`. No Haiku.
+14. Anything spanning more than one surface starts with a spec/plan (`.claude/rules/claude-code.md`), even when the user files it as a plain issue (#265 lesson).
 
 ## 5. Corrections log
 | # | Claude did | The user wanted |
@@ -76,7 +79,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 10 | Spec 003 merged with 20 task issues open | Issue and board hygiene (rule 8) |
 | 11 | (self) Appended decisions at the bottom | `docs/decisions.md` is newest first |
 | 12 | (self) `pkill -f <pattern>` killed its own shell | Kill by PID or `pgrep -x` |
-| 13 | (self) Repeated #12 | `pgrep -x server.test \| xargs -r kill`; `timeout` on long probes |
+| 13 | (self) Repeated #12 (twice now: also 2026-10-28 on a vite catalog server) | `pgrep -x server.test \| xargs -r kill`; for node: loop `pgrep -x node` and match `/proc/$pid/cmdline`; `timeout` on long probes |
 | 14 | (self) Unmeasured figure in a GitHub comment | Every number measured in the session |
 | 15 | (self) A test that passed with the bug present | Mutation-check every new test |
 | 16 | (self) Guessed a CI regression cause | Measure the hypothesis first |
@@ -101,13 +104,19 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 35 | (self) `border-radius: 0` went over the radius budget | `border-radius: initial` |
 | 36 | (self) SidePanel Escape blocked by a closed Select's listbox | Only on-screen elements count |
 | 37 | (self) Catalogue Escape test flaked on a late tooltip | Wait until no `.ui-tooltip` |
-| 38 | (self) Plan said a menu is "hidden for readers"; there is no role check | Shown to all; server refuses a reader's save |
-| 39 | (self) Listed "Save for everyone/Reset" filters as "Now" for charts | It changes every view type → left out of charts; backlog via T048 |
+| 38 | (self) Plan said a menu is "hidden for readers"; there is no role check | Shown to all; server refuses a reader's save (charts now use `canEdit` from the editor, FR-027) |
+| 39 | (self) Listed "Save for everyone/Reset" filters as "Now" for charts | Left out; backlog #279 |
 | 40 | (self) `go mod download all` changed protected `go.sum` | Revert it (`git checkout -- go.sum`); `go.sum` changes only through Go tooling with a reason |
 | 41 | (self) `scripts/licenses.mjs` without Go modules downloaded dropped 630 notice lines | Run `go mod download all` first, then regenerate, then revert `go.sum` |
-| 42 | (self) Chart settings in the toolbar stretched it into a tall column (seen in the screenshot) | Settings in their own row above the chart; look at every screenshot before committing |
-| 43 | (self) A chart with nothing to group by silently stayed a number chart, no "What to show" | FR-031: always show "What to show", every kind selectable, a sentence saying what to add |
-| 44 | (self) Proposed "group by any property" as the fix | The user wanted one bar per row with its number ("Each row", FR-030) |
+| 42 | (self) Chart settings in the toolbar stretched it | Look at every screenshot before committing |
+| 43 | (self) A chart with nothing to group by silently stayed a number chart | FR-031 sentence; every kind selectable (built) |
+| 44 | (self) Proposed "group by any property" as the fix | "Each row" (built) |
+| 45 | Built #265 (workflows, update check, installer, docs) without spec/plan; user: "Did you spec this first?" | Spec + plan first for multi-surface work; spec/plan 009 written after, code reviewed against it |
+| 46 | (self) `npx prettier --write` reformatted whole files (no repo config) | Never run prettier; revert and re-apply only own edits |
+| 47 | (self) A check regex matched words in a comment (`npm run build`) | Anchor checks to the code line (`/^RUN .*npm run build/m`) |
+| 48 | (self) Sonnet helper gave "Caption" the same German word as labels | Review helper output; "Bildunterschrift" / "Pie de gráfico" |
+| 49 | (self) Speckit taskstoissues dedups by task ID repo-wide (T001 exists for every spec) | Dedupe per parent issue's sub-issues |
+| 50 | (self) Container image's frontend stage copied a few dirs; gate failed on `.specify/` (#315) | `COPY . /src` + `.dockerignore`; `check-release.mjs` enforces it |
 
 ## 6. Decisions
 | Decision | Why |
@@ -117,92 +126,92 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Parity manifest + `check-parity.mjs`; `gapBudget` ratchet | Agent parity |
 | SQLite; read pool `s.rdb` beside writer `s.db` | Spec 002 |
 | Board derives Status; a ticked task closes its issue | Hygiene |
-| Spec 007 per-view `openIn`; centre peek = own `ui/CenterPanel` | User's choices |
-| Spec 004 drawn with Chart.js 4.5.1, lazy chunk | User: "I choose chartjs" |
-| Spec 004 grows a Notion-style chart builder (US5, FR-018–029) | User: "spec it and start the build" after the walk-through |
-| A chart in a document = the existing database block showing a chart view (`local.viewId`); settings stored on the view | One way to embed; agents use `embed_database view_id` |
-| Chart settings offered in a document's database block too (exception to #22, charts only) | A chart from the `/` menu must be finished where it was inserted |
-| Single-colour palettes: 3 shades per hue that pass 3:1 (Notion has 5) | FR-015 contrast rule |
-| New primitive `ui/Popover` for the settings panel (part 3) | The layer had none |
-| Number charts, horizontal bars: kinds of their own | Notion shows them so |
-| "Each row" grouping (`groupBy "__row"`), up to 50 rows drawn, default sort value high → low; new default when nothing groups but a number exists (FR-030, FR-019) | User: "I want the charts to show the value of each row as a bar" |
-| Settings always show "What to show"; a sentence when nothing groups (FR-031) | User's bug report |
-| Part 3 work (and "Each row") in one PR, not a separate bug-fix PR | User: "or is this part of Part 3?" → agreed |
-| Upgrade path = epic #263, next after charts, research first | User's request |
-| Parallel work: max 2 streams on non-overlapping files (Claude's recommendation B; #263 research could run in a second session) | Recommended, user has not answered |
+| Spec 004 charts with Chart.js 4.5.1, lazy chunk | User: "I choose chartjs" |
+| "Each row" draws every row up to 50 (12 on a donut) | User: "all rows" |
+| Agents author their commits | User: "Claude" (2026-10-28) |
+| Sonnet helpers for mechanical tasks | User (rule 13) |
+| #263 research ran in a second session in parallel | User: "1 yes" |
+| Old handoff branches deleted | User: "yes" (Claude was blocked; user does it by hand) |
+| Safe upgrades on a migration library: goose v3.29.0 (option C); golang-migrate rejected (SQL steps only) | User: "No, go with c"; goose picked by Claude for Go steps |
+| A refused start shows its sentence in the log AND on the usual address (one page; JSON `{error, code}` for `/api/`, `/mcp`) | User: "B" (spec 008 FR-019) |
+| Fixtures per upgrade step (not per release); pre-upgrade copies kept 3, not in `salt backup` | Claude while clarifying (releases happen on every push) |
+| #265 done before spec 008 build | User: "Yes but after that do 265 first" |
+| Every push to main = a release, next patch on the `server.Version` major.minor line (v1.6.9 first); plain `vX.Y.Z`; release action creates the tag; image built in the same workflow; desktop never latest | #265 + Claude's rule, in `docs/decisions.md` |
 
 ## 7. Changed / rejected
 - Earlier chats: decisions page in workspace → `docs/decisions.md`; fixed surfaces list → registry; force-push rebase → merge `main`; hand-moved cards → derived Status; committed catalogue baselines → reference drawn per run; `Dialog` `open`/`onOpenChange` → `onClose`.
-- Spec 004 "hand-drawn SVG, no runtime dependency" → Chart.js 4.5.1 (user's choice).
-- Spec 004 three separate PRs → parts 1+2 merged together in PR #264 (the Stop hook forced part 2's push before #264 merged); part 3 its own PR.
-- Chart settings in the database toolbar → a row above the chart (part 2) → `ui/Popover` panel (part 3).
-- "Group by any property like Notion" (option B) → not now; "Each row" covers the user's case (R18).
-- ❌ Spec 004 leaves out: a second grouping / stacked bars, reference lines, axis range, Download SVG, creating a database or CSV import from the picker, "Save for everyone"/"Reset", folding toolbar, Lock views, "Hide negative values", "Load limit", "Show data source title" (FR-017).
-- ❌ Grouping by a number's distinct values (R18).
-- ❌ DuckDB, Mantine as app component library, shadcn/ui, Storybook; uPlot, Recharts, ECharts; widening `ALLOWED_NON_TOOLS`; looser pixel tolerance; baselines committed by a CI bot; three or more parallel streams.
+- Spec 004 "hand-drawn SVG" → Chart.js 4.5.1; chart settings in toolbar → row → `ui/Popover` panel.
+- Owner as commit author → Claude as author.
+- #263 research recommendation B (hand-written runner, `PRAGMA user_version`) → C (goose; version in `goose_db_version`).
+- Spec 008 "one fixture per release" → per step.
+- #265 "server.Version + run number (1.6.8+42)" → rejected (update check ignores `+`).
+- ❌ Spec 004 leaves out: second grouping/stacked bars, reference lines, axis range, SVG, creating a database or CSV import from the picker, "Save for everyone"/"Reset", folding toolbar, Lock views, "Hide negative values", "Load limit", "Show data source title" (backlog #279–#282).
+- ❌ Grouping by a number's distinct values; "group by any property" (for now).
+- ❌ DuckDB, Mantine as app library, shadcn/ui, Storybook; uPlot, Recharts, ECharts; widening `ALLOWED_NON_TOOLS`; looser pixel tolerance; baselines committed by a CI bot; three or more parallel streams.
+- ❌ Down migrations, Litestream, upgrade-on-read as the mechanism (research).
 
 ## 8. Data & facts (exact)
 
 **Repo and tooling**
-- Go 1.27.2 local, CI 1.27.3; Node 22. `modernc.org/sqlite` v1.60.1 (SQLite 3.53.4). `@base-ui/react` 1.9.0; Playwright 1.63.0; Chart.js 4.5.1 (MIT, dependency `@kurkle/color` 0.3.4).
-- CI jobs: `Build and test` (required), `Component catalogue`, `Storage benchmarks`, `sync`, `cla` (skipped in fork).
-- Parity manifest: `collections` capability now lists `POST /api/collections/{id}/aggregate`; 34 MCP tools; `gapBudget` 10. check-wiki: 40 pages, 34 tools, 146 routes.
+- Go 1.27.2 local, CI 1.27.3; Node 22. `modernc.org/sqlite` v1.60.1 (SQLite 3.53.4). `@base-ui/react` 1.9.0; Playwright 1.63.0; Chart.js 4.5.1.
+- CI jobs: `Build and test` (required), `Component catalogue`, `Storage benchmarks`, `sync`, `cla` (skipped in fork). Release workflow on push to main: jobs `build`, `image / image`.
+- 34 MCP tools; `gapBudget` 10; check-wiki: 40 pages, 146 routes; registry has 17 surfaces (new: **Stored data**).
 - gofmt-exempt: `server/server.go`, `server/audit.go`, `server/desktop_auth.go`, `server/tunnel_update_test.go`.
-- `npm run check` includes `check-chartlayout.mjs` (39 rules) and `check-chartdefaults.mjs` (11 rules). Browser tests include `chart-view.mjs`.
-- Locales: 1155 entries each in de/es, 0 untranslated.
-- Token space scale: `--space-50` 2px, `--space-150` 6px, `--space-300` 12px, `--space-600` 24px; the database toolbar's side padding is 48px (`calc(2 * var(--space-600))`), 14px on ≤768px.
-- Container setup each new session: clone the working branch, `git fetch origin main:refs/remotes/origin/main`, deepen, `cd web && npm ci`, `cd web/tests && npm ci`; Playwright browsers at `/opt/pw-browsers`. For notices: `go mod download all` → `node scripts/licenses.mjs` → `git checkout -- go.sum`.
-- Full gate ~10 min: `scripts/agent-gate.sh > log; echo exit $? >> log` in the background.
+- `npm run check` now includes `check-chartlayout.mjs` (45 rules), `check-chartdefaults.mjs` (17 rules), `check-release.mjs`.
+- Locales: 1206 entries each de/es, 0 untranslated (at v1.6.10).
+- Container setup each new session: clone the working branch, `git fetch origin main:refs/remotes/origin/main`, deepen, `cd web && npm ci`, `cd web/tests && npm ci`; Playwright browsers at `/opt/pw-browsers`.
+- Full gate ~10 min: `timeout 900 scripts/agent-gate.sh > log 2>&1`.
+- Screenshot retake recipe: `cd web && npx vite build`; `go build -o <scratch>/salt-shot .`; fresh data dirs; run on 127.0.0.1:8421 (seed: `SALT_SEED_URL=http://127.0.0.1:8421 node scripts/seed-wiki-instance.mjs`) and fresh on 8422; `ln -sfn /opt/node22/lib/node_modules/playwright web/node_modules/playwright`; `SALT_SHOOT_URL=http://127.0.0.1:8421 SALT_SHOOT_FRESH_URL=http://127.0.0.1:8422 SALT_SHOOT_EMAIL=ada@example.com SALT_SHOOT_PASSWORD='WikiPruefung2026!' node scripts/shoot-wiki.mjs <ids>`; remove the symlink, `git checkout -- .github/hero.png`, `pgrep -x salt-shot | xargs -r kill`. Test account is invented. Changes to `tokens.css` mark ~30 shots stale (timestamps move on activity-log etc.).
 
-**Spec 004 (charts)**
-- Issues: parent #20; T001–T048 = #215–#262; T049–T054 = #271–#276 (Each row, Phase 9). Bug/finding filed: #266 (chart cannot filter on rollup/formula/backrelation; priority 2).
-- Merged in PR #264 (parts 1+2): T001–T030, T041–T044, T047 ticked; T046 done for `collection-chart` only.
-- Open for part 3: T031–T040 (builder), T045, T046 (`chart-settings` shot), T048 (backlog issues), T049–T054.
-- Bundle: main chunk 559,150 → 560,626 B (gzip -9, +1,476 B; plan budget +3 KB); `ChartView` lazy chunk 183.37 KB raw / 64.71 KB gzip; `budgets.json` `bundleGzip` 590,146.
-- Budgets (CI run 40704990150, p95 × 1.5): sum per select 7 ms (1k) / 59 ms (10k); count per month 5 / 38 ms; rollup sum 139 / 1,445 ms. CI p95: 4.06, 38.8, 2.68, 25.2, 92.2, 963 ms. Grouped count unchanged (19.41 → 19.35 ms p95 at 10k).
-- Chart.js sizes measured (bar+line+donut, gzip -9): uPlot 22,678 B; Chart.js 4.5.1 60,694 B; Recharts 112,446 B; ECharts 179,222 B.
-- Caps: 12 groups drawn (fold into "Other", never "No value"); 400 date periods; Each row 50 (12 on a donut); drill-down list 200 rows.
-- Tokens: `color.chart.1`–`.12` (colourful), `color.chart.<gray|blue|yellow|green|purple|teal|orange|pink|red>.1`–`.3`, `color.chart.background.1`–`.4`; `chart.height.small|medium|large|xlarge` = 200/320/440/600 px.
-- Error codes: `invalid_chart`, `too_many_periods`, `query_timeout`.
+**Charts (spec 004, done)**
+- Merged PRs #264 (parts 1+2), #283 (part 3). Issues closed: #20, #215–#262, #271–#276.
+- Each row: `groupBy "__row"`; budgets p95 4.575 ms → **7 ms** (1k), 45.84 ms → **69 ms** (10k), CI run 40764479349; answer 761,291 B at 10k (#277).
+- Popover tokens: `popover.width` 320px, `popover.layer` 150.
 
-**Safe upgrades (#263)**: today `openDB` runs `CREATE … IF NOT EXISTS` + ~40 `ensureColumn` on every start (additive only); search/file indexes versioned and rebuilt; `salt backup` / `salt restore` exist; no schema version, no pre-upgrade backup, no backwards guard, no upgrade test.
+**Releases (#265, spec 009, done)**
+- PR #288 merged → **v1.6.9** (binaries; image failed, #315); PR #316 merged → **v1.6.10** (binaries + image OK, run 40841297991).
+- Assets: `salt-darwin-arm64`, `salt-darwin-amd64`, `salt-linux-amd64`, `salt-linux-arm64`, `salt-windows-amd64.exe`, `SHA256SUMS.txt`; image `ghcr.io/neatlittlemacapps/salt.md:<version>` and `:latest`.
+- Fork tags before: v1.1.2–v1.1.4 (upstream's). `install.sh` `REPO="${SALT_REPO:-neatlittlemacapps/salt.md}"`; `updateRepo = "neatlittlemacapps/salt.md"`.
 
-**Upstream (`saltmd/salt.md`)**: fork contains upstream main up to `2ee1efc` (+ `521a2fc`); remote `upstream` must be re-added in a new container. #84 done (spec 006), #85 not taken, #91 done (spec 005), #92 done (spec 007), #93 done differently (spec 001).
+**Safe upgrades (spec 008, specified/planned, not built)**
+- Today: `openDB` runs `schema` + 40 `ensureColumn` calls; `schema_meta.version` overwritten every start; `make build` used to stamp nothing (fixed by #265).
+- Research measurements: `openDB` new file 90.6 ms; existing 2.3–2.6 ms; `VACUUM INTO` 83 MB in 178 ms; goose +83 modules, +1.16 MB (golang-migrate +192, +0.12 MB).
+- goose v3.29.0 probe (scratch, not in repo): `NewProvider(DialectSQLite3, db, nil, WithGoMigrations(NewGoMigration(n, &GoFunc{RunTx: …}, nil)))` works; a failing step rolls back, version stays at last success, next start continues; **a newer database: goose reports no pending, runs nothing, no error**; **`GetDBVersion` on a fresh DB creates `goose_db_version` (file checksum changed)** → refusal check must read the version with plain SQL before any goose call. Add both findings to the plan/research in T001.
+- Spec 008 tasks T001–T026 = **#289–#314** (sub-issues of #263); #289 labelled `in-progress`.
+- Codes: `upgrade_refused`, `upgrade_failed`, `upgrade_copy_failed`, `upgrade_busy`; copies `salt.db.before-step-<n>`; lock `upgrade.lock` (15-minute takeover); fixtures `server/testdata/upgrade/step-<N-1>.db`; SC-002 start ≤ 5 ms.
 
-**Screenshots**: retake with `cd web && npx vite build`; `go build -o <scratch>/salt-shot .`; fresh data dirs; run on 127.0.0.1:8421 (seed with `SALT_SEED_URL=http://127.0.0.1:8421 node scripts/seed-wiki-instance.mjs`) and a fresh instance on 8422; `ln -sfn /opt/node22/lib/node_modules/playwright web/node_modules/playwright`; `SALT_SHOOT_URL=http://127.0.0.1:8421 SALT_SHOOT_FRESH_URL=http://127.0.0.1:8422 SALT_SHOOT_EMAIL=ada@example.com SALT_SHOOT_PASSWORD='WikiPruefung2026!' node scripts/shoot-wiki.mjs <ids>`; then remove the symlink, `git checkout -- .github/hero.png`, `pgrep -x salt-shot | xargs -r kill`. Test account is invented. The wiki seed's Tasks database now has a Chart view (donut, sum of effort per status). 59 shots × light/dark (`collection-chart` added). A `tokens.css` change makes ~29 shots stale.
+**Upstream (`saltmd/salt.md`)**: fork contains upstream main up to `2ee1efc` (+ `521a2fc`); remote `upstream` must be re-added in a new container.
 
 ## 9. People, terms & names
 - **People:** the user (`neatlittlemacapps`, Frank De Graeve); upstream maintainer "Jeremia" (`jeremiaa`).
-- **Terms:** surface = a registry row; gap = a person can, an agent can't; budget = a count that only goes down; gate = `scripts/agent-gate.sh`; registry = `.specify/memory/surfaces.md`; read pool = `s.rdb`; writer = `s.db`; peek = a row opened beside/over its view; "What to show" = a chart's grouping (what one bar is); "Value" = how tall a bar is; "Each row" = one bar per row.
-- **Branches:** working branch `claude/happy-cori-rq1bym` (= main + the Each-row spec commit `bf80512` + this handoff); `claude/vigilant-babbage-bvoiel` and `claude/keen-hopper-9joiox` hold only old handoff files (user may delete).
-- **Spec 004 code names:** server `server/aggregate.go` (`aggSpec`, `aggGroup`, `aggResult`, `aggregateRows`, `aggregateSQL`, `aggregateDerived`, `groupKeySQL`, `groupKeysGo`, `finishGroups`, `fillPeriods`, `checkAggSpec`, `checkChartView`, `checkChartStyle`, `chartSignature`, `aggRequest`, `resolveAggRequest`, `handleAggregate`, `errChart`, `errTooManyPeriods`, `listTypes`), `rowsWhere` in `collections.go`, `normalizeViews` in `viewopen.go`, `applyChartSpec` in `mcp_schema.go`, `mcpAggregate` in `mcp_db.go`, `mcpEmbedDatabase(u, page, db, viewID)`; tests `aggregate_test.go`, `mcp_chart_test.go`. Browser: `chartLayout.ts` (`layoutChart`, `NO_VALUE`, `OTHER`, `MAX_DRAWN`), `chartGroups.ts` (`groupFilter`, `periodRange`), `chartDefaults.ts` (`defaultChartView`, `chartSettingsFor`, `GROUPABLE_TYPES`, `NUMBER_TYPES`), `chartTheme.ts` (`groupColourTokens`, `readInk`, `onThemeChange`), `components/ChartView.tsx` (data), `components/ChartFigure.tsx` (drawing; used by the catalogue), `components/ChartSettings.tsx`; keyboard shortcut id `chart.groups` in `keys.ts`.
-- **Planned part 3 names:** `ui/Popover`, `savePicture.ts`, `blocks.tsx` database block prop `chartKind`, five slash entries, `web/tests/chart-builder.mjs`.
+- **Terms:** surface = a registry row; gap = a person can, an agent can't; budget = a count that only goes down; gate = `scripts/agent-gate.sh`; registry = `.specify/memory/surfaces.md`; "Each row" = one bar per row; step = numbered upgrade step; fixture = a database written before a step.
+- **Branches:** working branch `claude/handoff-continuation-4byisr` (= main at `f9e35b9` + this handoff); `claude/upgrades-research` (research only, merged content via cherry-pick); `claude/happy-cori-rq1bym` (old, merged).
+- **Files:** specs `specs/004-chart-view/`, `specs/008-safe-upgrades/` (spec, research, plan, data-model, contracts/rest.md + refusal.md, quickstart, tasks), `specs/009-fork-releases/`; chart code `server/aggregate.go`, `web/src/components/ChartPane.tsx`, `ChartSettings.tsx`, `ChartSave.tsx`, `ChartFigure.tsx`, `ChartView.tsx`, `web/src/chartInsert.ts`, `savePicture.ts`, `ui/Popover.tsx`; release `.github/workflows/release.yml`, `docker.yml`, `.dockerignore`, `web/scripts/check-release.mjs`.
+- **Planned 008 names:** `server/upgrade.go` (`upgradeDB`, `UpgradeRefusal`, `copyBeforeUpgrade`, `pruneCopies`, `upgradeLock`, `RefusalHandler`), `server/upgrade_steps.go` (`baseSchema(tx)`, `rebuildTable`), `server/upgrade_test.go`, `web/scripts/check-upgrades.mjs`, `web/tests/upgrade-refusal.mjs`.
 
 ## 10. Work state
 | Item | Status | Location | Notes |
 |---|---|---|---|
-| Spec 004 parts 1+2 | merged | PR #264 | server, agents, chart view, wiki, budgets |
-| Spec 004 part 3 (builder + Each row) | spec done, not started | `specs/004-chart-view/` Phase 7 + Phase 9 | T031–T040, T045, T046 (chart-settings), T048, T049–T054 |
-| #266 chart filter on rollups | filed | issue | needs a decision (refuse vs apply in Go) |
-| #263 safe upgrades epic | filed, priority 1 | issue | after charts; research first |
-| #178 view changes not audited | issue | — | priority 2 |
-| Working branch | main + `bf80512` + this file | `claude/happy-cori-rq1bym` | rides into part 3's PR |
-
-**Backlog order** (priority 1): #20 charts (part 3) → #263 upgrades → #131 table text too small · #133 board drop marker · #132 drag columns · #18 Status property · #19 quick filters / board sub-groups · #26 agent edits live · #22 edit comments + reactions. Priority 2: #23, #24, #21, #15, #178, #14, #16, #266. Priority 3: #3–#9, #17, #25, decisions #10, #11, #12.
+| Spec 004 charts | done, merged | PRs #264, #283 | — |
+| #265 fork releases | done, merged | PR #288, spec 009 | v1.6.9 out |
+| #315 image build | done, merged | PR #316 | v1.6.10 image OK |
+| Spec 008 safe upgrades | spec + clarify + plan + tasks done; build not started | `specs/008-safe-upgrades/`, #289–#314 | T001 next |
+| Docker image visibility | waiting on user | GitHub Packages | make public (section 12) |
+| Backlog priority 1 | after 008 | issues | #131, #133, #132, #18, #19, #26, #22 |
+| Priority 2 | later | issues | #23, #24, #21, #15, #178, #14, #16, #266, #277, #278 |
+| Priority 3 | later | issues | #3–#9, #17, #25, #10, #11, #12, #279–#282 |
 
 ## 11. Next steps
-1. **Next action:** start spec 004 part 3: label its open issues `in-progress` (T031–T040 = #245–#254, T045 = #259, T046 = #260, T048 = #262, T049–T054 = #271–#276), then build Phase 9 first (T049 Each row on the server, then T051/T052 so the user's number-only collection works), then the builder (T031 `ui/Popover` → T033 panel → T034–T038), tests, wiki, `chart-settings` screenshot; gate; ask before opening the PR.
-2. Then epic #263: research (sources, options rejected) → `/speckit-specify`.
-3. Then the priority-1 backlog from the top.
+1. **Next action:** spec 008 T001 (#289): in the repo, `go get github.com/pressly/goose/v3@v3.29.0`; record binary size and module count before/after (`CGO_ENABLED=0`); regenerate notices (`go mod download all` → `node scripts/licenses.mjs` → keep `go.sum` only as `go get` changed it); write the two goose findings (section 8) into `specs/008-safe-upgrades/plan.md` P2/research.
+2. T002 fixture `step-0.db` from today's main, then T003–T006 (step 1 = today's schema; `upgradeDB`; all opens through it; frozen-step tests), then US2–US7 tasks in order; label each issue `in-progress` when starting.
+3. One PR for spec 008 (ask first), then the priority-1 backlog from #131.
 
 ## 12. Open questions ⚠️
-- Parallel work: run the #263 research in a second session while charts part 3 is built here (Claude's recommendation B), or keep one stream?
-- Each row with many rows: the spec defaults to drawing up to 50 rows (largest first, rest into "Other"). The user was asked "11 largest + Other" vs "every row up to 50" and did not answer.
-- Commit authorship: keep `neatlittlemacapps` as author (current) or switch to Claude as a Stop hook asks? (long open)
-- Delete branches `claude/keen-hopper-9joiox` and `claude/vigilant-babbage-bvoiel` (old handoffs only)? Archive the earlier session "04 salt"?
+- Has the user made the container image public (Profile → Packages → salt.md → Package settings → Change visibility → Public)? Without it `docker pull` needs a login.
+- Has the user deleted branches `claude/keen-hopper-9joiox` and `claude/vigilant-babbage-bvoiel` (said yes; Claude was blocked)?
 
 ## 13. Re-attach checklist
-Nothing to attach. This file is `docs/handoffs/handoff-saltmd.md` on branch `claude/happy-cori-rq1bym` of `neatlittlemacapps/salt.md`. Start a Claude Code session on that repo and branch.
+Nothing to attach. This file is `docs/handoffs/handoff-saltmd.md` on branch `claude/handoff-continuation-4byisr` of `neatlittlemacapps/salt.md`. Start a Claude Code session on that repo and branch.
 
 ---
-<sub>Audit: 13/13 sections · 12 rules · 44 corrections · 190 data points · secrets removed: none found (the test account is invented and documented) · generated by active-memory</sub>
+<sub>Audit: 13/13 sections · 14 rules · 50 corrections · 230 data points · secrets removed: none found (the test account is invented and documented) · generated by active-memory</sub>

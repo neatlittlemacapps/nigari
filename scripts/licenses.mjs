@@ -22,22 +22,36 @@ function licenceText(dir) {
 }
 
 // ---- Go ----
-// `go list -m -json all` reports every module in the build, with the directory
-// in the module cache where its licence file sits.
-const goMods = [];
-const raw = execFileSync('go', ['list', '-m', '-json', 'all'], { cwd: repo, maxBuffer: 64 << 20 }).toString();
-for (const chunk of raw.split(/^\}$/m)) {
-  const text = chunk.trim();
-  if (!text) continue;
-  let m;
-  try {
-    m = JSON.parse(text.endsWith('}') ? text : text + '\n}');
-  } catch {
-    continue;
-  }
-  if (!m.Path || !m.Version) continue;
-  goMods.push({ name: m.Path, version: m.Version, licence: licenceText(m.Dir) });
+// Only the modules compiled into a released binary. `go list -m all` is the
+// whole module graph: goose alone added 74 modules there (drivers for
+// ClickHouse, MySQL, Azure…) that salt.md never compiles in, and 10,000 lines
+// of notices for code that does not ship. `go list -deps` on the main package
+// is what the linker sees, so tests and test-only modules drop out too.
+//
+// Which modules link differs by platform (go-isatty on darwin and windows,
+// uuid not on windows), so the list is the union over every target the
+// release workflow builds, read from the workflow rather than repeated here.
+const release = readFileSync(join(repo, '.github/workflows/release.yml'), 'utf8');
+const targets = [...release.matchAll(/^\s+build +([a-z0-9]+) +([a-z0-9]+)/gm)].map((m) => [m[1], m[2]]);
+if (targets.length === 0) {
+  console.error('licenses: no `build <os> <arch>` lines in .github/workflows/release.yml');
+  process.exit(1);
 }
+const goByPath = new Map();
+for (const [goos, goarch] of targets) {
+  // -e: the embedded web/dist may not be built; the module list does not need it.
+  const raw = execFileSync(
+    'go',
+    ['list', '-e', '-deps', '-f', '{{with .Module}}{{.Path}}\t{{.Version}}\t{{.Dir}}{{end}}', '.'],
+    { cwd: repo, maxBuffer: 64 << 20, env: { ...process.env, GOOS: goos, GOARCH: goarch, CGO_ENABLED: '0' } },
+  ).toString();
+  for (const line of raw.split('\n')) {
+    const [path, version, dir] = line.split('\t');
+    if (!path || !version) continue; // the main module has no version
+    goByPath.set(path, { name: path, version, licence: licenceText(dir) });
+  }
+}
+const goMods = [...goByPath.values()].sort((a, b) => a.name.localeCompare(b.name));
 
 // ---- npm ----
 // Only what is actually shipped: dependencies, not devDependencies. Vite,

@@ -48,6 +48,19 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
     case 'too_many_periods':
       return t('This grouping makes too many periods to draw. Choose a coarser period: week, month or year.');
 
+    // ---- safe upgrades (spec 008) ----
+    // The server is not running these, only refusing: the sentences in the log
+    // and on the refusal page carry the step numbers and the paths; here the
+    // browser says what happened and where to look.
+    case 'upgrade_refused':
+      return t('This salt.md is older than its database, so it did not start and changed nothing. The server log names the release to run instead.');
+    case 'upgrade_failed':
+      return t('An upgrade step failed, so salt.md did not start. The database is as it was before that step; the server log says why.');
+    case 'upgrade_copy_failed':
+      return t('salt.md could not write the copy it takes before an upgrade, so no step ran. Free space in the data directory and start it again.');
+    case 'upgrade_busy':
+      return t('Another salt.md is upgrading this database. Wait for it to finish, then reload.');
+
     // ---- read-only workspaces ----
     case 'workspace_read_only':
       return t('You can only read this workspace, so nothing can be created or reordered in it.');

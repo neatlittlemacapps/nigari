@@ -9,7 +9,7 @@ import { useExclusiveModal } from '../modal';
 import { formatDay, formatMoment } from '../format';
 import { plural, t } from '../i18n';
 import { AdminSettingsModal, TwoFAModal, CalendarSubModal } from './AdminSettings';
-import { Key, History, CalendarDays, ShieldCheck, Users, Settings, LogOut, Bot, User as UserIcon, Columns2, Type, Languages, Undo2, Keyboard, SquareArrowOutUpRight } from 'lucide-react';
+import { Key, History, CalendarDays, ShieldCheck, Users, Settings, LogOut, Bot, Server, User as UserIcon, Columns2, Type, Languages, Undo2, Keyboard, SquareArrowOutUpRight } from 'lucide-react';
 import { chordFor } from '../keys';
 import { LanguageTimeModal } from './LanguageTime';
 import { RowOpenModal } from './RowOpenSettings';
@@ -395,6 +395,7 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
   // wording they sat between the page edits as a raw "disable_user".
   const label: Record<string, string> = {
     create_page: t('created'),
+    upgrade: t('upgraded the database'),
     update_page: t('changed'),
     append_markdown: t('added to'),
     // Find-and-replace edits: edit_content from REST, write_content from MCP
@@ -442,7 +443,14 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
             .map((e) => (
             <div key={e.id} className="user-row">
               <span className={'badge ' + (e.actorType === 'agent' ? 'agent-badge' : '')}>
-                {e.actorType === 'agent' ? <><Bot size={12} /> {t('agent')}</> : <><UserIcon size={12} /> {t('human')}</>}
+                {e.actorType === 'agent' ? (
+                  <><Bot size={12} /> {t('agent')}</>
+                ) : e.actorType === 'system' ? (
+                  // The server itself, at start-up: an upgrade step ran (spec 008).
+                  <><Server size={12} /> {t('system')}</>
+                ) : (
+                  <><UserIcon size={12} /> {t('human')}</>
+                )}
               </span>
               <span className="user-row-name">
                 {e.actorName} {label[e.action] ?? e.action}

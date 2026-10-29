@@ -79,11 +79,17 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	if err := os.MkdirAll(filepath.Join(dataDir, "files"), 0o755); err != nil {
 		return nil, err
 	}
+	// The steps run before the writer and the read pool open: each holds the
+	// file for itself while it changes what is stored (upgrade.go).
+	stepsRun, err := upgradeDB(filepath.Join(dataDir, DBFile))
+	if err != nil {
+		return nil, err
+	}
 	db, err := openDB(filepath.Join(dataDir, DBFile))
 	if err != nil {
 		return nil, err
 	}
-	// After openDB: the schema and WAL mode must exist before a read-only
+	// After upgradeDB: the schema and WAL mode must exist before a read-only
 	// connection can open the file.
 	rdb, err := openReadDB(filepath.Join(dataDir, DBFile))
 	if err != nil {
@@ -139,6 +145,12 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	}
 	if err := s.seed(); err != nil {
 		return nil, err
+	}
+	// One entry per start that changed what is stored, so the activity log
+	// says when the database was last upgraded and to which step.
+	if len(stepsRun) > 0 {
+		s.audit("system", "", "salt.md", "upgrade", "", "",
+			stepsDetail(stepsRun))
 	}
 	if err := s.migrateWorkspaces(); err != nil {
 		return nil, err
