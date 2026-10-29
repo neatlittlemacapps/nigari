@@ -33,3 +33,15 @@ shared instructions.
   server logic, new `ui/` primitives, security and permission gates, bug fixes.
   Review a helper's work before it is committed; the gate checks it like any
   other. Haiku is not used here.
+- **Review skills before a pull request is offered.** The owner merges every
+  pull request and does not read Go, so these reviews stand in for a
+  developer's second look; a finding they make goes into the pull request or
+  gets an issue, never dropped (2026-10-29):
+  - `/code-review` on the branch's diff, before any pull request is offered.
+  - `ux-ui-audit` after a change anyone can see in the interface, in light
+    and dark, at desktop and phone width.
+  - `/security-review` when sign-in, sessions, permissions, tokens or a
+    `canRead`/`canWrite`/`credentialMayEnter` gate change.
+  The pull request names which ran and what each found.
+- **Parallel work follows `.claude/skills/steward/SKILL.md`**: at most two
+  streams, Claude steering, each in its own files.
