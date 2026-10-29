@@ -496,7 +496,10 @@ func applyViewSpec(view map[string]any, spec viewSpec, schema []map[string]any) 
 			delete(view, key)
 			return nil
 		}
-		if !has(*val) {
+		// Each row is a chart's grouping, not a property; checkChartView
+		// judges it below like any other chart setting (FR-030).
+		isEachRow := key == "groupBy" && *val == rowGroupKey && view["type"] == "chart"
+		if !isEachRow && !has(*val) {
 			return fmt.Errorf("%q is not a property of this database", *val)
 		}
 		view[key] = *val

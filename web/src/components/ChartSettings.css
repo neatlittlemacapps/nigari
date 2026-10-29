@@ -1,28 +1,109 @@
-/* The chart's settings, one row above the chart (spec 004, US2). Each label
-   sits beside its dropdown, so the row stays one line on a laptop and wraps
-   by whole settings on a phone. */
+/* The chart's settings (spec 004, US5): a button in a row of its own above
+   the chart, in line with the toolbar's 48px, and the panel it opens. */
 .chart-settings {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-100) var(--space-300);
+  justify-content: flex-end;
+  gap: var(--space-100);
   padding: var(--space-150) calc(2 * var(--space-600)) 0; /* the toolbar's 48px */
 }
-
-.chart-settings .ui-select {
-  flex-direction: row;
-  align-items: center;
-  gap: var(--space-100);
-}
-
-.chart-settings .ui-select-label {
-  font-size: var(--font-size-sm);
-}
-
 
 /* On a phone the toolbar keeps 14px at the sides; so does this. */
 @media (max-width: 768px) {
   .chart-settings {
     padding-inline: calc(var(--space-300) + var(--space-50));
   }
+}
+
+.chart-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-300);
+}
+
+.chart-panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-200);
+}
+
+.chart-panel-heading,
+.chart-panel-label {
+  margin: 0;
+  padding: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em; /* token-ok: small capitals need air; no tracking token yet */
+}
+
+.chart-panel-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+}
+
+.chart-panel-row .chart-panel-heading {
+  flex: 1;
+}
+
+.chart-panel-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-150);
+  max-height: calc(8 * var(--control-height));
+  overflow-y: auto;
+}
+
+/* The five kinds: native radios drawn as a row of icon tiles. */
+.chart-kinds {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-100);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.chart-kinds legend {
+  margin-bottom: var(--space-150);
+}
+
+.chart-kind {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(var(--control-height) + var(--space-200));
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-scale-md);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.chart-kind input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.chart-kind:hover {
+  background: var(--color-hover);
+}
+
+.chart-kind:has(input:checked) {
+  border-color: var(--color-accent-default);
+  color: var(--color-text-default);
+  background: var(--color-accent-soft);
+}
+
+.chart-kind:has(input:focus-visible) {
+  outline: 2px solid var(--color-accent-default);
+  outline-offset: 2px;
+}
+
+.chart-kind svg {
+  display: block;
 }

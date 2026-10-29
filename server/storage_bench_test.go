@@ -154,8 +154,9 @@ func BenchmarkStorageGroupedCount(b *testing.B) {
 }
 
 // A chart's aggregate (spec 004): the sum of a number per select, a count per
-// month (gap filling included) and the sum of a rollup, which only Go can
-// compute (aggregateDerived reads the rows in pages and folds them). All over
+// month (gap filling included), the sum of a rollup, which only Go can
+// compute (aggregateDerived reads the rows in pages and folds them), and Each
+// row. All over
 // the rows the member may see. Budgets are this benchmark's CI p95 × 1.5, in
 // specs/002-storage-engine/research.md.
 func BenchmarkStorageAggregate(b *testing.B) {
@@ -166,6 +167,9 @@ func BenchmarkStorageAggregate(b *testing.B) {
 		{"sum-by-select", aggSpec{GroupBy: "stage", Agg: "sum", AggProp: "amount"}},
 		{"count-by-month", aggSpec{GroupBy: "due", Period: "month"}},
 		{"rollup-sum-by-select", aggSpec{GroupBy: "stage", Agg: "sum", AggProp: "budget"}},
+		// Each row (FR-030): one group per row, so the cost is the answer's
+		// size and the title lookup (labelRows), not the GROUP BY.
+		{"each-row-sum", aggSpec{GroupBy: rowGroupKey, Agg: "sum", AggProp: "amount"}},
 	}
 	for _, n := range rowSizes() {
 		for _, c := range cases {

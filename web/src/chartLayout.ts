@@ -36,6 +36,11 @@ export const OTHER = '__other';
  *  about that many a donut's slices and a bar's labels stop being readable. */
 export const MAX_DRAWN = 12;
 
+/** Each row (FR-030, research R18) draws up to this many rows: bars of one
+ *  colour stay readable well past twelve, and a collection of a few dozen rows
+ *  is drawn whole. A donut of Each row keeps MAX_DRAWN slices. */
+export const MAX_EACH_ROW = 50;
+
 export interface DrawnGroup extends AggGroup {
   /** For "Other", the keys folded into it; for any other group, its own key. */
   keys: string[];
@@ -57,6 +62,9 @@ export interface LayoutInput {
   /** A date grouping: never folded (the server caps it at 400 periods), and
    *  its label order is time order. */
   isDate?: boolean;
+  /** Each row: one group per row, drawn up to MAX_EACH_ROW. A row without a
+   *  number has no bar; the chart's note counts it as left out. */
+  eachRow?: boolean;
 }
 
 export type LayoutState = 'ok' | 'empty' | 'all-hidden';
@@ -84,7 +92,7 @@ const byValue = (a: AggGroup, b: AggGroup) => (a.value ?? -Infinity) - (b.value 
 
 export function layoutChart(input: LayoutInput, compare: (a: string, b: string) => number = defaultCompare): Layout {
   const { result, kind, agg } = input;
-  let groups = result.groups.slice();
+  let groups = input.eachRow ? result.groups.filter((g) => g.value !== null) : result.groups.slice();
 
   if (input.zeroOptions && (kind === 'bar' || kind === 'hbar' || kind === 'line')) {
     const have = new Map(groups.map((g) => [g.key, g]));
@@ -98,8 +106,8 @@ export function layoutChart(input: LayoutInput, compare: (a: string, b: string) 
 
   const all = groups.map((g) => ({ ...g, hidden: isHidden(g.key, input.hidden, input.showEmpty) }));
   const visible = all.filter((g) => !g.hidden);
-  const counted = result.groups.reduce((n, g) => n + g.rows, 0);
-  if (result.groups.length === 0 || counted === 0) {
+  const counted = groups.reduce((n, g) => n + g.rows, 0);
+  if (groups.length === 0 || counted === 0) {
     return { state: 'empty', drawn: [], all, total: null, largest: null };
   }
   if (visible.length === 0) {
@@ -129,12 +137,13 @@ export function layoutChart(input: LayoutInput, compare: (a: string, b: string) 
   const ordered = [...rest, ...empty];
 
   let drawn: DrawnGroup[] = ordered.map((g) => ({ key: g.key, label: g.label, value: g.value, rows: g.rows, missing: g.missing, keys: [g.key] }));
-  if (!input.isDate && drawn.length > MAX_DRAWN) {
+  const cap = input.eachRow && kind !== 'donut' ? MAX_EACH_ROW : MAX_DRAWN;
+  if (!input.isDate && drawn.length > cap) {
     // "No value" is never folded: "Other" then always means "the other
     // options", and the rows behind it are one filter away (chartGroups.ts).
     const tailEmpty = drawn.filter((g) => g.key === NO_VALUE);
     const named = drawn.filter((g) => g.key !== NO_VALUE);
-    const keep = MAX_DRAWN - 1 - tailEmpty.length;
+    const keep = cap - 1 - tailEmpty.length;
     const folded = named.slice(keep);
     drawn = [...named.slice(0, keep), foldOther(folded, agg), ...tailEmpty];
     if (input.sort === 'value_asc' || input.sort === 'value_desc') {

@@ -7643,6 +7643,13 @@ a,
   border-radius: 12px;
 }
 
+/* "Choose a database to chart" (spec 004): the / entry said what it is for. */
+.bn-db-picker-heading {
+  margin-bottom: var(--space-200);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
 .bn-db-picker-list {
   display: flex;
   flex-direction: column;

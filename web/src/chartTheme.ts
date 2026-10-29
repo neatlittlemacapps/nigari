@@ -9,6 +9,7 @@
 import { OPTION_HEXES } from './selectOptions';
 import { NO_VALUE, OTHER, type DrawnGroup } from './chartLayout';
 import type { ChartStyle, PropDef } from './types';
+import type { Chart, Plugin } from 'chart.js';
 
 export type Palette = NonNullable<ChartStyle['palette']>;
 
@@ -33,14 +34,17 @@ const OPTION_TOKEN: Record<string, string> = {
 
 /** The token each drawn group is painted with, in drawing order. "No value"
  *  and "Other" are greys whatever the palette: they are not a category of
- *  their own, and should not look like one. */
-export function groupColourTokens(drawn: DrawnGroup[], palette: Palette, groupProp?: PropDef): string[] {
+ *  their own, and should not look like one. oneColour paints every group the
+ *  palette's first colour: Each row's bars are one series of rows, not
+ *  categories, and fifty bars cycling through twelve colours would suggest
+ *  groups that are not there (research R18). */
+export function groupColourTokens(drawn: DrawnGroup[], palette: Palette, groupProp?: PropDef, oneColour = false): string[] {
   const options = new Map((groupProp?.options ?? []).map((o) => [o.id, o.color]));
   let i = 0;
   return drawn.map((g) => {
     if (g.key === NO_VALUE) return '--color-chart-gray-2';
     if (g.key === OTHER) return '--color-chart-gray-3';
-    const n = i++;
+    const n = oneColour ? 0 : i++;
     if (palette === 'auto' || palette === 'colorful') {
       const fromOption = palette === 'auto' ? OPTION_TOKEN[(options.get(g.key) ?? '').toLowerCase()] : undefined;
       return fromOption ?? `--color-chart-${(n % 12) + 1}`;
@@ -91,5 +95,56 @@ export function onThemeChange(cb: () => void): () => void {
   return () => {
     mo.disconnect();
     mq?.removeEventListener('change', cb);
+  };
+}
+
+/** Value labels (FR-024, research R16): each bar, slice or point's value
+ *  drawn beside it, in the chart's own type and ink. Chart.js' label plugin is
+ *  not shipped for this; drawing a number per element is a dozen lines. A halo
+ *  in the surface colour keeps the number readable where it falls on a slice
+ *  or a gridline, whatever the palette. */
+export function valueLabels(ink: ChartInk, kind: 'bar' | 'hbar' | 'line' | 'donut', format: (v: number) => string): Plugin {
+  return {
+    id: 'saltValueLabels',
+    afterDatasetsDraw(chart: Chart) {
+      const meta = chart.getDatasetMeta(0);
+      const data = chart.data.datasets[0]?.data as (number | null)[] | undefined;
+      if (!data) return;
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.font = `600 ${ink.fontSize}px ${ink.font}`;
+      ctx.fillStyle = ink.text;
+      ctx.strokeStyle = ink.surface;
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      const gap = 4;
+      meta.data.forEach((el, i) => {
+        const v = data[i];
+        if (v === null || v === undefined) return;
+        const text = format(v);
+        let x: number;
+        let y: number;
+        if (kind === 'donut') {
+          const at = el.tooltipPosition(true);
+          x = at.x ?? 0;
+          y = at.y ?? 0;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+        } else if (kind === 'hbar') {
+          x = el.x + gap;
+          y = el.y;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+        } else {
+          x = el.x;
+          y = el.y - gap - (kind === 'line' ? gap : 0);
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+        }
+        ctx.strokeText(text, x, y);
+        ctx.fillText(text, x, y);
+      });
+      ctx.restore();
+    },
   };
 }

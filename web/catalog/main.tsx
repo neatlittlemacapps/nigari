@@ -15,6 +15,7 @@ import { Select } from '../src/ui/Select';
 import { Switch } from '../src/ui/Switch';
 import { SidePanel } from '../src/ui/SidePanel';
 import { CenterPanel } from '../src/ui/CenterPanel';
+import { Popover } from '../src/ui/Popover';
 import ChartFigure from '../src/components/ChartFigure';
 import type { PropDef, ViewDef } from '../src/types';
 import type { AggResult } from '../src/chartLayout';
@@ -99,6 +100,9 @@ function Catalog() {
   const [alert, setAlert] = useState(params.get('open') === 'alert');
   const [panel, setPanel] = useState(params.get('open') === 'side-panel');
   const [center, setCenter] = useState(params.get('open') === 'center-panel');
+  const [pop, setPop] = useState(params.get('open') === 'popover');
+  const [popKind, setPopKind] = useState('bar');
+  const [popTable, setPopTable] = useState(false);
   const [checks, setChecks] = useState({ a: false, b: true });
   const [sw, setSw] = useState({ a: false, b: true });
   const [fruitValue, setFruitValue] = useState('banana');
@@ -227,6 +231,32 @@ function Catalog() {
           </div>
         </SidePanel>
       )}
+
+      <Section id="popover" title="Popover">
+        <Row label="open">
+          <Popover
+            label="Chart settings"
+            closeLabel="Close"
+            open={pop}
+            onOpenChange={setPop}
+            trigger={<Button>Chart settings</Button>}
+          >
+            <div className="cat-popover-body">
+              <Select
+                label="Chart"
+                value={popKind}
+                onValueChange={setPopKind}
+                options={[
+                  { value: 'bar', label: 'Vertical bars' },
+                  { value: 'line', label: 'Line' },
+                  { value: 'donut', label: 'Donut' },
+                ]}
+              />
+              <Switch label="Show as table" checked={popTable} onCheckedChange={setPopTable} />
+            </div>
+          </Popover>
+        </Row>
+      </Section>
 
       <Section id="chart" title="Chart (ChartFigure)">
         <div className="cat-charts">

@@ -172,3 +172,99 @@
     padding-inline: calc(var(--space-300) + var(--space-50));
   }
 }
+
+/* The chart and its group buttons; the buttons are the legend of a donut
+   and a line (FR-024): under the chart, beside it, or hidden. */
+.chart-plot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-150);
+}
+
+.chart-plot[data-legend='right'] {
+  flex-direction: row;
+  align-items: center;
+}
+
+.chart-plot[data-legend='right'] .chart-canvas {
+  flex: 1;
+  min-width: 0;
+}
+
+.chart-plot[data-legend='right'] .chart-groups {
+  flex: none;
+  max-width: 40%;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Hidden is hidden from sight only: the buttons are still how a keyboard and
+   a screen reader reach each group, so they come back while one has focus. */
+.chart-plot[data-legend='none'] .chart-groups:not(:focus-within) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* A phone has no room beside the chart. */
+@media (max-width: 768px) {
+  .chart-plot[data-legend='right'] {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .chart-plot[data-legend='right'] .chart-groups {
+    max-width: none;
+    flex-direction: row;
+  }
+}
+
+/* The tooltip (research R17): real text over the canvas, above the bar,
+   slice or point it names. Never in the way of the pointer. */
+.chart-tooltip {
+  position: absolute;
+  z-index: var(--layer-raised);
+  transform: translate(-50%, calc(-100% - var(--space-200)));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-50);
+  padding: var(--space-150) var(--space-200);
+  border-radius: var(--radius-scale-md);
+  background: var(--color-surface-glass);
+  box-shadow: var(--shadow-overlay);
+  color: var(--color-text-default);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.chart-tooltip-label {
+  font-weight: 600;
+}
+
+.chart-tooltip-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-tooltip-hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.chart-tooltip[data-below] {
+  transform: translate(-50%, var(--space-200));
+}
+.chart-tooltip[data-align='start'] {
+  transform: translate(0, calc(-100% - var(--space-200)));
+}
+.chart-tooltip[data-align='end'] {
+  transform: translate(-100%, calc(-100% - var(--space-200)));
+}
+.chart-tooltip[data-below][data-align='start'] {
+  transform: translate(0, var(--space-200));
+}
+.chart-tooltip[data-below][data-align='end'] {
+  transform: translate(-100%, var(--space-200));
+}

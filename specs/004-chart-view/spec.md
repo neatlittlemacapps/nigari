@@ -11,7 +11,7 @@
 **Chart builder** (added 2026-10-28): the owner walked through Notion's chart flow in 20
 screenshots (insert from the `/` menu, pick a source, the settings panel per chart type,
 style, filter, hover, save as picture) and asked for it to be specced and built. User Story 5
-and FR-018 to FR-029 come from that walk-through; what was left out, and why, is under
+and FR-018 to FR-029 come from that walk-through (FR-030 and FR-031 from the owner trying the first chart on a collection with only a number); what was left out, and why, is under
 Scope.
 
 **Issue**: #20
@@ -191,7 +191,7 @@ and click a group; save the picture.
 **The chart builder (User Story 5)**
 
 - **FR-018**: The `/` menu of a document MUST offer "Bar chart", "Horizontal bar chart", "Line chart", "Donut chart" and "Number chart". Each inserts a database block that asks for a database; picking one adds a chart view of that kind to it (FR-001), shows that view in the block, and opens the chart's settings.
-- **FR-019**: A new chart view MUST start drawable: grouped by the first select or status property, else the first property that groups (FR-003), else as a number chart; counting rows. Switching to a grouped kind without a grouping fills in the same default.
+- **FR-019**: A new chart view MUST start drawable: grouped by the first select or status property, else the first property that groups (FR-003), counting rows; else, when the database has a number property, one bar per row valued by the first number (FR-030); else as a number chart. Switching to a grouped kind without a grouping fills in the same default.
 - **FR-020**: A chart's settings MUST be one panel, ordered as a person builds: kind; data (what to show = grouping and period, value = aggregate and property, sort, groups); style; and the actions (show as table, save as picture). Every change redraws at once and is saved with the view, through the same check as the server's (FR-012).
 - **FR-021**: Sort MUST offer the default order (FR-005), label A→Z, label Z→A, value low→high and value high→low.
 - **FR-022**: Each group MUST be hideable by its key from a list in the panel, with "Hide all" and "Show all". Hidden groups are left out of the drawing, the folding into "Other" and the total, and are listed in the table alternative as hidden. "No value" is one of these groups.
@@ -202,6 +202,8 @@ and click a group; save the picture.
 - **FR-027**: Chart settings MUST be offered wherever the chart is shown, in a database's own page and in a document's database block, except to a viewer of the workspace; the server refuses a save the person may not make, and the chart returns to what is stored (as every view setting does, spec 007). A viewer sees, hovers, drills into, tabulates and saves the chart.
 - **FR-028**: An agent MUST be able to build the same chart: every setting above through `set_view`, and placing it in a document through `embed_database` with the view to show. Saving a picture is drawn by the browser; an agent reads the same numbers through `query_rows`.
 - **FR-029**: A number chart MUST read its value through the same aggregate (FR-008, FR-010) without a grouping, and an agent MUST get the same single value from `query_rows` with an aggregate and no grouping.
+- **FR-030** (owner, 2026-10-28, after trying a chart on a collection with only a number property): "What to show" MUST offer **Each row**: one bar, point or slice per row, labelled with the row's name, its height a number, formula or rollup property of that row (the value, not an aggregate of several rows). With Each row, "Value" lists those properties by name. At most 50 rows are drawn, in the chosen sort (default: value high to low); past 50 the rest are added up into "Other". Selecting a row's bar opens that row (following **Open pages in**), and agents get the same per row through `set_view` and `query_rows`.
+- **FR-031**: The settings MUST always show "What to show", and every kind MUST stay selectable. When a grouped kind has nothing it can group by, the chart says so and names what to add (a select, multi-select, person, checkbox, date or relation property, or a number property for Each row), instead of silently staying a number chart (owner's bug report, 2026-10-28).
 
 **Scope**
 

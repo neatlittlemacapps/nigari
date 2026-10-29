@@ -6,6 +6,9 @@ import { MERMAID_REV, renderMermaid } from './mermaidLoader';
 import { PageIcon } from './pageIcon';
 import { openPage, openPageAux } from './pageOpen';
 import CollectionView, { type EmbedState } from './components/CollectionView';
+import { addChartView, openSettingsOnce } from './chartInsert';
+import type { ChartKind } from './chartLayout';
+import { toast } from './toast';
 import { plural, t } from './i18n';
 import {
   MIN_PCT,
@@ -342,6 +345,10 @@ export const databaseSpec = createReactBlockSpec(
       // it shows, and per view the filters and sort it applies (#26). Empty
       // means "as the collection's views say" — every embed written before.
       local: { default: '' },
+      // The chart kind a / entry asked for (spec 004, R14), until a database
+      // is picked: then a chart view of that kind is added to it and shown
+      // here, and this is cleared. Empty is an ordinary embed.
+      chartKind: { default: '' },
     },
     content: 'none',
   } as const,
@@ -349,6 +356,7 @@ export const databaseSpec = createReactBlockSpec(
     render: (props) => {
       const { block, editor } = props;
       const collectionId = (block.props as { collectionId: string }).collectionId;
+      const chartKind = ((block.props as { chartKind?: string }).chartKind ?? '') as ChartKind | '';
       const localRaw = (block.props as { local?: string }).local ?? '';
       const { pagesById, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged } = useBlockCtx();
       const [q, setQ] = useState('');
@@ -359,6 +367,20 @@ export const databaseSpec = createReactBlockSpec(
       const keep = (next: EmbedLocal) => {
         if (editor.isEditable) editor.updateBlock(block, { props: { local: JSON.stringify(next) } } as never);
         else setUnsaved(next);
+      };
+      // A pick for a chart adds the chart view first, then shows it here with
+      // its settings open. Refused (a database this person may only read):
+      // the database is still embedded, as it is, and the toast says why.
+      const pickForChart = async (id: string) => {
+        if (!chartKind) return;
+        try {
+          const viewId = await addChartView(id, chartKind, t('Chart'));
+          openSettingsOnce(viewId);
+          editor.updateBlock(block, { props: { collectionId: id, chartKind: '', local: JSON.stringify({ viewId, views: {} }) } } as never);
+        } catch (e) {
+          editor.updateBlock(block, { props: { collectionId: id, chartKind: '' } } as never);
+          toast(t('No chart was added to this database: {reason}', { reason: (e as Error).message }));
+        }
       };
       const embed: EmbedState = {
         viewId: local.viewId,
@@ -379,6 +401,7 @@ export const databaseSpec = createReactBlockSpec(
           });
         return (
           <div className="bn-db-picker" contentEditable={false}>
+            {chartKind && <div className="bn-db-picker-heading">{t('Choose a database to chart')}</div>}
             <input
               className="prop-input"
               placeholder={t('Search collections…')}
@@ -393,7 +416,7 @@ export const databaseSpec = createReactBlockSpec(
                 <button
                   key={d.id}
                   type="button"
-                  onClick={() => editor.updateBlock(block, { props: { collectionId: d.id } } as never)}
+                  onClick={() => (chartKind ? void pickForChart(d.id) : editor.updateBlock(block, { props: { collectionId: d.id } } as never))}
                 >
                   <PageIcon icon={d.icon} size={15} fallback={<Table2 size={15} />} />
                   <span className="bn-db-picker-text">
@@ -432,6 +455,7 @@ export const databaseSpec = createReactBlockSpec(
             onPeek={onPeek}
             onPagesChanged={onPagesChanged}
             embed={embed}
+            canEdit={editor.isEditable}
           />
         </div>
       );

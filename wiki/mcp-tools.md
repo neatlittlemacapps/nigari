@@ -885,6 +885,11 @@ groups by `period`: `day`, `week` (ISO, starting Monday), `month` (the default)
 or `year`, and the periods between the first and the last come back at zero, so
 a trend has no holes. More than 400 periods are refused: choose a coarser one.
 
+`group_by: "__row"` makes one group per row, as a chart of **Each row** does. It
+needs `aggregate` `sum`, `avg`, `min` or `max` and an `aggregate_property`; a
+`count` is refused, because every bar would be 1. Each group's `key` is the row
+id and its `label` the row's title, highest value first.
+
 `aggregate` is `count` (the default), `sum`, `avg`, `min` or `max`; all but
 `count` read `aggregate_property`, a number, formula or rollup property. Rows
 without a number are left out and counted in `left_out`; a number stored as
@@ -1058,6 +1063,9 @@ settings. `chart_kind` is `bar` (the default), `hbar` (horizontal bars), `line`,
 select, multi-select, person, checkbox, date or relation property, and `period`
 for a date (`day`, `week`, `month`, `year`). `aggregate` and
 `aggregate_property` say what each group shows, as in `query_rows`.
+`group_by: "__row"` draws one bar, point or slice per row (**Each row** in the
+interface); it takes the same `aggregate` and `aggregate_property` rule as in
+`query_rows`, so a `count` is refused.
 `chart_sort` is `auto` (the property's own order, time for dates),
 `label_asc`, `label_desc`, `value_asc` or `value_desc`. `hidden_groups` lists
 group keys not drawn (`""` is No value); they still come back from

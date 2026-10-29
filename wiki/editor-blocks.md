@@ -65,6 +65,7 @@ other text, the new block is inserted **after** it.
 | **Columns** | Basic blocks | none |
 | **Callout** | Basic blocks | none |
 | **Embed a collection** | Basic blocks | none |
+| **Bar chart**, **Horizontal bar chart**, **Line chart**, **Donut chart**, **Number chart** | Basic blocks | none |
 | **Table of contents** | Basic blocks | none |
 | **Sub-pages** | Basic blocks | none |
 | **Table** | Advanced | none |
@@ -89,6 +90,14 @@ The seven salt.md blocks carry a one-line description in the menu:
 - **Embed a collection**: *Show an existing collection inside the document*
 - **Table of contents**: *Auto-generated list of every heading*
 - **Sub-pages**: *List of pages below this one*
+
+The five chart entries are **Bar chart**, **Horizontal bar chart**, **Line
+chart**, **Donut chart** and **Number chart**; typing "chart" finds them all.
+Each puts a database block in the document that reads *Choose a database to
+chart*. Pick a database and a chart view of that kind is added to it, shown in
+the document, and **Chart settings** opens. If you may not change the database,
+it is embedded as it is, without a new chart, and a message says why. See
+[Views](views.md#chart).
 
 **Columns** is a block that holds nothing itself. Inserting it gives you two
 empty blocks side by side. Hover the block and a small bar appears at its right

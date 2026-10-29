@@ -36,7 +36,7 @@ try {
     process.exit(1);
   }
 
-  const { layoutChart, groupFilter, periodRange, OTHER, MAX_DRAWN } = await import(bundle);
+  const { layoutChart, groupFilter, periodRange, OTHER, MAX_DRAWN, MAX_EACH_ROW } = await import(bundle);
   const out = [];
   const check = (name, got, want) => out.push({ name, got: JSON.stringify(got), want: JSON.stringify(want) });
   const g = (key, value, label = key || '∅') => ({ key, label, value, rows: value ?? 1 });
@@ -52,6 +52,17 @@ try {
   check('value low→high', keys(layoutChart({ result: base, kind: 'bar', agg: 'count', sort: 'value_asc' })), 'c  a b');
   const dates = res([g('2026-02', 1), g('2026-01', 2), g('2026-03', 3)]);
   check('dates by label are time order', keys(layoutChart({ result: dates, kind: 'line', agg: 'count', sort: 'label_asc', isDate: true })), '2026-01 2026-02 2026-03');
+
+  // ---- Each row (FR-030) ----
+  const rowsOf = (n) => res(Array.from({ length: n }, (_, i) => ({ key: 'r' + i, label: 'Row ' + i, value: n - i, rows: 1 })));
+  const sixty = layoutChart({ result: rowsOf(60), kind: 'bar', agg: 'sum', eachRow: true });
+  check('each row draws up to 50 bars, the rest in Other', [sixty.drawn.length, sixty.drawn[MAX_EACH_ROW - 1].key], [MAX_EACH_ROW, OTHER]);
+  check('each row keeps the server order, highest first', keys(layoutChart({ result: rowsOf(3), kind: 'bar', agg: 'sum', eachRow: true })), 'r0 r1 r2');
+  check('each row on a donut keeps twelve slices', layoutChart({ result: rowsOf(30), kind: 'donut', agg: 'sum', eachRow: true }).drawn.length, MAX_DRAWN);
+  check('other groupings still fold at twelve', layoutChart({ result: rowsOf(30), kind: 'bar', agg: 'sum' }).drawn.length, MAX_DRAWN);
+  const someEmpty = res([g('r1', 5), { key: 'r2', label: 'r2', value: null, rows: 1 }, g('r3', 2)]);
+  check('a row without a number has no bar', keys(layoutChart({ result: someEmpty, kind: 'bar', agg: 'sum', eachRow: true })), 'r1 r3');
+  check('no row with a number: nothing to chart', layoutChart({ result: res([{ key: 'r', label: 'r', value: null, rows: 1 }]), kind: 'bar', agg: 'sum', eachRow: true }).state, 'empty');
 
   // ---- hidden groups ----
   const hid = layoutChart({ result: base, kind: 'donut', agg: 'count', hidden: ['b', ''] });

@@ -9,7 +9,7 @@ description: "Tasks for chart views of a database, with the chart builder"
 
 **Tests**: required (salt.md). Refusal paths for every gate.
 
-**Issues**: parent #20; T001–T048 are #215–#262, in order.
+**Issues**: parent #20; T001–T048 are #215–#262, in order; T049–T054 are #271–#276.
 
 **Delivery**: three pull requests, each green on its own.
 1. **Server and agents**: the server half of Phase 2, US3, the route, the benchmark and
@@ -110,16 +110,16 @@ description: "Tasks for chart views of a database, with the chart builder"
 
 **Independent Test**: each `/` entry; every setting survives a reload; hover and click; save the picture.
 
-- [ ] T031 [US5] [ui] New primitive `web/src/ui/Popover.tsx` + `Popover.css` on Base UI's Popover (anchor, focus, Escape, outside click; layer above a peek); README entry in `web/src/ui/README.md`
-- [ ] T032 [P] [US5] [test] Catalogue section for `Popover` (checked by `web/tests/catalog.mjs`)
-- [ ] T033 [US5] [ui] `ChartSettings.tsx` becomes the one panel of research R13 in `ui/Popover`: kind buttons (five), Data (what to show, period, value, sort, groups list with hide/show and Hide all / Show all, show empty options), Style (palette, more style options: height, legend, value labels, centre total and its label, caption; a number chart's title), Show as table, Save chart as; immediate redraw, debounced text, refusal restores the stored view
-- [ ] T034 [US5] [ui] Style in `chartTheme.ts` / `ChartView.tsx` (research R16): palettes (auto from option colours), heights, legend place, value-labels plugin, centre total as DOM, caption as `figcaption`, number title
-- [ ] T035 [US5] [ui] Tooltip (research R17): Chart.js external tooltip as a token-styled DOM element with label, value and "Click to view data"; the same on group-button focus
-- [ ] T036 [US5] [ui] Save chart as (research R17): new `web/src/savePicture.ts` (offscreen 2× drawing on the chosen background with caption and legend, `toBlob`, Copy as PNG through the clipboard, Download PNG through an object URL; refused clipboard → toast and download)
-- [ ] T037 [US5] [ui] `blocks.tsx`: the database block takes `chartKind`; its picker reads "Choose a database to chart"; a pick adds `defaultChartView` through `PUT /api/collections/{id}`, writes `{collectionId, local: {viewId}}`, clears `chartKind`, opens the settings; a refusal keeps a plain embed with a toast (research R14)
-- [ ] T038 [US5] [ui] `Editor.tsx`: five slash entries (Bar chart, Horizontal bar chart, Line chart, Donut chart, Number chart) with search words, inserting the block of T037
-- [ ] T039 [P] [US5] [i18n] German (required) and Spanish for every builder string (plan, Translations row)
-- [ ] T040 [US5] [test] Playwright `web/tests/chart-builder.mjs` (in `web/tests/package.json`): each slash entry and the picker; every setting survives a reload (SC-007); hover tooltip; Save chart as downloads a PNG; a workspace viewer sees no settings
+- [x] T031 [US5] [ui] New primitive `web/src/ui/Popover.tsx` + `Popover.css` on Base UI's Popover (anchor, focus, Escape, outside click; layer above a peek); README entry in `web/src/ui/README.md`
+- [x] T032 [P] [US5] [test] Catalogue section for `Popover` (checked by `web/tests/catalog.mjs`)
+- [x] T033 [US5] [ui] `ChartSettings.tsx` becomes the one panel of research R13 in `ui/Popover`: kind buttons (five), Data (what to show, period, value, sort, groups list with hide/show and Hide all / Show all, show empty options), Style (palette, more style options: height, legend, value labels, centre total and its label, caption; a number chart's title), Show as table, Save chart as; immediate redraw, debounced text, refusal restores the stored view
+- [x] T034 [US5] [ui] Style in `chartTheme.ts` / `ChartView.tsx` (research R16): palettes (auto from option colours), heights, legend place, value-labels plugin, centre total as DOM, caption as `figcaption`, number title
+- [x] T035 [US5] [ui] Tooltip (research R17): Chart.js external tooltip as a token-styled DOM element with label, value and "Click to view data"; the same on group-button focus
+- [x] T036 [US5] [ui] Save chart as (research R17): new `web/src/savePicture.ts` (offscreen 2× drawing on the chosen background with caption and legend, `toBlob`, Copy as PNG through the clipboard, Download PNG through an object URL; refused clipboard → toast and download)
+- [x] T037 [US5] [ui] `blocks.tsx`: the database block takes `chartKind`; its picker reads "Choose a database to chart"; a pick adds `defaultChartView` through `PUT /api/collections/{id}`, writes `{collectionId, local: {viewId}}`, clears `chartKind`, opens the settings; a refusal keeps a plain embed with a toast (research R14)
+- [x] T038 [US5] [ui] `Editor.tsx`: five slash entries (Bar chart, Horizontal bar chart, Line chart, Donut chart, Number chart) with search words, inserting the block of T037
+- [x] T039 [P] [US5] [i18n] German (required) and Spanish for every builder string (plan, Translations row)
+- [x] T040 [US5] [test] Playwright `web/tests/chart-builder.mjs` (in `web/tests/package.json`): each slash entry and the picker; every setting survives a reload (SC-007); hover tooltip; Save chart as downloads a PNG; a workspace viewer sees no settings
 
 ---
 
@@ -129,10 +129,26 @@ description: "Tasks for chart views of a database, with the chart builder"
 - [x] T042 [perf] Bundle: main chunk growth measured against the plan's budgets; Chart.js only in the lazy chunk (`budgets.json` `bundleGzip` unchanged or lowered)
 - [x] T043 [P] [wiki] `wiki/collections.md` § "What the chart adds" and the eight view types; `docs/what-it-does.md` "eight ways"; `check-wiki.mjs` learns `chart`
 - [x] T044 [P] [wiki] `wiki/mcp-tools.md` §§ query_rows, set_view, get_collection, embed_database; `wiki/api.md` the aggregate route
-- [ ] T045 [P] [wiki] The wiki page that lists `/` entries gains the five chart entries; `wiki/collections.md` describes the settings panel, palettes and Save chart as
-- [ ] T046 [wiki] Screenshots `collection-chart` and `chart-settings` (light and dark) in `wiki/screenshots.json` and `web/scripts/shoot-wiki.mjs`; stale shots retaken
+- [x] T045 [P] [wiki] The wiki page that lists `/` entries gains the five chart entries; `wiki/collections.md` describes the settings panel, palettes and Save chart as
+- [x] T046 [wiki] Screenshots `collection-chart` and `chart-settings` (light and dark) in `wiki/screenshots.json` and `web/scripts/shoot-wiki.mjs`; stale shots retaken
 - [x] T047 [backend] Registry row *Aggregation* (tag `backend`, Since 2026-10-29) in `.specify/memory/surfaces.md` (plan, Registry)
-- [ ] T048 [ui] Backlog issues for what the walk-through showed and this feature leaves out (spec FR-017): "Save for everyone"/"Reset" on view filters, the folding toolbar, Lock views, a second grouping with stacked bars and reference lines
+- [x] T048 [ui] Backlog issues for what the walk-through showed and this feature leaves out (spec FR-017): "Save for everyone"/"Reset" on view filters, the folding toolbar, Lock views, a second grouping with stacked bars and reference lines
+
+
+---
+
+## Phase 9: Each row and an honest settings row (FR-030, FR-031, part 3)
+
+**Goal**: one bar per row with its number; a chart never silently stays a number chart.
+
+**Independent Test**: a collection with only a name and a number: a new chart is bars, one per row; switching kinds works; with no number either, the chart says what to add.
+
+- [x] T049 [backend] Each row in `server/aggregate.go` (research R18): `groupBy "__row"` keyed by row id and labelled by title in `aggregateSQL` and `aggregateDerived`; `checkAggSpec` / `checkChartView` accept it and refuse `count` with it; MCP descriptions of `query_rows` and `set_view` name it
+- [x] T050 [P] [test] Go tests for Each row: values equal each row's number, private rows excluded, formula and rollup values, `count` refused, MCP `set_view` and `query_rows` with `group_by "__row"`
+- [x] T051 [ui] `chartLayout.ts` cap of 50 for Each row (12 on a donut), default sort value high to low; `chartDefaults.ts` picks Each row and the first number when nothing groups; a row's bar opens the row; cases in `check-chartlayout.mjs` and `check-chartdefaults.mjs`
+- [x] T052 [ui] Settings: "What to show" always shown, "Each row" first when a number exists; with Each row "Value" lists the number properties by name; every kind selectable; a grouped kind with nothing to group by shows the sentence of FR-031; German and Spanish
+- [x] T053 [P] [test] Playwright: the owner's case, a collection with only a number, gives bars per row, kinds switch, a bar opens its row
+- [x] T054 [P] [wiki] `wiki/views.md` § chart and `wiki/mcp-tools.md`: Each row, and the sentence when nothing groups
 
 ---
 
@@ -142,3 +158,4 @@ description: "Tasks for chart views of a database, with the chart builder"
 - T009 → T016, T017. T010 → T016. T012 → T017, T037. T031 → T033.
 - US1 is the MVP. US2 and US4 need US1's view. US3 needs Phase 2's server half only.
 - US5 needs US1 (the view), T031, T012. The wiki follows the code it describes.
+- T049 → T050, T051 → T052 → T053. Phase 9 ships with part 3.

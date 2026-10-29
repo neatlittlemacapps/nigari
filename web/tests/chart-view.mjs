@@ -62,8 +62,26 @@ await withFixture(async ({ page, api, base, workspace, path }) => {
 
   // ---- US2: another value, other kinds ----
   const settings = page.locator('.chart-settings');
+  // The settings live in one panel (US5): the kinds are radios, the rest
+  // dropdowns.
+  const panel = page.getByRole('dialog', { name: 'Chart settings' });
+  const openPanel = async () => {
+    if (await panel.isVisible()) return;
+    await settings.getByRole('button', { name: 'Chart settings' }).click();
+    await panel.waitFor();
+  };
+  const closePanel = async () => {
+    if (!(await panel.isVisible())) return;
+    await page.keyboard.press('Escape');
+    await panel.waitFor({ state: 'hidden' });
+  };
   const choose = async (label, option) => {
-    await settings.getByRole('combobox', { name: label }).click();
+    await openPanel();
+    if (label === 'Chart') {
+      await panel.getByRole('radio', { name: option, exact: true }).check();
+      return;
+    }
+    await panel.getByRole('combobox', { name: label }).click();
     await page.getByRole('option', { name: option, exact: true }).click();
   };
   await choose('Value', 'Sum');
@@ -85,7 +103,9 @@ await withFixture(async ({ page, api, base, workspace, path }) => {
   assert.deepEqual(rowLoads.filter((u) => !u.includes('filter')), [], 'a chart loaded every row instead of the counts');
 
   // ---- US4: the table and the keyboard ----
-  await figure.getByText('Show as table').click();
+  await openPanel();
+  await panel.getByRole('switch', { name: 'Show as table' }).click();
+  await closePanel();
   const table = figure.locator('table.chart-table');
   await table.waitFor();
   assert.equal(await table.locator('tbody tr').count(), 3, 'the table does not list every group');

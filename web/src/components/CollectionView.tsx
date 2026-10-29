@@ -34,8 +34,7 @@ import { defaultChartView } from '../chartDefaults';
 
 // A chart (spec 004) brings Chart.js, about 60 KB gzip: loaded only when a
 // chart view is shown, so nobody who never opens one pays for it (SC-006).
-const ChartView = lazy(() => import('./ChartView'));
-const ChartSettings = lazy(() => import('./ChartSettings'));
+const ChartPane = lazy(() => import('./ChartPane'));
 import { PageIcon } from '../pageIcon';
 import { toast } from '../toast';
 import {
@@ -138,6 +137,9 @@ interface Props {
    *  it (an embedded view) the template opens as a page instead. */
   onEditTemplate?: (id: string) => void;
   embed?: EmbedState;
+  /** False for a viewer of the workspace: charts then show no settings
+   *  (spec 004, FR-027). The server decides in the end. */
+  canEdit?: boolean;
 }
 
 interface Row {
@@ -277,7 +279,7 @@ function applyView(rows: Row[], view: ViewDef, schema: PropDef[]): Row[] {
   return out;
 }
 
-export default function CollectionView({ collectionId, pages, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged, onEditTemplate, embed }: Props) {
+export default function CollectionView({ collectionId, pages, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged, onEditTemplate, embed, canEdit = true }: Props) {
   const [config, setConfig] = useState<CollectionConfig | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   // A full page remembers its view across tab switches and reloads (see
@@ -613,9 +615,20 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     const patch: Partial<CollectionConfig> = {};
     if (!config || next.schema !== config.schema) patch.schema = next.schema;
     if (!config || next.views !== config.views) patch.views = next.views;
+    const before = config;
     setConfig(next);
     if (!patch.schema && !patch.views) return;
-    await api.putCollection(collectionId, patch);
+    try {
+      await api.putCollection(collectionId, patch);
+    } catch (e) {
+      // A refused change (a reader's, or a chart setting the server cannot
+      // draw) used to stay on screen as if saved, until the next reload
+      // showed otherwise. Put back what is stored and say why (spec 004,
+      // FR-027; spec 007's pattern). Every caller fires and forgets, so the
+      // refusal ends here.
+      if (before) setConfig(before);
+      toast((e as Error).message);
+    }
   };
 
   const addRow = async (presetProps?: Record<string, unknown>) => {
@@ -1173,8 +1186,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           {/* One row of its own above the chart: in the toolbar, four labelled
               dropdowns wrapped into a column and stretched every button
               beside them. */}
-          <ChartSettings view={view} schema={schema} onChange={updateView} />
-          <ChartView
+          <ChartPane
+            onChange={updateView}
+            canEdit={canEdit}
+            onOpenRow={(id) => openCollectionRow({}, id, { onNavigate, onOpenInNewTab }, { openIn: view.openIn, onPeek })}
             collectionId={collectionId}
             view={view}
             schema={schema}

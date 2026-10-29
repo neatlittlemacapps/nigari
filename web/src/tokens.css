@@ -192,6 +192,8 @@
   --chart-height-medium: 320px;
   --chart-height-large: 440px;
   --chart-height-xlarge: 600px;
+  --popover-width: 320px;
+  --popover-layer: 150;
 }
 
 [data-theme='dark'] {

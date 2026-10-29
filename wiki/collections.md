@@ -317,7 +317,8 @@ A chart does not list rows; it counts them, on the server, over exactly the
 rows its filters let through. Each bar, slice or point is one value of the
 property it groups by, and a click on it lists the rows behind it. The settings,
 the order of the groups and how it reads without a mouse are in
-[Views](views.md#chart).
+[Views](views.md#chart), along with the settings panel (**Chart settings**),
+the colour palettes and **Save chart as**, which saves a PNG.
 
 ### What the form adds
 

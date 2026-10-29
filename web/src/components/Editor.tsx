@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import type { PeekMode } from '../peek';
 import {
   useCreateBlockNote,
@@ -37,7 +37,9 @@ import { usePeers, setPeers, clearPeers } from '../presence';
 import { tagColorClass, TAG_PALETTE } from '../tags';
 import { collectTags, suggestTags } from '../tagSuggest';
 import { modalOpen, useMenuDismiss } from '../modal';
-import { Menu, Copy, Star, Lock, LockOpen, Globe, MessageSquare, History, MoreHorizontal, Printer, FileCode, FileText, Upload, AlignLeft, Check, Image as ImageIcon , Smile, PanelRight, Link2, Trash2, FilePlus2, Columns2, Workflow, MoveHorizontal, LayoutTemplate} from 'lucide-react';
+import { Menu, Copy, Star, Lock, LockOpen, Globe, MessageSquare, History, MoreHorizontal, Printer, FileCode, FileText, Upload, AlignLeft, Check, Image as ImageIcon , Smile, PanelRight, Link2, Trash2, FilePlus2, Columns2, Workflow, MoveHorizontal, LayoutTemplate, ChartBar, ChartColumn, ChartLine, ChartPie, Hash} from 'lucide-react';
+import { CHART_SLASH_KINDS } from '../chartInsert';
+import type { ChartKind } from '../chartLayout';
 import { blockTypeFor, carriesExternalFiles } from '../dropFiles';
 import Portal from './Portal';
 
@@ -230,6 +232,7 @@ export default function Editor(props: EditorProps) {
             onPeek={props.onPeek}
             onPagesChanged={props.onPagesChanged}
             onEditTemplate={props.container === 'dialog' ? undefined : setTplEditId}
+            canEdit={props.canEdit}
           />
         ) : (
           <CollabEditor
@@ -1852,6 +1855,18 @@ function BlockContent({
 
   const [preview, setPreview] = useState<{ name: string; url: string } | null>(null);
 
+  // The chart entries' words, in the order of CHART_SLASH_KINDS.
+  const chartSlashItems = () => {
+    const words: Record<ChartKind, { title: string; subtext: string; icon: ReactElement; aliases: string[] }> = {
+      bar: { title: t('Bar chart'), subtext: t('Compare groups of a database as bars'), icon: <ChartColumn size={18} />, aliases: ['chart', 'bar', 'diagramm', 'balken', 'grafico', 'barras'] }, // i18n-ok: search aliases, deliberately multilingual
+      hbar: { title: t('Horizontal bar chart'), subtext: t('Bars side by side, for long names'), icon: <ChartBar size={18} />, aliases: ['chart', 'horizontal', 'diagramm', 'balken', 'grafico', 'barras'] }, // i18n-ok: search aliases, deliberately multilingual
+      line: { title: t('Line chart'), subtext: t('A trend over time'), icon: <ChartLine size={18} />, aliases: ['chart', 'line', 'trend', 'diagramm', 'linie', 'grafico', 'linea'] }, // i18n-ok: search aliases, deliberately multilingual
+      donut: { title: t('Donut chart'), subtext: t('Parts of a whole'), icon: <ChartPie size={18} />, aliases: ['chart', 'donut', 'pie', 'diagramm', 'kreis', 'torte', 'grafico', 'circular'] }, // i18n-ok: search aliases, deliberately multilingual
+      number: { title: t('Number chart'), subtext: t('One total, count or average'), icon: <Hash size={18} />, aliases: ['chart', 'number', 'kpi', 'total', 'zahl', 'summe', 'numero'] }, // i18n-ok: search aliases, deliberately multilingual
+    };
+    return CHART_SLASH_KINDS.map((kind) => ({ kind, ...words[kind] }));
+  };
+
   // Slash menu: default items + column layout + our custom blocks.
   const getSlashItems = async (query: string) => {
     const custom = [
@@ -1910,6 +1925,17 @@ function BlockContent({
         onItemClick: () =>
           insertOrUpdateBlockForSlashMenu(editor, { type: 'database' } as never),
       },
+      // Five chart entries (spec 004, FR-018): each inserts the database block
+      // asking for a chart of that kind; picking a database adds the chart
+      // view and opens its settings (chartInsert.ts).
+      ...chartSlashItems().map((c) => ({
+        title: c.title,
+        subtext: c.subtext,
+        aliases: c.aliases,
+        icon: c.icon,
+        group: 'Basic blocks',
+        onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: 'database', props: { chartKind: c.kind } } as never),
+      })),
       {
         title: t('Table of contents'),
         subtext: t('Auto-generated list of every heading'),

@@ -349,3 +349,126 @@ func TestAggregateRoute(t *testing.T) {
 		t.Errorf("PUT of a bad chart: %d %s", rec.Code, rec.Body.String())
 	}
 }
+
+// Each row (FR-030, research R18): one group per row the reader may see, its
+// value that row's own number, labelled by the row's title, highest first. The
+// owner's case was a collection with only a name and a number, where a chart
+// had nothing to group by and stayed a single number. Checked on the seeded
+// workspace as a plain member, so the private rows must stay out, on the SQL
+// path (a number) and the Go path (a rollup).
+func TestAggregateEachRowIsEveryRowsOwnNumber(t *testing.T) {
+	w := buildBenchWorld(t, t.TempDir(), benchDefaultSeed, 0, 300)
+	defer w.s.Close()
+	ctx := context.Background()
+	rows, _, err := w.s.collectionRowsQuery(ctx, w.member(), w.rowsDB, nil, nil, "", 10000, 0, benchDay)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := map[string]map[string]any{}
+	for _, r := range rows {
+		byID[r["id"].(string)] = r
+	}
+	for _, prop := range []string{"amount", "budget"} {
+		res, err := w.s.aggregateRows(ctx, w.member(), w.rowsDB, aggSpec{GroupBy: rowGroupKey, Agg: "sum", AggProp: prop}, nil, nil, benchDay)
+		if err != nil {
+			t.Fatalf("%s: %v", prop, err)
+		}
+		if len(res.Groups) != len(rows) || res.Total != len(rows) {
+			t.Fatalf("%s: %d groups over %d rows, want one per each of the %d rows the member sees", prop, len(res.Groups), res.Total, len(rows))
+		}
+		var prev *float64
+		sawNil := false
+		for _, g := range res.Groups {
+			if w.private[g.Key] {
+				t.Errorf("%s: row %s is private to someone else and was charted", prop, g.Key)
+			}
+			r := byID[g.Key]
+			if r == nil {
+				t.Fatalf("%s: group %q is no row the member sees", prop, g.Key)
+			}
+			if title, _ := r["title"].(string); g.Label != title || g.Rows != 1 {
+				t.Errorf("%s: row %s labelled %q over %d rows, want %q over 1", prop, g.Key, g.Label, g.Rows, title)
+			}
+			want, ok := derivedNumber(r["props"].(map[string]any)[prop])
+			switch {
+			case !ok && g.Value != nil:
+				t.Errorf("%s: row %s has no number but shows %v", prop, g.Key, *g.Value)
+			case ok && (g.Value == nil || math.Abs(*g.Value-want) > 1e-6):
+				t.Errorf("%s: row %s shows %v, its own number is %v", prop, g.Key, g.Value, want)
+			}
+			switch {
+			case g.Value != nil && sawNil:
+				t.Errorf("%s: %v after a row without a number, want those last", prop, *g.Value)
+			case g.Value != nil && prev != nil && *g.Value > *prev:
+				t.Errorf("%s: %v after %v, want highest first", prop, *g.Value, *prev)
+			}
+			if g.Value == nil {
+				sawNil = true
+			} else {
+				prev = g.Value
+			}
+		}
+	}
+}
+
+func TestAggregateEachRowEdgeCases(t *testing.T) {
+	s := testServer(t)
+	uid, _ := signedIn(t, s, "owner@example.test")
+	ws := s.firstWorkspaceOf(t, uid)
+	col := s.makeCollection(t, ws, uid, "Costs", `[
+		{"id":"amt","name":"Amount","type":"number"},
+		{"id":"dbl","name":"Double","type":"formula","formula":"{amt} * 2"}]`)
+	s.makeRow(t, ws, uid, col, "Rent", `{"amt":1200}`)
+	s.makeRow(t, ws, uid, col, "Food", `{"amt":450}`)
+	s.makeRow(t, ws, uid, col, "", `{"amt":30}`)
+	s.makeRow(t, ws, uid, col, "Typed as text", `{"amt":"12"}`)
+	u := &user{ID: uid}
+	ctx := context.Background()
+	show := func(spec aggSpec) string {
+		t.Helper()
+		res, err := s.aggregateRows(ctx, u, col, spec, nil, nil, benchDay)
+		if err != nil {
+			t.Fatalf("%+v: %v", spec, err)
+		}
+		var b strings.Builder
+		for _, g := range res.Groups {
+			v := "nil"
+			if g.Value != nil {
+				v = fmt.Sprint(*g.Value)
+			}
+			fmt.Fprintf(&b, "%s:%s ", g.Label, v)
+		}
+		return strings.TrimSpace(b.String())
+	}
+	// Highest first, an untitled row keeps an empty label (the browser says
+	// Untitled), a number typed as text has none and comes last.
+	if got, want := show(aggSpec{GroupBy: rowGroupKey, Agg: "sum", AggProp: "amt"}), "Rent:1200 Food:450 :30 Typed as text:nil"; got != want {
+		t.Errorf("each row:\n got %s\nwant %s", got, want)
+	}
+	// A formula is computed per row in Go and reads the same way.
+	if got, want := show(aggSpec{GroupBy: rowGroupKey, Agg: "max", AggProp: "dbl"}), "Rent:2400 Food:900 :60"; !strings.HasPrefix(got, want) {
+		t.Errorf("each row of a formula:\n got %s\nwant %s…", got, want)
+	}
+	// A count would draw a bar of 1 per row, and a period means nothing here.
+	for _, bad := range []aggSpec{{GroupBy: rowGroupKey}, {GroupBy: rowGroupKey, Agg: "count"},
+		{GroupBy: rowGroupKey, Agg: "sum", AggProp: "amt", Period: "month"}} {
+		var chartErr errChart
+		if _, err := s.aggregateRows(ctx, u, col, bad, nil, nil, benchDay); !errors.As(err, &chartErr) {
+			t.Errorf("%+v: %v, want a chart refusal", bad, err)
+		}
+	}
+	// A stored view is held to the same rule, with or without its schema; a
+	// number chart may keep Each row as the grouping it returns to.
+	for _, withSchema := range []bool{false, true} {
+		if err := checkChartView(map[string]any{"type": "chart", "groupBy": rowGroupKey}, nil, withSchema); err == nil {
+			t.Errorf("withSchema=%v: a counting Each row view was accepted", withSchema)
+		}
+	}
+	schema := []map[string]any{{"id": "amt", "type": "number"}}
+	if err := checkChartView(map[string]any{"type": "chart", "groupBy": rowGroupKey, "agg": "sum", "aggProp": "amt"}, schema, true); err != nil {
+		t.Errorf("each row with a sum: %v", err)
+	}
+	if err := checkChartView(map[string]any{"type": "chart", "chartKind": "number", "groupBy": rowGroupKey}, schema, true); err != nil {
+		t.Errorf("a number chart keeping Each row: %v", err)
+	}
+}

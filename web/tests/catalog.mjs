@@ -204,6 +204,18 @@ try {
       if (!shotsOnly) await axe(`${theme}, side panel open`);
     }
 
+    // The popover (spec 004, the chart settings), skipped the same way on a
+    // base that predates it.
+    await page.goto(`${base}?theme=${theme}&open=popover`);
+    if (!shotsOnly || (await page.locator('[data-section="popover"]').count()) > 0) {
+      const popover = page.getByRole('dialog', { name: 'Chart settings' });
+      await popover.waitFor();
+      await page.evaluate(() => document.fonts.ready);
+      await page.waitForTimeout(250);
+      await matches(`popover-open-${theme}`, await popover.screenshot({ animations: 'disabled' }));
+      if (!shotsOnly) await axe(`${theme}, popover open`);
+    }
+
     // The centre panel (spec 007, phase 7), skipped the same way on a base
     // that predates it.
     await page.goto(`${base}?theme=${theme}&open=center-panel`);
@@ -295,6 +307,43 @@ try {
   await page.keyboard.press('Escape');
   await sidePanel.waitFor({ state: 'hidden' });
   assert(await panelOpener.evaluate((el) => el === document.activeElement), 'SidePanel: focus did not return to the button that opened it');
+
+  // Popover (spec 004): opens from its trigger with focus inside; Tab stays
+  // inside; a Select in it opens and picks without closing the panel (its
+  // list is in a portal of its own); the first Escape closes only an open
+  // list, the next the panel, and focus returns to the trigger; a click
+  // outside closes it too. The chart settings live in one, so a panel that
+  // closed on picking a kind would be unusable.
+  const popOpener = page.getByRole('button', { name: 'Chart settings' });
+  await popOpener.focus();
+  await page.keyboard.press('Enter');
+  const popover = page.getByRole('dialog', { name: 'Chart settings' });
+  await popover.waitFor();
+  await eventually(async () => popover.evaluate((p) => p.contains(document.activeElement)));
+  for (let i = 0; i < 4; i++) {
+    await page.keyboard.press('Tab');
+    await eventually(async () => popover.evaluate((p) => p.contains(document.activeElement))).catch(() => {
+      throw new Error(`Popover: Tab ${i + 1} left the panel`);
+    });
+  }
+  const popKind = popover.getByRole('combobox', { name: 'Chart' });
+  await popKind.click();
+  await page.getByRole('option', { name: 'Donut', exact: true }).click();
+  await eventually(async () => (await popKind.textContent())?.includes('Donut'));
+  assert(await popover.isVisible(), 'Popover: picking an option in a Select inside it closed the panel');
+  await popKind.focus();
+  await page.keyboard.press('ArrowDown');
+  await page.getByRole('listbox').waitFor();
+  await page.keyboard.press('Escape');
+  await page.getByRole('listbox').waitFor({ state: 'hidden' });
+  assert(await popover.isVisible(), 'Popover: the Escape that closed a list inside it closed the panel too');
+  await page.keyboard.press('Escape');
+  await popover.waitFor({ state: 'hidden' });
+  assert(await popOpener.evaluate((el) => el === document.activeElement), 'Popover: focus did not return to the button that opened it');
+  await popOpener.click();
+  await popover.waitFor();
+  await page.mouse.click(5, 5);
+  await popover.waitFor({ state: 'hidden' });
 
   // CenterPanel: focus in, Tab stays inside, the first Escape in a text field
   // leaves the field and the second closes, focus returns; a click on the
