@@ -1,12 +1,13 @@
-# Rootless Podman Quadlet. Copy to ~/.config/containers/systemd/salt.container.
+# Rootless Podman Quadlet. Copy to ~/.config/containers/systemd/nigari.container.
 # See wiki/self-hosting.md for startup, backups and updates.
 [Unit]
-Description=salt.md workspace (rootless Podman)
+Description=nigari workspace (rootless Podman)
 
 [Container]
-Image=ghcr.io/neatlittlemacapps/salt.md:latest
-ContainerName=salt
+Image=ghcr.io/neatlittlemacapps/nigari:latest
+ContainerName=nigari
 PublishPort=127.0.0.1:8420:8420
+# salt.md's volume name on purpose: a renamed one is new and empty (spec 011).
 Volume=salt-data:/data
 PodmanArgs=--memory=4g --stop-timeout=20
 

@@ -1,14 +1,16 @@
 services:
-  salt:
+  nigari:
     build: .
     # Or use the prebuilt image instead of build:
-    # image: ghcr.io/neatlittlemacapps/salt.md:latest
+    # image: ghcr.io/neatlittlemacapps/nigari:latest
     ports:
       - "8420:8420"
+    # The volume keeps salt.md's name on purpose: renamed, it would be a new,
+    # empty volume, and the workspace would look lost (spec 011, R14).
     volumes:
       - salt-data:/data
     # A container cannot see how much of the host it is meant to get, so
-    # without a limit salt.md assumes a small machine and indexes fewer large
+    # without a limit nigari assumes a small machine and indexes fewer large
     # PDFs than it could. Raise this to what you actually want to give it —
     # it only affects how much text reaches the search index, never whether an
     # upload succeeds. In nested setups (Docker inside LXC) neither the cgroup

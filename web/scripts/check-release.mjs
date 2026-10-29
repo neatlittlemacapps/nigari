@@ -45,7 +45,7 @@ if (docker.includes(`ghcr.io/${UPSTREAM}`)) fail('.github/workflows/docker.yml',
 
 // Install lines: the script URL, the image, release downloads.
 const upstreamLinks = [`raw.githubusercontent.com/${UPSTREAM}/`, `ghcr.io/${UPSTREAM}`, `github.com/${UPSTREAM}/releases`];
-const docFiles = ['README.md', 'docker-compose.yml', 'deploy/salt.container', 'install.sh'];
+const docFiles = ['README.md', 'docker-compose.yml', 'deploy/nigari.container', 'install.sh'];
 for (const dir of ['wiki', 'docs']) {
   for (const f of readdirSync(join(repo, dir))) if (f.endsWith('.md')) docFiles.push(`${dir}/${f}`);
 }

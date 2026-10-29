@@ -94,7 +94,7 @@ description: "Tasks for the rename to nigari"
 
   Also: `Documentation=` link (R16), and the `./data/salt.db` note → `nigari.db`
 - [x] T017 [US2] [test] New `scripts/test-install-move.sh` runs `install.sh`'s move function against a temp root holding a fake `salt.service`, `/var/lib/salt/salt.db` and `/usr/local/bin/salt`, with `systemctl`, `useradd` and `chown` stubbed on `PATH`. It checks the moved directory, the new unit's `NIGARI_DATA=/var/lib/nigari`, the removed files, and the refusal when both directories exist. It runs in CI's `Build and test` job and in `scripts/agent-gate.sh`
-- [ ] T018 [P] [US2] [backend] Containers (R14):
+- [x] T018 [P] [US2] [backend] Containers (R14):
   - `Dockerfile`: user `nigari` with the uid the `salt` user has in the current image (measure with `docker run --entrypoint id ghcr.io/neatlittlemacapps/salt.md:latest`, or read Alpine's `adduser` default, and pin it with `-u`); `ENV NIGARI_ADDR=:8420 NIGARI_DATA=/data`; binary and `ENTRYPOINT` `nigari`;
   - `docker-compose.yml`: service `nigari`, image `ghcr.io/neatlittlemacapps/nigari`, volume **`salt-data` kept**, with a comment saying why;
   - `git mv deploy/salt.container deploy/nigari.container` (`Image=`, `ContainerName=nigari`, `Volume=salt-data:/data` kept);
