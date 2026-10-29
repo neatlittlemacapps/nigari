@@ -95,6 +95,7 @@ Measured on the CI runner (`ubuntu-latest`, 4 cores, Go 1.27.3), `-bench Storage
 | Chart: Each row, a number per row (spec 004) | 1k rows | — | 4.58 ms (#283) | 7 ms |
 | Chart: Each row, a number per row (spec 004) | 10k rows | — | 45.8 ms (#283) | 69 ms |
 | Property write during a 5-agent burst | 10k rows | 20 ms per write | 5.3 ms | 8 ms per write |
+| Start with no upgrade step pending (spec 008) | one instance | — | 1.275 ms (#321) | 2 ms per start |
 
 - **One budget is still looser than the guess.** `query_rows` at 10k rows started at 113 ms and is now 50 ms, which meets the guess (#79, PR #85). Search at 20k pages went from 301 to 185 ms; the 50 ms target stays with #78, where the measurement says why a faster join cannot reach it (ranking 24k hits alone costs most of it).
 - **The driver bump (#80) lowers most of these** (−11% to −44% p95 on a 4-core dev machine). Measured before it, these budgets have that much headroom until the next re-baseline.
@@ -103,6 +104,8 @@ Measured on the CI runner (`ubuntu-latest`, 4 cores, Go 1.27.3), `-bench Storage
 - **Chart rows (#264)** were measured on the same runner in PR #264, run 40704990150 (`-count=6`, the p95 benchstat reports). The grouped count beside them did not move against its base (19.41 → 19.35 ms p95 at 10k). A rollup sum is slow by nature: rollups exist only in Go (`computeDerived`), so every row is read and computed (spec 004, research R3). At 10k rows it takes about a second; at 100k it would reach the 5-second limit and answer with the time-limit sentence, which is the documented behaviour, not a hang.
 
 - **Each row (#283)** was measured on the same runner in PR #283, run 40764479349 (`-count=6`, the p95 benchstat reports: 4.575 ms at 1k, 45.84 ms at 10k). It costs about twice a sum per select (20.82 ms p95 at 10k in the same run, where the existing chart rows did not move against their base) because the answer has one group per row and every title is looked up (in batches of 500). The size of that answer at 10k rows is #277.
+
+- **Start (#321)** was measured on the same runner in PR #321, run 40944485890 (`-count=6`, the p95 benchstat reports). `BenchmarkStorageStart` copies `server/testdata/upgrade/step-0.db`, brings it to the newest step once, then times what every restart pays: `upgradeDB` finding nothing pending, then `openDB`. Its `before-spec-008` case times the start-up the release before goose did (`openDB` plus the whole schema and every `ensureColumn`, now step 1): 1.666 ms p95 in the same run. A start with nothing pending is faster than before because the schema no longer runs on every start, which meets spec 008 SC-002 (no slower than today, within 5 ms). It costs once per start, not per request, so the seeded workspace has no size column here.
 
 A budget may only be raised in a PR that says why.
 
