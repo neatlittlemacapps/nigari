@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node callout-colors.mjs && node property-order.mjs && node select-options.mjs && node menus-and-arrows.mjs && node shortcuts.mjs && node embeds.mjs && node people.mjs && node tabs.mjs && node share-menu.mjs && node collection-config.mjs && node slash-menu.mjs && node trash-navigation.mjs && node smart-dates.mjs && node scroll-memory.mjs && node board-tick.mjs && node oauth-consent.mjs && node find-replace-reload.mjs && node toolbar-menus.mjs && node database-toolbar-menus.mjs && node design-system-dialog.mjs && node dialog-escape.mjs && node new-row-filters.mjs && node side-peek.mjs && node chart-view.mjs && node chart-each-row.mjs && node chart-builder.mjs && node editor-tokens.mjs && node catalog.mjs"
+    "test": "node callout-colors.mjs && node property-order.mjs && node select-options.mjs && node menus-and-arrows.mjs && node shortcuts.mjs && node embeds.mjs && node people.mjs && node tabs.mjs && node share-menu.mjs && node collection-config.mjs && node slash-menu.mjs && node trash-navigation.mjs && node smart-dates.mjs && node scroll-memory.mjs && node board-tick.mjs && node oauth-consent.mjs && node find-replace-reload.mjs && node toolbar-menus.mjs && node database-toolbar-menus.mjs && node design-system-dialog.mjs && node dialog-escape.mjs && node new-row-filters.mjs && node side-peek.mjs && node chart-view.mjs && node chart-each-row.mjs && node chart-builder.mjs && node editor-tokens.mjs && node upgrade-refusal.mjs && node catalog.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",

@@ -1275,5 +1275,9 @@
   "One total, count or average": "Un total, recuento o promedio",
   "Parts of a whole": "Partes de un todo",
   "system": "sistema",
-  "upgraded the database": "actualizó la base de datos"
+  "upgraded the database": "actualizó la base de datos",
+  "This salt.md is older than its database, so it did not start and changed nothing. The server log names the release to run instead.": "Este salt.md es más antiguo que su base de datos, así que no se inició y no cambió nada. El registro del servidor indica qué versión ejecutar en su lugar.",
+  "An upgrade step failed, so salt.md did not start. The database is as it was before that step; the server log says why.": "Un paso de actualización falló, así que salt.md no se inició. La base de datos está como antes de ese paso; el registro del servidor explica por qué.",
+  "salt.md could not write the copy it takes before an upgrade, so no step ran. Free space in the data directory and start it again.": "salt.md no pudo escribir la copia que hace antes de una actualización, así que no se ejecutó ningún paso. Libera espacio en el directorio de datos y vuelve a iniciarlo.",
+  "Another salt.md is upgrading this database. Wait for it to finish, then reload.": "Otro salt.md está actualizando esta base de datos. Espera a que termine y vuelve a cargar."
 }

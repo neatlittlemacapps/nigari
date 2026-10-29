@@ -63,8 +63,8 @@ description: "Tasks for safe upgrades"
 - [x] T015 [US4] [backend] `upgradeLock` (`upgrade.lock`, exclusive create, PID and time, removed after; a second process refuses with `upgrade_busy`; older than 15 minutes is taken over)
 - [x] T016 [US4] [backend] `main.go` and new `server.RefusalHandler(r)`: the sentence in the log; every request answered 503, HTML page for pages, `{error, code}` for `/api/` and `/mcp` (contracts/refusal.md); nothing in the data directory touched
 - [x] T017 [US4] [test] `TestUpgradeRefusesNewerDatabase` (checksum unchanged, SC-004), `TestUpgradeLock`, `RefusalHandler` answers per contracts/refusal.md
-- [ ] T018 [P] [US4] [test] Playwright `web/tests/upgrade-refusal.mjs`: a binary started on a newer database shows the sentence at `/` and the code at `/api/me` (in `web/tests/package.json`)
-- [ ] T019 [P] [US4] [i18n] `web/src/serverErrors.ts`: `upgrade_refused`, `upgrade_failed`, `upgrade_copy_failed`, `upgrade_busy`, German and Spanish
+- [x] T018 [P] [US4] [test] Playwright `web/tests/upgrade-refusal.mjs`: a binary started on a newer database shows the sentence at `/` and the code at `/api/me` (in `web/tests/package.json`)
+- [x] T019 [P] [US4] [i18n] `web/src/serverErrors.ts`: `upgrade_refused`, `upgrade_failed`, `upgrade_copy_failed`, `upgrade_busy`, German and Spanish
 
 ---
 
