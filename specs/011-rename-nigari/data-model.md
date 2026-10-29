@@ -65,6 +65,7 @@ Treatments:
 | app id `md.salt.desktop`, product `salt.md`, package `salt-desktop` | `io.github.neatlittlemacapps.nigari`, `nigari`, `nigari-desktop` | renamed: a new app to the OS (FR-012) |
 | URL scheme `salt://` (`desktopScheme`) | `nigari://` | renamed with the app; the fork never released a desktop app, so no installed one waits on `salt://` |
 | Go module `salt`, `-X salt/server.Version` | `nigari`, `-X nigari/server.Version` | inside name |
+| design-token extension namespace `md.salt.*` (`$extensions` in `web/tokens/*.tokens.json`, read by `build-tokens.mjs`) | `io.github.neatlittlemacapps.nigari.*` | inside name; found by `check-names.mjs` (T002), renamed with T025 |
 
 ## Kept on purpose
 

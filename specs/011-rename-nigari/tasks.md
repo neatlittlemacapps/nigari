@@ -22,7 +22,7 @@ description: "Tasks for the rename to nigari"
 ## Phase 1: Setup
 
 - [x] T001 [backend] Go module: `go.mod` `module salt` → `module nigari`; every `import "salt/server"` → `"nigari/server"` (`main.go`, `server/**`); ldflags `-X salt/server.Version` → `-X nigari/server.Version` in `Makefile`, `Dockerfile`, `.github/workflows/release.yml`, `.devcontainer/*`. `go build ./... && go test ./...` green. Record the `CGO_ENABLED=0` binary size before and after. `go.sum` must not change (protected; R10)
-- [ ] T002 [test] New `web/scripts/check-names.mjs` + `web/scripts/names-allowlist.json` (`{path: {count, reason}}`), added to `npm run check`. Patterns from plan P8: `salt.md`, `saltmd`, `SALT_`, `salt_`, `salt-`, `salt:`, `salt/`, `salt://`, and `Salt`/`salt` as words. Skipped paths: `LICENSE`, `CLA.md`, `THIRD-PARTY-NOTICES.md`, `.github/cla-signatures.json`, `specs/001`–`010`, `docs/handoffs/`, `docs/decisions.md` (entries before the rename's), `server/testdata/upgrade/step-*.db`. It **reports only** until T031 makes it fail. Its own failing cases in the same file, as `check-build-tokens.mjs` does: a new name fails; a count above the allowlist fails; a count below it says to lower the allowlist
+- [x] T002 [test] New `web/scripts/check-names.mjs` + `web/scripts/names-allowlist.json` (`{path: {count, reason}}`), added to `npm run check`. Patterns from plan P8: `salt.md`, `saltmd`, `SALT_`, `salt_`, `salt-`, `salt:`, `salt/`, `salt://`, and `Salt`/`salt` as words. Skipped paths: `LICENSE`, `CLA.md`, `THIRD-PARTY-NOTICES.md`, `.github/cla-signatures.json`, `specs/001`–`010`, `docs/handoffs/`, `docs/decisions.md` (entries before the rename's), `server/testdata/upgrade/step-*.db`. It **reports only** until T031 makes it fail. Its own failing cases in the same file, as `check-build-tokens.mjs` does: a new name fails; a count above the allowlist fails; a count below it says to lower the allowlist
 
 ---
 
@@ -140,6 +140,7 @@ description: "Tasks for the rename to nigari"
   - `web/index.html` (`<title>`, `apple-mobile-web-app-title`), `web/public/manifest.webmanifest`, the `aria-label` in `web/public/logo.svg`, the comment in `web/public/sw.js`;
   - the 17 strings that name the product, in `web/src/**` (`t('…')` keys change, `Salt fonts` → `nigari fonts`);
   - DOM event names `salt:*` → `nigari:*` in every dispatch and listen;
+  - the design-token extension namespace `md.salt.*` → `io.github.neatlittlemacapps.nigari.*` in `web/tokens/*.tokens.json` and `web/scripts/build-tokens.mjs` (found by T002); `tokens.css` rebuilt, `check-build-tokens.mjs` green;
   - checked in light and dark
 - [ ] T026 [US1] [ui] Origin notice (FR-002): in the About/licences section of `web/src/components/AdminSettings.tsx` and in `README.md`, one statement that nigari is a modified version of salt.md (`saltmd/salt.md`) since 2026-10-29, under AGPL-3.0, with a link to the source. `LICENSE` and the copyright lines stay unchanged
 - [ ] T027 [US1] [i18n] `web/src/locales/de.json` and `es.json`: the changed keys from T009, T025 and T026 move to their new English keys with German (required) and Spanish. Sonnet helper; Claude reviews every line before commit. `check-i18n.mjs` reports 0 untranslated
