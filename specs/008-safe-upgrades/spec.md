@@ -13,6 +13,14 @@ new release without breaking." Research first (`research.md`), then the owner ch
 research's option C on 2026-10-29: numbered upgrade steps run by a migration library
 (goose, `docs/decisions.md`), with everything else the research recommended.
 
+## Clarifications
+
+### Session 2026-10-29
+
+- Q: When salt.md refuses to start (an older binary on a newer database, or a failed step), does it say so only in the terminal, or also in the browser? → A: Both. The sentence goes to the log, and the usual address serves one page with the same sentence and the way out, and nothing else, until the cause is fixed (FR-019).
+- Fixtures are kept per upgrade step, not per release (decided while clarifying): #265 publishes a release on every push to `main`, so "one per release" would add a database to the repository on every push. Each new step ships with a fixture written just before it (FR-012).
+- The pre-upgrade copies are not part of `salt backup` (decided while clarifying): each is a full copy of the database, and a backup carrying three of them would be up to four times its size (FR-005).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A running instance moves to a new release and keeps everything (Priority: P1)
@@ -104,14 +112,14 @@ taken before the upgrade.
 disappoints, and it is the case that silently damages data today.
 
 **Independent Test**: start a binary on a database whose step number is higher than any
-step it knows. It exits without writing, and the sentence names both numbers and both ways
-out.
+step it knows. It writes nothing; the log and the browser show the sentence with both
+numbers and both ways out.
 
 **Acceptance Scenarios**:
 
 1. **Given** a database at a higher step than the binary knows, **When** the binary
-   starts, **Then** it writes nothing (the file is byte-for-byte unchanged) and exits with
-   the sentence.
+   starts, **Then** it writes nothing (the file is byte-for-byte unchanged), and the log and
+   the browser show the sentence.
 2. **Given** the same database, **When** the newer release starts again, **Then** it runs
    normally.
 
@@ -202,7 +210,7 @@ time, and the copy. `salt version` matches.
 - **Derived indexes** (search, files) keep their own version and rebuild as today. A step
   never needs to rebuild them by hand.
 - **The desktop app** opens no data of its own (`desktop/README.md`). It shows the
-  server's refusal page when the server refuses.
+  server's refusal page (FR-019) like a browser does.
 - **Data written by a newer release into JSON shapes the older release does not know**:
   covered by the refusal (Story 4). Expand/contract keeps the previous release able to
   read for one release where possible.
@@ -224,7 +232,7 @@ time, and the copy. `salt version` matches.
 - **FR-005**: Before the first pending step, salt.md MUST write a complete copy of the
   database beside it. The copy is named after the step it precedes, and the log gives the
   command that restores it. The newest 3 copies are kept and older ones removed. No copy is
-  taken when no step is pending.
+  taken when no step is pending. The copies are not included in `salt backup`.
 - **FR-006**: A failed step MUST leave the database at the last completed step and stop
   start-up with one sentence naming the step, the reason and the copy.
 - **FR-007**: A binary MUST refuse a database whose step number is higher than the newest
@@ -238,8 +246,9 @@ time, and the copy. `salt version` matches.
   anything.
 - **FR-010**: Only one process MUST run the steps on a data directory at a time.
 - **FR-011**: A rebuilt table MUST pass a foreign-key check before its step commits.
-- **FR-012**: The repository MUST keep one fixture database per release from this feature
-  on, starting with one written by today's release before step 1 exists. The test suite
+- **FR-012**: The repository MUST keep one fixture database per upgrade step from this
+  feature on, written by the code just before that step, starting with one written by
+  today's release before step 1 exists. The test suite
   MUST open each with the new release and check pages, rows, views, comments, search and
   the step number.
 - **FR-013**: The build gate MUST fail when the stored schema or the step list changes
@@ -256,6 +265,10 @@ time, and the copy. `salt version` matches.
 - **FR-018**: Out of scope: steps that undo other steps (going back is restoring the copy),
   a continuous replica, upgrades while the server is serving, and moving between database
   engines.
+- **FR-019**: When start-up is refused (FR-006, FR-007), the sentence MUST go to the log
+  and the server's usual address MUST answer every request with one page showing the same
+  sentence and the way out (and a machine-readable code for agents and the desktop app).
+  It serves nothing else and writes nothing until it is restarted with the cause fixed.
 
 ### Key Entities
 
