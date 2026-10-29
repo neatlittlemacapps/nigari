@@ -16,6 +16,18 @@ Owner: "C. Rename everything, internals too"; the name: first "salty.md",
 then, after checking it: “go with "nigari"”. Specified
 now, built after spec 008 (its data-file rename is an upgrade step).
 
+## Clarifications
+
+### Session 2026-10-29
+
+- Q: How long do the old names keep working? → A: Not at all; they stop with
+  the first nigari release (owner: "Q1 immediately"). Data still moves once
+  (database file, browser preferences); an old `SALT_*` variable refuses the
+  start with a sentence rather than being ignored, because an ignored
+  `SALT_DATA` would start on an empty directory and look like lost data.
+- Q: Does the first nigari release continue v1.6.x or start v2.0.0? → A:
+  v2.0.0 (owner: "Q2 B").
+
 ## Context
 
 The fork has diverged from `saltmd/salt.md` and does not send work back
@@ -68,78 +80,73 @@ settings and an export; no visible text says "salt.md" except the origin line.
 
 ---
 
-### User Story 2 - An existing install keeps working after the update (Priority: P1)
+### User Story 2 - An existing install updates without losing anything (Priority: P1)
 
-An admin runs salt.md v1.6.x from a service file with `SALT_DATA=/srv/salt`
-and `SALT_ADDR=:8420`. They update to the first nigari release. It starts on
-the same data, with the same settings, and every person stays signed in. The
-admin finds a line in the log saying which old names it found and what they
-are now called; nothing breaks the day they update.
+An admin runs salt.md v1.6.x on a data directory with its `salt.db`. They
+update to nigari v2.0.0. It starts on the same data: the database file is
+renamed once, with the copy before it that spec 008 takes, and every page,
+row, comment and file is there. Preferences a browser stored under the old
+names come along once. What does **not** come along are the old names
+themselves: the owner chose no transition ("Q1 immediately"), so from v2.0.0
+nothing answers to `SALT_*`, the old cookies, the old webhook header or the
+`salt` command.
 
-**Why this priority**: Option C renames internals; the upgrade must not cost
-anyone their data, settings or sessions. That is what spec 008 is for.
+**Why this priority**: A rename must never cost data. The old names going at
+once is the owner's choice; losing content with them is not.
 
-**Independent Test**: Start the new release on a data directory and the
-environment of v1.6.10 (the upgrade fixture of spec 008 plus `SALT_*`
-variables); it starts, the content is there, and a browser with an old session
-cookie and old stored preferences is still signed in with its preferences.
+**Independent Test**: Start v2.0.0 on the spec 008 fixture `step-0.db`
+(written by salt.md v1.6.10); it starts, the content is there, and the
+database is now `nigari.db`.
 
 **Acceptance Scenarios**:
 
-1. **Given** a data directory with `salt.db`, **When** the new release starts,
-   **Then** it renames the database to `nigari.db` as an upgrade step (with the
-   copy before it that spec 008 takes), and the data is unchanged.
-2. **Given** an environment that sets `SALT_DATA`, `SALT_ADDR` or any other
-   `SALT_*` variable, **When** the new release starts, **Then** it uses each
-   one as if the matching `NIGARI_*` variable were set, and logs one line
-   naming the old variables found and their new names.
-3. **Given** both `SALT_X` and `NIGARI_X` set, **When** it starts, **Then**
-   `NIGARI_X` wins and the log says so.
-4. **Given** a browser with a `salt_session` cookie, **When** it makes its
-   first request to the new release, **Then** the person is still signed in and
-   the browser gets the new cookie in exchange; the same for the OAuth cookies
-   in the middle of a sign-in.
-5. **Given** preferences in old browser-storage keys (theme, tabs, sidebar,
-   recent pages, language…), **When** the new interface loads, **Then** it
-   moves them to the new keys once and the person sees their own settings.
-6. **Given** a webhook receiver that checks `X-Salt-Signature`, **When** the
-   new release sends a webhook, **Then** it sends the signature under both the
-   old and the new header name.
-7. **Given** a `salt-workspace.json` export from an older release, **When** it
-   is imported, **Then** it is accepted as before.
-8. **Given** the command `salt backup` in an admin's cron job, **When** the
-   binary is now called `nigari`, **Then** the release notes and the installer
-   say how to keep the old command working (the installer leaves a `salt`
-   link to `nigari` when it replaces an existing `salt`).
-9. **Given** the desktop app installed as salt.md, **When** it updates,
-   **Then** it keeps its saved server and window settings.
+1. **Given** a data directory with `salt.db`, **When** v2.0.0 starts,
+   **Then** an upgrade step renames it to `nigari.db` (with the copy before it,
+   spec 008), and the data is unchanged.
+2. **Given** preferences in old browser-storage keys (theme, tabs, sidebar,
+   recent pages, language…), **When** the new interface first loads, **Then**
+   it moves them to the new keys once and removes the old ones.
+3. **Given** a `salt-workspace.json` export from an older release, **When** it
+   is imported, **Then** it is accepted: an export is a file a person keeps,
+   not a name the running app answers to.
 
 ---
 
-### User Story 3 - The old names stop working at a known time (Priority: P2)
+### User Story 3 - An old name fails loudly, never silently (Priority: P1)
 
-The old names keep working through a transition so nobody breaks on update
-day, and the release notes say when they stop. After that the code carries no
-"salt" except the origin line, the licence and the history.
+The admin's service file still sets `SALT_DATA=/srv/salt`. If v2.0.0 simply
+ignored it, it would start on an empty default data directory, and the admin
+would see an empty workspace and think the data was gone. Instead v2.0.0
+refuses to start and says, in one sentence, which old variables it found and
+what they are called now. Everything else old fails in the plainest way it
+can, and the release notes list each one.
 
-**Why this priority**: Option C asked for the internals renamed; keeping the
-old names forever is option B in disguise.
+**Why this priority**: With no transition, the danger is an old name being
+ignored without a word. The refusal turns the worst case into a one-line fix.
 
-**Independent Test**: Search the code of the release after the transition for
-the old names; only the origin notice, the licence texts and the upgrade step
-that renamed the database remain.
+**Independent Test**: Start v2.0.0 with `SALT_DATA` set and no `NIGARI_DATA`;
+it refuses, naming `SALT_DATA` → `NIGARI_DATA`, and touches nothing.
 
 **Acceptance Scenarios**:
 
-1. **Given** a release inside the transition, **When** an old name is used,
-   **Then** it works and the log or the response says it is deprecated and
-   until when.
-2. **Given** the first release after the transition, **When** an old name is
-   used, **Then** it no longer works and the log says what the new name is.
-3. **Given** the transition length, [NEEDS CLARIFICATION: How long do the old
-   names (`SALT_*` variables, old cookies, the old webhook header, the `salt`
-   command link) keep working: a fixed number of releases, a date, or until the
-   next major version?]
+1. **Given** any `SALT_*` variable set and its `NIGARI_*` name not set,
+   **When** v2.0.0 starts, **Then** it refuses to start with a sentence naming
+   each old variable and its new name, and writes nothing to the data
+   directory.
+2. **Given** both `SALT_X` and `NIGARI_X` set, **When** it starts, **Then** it
+   uses `NIGARI_X` and logs one line that `SALT_X` is ignored.
+3. **Given** a browser with an old session cookie, **When** it makes its first
+   request, **Then** the person is asked to sign in again (sessions are not
+   carried over; the release notes say so).
+4. **Given** a webhook receiver that checks `X-Salt-Signature`, **When**
+   v2.0.0 sends a webhook, **Then** it carries the new header only; the release
+   notes name the header to switch to.
+5. **Given** a cron job calling `salt backup`, **When** the binary is now
+   `nigari`, **Then** the old command no longer exists; the installer and the
+   release notes say to use `nigari backup`.
+6. **Given** the desktop app installed as salt.md, **When** a nigari desktop
+   app is installed, **Then** it is a new app to the operating system; it asks
+   for the server address once.
 
 ### Edge Cases
 
@@ -162,8 +169,9 @@ that renamed the database remain.
   stops with a sentence saying so, as every failed step does (spec 008).
 - **Two processes**, one old and one new release, on the same data directory:
   spec 008's lock and refusal handle it.
-- **Version number**: [NEEDS CLARIFICATION: Does the first nigari release
-  continue the 1.6 line (v1.6.x) or start a new one (v2.0.0)?]
+- **Version number**: the first nigari release is **v2.0.0** (owner: "Q2 B");
+  the release rule of spec 009 (next patch on `server.Version`'s major.minor)
+  continues on the 2.0 line from there.
 
 ## Requirements *(mandatory)*
 
@@ -180,25 +188,27 @@ that renamed the database remain.
   installer, the desktop app and the Go module MUST carry the new name.
 - **FR-004**: The database file MUST be renamed from `salt.db` to `nigari.db`
   by an upgrade step of spec 008, with its copy before and its refusal rules.
-- **FR-005**: Every `SALT_*` environment variable MUST be read as its
-  `NIGARI_*` name during the transition, the new name winning when both are
-  set, with one log line naming what was found.
-- **FR-006**: Old session and OAuth cookies MUST be accepted during the
-  transition and exchanged for the new ones on first use, so nobody is signed
-  out by the update.
+- **FR-005**: No old name MUST keep working from v2.0.0: no `SALT_*`
+  variable, old cookie, old webhook header or `salt` command is accepted
+  (owner: no transition).
+- **FR-006**: A `SALT_*` variable set without its `NIGARI_*` name MUST stop
+  start-up with one sentence naming each old variable and its new name, before
+  anything is written; set beside its new name, it MUST be logged as ignored.
 - **FR-007**: Old browser-storage keys MUST be moved to the new keys once, on
-  the first load of the new interface.
-- **FR-008**: Webhooks MUST carry the signature under both the old and the new
-  header name during the transition.
+  the first load of the new interface, and the old keys removed.
+- **FR-008**: Sessions are not carried over; people sign in again once, and the
+  release notes MUST say so.
 - **FR-009**: Imports MUST accept exports made under the old name.
-- **FR-010**: The installer MUST leave a `salt` command pointing at `nigari`
-  when it replaces an existing install, for the transition.
-- **FR-011**: The desktop app MUST keep its saved settings across the rename.
-- **FR-012**: Each old name MUST stop working at the end of the transition,
-  and the release notes MUST say when that is.
-- **FR-013**: After the transition, the code MUST contain no "salt" name except
-  the origin notice, licence texts, history documents and the upgrade step; a
-  build check MUST fail on a new one.
+- **FR-010**: The release notes of v2.0.0 MUST list every old name with its
+  new name and what happens to it (moved, refused with a sentence, or gone).
+- **FR-011**: The first nigari release MUST be v2.0.0, and releases continue
+  on the 2.0 line under spec 009's rule.
+- **FR-012**: The desktop app MUST be renamed and get a new app id; it asks for
+  the server address once.
+- **FR-013**: The code MUST contain no "salt" name except the origin notice,
+  licence texts, history documents, the refusal and storage-move code that
+  names the old names, and the upgrade step; a build check MUST fail on a new
+  one.
 - **FR-014**: Translations of every changed string MUST be updated (German
   required, Spanish reported).
 
@@ -206,7 +216,8 @@ that renamed the database remain.
 
 - **Old name**: a name a running install or something outside it may still
   use (variable, cookie, header, storage key, file, command, app id), with its
-  new name and the release it stops working in.
+  new name, and how v2.0.0 meets it: moved once, refused with a sentence, or
+  simply gone (and named in the release notes).
 - **Origin notice**: the statement that nigari is a modified salt.md.
 
 ## Success Criteria *(mandatory)*
@@ -214,14 +225,17 @@ that renamed the database remain.
 ### Measurable Outcomes
 
 - **SC-001**: An install of salt.md v1.6.10 updated to the first nigari
-  release starts on the first try with its data, settings and signed-in
-  sessions intact (tested from the spec 008 fixture and a v1.6.10
-  environment).
+  release starts on the first try with all its data (tested from the spec 008
+  fixture), once its `SALT_*` variables are renamed as the refusal sentence
+  says.
 - **SC-002**: 0 visible mentions of salt.md in the interface, in any language,
   apart from the origin notice.
-- **SC-003**: 0 people signed out and 0 preferences lost by the update.
-- **SC-004**: After the transition, the build check finds 0 old names outside
-  the allowed places.
+- **SC-003**: 0 pages, rows, comments, files or browser preferences lost by
+  the update; signing in again once is expected.
+- **SC-004**: The build check finds 0 old names outside the allowed places in
+  v2.0.0.
+- **SC-005**: An old `SALT_*` variable is never silently ignored: 100% of them
+  lead to the refusal sentence or, beside its new name, a log line.
 
 ## Agent parity and other surfaces
 
@@ -231,8 +245,8 @@ that renamed the database remain.
   the registry's Stored data surface applies.
 - **Release and installer** (spec 009): asset names, image name, repository
   name in `install.sh` and the update check.
-- **Registry**: no new concept, unless the plan finds the "old name with a
-  transition" pattern worth a surface of its own.
+- **Registry**: no new concept, unless the plan finds "a name outside the
+  code depends on" worth a surface of its own (FR-013's check suggests it).
 
 ## Assumptions
 
