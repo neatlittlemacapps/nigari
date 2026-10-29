@@ -7,6 +7,32 @@ entries are not edited away.
 
 ---
 
+## 2026-10-29 — Third-party notices list what the released binaries link, not the module graph
+
+**Decision** (owner chose B, while adding goose for spec 008): `scripts/licenses.mjs`
+lists the Go modules `go list -deps` reports for the main package, merged over every
+`build <os> <arch>` target in `.github/workflows/release.yml`. Before, it listed
+`go list -m all`, the whole module graph.
+
+**Why**: goose v3.29.0 added 79 modules to the graph and only 5 to the binary; the rest
+are its drivers for other databases. The old script would have added about 10,000 lines
+of notices for code salt.md does not ship. It already listed 17 modules that never
+shipped (the SQLite driver's code generator, test tools): 33 listed, 16 linked. The
+notice has to travel with what ships (the script's own header), and that is what the
+linker sees. The targets are read from the release workflow so a new platform cannot be
+forgotten here.
+
+**Turned down**:
+- A. Keep `go list -m all`: no script change, but notices about ten times longer and
+  mostly about code that is not in any download.
+- One fixed platform: the linked set differs (go-isatty on darwin and windows only,
+  google/uuid not on windows).
+
+A module that only a test imports (goose until `server/upgrade.go` uses it) is not
+listed; it is once the binary links it, the next time the script runs.
+
+---
+
 ## 2026-10-29 — The fork releases every push to main, on its own 1.6 line
 
 **Decision** (owner's issue #265, with the version rule left to us): every push to `main`
