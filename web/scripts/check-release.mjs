@@ -70,6 +70,11 @@ if (!/SALT_VERSION=\$\(VERSION\)/.test(make) || !/-X salt\/server\.Version=\$\(V
   fail('Makefile', 'frontend and backend must both take $(VERSION) (SALT_VERSION=$(VERSION), -X salt/server.Version=$(VERSION))');
 }
 const dockerfile = read('Dockerfile');
+// The image's frontend stage runs this whole gate (npm run build), so it must
+// have every file the gate reads. Copying directories one by one broke the
+// image each time a check read a new one (v1.6.9: .specify/).
+const webStage = dockerfile.slice(dockerfile.indexOf(' AS web'), dockerfile.search(/^RUN .*npm run build/m));
+if (!/^COPY \. \/src$/m.test(webStage)) fail('Dockerfile', 'the frontend stage must COPY . /src before npm run build: the gate inside it reads files all over the repository');
 if (!/SALT_VERSION=\$\{VERSION\}/.test(dockerfile) || !/-X salt\/server\.Version=\$\{VERSION\}/.test(dockerfile)) {
   fail('Dockerfile', 'frontend and backend must both take ${VERSION}');
 }

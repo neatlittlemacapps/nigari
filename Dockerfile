@@ -4,21 +4,20 @@ ARG VERSION=dev
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json* ./
 RUN npm ci || npm install
-COPY web ./
-# `npm run build` runs the whole gate first, and part of that gate reads files
-# OUTSIDE web/: check-wiki.mjs compares the wiki against the MCP catalogue and
-# the route table. Without these two the image build died on a missing
-# directory — the gate is deliberately not skippable, so what it needs has to
-# be here.
+# `npm run build` runs the whole gate first, and the gate reads files all over
+# the repository, not only web/: the wiki against the MCP catalogue and the
+# route table (wiki/, server/), the capability manifest, every plan against the
+# surfaces registry (.specify/, specs/), and the release checks (install.sh,
+# the workflows, the Makefile, this file, the docs). Copying them one by one
+# broke the image twice: each new check read a directory that was not here
+# (v1.6.9's image died on .specify/memory/surfaces.md). So the whole context
+# comes in, and .dockerignore keeps out what must not (node_modules, .git,
+# the built frontend). The gate is deliberately not skippable.
 #
-# The cost is honest and worth naming: a change under server/ now busts this
-# layer's cache and the frontend rebuilds. That is about thirty seconds on a
-# build that only runs on a tag, and the alternative is a check that silently
-# does not run in one of the two places we build.
-COPY wiki /src/wiki
-COPY server /src/server
-# check-parity.mjs reads the capability manifest at the repository root.
-COPY capabilities.json /src/capabilities.json
+# The cost is honest and worth naming: any change busts this layer's cache and
+# the frontend rebuilds, about thirty seconds on a build that runs once per
+# release.
+COPY . /src
 # Same VERSION the backend is stamped with, so the two never disagree and the
 # "reload" banner only fires after an actual deploy.
 RUN SALT_VERSION=${VERSION} npm run build
