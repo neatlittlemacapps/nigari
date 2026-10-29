@@ -66,6 +66,7 @@ reviewed against the spec here; the review findings are tasks below.
 | Page containers | No change: no page rendering. | ui |
 | Aggregation | No change: no property type. | backend |
 | Stored data | No change: nothing stored changes, so no upgrade step. | backend |
+| Outside names | Added to the registry after this plan, by spec 011, on the same day. The names this feature set (release assets `salt-<os>-<arch>`, `install.sh`'s `SALT_REPO`/`SALT_VERSION`, the image under the repository's name) are outside names; spec 011's `data-model.md` lists them with their treatment. | backend |
 
 **New concepts**: None that later features must answer for. The release rule lives in
 `docs/decisions.md` and `check-release.mjs`.

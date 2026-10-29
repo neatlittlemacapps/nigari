@@ -1,6 +1,6 @@
 # active-memory handoff: salt.md agentic setup and feature roadmap
 
-**Handoff #9** · 2026-10-29 · Lineage:
+**Handoff #10** · 2026-10-29 · Lineage:
 - **#1 (2026-10-25):** agentic setup (rules, gate, Spec Kit, parity manifest); four feature branches merged; 25 issues; three specs.
 - **#2 (2026-10-26):** find-and-replace edits (#13, PR #48); specs 001/002 planned; #47 fixed; surfaces registry, board sync, ruleset (PR #49).
 - **#3 (2026-10-26):** board derives its columns (PR #74); spec 002 tasks (#50–#73); storage benchmarks; fixes #75, #76; Codespaces (PR #77).
@@ -9,7 +9,8 @@
 - **#6 (2026-10-27):** owner answered all open questions; PRs #135, #137, #138, #159 (spec 005), #176 (spec 006).
 - **#7 (2026-10-27/28):** spec 007 shipped (PRs #212, #213); upstream #85 not taken; backlog prioritised; spec 004 planned with Chart.js (PR #214).
 - **#8 (2026-10-28):** Notion chart walk-through → spec 004 builder (US5, FR-018–031); charts parts 1+2 merged (PR #264); safe-upgrades epic #263 filed.
-- **#9 (2026-10-28/29):** charts finished (PR #283: Each row, ui/Popover, settings panel, tooltip, Save chart as, `/` entries); agents author commits; Sonnet helpers rule; #263 research (second session) → owner chose option C (goose) → spec 008 specified, clarified, planned, 26 task issues (#289–#314); #265 fork releases (spec 009, PR #288) → v1.6.9; image fix (#315, PR #316) → v1.6.10 with image.
+- **#9 (2026-10-28/29):** charts finished (PR #283); agents author commits; Sonnet helpers rule; #263 → option C (goose) → spec 008 specified/planned, tasks #289–#314; #265 fork releases (spec 009, PR #288) → v1.6.9; image fix (PR #316) → v1.6.10.
+- **#10 (2026-10-29):** spec 008 part 1 built (T001–T007, T009–T019) and merged (PR #321); notices list linked modules only; spec 010 (menu icons) and spec 011 (rename to **nigari**) specified + clarified; plan agreed: rename first, then 2 streams; code-review, ux-ui-audit and playwright plugins installed.
 
 ## 0. Instructions for Claude (read first)
 
@@ -23,20 +24,21 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 6. Your first reply: at most 5 lines covering the goal, the current state, and the next step (section 11). Mention any files from section 13 that were not attached. Ask the questions in section 12 if there are any. End with "Ready to continue with <next step>?" Then wait for the user's go.
 
 ## 1. Mission
-- **Goal:** take salt.md (the user's fork) "to a higher level": many more features, built with an agentic setup that keeps the software's domains intact.
+- **Goal:** take the fork "to a higher level": many more features, built with an agentic setup that keeps the software's domains intact.
 - **In the user's words:** "proper coding, holistic adjustments (think, when I add a feature, the system should also reason and tackle the fact that the mcp functionality might also need to follow), proper UI implementation, performance and testing".
 - **Done looks like:** features flow spec → plan → tasks → board → implementation; each reaches every surface in the registry; gate and CI green; every merge to main becomes a release.
 - **Standing way of working** (2026-10-26): "from here on out, you should indeed ensure you think about all aspects of the code in relation to my feature requests." / "When a feature request introduces some new concept (like but not excluding the design system) you should add it to the pool of things to think about when specking new features."
 - **Also:** "I want you to be able to do as much as possible yourself"; "ensure you have good board and issue hygiene".
-- **2026-10-27:** "I want you to ignore the maintainers comments unless they really make sense for us as well. I basically want to implement the functionality on our end. I don't care about pushing it back to them".
-- **Current order of work (2026-10-29):** spec 008 safe upgrades (#263) build → then the priority-1 backlog.
+- **2026-10-29:** the fork is "an official forked version", renamed **nigari** ("we are too far gone from the original salt to ever contribute back").
+- **Current order of work (2026-10-29, owner: "bump the rename to the top, then follow the proposed plan"; "after rename go 2 streams"):** (1) post-merge housekeeping + rule + steward skill; (2) spec 011 rename to nigari (alone, no parallel stream); (3) 2 streams: stream A = Claude (rest of spec 008 T020–T026, then spec 010 menu icons), stream B = a helper session (Epic A, database views); (4) later epics.
 
 ## 2. About the user (as relevant to this work)
 - GitHub `neatlittlemacapps` (id 60575307), display name "Frank De Graeve"; email neatlittlemacapps@gmail.com; owns `neatlittlemacapps/salt.md`, a public fork of `saltmd/salt.md` (AGPL-3.0); CLA signed upstream.
 - Works mostly from a phone (Claude app, iPhone), also the Claude desktop app on a Mac. Designer/PM, not a developer. Timezone Europe/Brussels. Thinks in Notion terms.
-- Answers each step with a terse "Ok"/"Yes". Asks plain-language questions; catches process slips ("Did you spec this first?").
-- Local Mac test install: repo at `~/Documents/Salt/salt.md`; data `~/salt-demo`; run `cd ~/Documents/Salt/salt.md && SALT_DATA=~/salt-demo SALT_ADDR=:8420 ./salt`, open `http://localhost:8420` (http, not https); stop with Ctrl+C; seed with `SALT_SEED_URL=http://127.0.0.1:8420 node web/scripts/seed-wiki-instance.mjs`. Backup before an update: `./salt backup`. Now also installable with `curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh` (fork releases).
-- GitHub settings: Actions on; auto-merge enabled in the repo; `BOARD_TOKEN` secret, `BOARD_PROJECT`=5. The user taps merge on every PR.
+- Answers each step with a terse "Ok"/"Yes"/a letter. Asks plain-language questions; catches process slips. Says when lost ("I am lost with what is done vs what is todo") → give a done/todo table.
+- Local Mac test install: repo at `~/Documents/Salt/salt.md`; data `~/salt-demo`; run `cd ~/Documents/Salt/salt.md && SALT_DATA=~/salt-demo SALT_ADDR=:8420 ./salt`, open `http://localhost:8420`; stop with Ctrl+C. Install latest release: `curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh`.
+- GitHub settings: Actions on; auto-merge enabled; `BOARD_TOKEN` secret, `BOARD_PROJECT`=5. The user taps merge on every PR.
+- The user's desktop Claude once said "GitHub holds no built binary": binaries live under Releases, not in the code; the desktop app was never released by the fork.
 
 ## 3. Style & communication
 - **Language:** English.
@@ -44,30 +46,32 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - **Reply length:** short (phone screen). Lead with the answer; detail only when asked.
 - **Formatting:** short lists and small tables; numbered steps with exact tap/click paths for anything the user does by hand; shell commands in their own fenced `bash` blocks with full paths.
 - **"Explain X" / options:** per option: gains, costs, effort; then one recommendation.
-- **Working style:** each step ends with "Ready to continue with <next step>?" and waits for the user's go; a short status line when the user hasn't heard from Claude in a while during a long turn.
-- **Explaining terms:** plain words for a non-developer (what it is, what it costs us, what it gives us); concrete examples.
+- **Working style:** each step ends with "Ready to continue with <next step>?" and waits for the user's go; a short status line when the user hasn't heard from Claude in a while during a long turn. When the user asks mid-turn questions, answer them in the same reply.
+- **Explaining terms:** plain words for a non-developer; concrete examples.
 - **Avoid:** recaps of steps; long explanations before the result.
 
 ## 4. Hard rules (word for word)
 1. "Use spec-kit but indeed also a board to to track the work"
 2. "Fold them into here so the functionality is in here too (those branches)"
-3. Pushing: routine pushes to the working branch are fine; opening a PR is asked for ("Ready to continue with opening the PR?"), unless the user just asked for it. PRs: the user taps merge (Claude cannot enable auto-merge: classifier denial).
+3. Pushing: routine pushes to the working branch are fine; opening a PR is asked for ("Ready to continue with opening the PR?"), unless the user just asked for it. The user taps merge (Claude cannot enable auto-merge: classifier denial).
 4. Repo rules in `AGENTS.md` and `.claude/rules/` apply. A Stop hook runs `scripts/agent-gate.sh` plus a git-check (uncommitted or unpushed work fails it). Stale wiki screenshots fail the gate: retake before stopping.
 5. "ensure you think about all aspects of the code in relation to my feature requests". A new concept goes into `.specify/memory/surfaces.md`.
-6. Never work around a classifier denial (CI bypass, self-modification, destructive git such as deleting remote branches, enabling auto-merge, deleting scheduled tasks). Tell the user and give them the manual step.
-7. Commit authorship (changed 2026-10-28, owner: "Claude"): commits are authored by the agent (git's configured `Claude <noreply@anthropic.com>`); trailers `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and `Claude-Session: …`. Anything offered upstream is re-committed with the owner as author first.
-8. "ensure you have good board and issue hygiene": label `in-progress` when starting (remove when done/merged); tick tasks in `tasks.md` in the PR that does them; `Closes #N` for every finished task issue; file an issue for every bug or finding; nobody moves cards.
+6. Never work around a classifier denial (CI bypass, self-modification, destructive git, enabling auto-merge, deleting scheduled tasks, copying protected `go.sum`). Tell the user and give them the manual step.
+7. Commit authorship (owner, 2026-10-28: "Claude"): commits authored by the agent (`Claude <noreply@anthropic.com>`); trailers `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and `Claude-Session: …`.
+8. "ensure you have good board and issue hygiene": label `in-progress` when starting (remove when merged); tick tasks in `tasks.md` in the PR that does them; `Closes #N` for every finished task issue; file an issue for every bug or finding; nobody moves cards.
 9. After opening a PR: `subscribe_pr_activity`; a `send_later` check-in ~50 min later; on CI red fix and push; on merge remove `in-progress` and fast-forward the working branch (`git push origin origin/main:refs/heads/<branch>` when the branch is inside main).
 10. "I want you to ignore the maintainers comments unless they really make sense for us as well. I basically want to implement the functionality on our end. I don't care about pushing it back to them"
 11. Every number in a doc, comment or PR is measured in the session.
-12. Upgrade epic (#263) is "the next big epic to complete after the charting"; research done; owner chose option C ("No, go with c").
-13. Sonnet helpers (owner, 2026-10-28: "can you hand off to sonnet if you think it is useful?" → yes; "Capture that behaviour for other sessions please."): mechanical tasks (translations, wiki text following an existing page, screenshot retakes, test runs, copy-a-pattern tasks) may go to a `model: "sonnet"` subagent; judgement stays on Opus; review helper output before committing. Recorded in `.claude/rules/claude-code.md`. No Haiku.
-14. Anything spanning more than one surface starts with a spec/plan (`.claude/rules/claude-code.md`), even when the user files it as a plain issue (#265 lesson).
+12. Sonnet helpers for mechanical tasks (translations, wiki text following a page, screenshot retakes, test runs, copy-a-pattern); judgement stays on Opus; review helper output. No Haiku. (`.claude/rules/claude-code.md`)
+13. Anything spanning more than one surface starts with a spec/plan, even when filed as a plain issue.
+14. Menu icons (owner, 2026-10-29): "menu-items should have an icon. Ensure that no 2 functions have the same icon" — same function keeps one icon in every menu; editor menus count; a function = the verb.
+15. Parallel work: "after rename go 2 streams" (conductor = Claude; helper sessions on disjoint areas); never 3+.
+16. After PR #321 merged: write the skill-use rule and the steward skill "right after PR #321 merges, on the fresh branch, so the open PR stays as it is".
 
 ## 5. Corrections log
 | # | Claude did | The user wanted |
 |---|---|---|
-| 1 | Told the user to run `/speckit-specify` in a separate session | Run Spec Kit steps directly |
+| 1 | Told the user to run `/speckit-specify` in a separate session | Run Spec Kit steps directly (the speckit skills are `disable-model-invocation`: follow their SKILL.md by hand) |
 | 2 | (self) Called token-reachable membership routes a hidden security issue | A docs contradiction; #1 option B |
 | 3 | (self) Planned `server/ops_*.go` | `server/ops.go` exists → `cap_*.go` |
 | 4 | (self) Counted 36 MCP tools | 34 |
@@ -78,45 +82,43 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 9 | Edited `AGENTS.md` during a rejected tool call | Wait for the user |
 | 10 | Spec 003 merged with 20 task issues open | Issue and board hygiene (rule 8) |
 | 11 | (self) Appended decisions at the bottom | `docs/decisions.md` is newest first |
-| 12 | (self) `pkill -f <pattern>` killed its own shell | Kill by PID or `pgrep -x` |
-| 13 | (self) Repeated #12 (twice now: also 2026-10-28 on a vite catalog server) | `pgrep -x server.test \| xargs -r kill`; for node: loop `pgrep -x node` and match `/proc/$pid/cmdline`; `timeout` on long probes |
+| 12–13 | (self) `pkill -f <pattern>` killed its own shell (twice) | `pgrep -x <name> \| xargs -r kill`; `timeout` on long probes |
 | 14 | (self) Unmeasured figure in a GitHub comment | Every number measured in the session |
 | 15 | (self) A test that passed with the bug present | Mutation-check every new test |
 | 16 | (self) Guessed a CI regression cause | Measure the hypothesis first |
 | 17 | (self) `gofmt -w` on an exempt file | gofmt only touched files; four exempt files |
-| 18 | (self) `` `query_timeout` `` in the wiki | Write `` `"code": "query_timeout"` ``; never widen `ALLOWED_NON_TOOLS` |
-| 19 | (self) Raw `go test` output to benchstat | Filter lines (`scripts/bench-compare.sh`) |
-| 20 | (self) `git checkout -- web/src/theme.css` undid own edits | Back up a file before a test edit, restore from the backup |
-| 21 | (self) Unmeasured "about 200 rules" for `--radius-sm` | Measured: 15 uses |
-| 22 | (self) Unmeasured bundle baseline 790,888 B | Measured on main |
-| 23 | (self) Committed catalogue baselines from the container | Reference drawn on the same CI runner |
+| 18 | (self) `` `query_timeout` `` in the wiki | `` `"code": "query_timeout"` ``; never widen `ALLOWED_NON_TOOLS` |
+| 19 | (self) Raw `go test` output to benchstat | `scripts/bench-compare.sh` |
+| 20 | (self) `git checkout -- file` undid own edits | Back up a file before a test edit (to the scratchpad) |
+| 21–22 | (self) Unmeasured counts/baselines | Measure |
+| 23 | (self) Committed catalogue baselines from the container | Reference drawn on the CI runner |
 | 24 | (self) `\s*` before a lookahead in `check-tokens.mjs` | Each lookahead carries its own `\s*` |
 | 25 | (self) `git reset --hard` + force-push (blocked) | Fast-forward: `git push origin origin/main:refs/heads/<branch>` |
-| 26 | (self) `setsid` in `.devcontainer/start.sh` failed on a Mac | `nohup` fallback (#130, PR #135) |
-| 27 | (self) Told the user `localhost:8420` without http | Say `http://localhost:8420` |
-| 28 | (self) A mutation `sed` removed opt-outs from 5 files; backup covered 2 | Back up every file a mutation touches |
-| 29 | (self) `check-tokens` counted a `[role="dialog"]` selector | Find the panel by `[aria-modal="true"]`; never `token-ok` to dodge a counter |
+| 26 | (self) `setsid` in `.devcontainer/start.sh` failed on a Mac | `nohup` fallback |
+| 27 | (self) `localhost:8420` without http | `http://localhost:8420` |
+| 28 | (self) Mutation `sed` hit 5 files, backup covered 2 | Back up every file a mutation touches |
+| 29 | (self) `check-tokens` counted a dialog selector | `[aria-modal="true"]`; never `token-ok` to dodge a counter |
 | 30 | (self) A Playwright block that could never run | Delete vacuous test code |
-| 31 | (self) Unmeasured "chart libraries add 40–90 KB gzip" | Measured sizes (section 8) |
-| 32 | (self) Spec 004 called "no new runtime dependency" the user's; it was Claude's | Label Claude's defaults as defaults |
+| 31–32 | (self) Unmeasured chart sizes; Claude's default labelled as user's | Measure; label Claude's defaults as defaults |
 | 33 | (self) Gate said "nothing changed" in a shallow clone | Fetch `origin/main` and deepen before the gate |
-| 34 | (self) Catalogue CI reference run timed out on a section main lacked | Skip a section the base lacks in `CATALOG_SHOTS_ONLY` runs |
-| 35 | (self) `border-radius: 0` went over the radius budget | `border-radius: initial` |
-| 36 | (self) SidePanel Escape blocked by a closed Select's listbox | Only on-screen elements count |
-| 37 | (self) Catalogue Escape test flaked on a late tooltip | Wait until no `.ui-tooltip` |
-| 38 | (self) Plan said a menu is "hidden for readers"; there is no role check | Shown to all; server refuses a reader's save (charts now use `canEdit` from the editor, FR-027) |
-| 39 | (self) Listed "Save for everyone/Reset" filters as "Now" for charts | Left out; backlog #279 |
-| 40 | (self) `go mod download all` changed protected `go.sum` | Revert it (`git checkout -- go.sum`); `go.sum` changes only through Go tooling with a reason |
-| 41 | (self) `scripts/licenses.mjs` without Go modules downloaded dropped 630 notice lines | Run `go mod download all` first, then regenerate, then revert `go.sum` |
-| 42 | (self) Chart settings in the toolbar stretched it | Look at every screenshot before committing |
-| 43 | (self) A chart with nothing to group by silently stayed a number chart | FR-031 sentence; every kind selectable (built) |
-| 44 | (self) Proposed "group by any property" as the fix | "Each row" (built) |
-| 45 | Built #265 (workflows, update check, installer, docs) without spec/plan; user: "Did you spec this first?" | Spec + plan first for multi-surface work; spec/plan 009 written after, code reviewed against it |
-| 46 | (self) `npx prettier --write` reformatted whole files (no repo config) | Never run prettier; revert and re-apply only own edits |
-| 47 | (self) A check regex matched words in a comment (`npm run build`) | Anchor checks to the code line (`/^RUN .*npm run build/m`) |
-| 48 | (self) Sonnet helper gave "Caption" the same German word as labels | Review helper output; "Bildunterschrift" / "Pie de gráfico" |
-| 49 | (self) Speckit taskstoissues dedups by task ID repo-wide (T001 exists for every spec) | Dedupe per parent issue's sub-issues |
-| 50 | (self) Container image's frontend stage copied a few dirs; gate failed on `.specify/` (#315) | `COPY . /src` + `.dockerignore`; `check-release.mjs` enforces it |
+| 34–37 | (self) catalogue/CI/Escape/tooltip slips | see spec 001/004 history |
+| 38–39 | (self) Plan claims about reader menus; unasked "Now" items | Check the code; leave out what was not asked |
+| 40 | (self) `go mod download all` changed protected `go.sum` | Revert with `git checkout -- go.sum` (commit first so git is the backup) |
+| 41 | (self) `scripts/licenses.mjs` without modules downloaded dropped notices | `go mod download all` first, then regenerate, then revert `go.sum` |
+| 42 | (self) Toolbar stretched by chart settings | Look at every screenshot before committing |
+| 43–44 | (self) Chart grouping slips | FR-031; "Each row" |
+| 45 | Built #265 without spec/plan; user: "Did you spec this first?" | Spec + plan first for multi-surface work |
+| 46 | (self) `npx prettier --write` reformatted whole files | Never run prettier |
+| 47 | (self) Check regex matched words in a comment | Anchor checks to the code line |
+| 48 | (self) Sonnet gave "Caption" the labels' German word | Review helper output |
+| 49 | (self) taskstoissues dedup by task ID repo-wide | Dedupe per parent issue's sub-issues |
+| 50 | (self) Container image copied a few dirs only | `COPY . /src` + `.dockerignore`; `check-release.mjs` |
+| 51 | (self) `cp go.sum <scratch>` was denied (twice) | Commit `go.mod`/`go.sum` first; git is the backup; never copy protected files |
+| 52 | Wrote spec 011 with the name "salty.md" before the user had checked it; user: "stop, lemme doublecheck the name" | Brand/name choices are confirmed (availability checked by the user) before they go into docs |
+| 53 | (self) Test expected copy `.before-step-2`; one start takes one copy, before its first pending step | Correct expectation: the newest copy the release can open |
+| 54 | (self) Read-only SQLite check created `-wal`/`-shm` | Open `immutable=1` when no `-wal` exists |
+| 55 | (self) New "upgrade" audit entry on a fresh DB broke retention tests | A new, empty file is created, not upgraded: no entry (fix code, not test) |
+| 56 | (self) Parameter named `sql` shadowed the package; `fmt` added to exempt `server.go` | Rename params; put helpers (e.g. `stepsDetail`) in the new file |
 
 ## 6. Decisions
 | Decision | Why |
@@ -125,93 +127,111 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | `AGENTS.md` shared; `CLAUDE.md` gitignored | An earlier `CLAUDE.md` leaked deployment details |
 | Parity manifest + `check-parity.mjs`; `gapBudget` ratchet | Agent parity |
 | SQLite; read pool `s.rdb` beside writer `s.db` | Spec 002 |
-| Board derives Status; a ticked task closes its issue | Hygiene |
-| Spec 004 charts with Chart.js 4.5.1, lazy chunk | User: "I choose chartjs" |
-| "Each row" draws every row up to 50 (12 on a donut) | User: "all rows" |
-| Agents author their commits | User: "Claude" (2026-10-28) |
-| Sonnet helpers for mechanical tasks | User (rule 13) |
-| #263 research ran in a second session in parallel | User: "1 yes" |
-| Old handoff branches deleted | User: "yes" (Claude was blocked; user does it by hand) |
-| Safe upgrades on a migration library: goose v3.29.0 (option C); golang-migrate rejected (SQL steps only) | User: "No, go with c"; goose picked by Claude for Go steps |
-| A refused start shows its sentence in the log AND on the usual address (one page; JSON `{error, code}` for `/api/`, `/mcp`) | User: "B" (spec 008 FR-019) |
-| Fixtures per upgrade step (not per release); pre-upgrade copies kept 3, not in `salt backup` | Claude while clarifying (releases happen on every push) |
-| #265 done before spec 008 build | User: "Yes but after that do 265 first" |
-| Every push to main = a release, next patch on the `server.Version` major.minor line (v1.6.9 first); plain `vX.Y.Z`; release action creates the tag; image built in the same workflow; desktop never latest | #265 + Claude's rule, in `docs/decisions.md` |
+| Charts on Chart.js 4.5.1 | User: "I choose chartjs" |
+| Agents author their commits | User: "Claude" |
+| Safe upgrades on goose v3.29.0 (option C) | User: "No, go with c" |
+| Every push to main = a release, next patch on `server.Version`'s major.minor | #265, `docs/decisions.md` |
+| Third-party notices list modules the 5 release binaries link (`go list -deps` per target in `release.yml`), not `go list -m all` | User: "B" (in `docs/decisions.md`) |
+| Spec 010: every menu item has an icon; one function = one icon app-wide; editor's `/` and block menus count; function = the verb ("Move to trash" ≠ "Delete") | User: "1. yes", "2. count too", "A" |
+| Spec 010 timing: spec now, build after 008 | User: "3. spec now, build after 008" |
+| Rename the fork, option C: everything incl. internals | User: "C. Rename everything, internals too" |
+| New name **nigari** | User: "go with \"nigari\"" (after checking "salty.md") |
+| No transition for old names: they stop with the first nigari release; data still moves once; a `SALT_*` variable without its `NIGARI_*` name refuses the start | User: "Q1 immediately" (refusal = Claude's safety design inside that choice) |
+| First nigari release = **v2.0.0** | User: "Q2 B" |
+| Rename the GitHub repo too, at the moment the spec 011 PR merges | Claude's recommendation; user asked, did not object |
+| Spec 008 split: part 1 (T001–T019) merged as PR #321; part 2 (T020–T026) later | Needed for the rename (owner: "bump the rename to the top") |
+| After the rename: 2 streams (conductor + 1 helper) | User: "after rename go 2 streams" |
+| Skill use enforced by (1) a rule in `.claude/rules/claude-code.md` + (2) a repo steward skill; GitHub auto-review (3) later if needed | User: "yes" |
+| Plugins installed: code-review (Anthropic), ux-ui-audit (community), playwright (Microsoft) | User installed from Claude's card |
 
 ## 7. Changed / rejected
-- Earlier chats: decisions page in workspace → `docs/decisions.md`; fixed surfaces list → registry; force-push rebase → merge `main`; hand-moved cards → derived Status; committed catalogue baselines → reference drawn per run; `Dialog` `open`/`onOpenChange` → `onClose`.
-- Spec 004 "hand-drawn SVG" → Chart.js 4.5.1; chart settings in toolbar → row → `ui/Popover` panel.
-- Owner as commit author → Claude as author.
-- #263 research recommendation B (hand-written runner, `PRAGMA user_version`) → C (goose; version in `goose_db_version`).
-- Spec 008 "one fixture per release" → per step.
-- #265 "server.Version + run number (1.6.8+42)" → rejected (update check ignores `+`).
-- ❌ Spec 004 leaves out: second grouping/stacked bars, reference lines, axis range, SVG, creating a database or CSV import from the picker, "Save for everyone"/"Reset", folding toolbar, Lock views, "Hide negative values", "Load limit", "Show data source title" (backlog #279–#282).
-- ❌ Grouping by a number's distinct values; "group by any property" (for now).
-- ❌ DuckDB, Mantine as app library, shadcn/ui, Storybook; uPlot, Recharts, ECharts; widening `ALLOWED_NON_TOOLS`; looser pixel tolerance; baselines committed by a CI bot; three or more parallel streams.
-- ❌ Down migrations, Litestream, upgrade-on-read as the mechanism (research).
+- Earlier chats: decisions page in workspace → `docs/decisions.md`; fixed surfaces list → registry; force-push rebase → merge `main`; hand-moved cards → derived Status; committed catalogue baselines → reference per run; `Dialog` `open`/`onOpenChange` → `onClose`; hand-drawn SVG charts → Chart.js; owner as commit author → Claude.
+- #263 research B (hand-written runner) → C (goose); spec 008 fixture per release → per step; #265 `1.6.8+42` versions rejected.
+- Notices from `go list -m all` → linked modules only (A rejected: 10× longer notices for code that does not ship).
+- Plan 008 P2 "goose's own missing-migrations error would also catch a newer DB" → false; plain-SQL refusal. P3 `HasPending` → plain-SQL "pending" (HasPending writes).
+- Upgrades on the single writer connection → own pool of 2 (RunDB deadlock).
+- Name "salty.md" → "nigari".
+- Rename option B (product only) → C (everything). Transition period for old names → none.
+- Spec 008 as one PR → two parts. Rename after all of 008 → rename right after part 1.
+- ❌ 3+ parallel streams; parallel streams during the rename.
+- ❌ Community Go/security/Flutter/mobile/AWS plugins (repo rules and `/security-review` cover it).
+- ❌ Spec 004 leftovers (backlog #279–#282); DuckDB, Mantine as app library, shadcn/ui, Storybook, uPlot, Recharts, ECharts; widening `ALLOWED_NON_TOOLS`; looser pixel tolerance; baselines committed by a CI bot; down migrations, Litestream, upgrade-on-read.
 
 ## 8. Data & facts (exact)
 
 **Repo and tooling**
-- Go 1.27.2 local, CI 1.27.3; Node 22. `modernc.org/sqlite` v1.60.1 (SQLite 3.53.4). `@base-ui/react` 1.9.0; Playwright 1.63.0; Chart.js 4.5.1.
-- CI jobs: `Build and test` (required), `Component catalogue`, `Storage benchmarks`, `sync`, `cla` (skipped in fork). Release workflow on push to main: jobs `build`, `image / image`.
-- 34 MCP tools; `gapBudget` 10; check-wiki: 40 pages, 146 routes; registry has 17 surfaces (new: **Stored data**).
+- Go 1.27.2 local, CI 1.27.3; Node 22 (v22.22.0, has `node:sqlite`). `modernc.org/sqlite` v1.60.1; `modernc.org/libc` now v1.78.0 (was v1.77.1; raised by goose with x/crypto v0.58.0, x/net v0.61.0, x/sys v0.49.0, x/text v0.43.0, go-humanize v1.1.0, go-strftime v1.1.0). Playwright 1.63.0; Chart.js 4.5.1.
+- CI jobs: `Build and test` (required), `Component catalogue`, `Storage benchmarks`, `sync`, `cla` (skipped). Release workflow on push to main: `build`, `image / image`.
+- 34 MCP tools; `gapBudget` 10; check-wiki: 40 pages, 146 routes; registry 17 surfaces.
+- Locales: de/es 1212 entries each, 0 untranslated. Languages: en, de, es (no Dutch). i18n: `t('English')` keys, `web/src/locales/*.json` auto-picked, `web/scripts/translate.mjs` (model `SALT_TRANSLATE_MODEL`), `check-i18n.mjs`. German uses "du".
 - gofmt-exempt: `server/server.go`, `server/audit.go`, `server/desktop_auth.go`, `server/tunnel_update_test.go`.
-- `npm run check` now includes `check-chartlayout.mjs` (45 rules), `check-chartdefaults.mjs` (17 rules), `check-release.mjs`.
-- Locales: 1206 entries each de/es, 0 untranslated (at v1.6.10).
-- Container setup each new session: clone the working branch, `git fetch origin main:refs/remotes/origin/main`, deepen, `cd web && npm ci`, `cd web/tests && npm ci`; Playwright browsers at `/opt/pw-browsers`.
-- Full gate ~10 min: `timeout 900 scripts/agent-gate.sh > log 2>&1`.
-- Screenshot retake recipe: `cd web && npx vite build`; `go build -o <scratch>/salt-shot .`; fresh data dirs; run on 127.0.0.1:8421 (seed: `SALT_SEED_URL=http://127.0.0.1:8421 node scripts/seed-wiki-instance.mjs`) and fresh on 8422; `ln -sfn /opt/node22/lib/node_modules/playwright web/node_modules/playwright`; `SALT_SHOOT_URL=http://127.0.0.1:8421 SALT_SHOOT_FRESH_URL=http://127.0.0.1:8422 SALT_SHOOT_EMAIL=ada@example.com SALT_SHOOT_PASSWORD='WikiPruefung2026!' node scripts/shoot-wiki.mjs <ids>`; remove the symlink, `git checkout -- .github/hero.png`, `pgrep -x salt-shot | xargs -r kill`. Test account is invented. Changes to `tokens.css` mark ~30 shots stale (timestamps move on activity-log etc.).
+- Container setup each new session: clone the working branch, `git fetch origin main`, deepen, `cd web && npm ci && npx vite build`, `cd web/tests && npm ci`; Playwright at `/opt/pw-browsers`.
+- Full gate ~10 min: `timeout 900 scripts/agent-gate.sh > log 2>&1` (prints only "gate: green" when green).
+- Screenshot recipe: `cd web && npx vite build`; `go build -o <scratch>/salt-shot .`; fresh data dirs; instances on 127.0.0.1:8421 (seed: `SALT_SEED_URL=http://127.0.0.1:8421 node scripts/seed-wiki-instance.mjs`) and fresh on 8422; `ln -sfn /opt/node22/lib/node_modules/playwright web/node_modules/playwright`; `SALT_SHOOT_URL=http://127.0.0.1:8421 SALT_SHOOT_FRESH_URL=http://127.0.0.1:8422 SALT_SHOOT_EMAIL=ada@example.com SALT_SHOOT_PASSWORD='WikiPruefung2026!' node scripts/shoot-wiki.mjs <ids>`; remove the symlink; `git checkout -- .github/hero.png`; `pgrep -x salt-shot | xargs -r kill`. Test account invented.
 
-**Charts (spec 004, done)**
-- Merged PRs #264 (parts 1+2), #283 (part 3). Issues closed: #20, #215–#262, #271–#276.
-- Each row: `groupBy "__row"`; budgets p95 4.575 ms → **7 ms** (1k), 45.84 ms → **69 ms** (10k), CI run 40764479349; answer 761,291 B at 10k (#277).
-- Popover tokens: `popover.width` 320px, `popover.layer` 150.
+**Releases**
+- v1.6.9, v1.6.10 (08:22 UTC 2026-10-29; assets `salt-darwin-arm64` 25,759,266 B, `salt-darwin-amd64`, `salt-linux-amd64`, `salt-linux-arm64`, `salt-windows-amd64.exe`, `SHA256SUMS.txt`; image `ghcr.io/neatlittlemacapps/salt.md`).
+- PR #321 merged → main `aa5d13b`; release run **40946182773** was in progress at handoff time (expected v1.6.11 — verify, do not assume).
+- No `desktop-v*` tags: the fork never released the desktop app (`desktop/`, Electron, `appId` `md.salt.desktop`, unsigned without Apple secrets).
 
-**Releases (#265, spec 009, done)**
-- PR #288 merged → **v1.6.9** (binaries; image failed, #315); PR #316 merged → **v1.6.10** (binaries + image OK, run 40841297991).
-- Assets: `salt-darwin-arm64`, `salt-darwin-amd64`, `salt-linux-amd64`, `salt-linux-arm64`, `salt-windows-amd64.exe`, `SHA256SUMS.txt`; image `ghcr.io/neatlittlemacapps/salt.md:<version>` and `:latest`.
-- Fork tags before: v1.1.2–v1.1.4 (upstream's). `install.sh` `REPO="${SALT_REPO:-neatlittlemacapps/salt.md}"`; `updateRepo = "neatlittlemacapps/salt.md"`.
+**Spec 008 safe upgrades (part 1 merged)**
+- Done T001–T007, T009–T019 = #289–#295, #297–#307 (closed by PR #321 on merge). Open: T008 #296 (budget to record), T020–T026 = #308–#314.
+- Binary 33,914,395 B → 34,268,625 B with goose imported (+354,230 B). Modules in graph 33 → 112; linked +5 (goose, mfridman/interpolate, sethvargo/go-retry, go.uber.org/multierr, golang.org/x/sync). Notices now 16 Go modules (was 33 listed).
+- `BenchmarkStorageStart` on CI (run 40944485890, AMD EPYC 9V74, 6 runs): `upgrade-nothing-pending` p95 **1.275 ms** (benchstat), `before-spec-008` p95 **1.666 ms** → budget **2 ms** (p95 × 1.5, rounded up). Container: 0.82–0.95 ms vs 1.84–2.23 ms.
+- Fixture `server/testdata/upgrade/step-0.db` 421,888 B, written by main `f9e35b9` (v1.6.10); generator `TestWriteUpgradeFixture` (`SALT_WRITE_UPGRADE_FIXTURE=<path>`), content in `upgradeFixture` (page "Upgrade fixture", search word "quokka", child "Child page", database "Hours", rows Design/Build/Test, chart view "Hours by stage", comment "Written before the upgrade", file `notes.txt`, account `fixture@example.test`).
+- Step 1 fingerprint `stepOneShape` = `25b99a931b53844377f1d7738661854fe9e6ab9a3cd97e80c3c30e9b194f133f`.
+- Codes: `upgrade_refused`, `upgrade_failed`, `upgrade_copy_failed`, `upgrade_busy`. Copies `salt.db.before-step-<n>`, keep 3; restore line `cp <copy> salt.db && rm -f salt.db-wal salt.db-shm`. Lock `upgrade.lock` (PID + time), only when pending, stale after 15 min.
+- goose findings (tests in `server/upgrade_goose_test.go`): newer DB → no pending, no error; `GetDBVersion` and `HasPending` create `goose_db_version`; `NewProvider` writes nothing; `RunDB` on 1 connection deadlocks.
 
-**Safe upgrades (spec 008, specified/planned, not built)**
-- Today: `openDB` runs `schema` + 40 `ensureColumn` calls; `schema_meta.version` overwritten every start; `make build` used to stamp nothing (fixed by #265).
-- Research measurements: `openDB` new file 90.6 ms; existing 2.3–2.6 ms; `VACUUM INTO` 83 MB in 178 ms; goose +83 modules, +1.16 MB (golang-migrate +192, +0.12 MB).
-- goose v3.29.0 probe (scratch, not in repo): `NewProvider(DialectSQLite3, db, nil, WithGoMigrations(NewGoMigration(n, &GoFunc{RunTx: …}, nil)))` works; a failing step rolls back, version stays at last success, next start continues; **a newer database: goose reports no pending, runs nothing, no error**; **`GetDBVersion` on a fresh DB creates `goose_db_version` (file checksum changed)** → refusal check must read the version with plain SQL before any goose call. Add both findings to the plan/research in T001.
-- Spec 008 tasks T001–T026 = **#289–#314** (sub-issues of #263); #289 labelled `in-progress`.
-- Codes: `upgrade_refused`, `upgrade_failed`, `upgrade_copy_failed`, `upgrade_busy`; copies `salt.db.before-step-<n>`; lock `upgrade.lock` (15-minute takeover); fixtures `server/testdata/upgrade/step-<N-1>.db`; SC-002 start ≤ 5 ms.
+**Spec 011 rename (specified, clarified, not planned)**
+- 256 tracked files mention "salt"; 33 `SALT_*` env vars; cookies `salt_session`, `salt_oauth`, `salt_mail_oauth`; 18 browser-storage keys (`salt-theme`, `salt-tabs`, …); header `X-Salt-Signature`; export `salt-workspace.json`; `salt.db`; binary `salt`; Go module `salt`; desktop `md.salt.desktop`; image `ghcr.io/neatlittlemacapps/salt.md`; repo `neatlittlemacapps/salt.md`; 11 UI strings; 36 wiki pages.
+- New names: `nigari` binary/image, `NIGARI_*`, `nigari.db`, repo `neatlittlemacapps/nigari`, v2.0.0.
 
-**Upstream (`saltmd/salt.md`)**: fork contains upstream main up to `2ee1efc` (+ `521a2fc`); remote `upstream` must be re-added in a new container.
+**Backlog epics (proposed by Claude, Epic A chosen for stream B)**
+| Epic | Issues |
+|---|---|
+| A. Databases & views | #131, #132, #133, #18, #19, #270, #269, #279, #281, #280, #178 |
+| B. Charts follow-ups | #319, #318, #278, #277, #282, #266 |
+| C. Collaboration | #22, #26, #24, #23 |
+| D. Editor | #317, #267, #268 |
+| E. Agent parity | #3–#12, #14, #16, #17 |
+- New issues this chat: #317, #318, #319 (filed by the user), #320 (wiki screenshots show the scratch data directory).
 
 ## 9. People, terms & names
 - **People:** the user (`neatlittlemacapps`, Frank De Graeve); upstream maintainer "Jeremia" (`jeremiaa`).
-- **Terms:** surface = a registry row; gap = a person can, an agent can't; budget = a count that only goes down; gate = `scripts/agent-gate.sh`; registry = `.specify/memory/surfaces.md`; "Each row" = one bar per row; step = numbered upgrade step; fixture = a database written before a step.
-- **Branches:** working branch `claude/handoff-continuation-4byisr` (= main at `f9e35b9` + this handoff); `claude/upgrades-research` (research only, merged content via cherry-pick); `claude/happy-cori-rq1bym` (old, merged).
-- **Files:** specs `specs/004-chart-view/`, `specs/008-safe-upgrades/` (spec, research, plan, data-model, contracts/rest.md + refusal.md, quickstart, tasks), `specs/009-fork-releases/`; chart code `server/aggregate.go`, `web/src/components/ChartPane.tsx`, `ChartSettings.tsx`, `ChartSave.tsx`, `ChartFigure.tsx`, `ChartView.tsx`, `web/src/chartInsert.ts`, `savePicture.ts`, `ui/Popover.tsx`; release `.github/workflows/release.yml`, `docker.yml`, `.dockerignore`, `web/scripts/check-release.mjs`.
-- **Planned 008 names:** `server/upgrade.go` (`upgradeDB`, `UpgradeRefusal`, `copyBeforeUpgrade`, `pruneCopies`, `upgradeLock`, `RefusalHandler`), `server/upgrade_steps.go` (`baseSchema(tx)`, `rebuildTable`), `server/upgrade_test.go`, `web/scripts/check-upgrades.mjs`, `web/tests/upgrade-refusal.mjs`.
+- **Terms:** surface = registry row; gap = person can, agent can't; budget = count that only goes down; gate = `scripts/agent-gate.sh`; step = numbered upgrade step; fixture = DB written before a step; stream = a parallel work line; conductor = Claude steering helper sessions; steward skill = repo skill with the conductor rules.
+- **Branches:** working branch `claude/serene-planck-ie0e6w` (fast-forwarded to main `aa5d13b` after the merge; holds this handoff once committed); `claude/handoff-continuation-4byisr` (old handoff branch, merged).
+- **Files:** `server/upgrade.go` (`upgradeDB`, `upgradeWith`, `inspectDB`, `storedStep`, `refuseNewer`, `copyBeforeUpgrade`, `pruneCopies`, `takeUpgradeLock`, `UpgradeRefusal`, `stepsDetail`), `server/upgrade_steps.go` (`upgradeSteps`, `baseSchema`, `rebuildTable`), `server/refusal.go` (`RefusalHandler`), `main.go` (`serveRefusal`), tests `server/upgrade_test.go`, `upgrade_goose_test.go`, `upgrade_fixture_test.go`, `web/tests/upgrade-refusal.mjs`; specs `specs/008-safe-upgrades/`, `specs/010-menu-icons/`, `specs/011-rename-nigari/`.
+- **Plugins/skills available:** `code-review:code-review`, `ux-ui-audit:ux-ui-audit`, playwright MCP (`mcp__plugin_playwright_playwright__*`), built-in `/code-review`, `/security-review`.
 
 ## 10. Work state
 | Item | Status | Location | Notes |
 |---|---|---|---|
-| Spec 004 charts | done, merged | PRs #264, #283 | — |
-| #265 fork releases | done, merged | PR #288, spec 009 | v1.6.9 out |
-| #315 image build | done, merged | PR #316 | v1.6.10 image OK |
-| Spec 008 safe upgrades | spec + clarify + plan + tasks done; build not started | `specs/008-safe-upgrades/`, #289–#314 | T001 next |
-| Docker image visibility | waiting on user | GitHub Packages | make public (section 12) |
-| Backlog priority 1 | after 008 | issues | #131, #133, #132, #18, #19, #26, #22 |
-| Priority 2 | later | issues | #23, #24, #21, #15, #178, #14, #16, #266, #277, #278 |
-| Priority 3 | later | issues | #3–#9, #17, #25, #10, #11, #12, #279–#282 |
+| Spec 008 part 1 | merged | PR #321 | release run 40946182773 |
+| T008 budget | measured, not recorded | #296 | write 2 ms into `specs/002-storage-engine/research.md` P3; tick T008 |
+| `in-progress` labels | to remove | #289–#307 | rule 8 (closed issues keep no in-progress) |
+| Skill-use rule + steward skill | agreed, not written | `.claude/rules/claude-code.md`, `.claude/skills/steward/SKILL.md` | rule 16 |
+| Spec 011 rename | spec + clarify done | `specs/011-rename-nigari/` | plan next (incl. repo-rename steps) |
+| Spec 008 part 2 | not started | T020–T026, #308–#314 | stream A after rename |
+| Spec 010 menu icons | spec + clarify done | `specs/010-menu-icons/` | stream A after 008 |
+| Epic A | proposed | issues in section 8 | stream B (helper) after rename; spec 012 |
+| #320 | filed | issue | wiki screenshot data dir |
 
 ## 11. Next steps
-1. **Next action:** spec 008 T001 (#289): in the repo, `go get github.com/pressly/goose/v3@v3.29.0`; record binary size and module count before/after (`CGO_ENABLED=0`); regenerate notices (`go mod download all` → `node scripts/licenses.mjs` → keep `go.sum` only as `go get` changed it); write the two goose findings (section 8) into `specs/008-safe-upgrades/plan.md` P2/research.
-2. T002 fixture `step-0.db` from today's main, then T003–T006 (step 1 = today's schema; `upgradeDB`; all opens through it; frozen-step tests), then US2–US7 tasks in order; label each issue `in-progress` when starting.
-3. One PR for spec 008 (ask first), then the priority-1 backlog from #131.
+1. **Next action:** check the release of run 40946182773 (version, assets, image), then remove `in-progress` from #289–#307 and write T008's 2 ms budget into `specs/002-storage-engine/research.md` P3 with run 40944485890, tick T008 (#296).
+2. Write the skill-use rule into `.claude/rules/claude-code.md` (`/code-review` before offering any PR; `ux-ui-audit` after visible UI changes, light and dark; `/security-review` when sign-in, permissions or tokens change) and `.claude/skills/steward/SKILL.md` (conductor rules: allowed files per stream, branch names, labels, tick tasks, `Closes #N`, merge `main` after each merge, review before offering, never touch the other stream's area).
+3. Spec 011: `/speckit-plan` (by hand), then tasks, then issues via `speckit-github-taskstoissues` (dedupe per parent), then build; PR asked first; repo rename by the owner at merge time.
+4. Then 2 streams (rule 15).
 
 ## 12. Open questions ⚠️
-- Has the user made the container image public (Profile → Packages → salt.md → Package settings → Change visibility → Public)? Without it `docker pull` needs a login.
-- Has the user deleted branches `claude/keen-hopper-9joiox` and `claude/vigilant-babbage-bvoiel` (said yes; Claude was blocked)?
+- nigari icon: A custom SVG mark (recommended) / B Lucide icon / C Tabler or Phosphor.
+- Add a fork desktop release (unsigned at first) to the backlog?
+- Add Dutch (`nl.json`, ~1,212 strings via a Sonnet helper)?
+- Has the user made the container image public (Profile → Packages → salt.md → Package settings → Change visibility → Public)?
+- Has the user deleted branches `claude/keen-hopper-9joiox` and `claude/vigilant-babbage-bvoiel`?
 
 ## 13. Re-attach checklist
-Nothing to attach. This file is `docs/handoffs/handoff-saltmd.md` on branch `claude/handoff-continuation-4byisr` of `neatlittlemacapps/salt.md`. Start a Claude Code session on that repo and branch.
+Nothing to attach. This file is `docs/handoffs/handoff-saltmd.md` on branch `claude/serene-planck-ie0e6w` of `neatlittlemacapps/salt.md`. Start a Claude Code session on that repo and branch.
 
 ---
-<sub>Audit: 13/13 sections · 14 rules · 50 corrections · 230 data points · secrets removed: none found (the test account is invented and documented) · generated by active-memory</sub>
+<sub>Audit: 13/13 sections · 16 rules · 56 corrections · 260 data points · secrets removed: none found (the test accounts are invented and documented) · generated by active-memory</sub>
