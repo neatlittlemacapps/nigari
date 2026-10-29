@@ -4,7 +4,7 @@
 Description=salt.md workspace (rootless Podman)
 
 [Container]
-Image=ghcr.io/saltmd/salt.md:latest
+Image=ghcr.io/neatlittlemacapps/salt.md:latest
 ContainerName=salt
 PublishPort=127.0.0.1:8420:8420
 Volume=salt-data:/data

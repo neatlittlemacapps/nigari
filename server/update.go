@@ -23,7 +23,9 @@ import (
 // one NAT, and the 403 that arrives when it runs out looks exactly like an
 // answer.
 const (
-	updateRepo    = "saltmd/salt.md"
+	// This fork's releases (#265): every push to main is one. Asking upstream
+	// told a fork instance about releases that are not its own.
+	updateRepo    = "neatlittlemacapps/salt.md"
 	updateLatest  = "https://github.com/" + updateRepo + "/releases/latest"
 	updateEvery   = 24 * time.Hour
 	updateTimeout = 10 * time.Second

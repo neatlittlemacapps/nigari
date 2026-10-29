@@ -1,20 +1,55 @@
 name: Release
 
-# Push a tag like v1.0.0 to build prebuilt binaries for every platform and
-# attach them to a GitHub Release. install.sh downloads from here.
+# Every push to main becomes a release of this fork (#265): prebuilt binaries
+# for every platform on a GitHub Release, and the container image. install.sh,
+# the admin's update notice and the Docker instructions all read from here.
+# Before, the fork had no releases, so installing it gave upstream's v1.1.4.
+#
+# The version: the fork's own patch line. The next number after the highest
+# fork tag on the line named by server.Version's major.minor (1.6 today), so
+# every release sorts above upstream's v1.1.x tags that the fork carries.
+# server/update.go only treats plain x.y.z as a release, which is why this is
+# not "1.6.8+42". A pushed v* tag still releases as itself.
 on:
   push:
+    branches: [main]
     tags: ["v*"]
   workflow_dispatch: {}
 
 permissions:
   contents: write
+  packages: write
+
+# Two pushes in quick succession must not both take the same next number.
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Work out the version
+        id: v
+        run: |
+          set -eu
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            version="${GITHUB_REF_NAME}"
+          else
+            base=$(sed -n 's/^var Version = "\(.*\)"$/\1/p' server/backup.go)
+            line="${base%.*}"
+            last=$(git tag -l "v${line}.*" --sort=-v:refname | head -n1)
+            if [ -n "$last" ]; then n="${last##*.}"; else n="${base##*.}"; fi
+            version="v${line}.$((n + 1))"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "Releasing ${version}" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/setup-node@v4
         with:
@@ -35,12 +70,12 @@ jobs:
       - name: Build frontend
         run: make frontend
         env:
-          SALT_VERSION: ${{ github.ref_name }}
+          SALT_VERSION: ${{ steps.v.outputs.version }}
 
       - name: Cross-compile binaries
         run: |
           set -eu
-          VERSION="${GITHUB_REF_NAME:-dev}"
+          VERSION="${{ steps.v.outputs.version }}"
           mkdir -p dist
           build() {
             os="$1"; arch="$2"; ext="${3:-}"
@@ -59,9 +94,27 @@ jobs:
           ( cd dist && sha256sum salt-* > SHA256SUMS.txt )
           ls -lh dist
 
+      # The action creates the tag on this commit. A tag pushed with
+      # GITHUB_TOKEN would not start other workflows, which is why the image
+      # is a job below rather than docker.yml reacting to the tag.
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.v.outputs.version }}
+          target_commitish: ${{ github.sha }}
           files: dist/*
           generate_release_notes: true
           fail_on_unmatched_files: true
+          # /releases/latest (install.sh, the update notice) skips
+          # prereleases, so these are full releases, and the latest.
+          prerelease: false
+          make_latest: "true"
+
+  image:
+    needs: build
+    uses: ./.github/workflows/docker.yml
+    with:
+      version: ${{ needs.build.outputs.version }}
+    permissions:
+      contents: read
+      packages: write

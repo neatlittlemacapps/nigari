@@ -7,6 +7,33 @@ entries are not edited away.
 
 ---
 
+## 2026-10-29 — The fork releases every push to main, on its own 1.6 line
+
+**Decision** (owner's issue #265, with the version rule left to us): every push to `main`
+publishes a GitHub Release of this fork and its container image. Each gets the next patch
+number on the line named by `server.Version`'s major.minor (1.6 today: v1.6.9, v1.6.10, …).
+`install.sh`, the admin's update notice, the Docker image and the docs point at the fork.
+
+**Why this rule**:
+- The update check only treats plain `x.y.z` as a release (`server/update.go`), so
+  build-metadata versions like `1.6.8+42` would make every instance silent about updates.
+- Every fork release must sort above the upstream tags the fork carries (v1.1.2–v1.1.4),
+  and the 1.6 line already does.
+- If an upstream merge moves `server.Version` to a new major.minor, the fork follows that
+  line from its patch + 1.
+
+`make build` stamps the same version into the frontend and the server, from
+`git describe`. Before, a local build was "dev" in the browser and "1.6.8" on the server.
+
+**Turned down**:
+- `server.Version` plus the run number: rejected by the update check, as above.
+- Pushing a tag from one workflow for `release.yml` to react to: tags pushed with
+  `GITHUB_TOKEN` start no other workflow, so the release job creates the tag and calls the
+  image build itself.
+- Marking these releases as prereleases: `/releases/latest` skips them.
+
+---
+
 ## 2026-10-29 — Safe upgrades run on a migration library: goose
 
 **Decision** (owner, shown the research's options for #263 with B recommended: "No, go with

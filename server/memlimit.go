@@ -16,7 +16,7 @@ import (
 // has 64 GB, sizes its work accordingly, and gets killed by the first large
 // document. The cgroup files below are the only place the real cap is written.
 
-// containerWithoutCap is what a plain `docker run ghcr.io/saltmd/salt.md`
+// containerWithoutCap is what a plain `docker run ghcr.io/neatlittlemacapps/salt.md`
 // produces: a container with no --memory, on a host with plenty. There the
 // host's figure is NOT a promise — the operator may hand this container 512 MB
 // tomorrow, and nothing in the container would notice. Assuming the host's

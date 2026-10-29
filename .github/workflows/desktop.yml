@@ -185,6 +185,9 @@ jobs:
           # they click "latest". It also must not sit above the server release,
           # which is the download people actually come for.
           prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+          # Never "latest": install.sh and the server's update notice read
+          # /releases/latest and must land on a server release (#265).
+          make_latest: "false"
           body: |
             The salt.md desktop app — a window onto a server you run.
 

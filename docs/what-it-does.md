@@ -279,7 +279,7 @@ there if it is enough.
 ### 1. Just run it
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/saltmd/salt.md/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
 salt
 ```
 

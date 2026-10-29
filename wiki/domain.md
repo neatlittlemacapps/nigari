@@ -376,7 +376,7 @@ the environment is in [Self-hosting](self-hosting.md).
 ## Where a fresh installation listens
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/saltmd/salt.md/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
 salt
 ```
 
