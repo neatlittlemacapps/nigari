@@ -69,6 +69,7 @@ Release naming (FR-015) is delivered with #265, which the owner put first.
 | Page containers | No change: no page rendering changes. | ui |
 | Aggregation | No change: no property type changes. | backend |
 | Stored data | Introduced here: step 1 and the runner (`server/upgrade.go`, `server/upgrade_steps.go`), the first fixture `step-0.db`, `TestUpgradeStepOneIsFrozen`, `check-upgrades.mjs`, and the registry row itself. | backend |
+| Outside names | Added to the registry after this plan, by spec 011, on the same day. This feature puts new names in the data directory (`salt.db.before-step-<n>`, `upgrade.lock`) and gives agents refusal codes (`upgrade_refused`, `upgrade_failed`, `upgrade_copy_failed`, `upgrade_busy`). Spec 011's `data-model.md` lists them; the copies move with the database there. Part 2 (T020–T026) adds no new outside name. | backend |
 
 **New concepts**: **Stored data**. Every later feature that changes what is stored (a table, a column, an index, a JSON shape inside a column) ships it as a new upgrade step with a fixture written just before it, and never edits an earlier step. Added to `.specify/memory/surfaces.md` (tag `backend`, since 2026-10-29), enforced by `check-upgrades.mjs` and `TestUpgradeStepOneIsFrozen`.
 
