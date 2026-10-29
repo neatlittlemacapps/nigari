@@ -3,6 +3,11 @@
 Research for issue #263 (epic: safe upgrades). Research only: no code changes,
 no spec yet. Written 2026-10-28.
 
+> **Decision, 2026-10-29:** the owner chose **option C** (a migration library) over the
+> recommended B, and goose was taken (Go steps; golang-migrate runs SQL only). The
+> reasoning is in `docs/decisions.md`. Everything below except the runner still stands:
+> the backup, the refusal, the restore report, the fixtures and the check.
+
 **The question** (owner): how does this type of software make sure that moving
 to a newer release is always possible, for a running instance and for an older
 backup restored into a newer release?

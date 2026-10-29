@@ -7,6 +7,34 @@ entries are not edited away.
 
 ---
 
+## 2026-10-29 — Safe upgrades run on a migration library: goose
+
+**Decision** (owner, shown the research's options for #263 with B recommended: "No, go with
+c"): the numbered upgrade steps of spec 008 run on a migration library rather than a runner
+written by hand. Of the two libraries the research measured, **pressly/goose v3** is used.
+Research: `specs/008-safe-upgrades/research.md`.
+
+**Why goose and not golang-migrate**: salt.md stores views, property schemas and row
+values as JSON inside columns, and reshaping those needs steps written in Go. goose runs Go
+functions as steps (and SQL files), each in a transaction. golang-migrate runs SQL files
+only. Both build with `CGO_ENABLED=0` on salt.md's SQLite driver (measured).
+
+**What it costs** (measured in the research, against a minimal program on the same driver):
++83 modules in the build graph and +1.16 MB of binary for goose (golang-migrate: +192
+modules, +0.12 MB). Principle I asks a new dependency to state its reason: this entry is it.
+
+**What changes from the research's recommendation**: the step number lives in goose's own
+version table, not in `PRAGMA user_version`. The pre-upgrade copy, the refusal to open a
+database newer than the binary, `salt restore` reporting the version, the fixture databases
+and the check stay as recommended; goose provides none of them, so they are written here.
+
+**Turned down**: option B, the same steps on a runner of our own (the research's
+recommendation; the owner preferred a known library); golang-migrate (SQL steps only);
+down migrations (going back is restoring the copy taken before the upgrade); Litestream
+(an external process and service).
+
+---
+
 ## 2026-10-28 — Mechanical tasks go to Sonnet helpers; judgement stays on Opus
 
 **Decision** (owner: "can you hand off to sonnet if you think it is useful?" — yes, and
