@@ -38,7 +38,7 @@ export default function UpdateBanner() {
 
   // Dismissal is per version, so the next release speaks up again rather than
   // being swallowed by a click somebody made months earlier.
-  const key = `salt-update-seen-${info.latest}`;
+  const key = `nigari-update-seen-${info.latest}`;
   let seen = false;
   try {
     seen = localStorage.getItem(key) === '1';

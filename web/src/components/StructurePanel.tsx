@@ -14,7 +14,7 @@ import { CornerDownRight, FileText, Globe, Link2, PanelRightClose, Table2 } from
 // the body — but a reader had to hunt through the sidebar or scroll to the end
 // to find any of it. The panel is a view onto data that was already there.
 
-const PANEL_KEY = 'salt-structure-open';
+const PANEL_KEY = 'nigari-structure-open';
 
 export function structurePanelOpen(): boolean {
   return localStorage.getItem(PANEL_KEY) === '1';

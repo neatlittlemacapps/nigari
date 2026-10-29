@@ -297,7 +297,7 @@ function SidebarSection({
   openOnGrowth?: boolean;
   children: React.ReactNode;
 }) {
-  const key = 'salt-sec-' + id;
+  const key = 'nigari-sec-' + id;
   const [open, setOpen] = useState(() => {
     const v = localStorage.getItem(key);
     return v === null ? defaultOpen : v === '1';

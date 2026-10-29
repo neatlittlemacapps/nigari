@@ -34,7 +34,7 @@ import { t, plural } from '../i18n';
  *  topbar stays right without the panel owning it. */
 export const COMMENTS_CHANGED = 'salt:comments-changed';
 
-const PANEL_KEY = 'salt-comments-open';
+const PANEL_KEY = 'nigari-comments-open';
 
 export function commentsPanelOpen(): boolean {
   return localStorage.getItem(PANEL_KEY) === '1';

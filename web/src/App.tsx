@@ -105,12 +105,12 @@ export default function App() {
   // The last opened workspace is remembered. Without it every reload dropped
   // you back into the first one — anybody who mostly works in a second had to
   // pick it again on every page load.
-  const [currentWs, setCurrentWs] = useState<string>(() => localStorage.getItem('salt-ws') ?? '');
+  const [currentWs, setCurrentWs] = useState<string>(() => localStorage.getItem('nigari-ws') ?? '');
   const [loadError, setLoadError] = useState(false);
   // Bear-style notes mode (middle notes column) — an explicit per-user setting
   // in the UserMenu, DEFAULT OFF so the first impression stays the classic
   // tree layout (user feedback: three parallel content areas felt chaotic).
-  const [notesMode, setNotesMode] = useState(() => localStorage.getItem('salt-notes-mode') === '1');
+  const [notesMode, setNotesMode] = useState(() => localStorage.getItem('nigari-notes-mode') === '1');
   // Tag selected in the sidebar while in notes mode — filters the notes list.
   const [notesTag, setNotesTag] = useState<string | null>(null);
   // The notes list is a column of its own from 901px, the width at which the
@@ -128,7 +128,7 @@ export default function App() {
   const toggleNotesMode = useCallback(() => {
     setNotesMode((cur) => {
       const next = !cur;
-      localStorage.setItem('salt-notes-mode', next ? '1' : '0');
+      localStorage.setItem('nigari-notes-mode', next ? '1' : '0');
       if (!next) setNotesTag(null);
       return next;
     });
@@ -145,7 +145,7 @@ export default function App() {
   const [openTabs, setOpenTabs] = useState<string[]>(() => {
     let seed: string[] = [];
     try {
-      const s = JSON.parse(localStorage.getItem('salt-tabs') ?? '[]');
+      const s = JSON.parse(localStorage.getItem('nigari-tabs') ?? '[]');
       if (Array.isArray(s)) seed = s.filter((x): x is string => typeof x === 'string');
     } catch {
       /* localStorage unavailable — tabs fall back to a single view */
@@ -164,7 +164,7 @@ export default function App() {
   useEffect(() => {
     tabsRef.current = openTabs;
     try {
-      localStorage.setItem('salt-tabs', JSON.stringify(openTabs));
+      localStorage.setItem('nigari-tabs', JSON.stringify(openTabs));
     } catch {
       /* best-effort persistence */
     }
@@ -183,11 +183,11 @@ export default function App() {
   // Desktop-only: collapse the sidebar entirely (mobile uses the drawer). The
   // editor's hamburger reopens it. Persisted so it stays collapsed across loads.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
-    () => localStorage.getItem('salt-sidebar-collapsed') === '1',
+    () => localStorage.getItem('nigari-sidebar-collapsed') === '1',
   );
   useEffect(() => {
     try {
-      localStorage.setItem('salt-sidebar-collapsed', sidebarCollapsed ? '1' : '0');
+      localStorage.setItem('nigari-sidebar-collapsed', sidebarCollapsed ? '1' : '0');
     } catch {
       /* best-effort */
     }
@@ -230,7 +230,7 @@ export default function App() {
   // this change keeps it — that was a deliberate setting, not something to
   // overwrite quietly. 'auto' is the new default.
   const [themePref, setThemePref] = useState<ThemePref>(() => {
-    const saved = localStorage.getItem('salt-theme');
+    const saved = localStorage.getItem('nigari-theme');
     return saved === 'light' || saved === 'dark' || saved === 'auto' ? saved : 'auto';
   });
   const [systemDark, setSystemDark] = useState(
@@ -250,7 +250,7 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem('salt-theme', themePref);
+    localStorage.setItem('nigari-theme', themePref);
   }, [theme, themePref]);
 
   // Typeface: the same mechanism as the theme — the choice is kept locally,
@@ -261,11 +261,11 @@ export default function App() {
   // only a MISSING key means "not decided yet" and therefore falls to the
   // bundled fonts.
   const [fontPref, setFontPref] = useState<FontPref>(() =>
-    localStorage.getItem('salt-font') === 'system' ? 'system' : 'brand',
+    localStorage.getItem('nigari-font') === 'system' ? 'system' : 'brand',
   );
   useEffect(() => {
     document.documentElement.dataset.font = fontPref;
-    localStorage.setItem('salt-font', fontPref);
+    localStorage.setItem('nigari-font', fontPref);
   }, [fontPref]);
 
   const loadFavorites = useCallback(async () => {
@@ -305,7 +305,7 @@ export default function App() {
   useEffect(() => {
     if (!currentWs) return;
     try {
-      localStorage.setItem('salt-ws', currentWs);
+      localStorage.setItem('nigari-ws', currentWs);
     } catch {
       /* private mode */
     }
@@ -716,9 +716,9 @@ export default function App() {
 
   const rememberRecent = (id: string) => {
     try {
-      const cur: string[] = JSON.parse(localStorage.getItem('salt-recents') ?? '[]');
+      const cur: string[] = JSON.parse(localStorage.getItem('nigari-recents') ?? '[]');
       const next = [id, ...cur.filter((x) => x !== id)].slice(0, 8);
-      localStorage.setItem('salt-recents', JSON.stringify(next));
+      localStorage.setItem('nigari-recents', JSON.stringify(next));
     } catch {
       /* localStorage unavailable — recents are a nice-to-have */
     }
@@ -1455,7 +1455,7 @@ export default function App() {
         <SearchModal
           recent={(() => {
             try {
-              const ids: string[] = JSON.parse(localStorage.getItem('salt-recents') ?? '[]');
+              const ids: string[] = JSON.parse(localStorage.getItem('nigari-recents') ?? '[]');
               return ids
                 .map((id) => pagesById.get(id))
                 .filter((p): p is PageMeta => !!p && !p.trashed)

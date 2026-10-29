@@ -27,7 +27,7 @@ await withFixture(async ({ page, api, base, workspace }) => {
   for (const theme of ['light', 'dark']) {
     await page.emulateMedia({ colorScheme: theme });
     await page.goto(`${base}/p/${doc.id}`);
-    await page.evaluate((t) => localStorage.setItem('salt-theme', t), theme);
+    await page.evaluate((t) => localStorage.setItem('nigari-theme', t), theme);
     await page.reload();
     await eventually(async () => (await page.evaluate(() => document.documentElement.dataset.theme)) === theme);
     await page.locator('[data-id="intro"] .bn-inline-content').click();

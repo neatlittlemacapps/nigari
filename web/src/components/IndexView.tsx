@@ -48,7 +48,7 @@ function tabs(): { id: Mode; label: string; icon: React.ReactNode }[] {
     matters); until then this is honest about what it knows. */
 function recentIDs(): string[] {
   try {
-    const v = JSON.parse(localStorage.getItem('salt-recents') ?? '[]');
+    const v = JSON.parse(localStorage.getItem('nigari-recents') ?? '[]');
     return Array.isArray(v) ? (v as string[]) : [];
   } catch {
     return [];

@@ -8,7 +8,7 @@
  *    Caching API responses would serve stale user data; the CRDT and REST
  *    layers own their own consistency.
  */
-const SHELL = 'salt-shell-v1';
+const SHELL = 'nigari-shell-v1';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();

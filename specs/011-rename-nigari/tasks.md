@@ -71,13 +71,13 @@ description: "Tasks for the rename to nigari"
   - rename every `server/blueprints/**/salt-workspace.json` with `git mv`;
   - update `server/blueprints/README.md` and the `bad_archive` sentence
 - [x] T013 [P] [US2] [test] `TestImportReadsOldArchive`: an archive with `salt-workspace.json` and `saltVersion` imports; a new export carries `nigari-workspace.json`; the blueprint library loads every blueprint (`credential_audit_test.go`'s archive fixture moves to the new name, and an old-name case stays)
-- [ ] T014 [US2] [ui] New `web/src/storageMove.ts`, from data-model.md "Browser":
+- [x] T014 [US2] [ui] New `web/src/storageMove.ts`, from data-model.md "Browser":
   - the 10 keys and 3 prefixes move copy-if-absent, then the old key is removed;
   - the 4 legacy names (`salt-locale`, `salt:view:`, `salt:scroll:`, `salt:hscroll:`) are removed, and their handling moves out of `pageUiState.ts` and `i18n.ts`;
   - every access is inside `try`.
 
   It is the first import in `web/src/main.tsx` (R4). Every call site reads and writes the `nigari-…` keys (`App.tsx`, `i18n.ts`, `pageUiState.ts`, `IndexView.tsx`, `Sidebar.tsx`, `UpdateBanner.tsx`, `CommentsPanel.tsx`, `StructurePanel.tsx`). Service worker `web/public/sw.js`: `SHELL = 'nigari-shell-v1'`
-- [ ] T015 [US2] [test] New `web/tests/storage-move.mjs`, added to `web/tests/package.json`'s `test` script:
+- [x] T015 [US2] [test] New `web/tests/storage-move.mjs`, added to `web/tests/package.json`'s `test` script:
   - seed `salt-theme=dark`, `salt-tabs`, `salt-recents`, `salt-prefs` and a `salt-sec-<id>`; load the app;
   - it renders dark with those tabs and recents; the `nigari-*` keys hold the values, and no `salt-*` key is left;
   - a second load changes nothing.

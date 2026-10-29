@@ -5,18 +5,15 @@
 // (`key={currentId}`), so anything kept in component state alone — the view
 // tab, the scroll position resets. This module is the memory instead.
 //
-// One JSON object per account, capped in size: the keys it replaces
-// (`salt:view:`, `salt:scroll:`, `salt:hscroll:`) grew one entry per visited
-// page and were shared between everyone using the browser. The old keys are
-// swept on first use. View memory rebuilds itself.
+// One JSON object per account, capped in size: the keys it replaced grew one
+// entry per visited page and were shared between everyone using the browser.
+// storageMove.ts removes them. View memory rebuilds itself.
 //
 // View ids persist across reloads (a choice, like the theme). Scroll positions
 // also persist across reloads — localStorage is the store either way, and a
 // reload lands back where you were rather than at the top.
 
-const STORE_PREFIX = 'salt:ui:';
-// Old unscoped keys, removed once the scoped store is in use.
-const LEGACY_PREFIXES = ['salt:view:', 'salt:scroll:', 'salt:hscroll:'];
+const STORE_PREFIX = 'nigari:ui:';
 // Entries per map; oldest goes first. Enough for years of navigation, small
 // enough that the store never matters.
 const MAX_ENTRIES = 300;
@@ -34,7 +31,6 @@ const emptyStore = (): UiStore => ({ views: {}, scrolls: {}, hscrolls: {} });
 // first person's scroll positions.
 let account: string | null = null;
 const memory = emptyStore();
-let swept = false;
 
 function storeKey(): string | null {
   return account ? STORE_PREFIX + account : null;
@@ -67,26 +63,10 @@ function save(store: UiStore): void {
   }
 }
 
-function sweepLegacy(): void {
-  if (swept) return;
-  swept = true;
-  try {
-    const gone: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && LEGACY_PREFIXES.some((p) => k.startsWith(p))) gone.push(k);
-    }
-    gone.forEach((k) => localStorage.removeItem(k));
-  } catch {
-    /* best-effort */
-  }
-}
-
 /** Whose memory to keep. Call on sign-in and sign-out; switching accounts
  *  switches the store with it. */
 export function setUiAccount(id: string | null): void {
   account = id;
-  if (id) sweepLegacy();
 }
 
 // LRU within the cap: touching a key moves it to the back, writing past the
