@@ -83,7 +83,7 @@ description: "Tasks for the rename to nigari"
   - a second load changes nothing.
 
   Mutation-check: drop the import and the test fails
-- [ ] T016 [US2] [backend] `install.sh` (plan P5, R13): `REPO` defaults to `neatlittlemacapps/nigari` through `NIGARI_REPO`; asset `nigari-<os>-<arch>`; binary `nigari`; its four variables renamed, with the refusal from contracts/refusal.md on `SALT_*`.
+- [x] T016 [US2] [backend] `install.sh` (plan P5, R13): `REPO` defaults to `neatlittlemacapps/nigari` through `NIGARI_REPO`; asset `nigari-<os>-<arch>`; binary `nigari`; its four variables renamed, with the refusal from contracts/refusal.md on `SALT_*`.
 
   The service move, as a function that takes a root prefix (`NIGARI_INSTALL_ROOT`, tests only):
   1. find `etc/systemd/system/salt.service`; stop and disable it;
@@ -93,7 +93,7 @@ description: "Tasks for the rename to nigari"
   5. print each step.
 
   Also: `Documentation=` link (R16), and the `./data/salt.db` note → `nigari.db`
-- [ ] T017 [US2] [test] New `scripts/test-install-move.sh` runs `install.sh`'s move function against a temp root holding a fake `salt.service`, `/var/lib/salt/salt.db` and `/usr/local/bin/salt`, with `systemctl`, `useradd` and `chown` stubbed on `PATH`. It checks the moved directory, the new unit's `NIGARI_DATA=/var/lib/nigari`, the removed files, and the refusal when both directories exist. It runs in CI's `Build and test` job and in `scripts/agent-gate.sh`
+- [x] T017 [US2] [test] New `scripts/test-install-move.sh` runs `install.sh`'s move function against a temp root holding a fake `salt.service`, `/var/lib/salt/salt.db` and `/usr/local/bin/salt`, with `systemctl`, `useradd` and `chown` stubbed on `PATH`. It checks the moved directory, the new unit's `NIGARI_DATA=/var/lib/nigari`, the removed files, and the refusal when both directories exist. It runs in CI's `Build and test` job and in `scripts/agent-gate.sh`
 - [ ] T018 [P] [US2] [backend] Containers (R14):
   - `Dockerfile`: user `nigari` with the uid the `salt` user has in the current image (measure with `docker run --entrypoint id ghcr.io/neatlittlemacapps/salt.md:latest`, or read Alpine's `adduser` default, and pin it with `-u`); `ENV NIGARI_ADDR=:8420 NIGARI_DATA=/data`; binary and `ENTRYPOINT` `nigari`;
   - `docker-compose.yml`: service `nigari`, image `ghcr.io/neatlittlemacapps/nigari`, volume **`salt-data` kept**, with a comment saying why;

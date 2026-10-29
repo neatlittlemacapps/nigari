@@ -60,6 +60,13 @@ if touches '\.go$|^go\.(mod|sum)$'; then
   fi
 fi
 
+# ---- Installer ---------------------------------------------------------------
+if touches '^install\.sh$|^scripts/test-install-move\.sh$'; then
+  if ! out="$(scripts/test-install-move.sh 2>&1)"; then
+    report "install.sh's service move failed:"; echo "$out" >&2
+  fi
+fi
+
 # ---- Frontend, translations, wiki ------------------------------------------
 # check-wiki and check-parity read server/mcp.go and server.go too, so a server change that
 # renames a tool or a route has to pass it as well.
