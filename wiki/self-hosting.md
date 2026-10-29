@@ -586,6 +586,16 @@ installer fetches from), and a container image on GHCR tagged both with the
 version and as `latest`. These are this fork's releases; to install upstream
 salt.md instead, run the script with `SALT_REPO=saltmd/salt.md`.
 
+Two settings on GitHub, set once by whoever owns the repository, make this
+work:
+
+- **The release run may write.** Settings → Actions → General → Workflow
+  permissions → **Read and write permissions**. Without it the run cannot
+  create the release.
+- **The image is public.** GitHub makes a new container image private. After
+  the first release: your profile → Packages → **salt.md** → Package settings
+  → Change visibility → **Public**. Until then `docker pull` asks for a login.
+
 **Installed with the script:** re-run it. Pin with
 `SALT_VERSION=v1.6.13` if you do not want the newest.
 
