@@ -1,0 +1,7 @@
+# Kept out of the image's build context (Dockerfile): installed dependencies
+# would overwrite the ones npm ci installs inside the image for its own
+# platform, the frontend is built inside the image, and history is not needed.
+**/node_modules
+web/dist
+.git
+desktop/out
