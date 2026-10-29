@@ -2,7 +2,7 @@ services:
   salt:
     build: .
     # Or use the prebuilt image instead of build:
-    # image: ghcr.io/saltmd/salt.md:latest
+    # image: ghcr.io/neatlittlemacapps/salt.md:latest
     ports:
       - "8420:8420"
     volumes:

@@ -7,6 +7,61 @@ entries are not edited away.
 
 ---
 
+## 2026-10-29 — The fork releases every push to main, on its own 1.6 line
+
+**Decision** (owner's issue #265, with the version rule left to us): every push to `main`
+publishes a GitHub Release of this fork and its container image. Each gets the next patch
+number on the line named by `server.Version`'s major.minor (1.6 today: v1.6.9, v1.6.10, …).
+`install.sh`, the admin's update notice, the Docker image and the docs point at the fork.
+
+**Why this rule**:
+- The update check only treats plain `x.y.z` as a release (`server/update.go`), so
+  build-metadata versions like `1.6.8+42` would make every instance silent about updates.
+- Every fork release must sort above the upstream tags the fork carries (v1.1.2–v1.1.4),
+  and the 1.6 line already does.
+- If an upstream merge moves `server.Version` to a new major.minor, the fork follows that
+  line from its patch + 1.
+
+`make build` stamps the same version into the frontend and the server, from
+`git describe`. Before, a local build was "dev" in the browser and "1.6.8" on the server.
+
+**Turned down**:
+- `server.Version` plus the run number: rejected by the update check, as above.
+- Pushing a tag from one workflow for `release.yml` to react to: tags pushed with
+  `GITHUB_TOKEN` start no other workflow, so the release job creates the tag and calls the
+  image build itself.
+- Marking these releases as prereleases: `/releases/latest` skips them.
+
+---
+
+## 2026-10-29 — Safe upgrades run on a migration library: goose
+
+**Decision** (owner, shown the research's options for #263 with B recommended: "No, go with
+c"): the numbered upgrade steps of spec 008 run on a migration library rather than a runner
+written by hand. Of the two libraries the research measured, **pressly/goose v3** is used.
+Research: `specs/008-safe-upgrades/research.md`.
+
+**Why goose and not golang-migrate**: salt.md stores views, property schemas and row
+values as JSON inside columns, and reshaping those needs steps written in Go. goose runs Go
+functions as steps (and SQL files), each in a transaction. golang-migrate runs SQL files
+only. Both build with `CGO_ENABLED=0` on salt.md's SQLite driver (measured).
+
+**What it costs** (measured in the research, against a minimal program on the same driver):
++83 modules in the build graph and +1.16 MB of binary for goose (golang-migrate: +192
+modules, +0.12 MB). Principle I asks a new dependency to state its reason: this entry is it.
+
+**What changes from the research's recommendation**: the step number lives in goose's own
+version table, not in `PRAGMA user_version`. The pre-upgrade copy, the refusal to open a
+database newer than the binary, `salt restore` reporting the version, the fixture databases
+and the check stay as recommended; goose provides none of them, so they are written here.
+
+**Turned down**: option B, the same steps on a runner of our own (the research's
+recommendation; the owner preferred a known library); golang-migrate (SQL steps only);
+down migrations (going back is restoring the copy taken before the upgrade); Litestream
+(an external process and service).
+
+---
+
 ## 2026-10-28 — Mechanical tasks go to Sonnet helpers; judgement stays on Opus
 
 **Decision** (owner: "can you hand off to sonnet if you think it is useful?" — yes, and

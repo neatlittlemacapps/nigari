@@ -2,14 +2,15 @@
 # salt.md installer: downloads the right prebuilt binary, installs it, and
 # starts it. Set SALT_NO_START=1 to install without starting.
 #
-#   curl -fsSL https://raw.githubusercontent.com/saltmd/salt.md/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
 #
 # The binary is fully self-contained (frontend embedded, no CGO, no runtime
-# deps). Override the target dir with BIN_DIR=/path, or pin a version with
-# SALT_VERSION=v1.0.0.
+# deps). Override the target dir with BIN_DIR=/path, pin a version with
+# SALT_VERSION=v1.6.9, or install from another repository with
+# SALT_REPO=owner/name (upstream: SALT_REPO=saltmd/salt.md).
 set -eu
 
-REPO="saltmd/salt.md"
+REPO="${SALT_REPO:-neatlittlemacapps/salt.md}"
 
 say()  { printf '\033[1;32m»\033[0m %s\n' "$*"; }
 err()  { printf '\033[1;31m✗\033[0m %s\n' "$*" >&2; exit 1; }

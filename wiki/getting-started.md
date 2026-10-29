@@ -13,7 +13,7 @@ The installer picks the right build for your machine and puts it somewhere on
 your path:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/saltmd/salt.md/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
 ```
 
 If the machine has no `curl`, fetch the script with `wget` instead. Minimal
@@ -21,7 +21,7 @@ server images often ship one and not the other. The script itself uses whichever
 of the two it finds, so only this first line changes:
 
 ```sh
-wget -qO- https://raw.githubusercontent.com/saltmd/salt.md/main/install.sh | sh
+wget -qO- https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
 ```
 
 It detects your operating system and processor, downloads the matching file from
@@ -64,7 +64,7 @@ like from the outside.
 ```sh
 docker run -d --name salt --restart unless-stopped \
   -p 8420:8420 -v salt-data:/data --memory=4g \
-  ghcr.io/saltmd/salt.md:latest
+  ghcr.io/neatlittlemacapps/salt.md:latest
 ```
 
 The image already sets the listen address to `:8420` and the data directory to

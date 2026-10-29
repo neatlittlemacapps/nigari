@@ -24,7 +24,7 @@
 ## Quickstart
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/saltmd/salt.md/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
 ```
 
 One command downloads the binary for your platform, installs it, starts it and
@@ -35,7 +35,7 @@ service, and running it again upgrades it. No `curl` on the machine?
 Or with Docker:
 
 ```sh
-docker run -d -p 8420:8420 -v salt-data:/data ghcr.io/saltmd/salt.md:latest
+docker run -d -p 8420:8420 -v salt-data:/data ghcr.io/neatlittlemacapps/salt.md:latest
 ```
 
 There is nothing else to install: no database server, no cache, no object

@@ -1,10 +1,16 @@
 name: Docker
 
-# Build the container image and push it to GHCR (ghcr.io/saltmd/salt.md).
-# Fires on release tags (v*) and can be run manually for an existing version.
+# Build the container image and push it to this repository's GHCR image
+# (ghcr.io/<owner>/<repo>; the fork cannot push to saltmd's). Called by
+# release.yml with the version it just released, and can be run by hand for an
+# existing version.
 on:
-  push:
-    tags: ["v*"]
+  workflow_call:
+    inputs:
+      version:
+        description: "Version to build, as released (with or without the leading v)"
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       version:
@@ -25,11 +31,8 @@ jobs:
       - name: Resolve version
         id: v
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "ver=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "ver=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          fi
+          ver="${{ inputs.version }}"
+          echo "ver=${ver#v}" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
@@ -50,5 +53,5 @@ jobs:
           build-args: |
             VERSION=${{ steps.v.outputs.ver }}
           tags: |
-            ghcr.io/saltmd/salt.md:${{ steps.v.outputs.ver }}
-            ghcr.io/saltmd/salt.md:latest
+            ghcr.io/${{ github.repository }}:${{ steps.v.outputs.ver }}
+            ghcr.io/${{ github.repository }}:latest

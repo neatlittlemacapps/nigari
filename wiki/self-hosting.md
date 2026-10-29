@@ -16,7 +16,7 @@ one. Everything the instance owns lives in one directory.
 ### The installer script
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/saltmd/salt.md/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
 ```
 
 That installs it and starts it, and prints the address to open. `SALT_NO_START=1`
@@ -40,7 +40,7 @@ downloads with whichever of the two it finds, and stops with a clear message if
 neither is installed:
 
 ```sh
-wget -qO- https://raw.githubusercontent.com/saltmd/salt.md/main/install.sh | sh
+wget -qO- https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
 ```
 
 The script reads `uname` and picks the matching prebuilt binary: Linux and
@@ -55,6 +55,7 @@ Two variables change what it does:
 | --- | --- |
 | `BIN_DIR=/path` | install there instead of the automatic choice |
 | `SALT_VERSION=v1.6.13` | download that release tag instead of `latest` |
+| `SALT_REPO=owner/name` | install from another repository's releases (default `neatlittlemacapps/salt.md`) |
 
 The tag needs its leading `v`: it goes into the download URL unchanged.
 
@@ -69,7 +70,7 @@ Windows is not covered by the script (it stops with "Unsupported OS"), but a
 ```sh
 docker run -d --name salt --restart unless-stopped \
   -p 8420:8420 -v salt-data:/data --memory=4g \
-  ghcr.io/saltmd/salt.md:latest
+  ghcr.io/neatlittlemacapps/salt.md:latest
 ```
 
 The image is published for `linux/amd64` and `linux/arm64`. It runs as an
@@ -88,7 +89,7 @@ The memory limit requires cgroup v2.
 ```sh
 podman run -d --name salt \
   -p 127.0.0.1:8420:8420 -v salt-data:/data --memory=4g \
-  ghcr.io/saltmd/salt.md:latest
+  ghcr.io/neatlittlemacapps/salt.md:latest
 ```
 
 Open `http://127.0.0.1:8420` on the host. For a remote server, use an SSH tunnel
@@ -116,7 +117,7 @@ Quadlet generates the service and its startup link; do not enable the generated
 unit manually. It starts with your user manager. To run at boot and after logout,
 an administrator can run `loginctl enable-linger USERNAME`.
 Read logs with `journalctl --user -u salt.service`. To update, pull
-`ghcr.io/saltmd/salt.md:latest` with Podman, then run
+`ghcr.io/neatlittlemacapps/salt.md:latest` with Podman, then run
 `systemctl --user restart salt.service`.
 
 ### Docker Compose
@@ -578,10 +579,22 @@ in the count of unreferenced files and nowhere else.
 
 ## Updating
 
-A release publishes two artefacts from the same tag: five binaries plus a
-`SHA256SUMS.txt` on the GitHub Release (which is where the installer fetches
-from), and a container image on GHCR tagged both with the version and as
-`latest`.
+Every change merged into `main` is released: it gets the next version on the
+1.6 line (v1.6.9, v1.6.10, …) and publishes two artefacts from the same tag:
+five binaries plus a `SHA256SUMS.txt` on the GitHub Release (which is where the
+installer fetches from), and a container image on GHCR tagged both with the
+version and as `latest`. These are this fork's releases; to install upstream
+salt.md instead, run the script with `SALT_REPO=saltmd/salt.md`.
+
+Two settings on GitHub, set once by whoever owns the repository, make this
+work:
+
+- **The release run may write.** Settings → Actions → General → Workflow
+  permissions → **Read and write permissions**. Without it the run cannot
+  create the release.
+- **The image is public.** GitHub makes a new container image private. After
+  the first release: your profile → Packages → **salt.md** → Package settings
+  → Change visibility → **Public**. Until then `docker pull` asks for a login.
 
 **Installed with the script:** re-run it. Pin with
 `SALT_VERSION=v1.6.13` if you do not want the newest.
@@ -591,9 +604,9 @@ from), and a container image on GHCR tagged both with the version and as
 ```sh
 mkdir -p /tmp/salt-1.6.16 && cd /tmp/salt-1.6.16
 wget -O salt-linux-amd64 \
-  https://github.com/saltmd/salt.md/releases/download/v1.6.16/salt-linux-amd64
+  https://github.com/neatlittlemacapps/salt.md/releases/download/v1.6.16/salt-linux-amd64
 wget -O SHA256SUMS.txt \
-  https://github.com/saltmd/salt.md/releases/download/v1.6.16/SHA256SUMS.txt
+  https://github.com/neatlittlemacapps/salt.md/releases/download/v1.6.16/SHA256SUMS.txt
 grep salt-linux-amd64 SHA256SUMS.txt | sha256sum -c -
 
 systemctl stop salt
