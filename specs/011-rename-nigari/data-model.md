@@ -56,6 +56,7 @@ Treatments:
 | image `ghcr.io/neatlittlemacapps/salt.md` | `ghcr.io/neatlittlemacapps/nigari` | renamed through the repository; the old image keeps its tags and gets no new ones |
 | release assets `salt-<os>-<arch>` | `nigari-<os>-<arch>` | renamed |
 | repository `neatlittlemacapps/salt.md` | `neatlittlemacapps/nigari` | renamed by the owner; GitHub redirects the old URLs |
+| website links `https://salt.md`, `/wiki/…`, `/demo/`, `/self-host/` (13) | the wiki in `neatlittlemacapps/nigari` (relative links in the README) | renamed; Website, demo and `llms.txt` links removed (research R16) |
 
 ## Desktop and code
 
