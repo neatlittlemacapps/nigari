@@ -37,7 +37,7 @@ description: "Tasks for safe upgrades"
 
 ## Phase 3: User Story 1: a running instance keeps everything (P1) 🎯 MVP
 
-- [ ] T007 [US1] [test] `TestUpgradeFixtures`: every `server/testdata/upgrade/step-*.db`, copied to a temp dir, opened with `New`, keeps pages, rows, views, comments, files and search results, and ends at the newest step
+- [x] T007 [US1] [test] `TestUpgradeFixtures`: every `server/testdata/upgrade/step-*.db`, copied to a temp dir, opened with `New`, keeps pages, rows, views, comments, files and search results, and ends at the newest step
 - [ ] T008 [US1] [perf] `BenchmarkStartNoPending` in `server/storage_bench_test.go`: `openDB` + `upgradeDB` on a database at the newest step, against today's `openDB` (SC-002); budget from the PR's CI run into `specs/002-storage-engine/research.md`
 
 ---

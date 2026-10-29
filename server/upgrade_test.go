@@ -5,12 +5,14 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/pressly/goose/v3"
 )
@@ -182,4 +184,79 @@ func lineDiff(a, b string) string {
 		}
 	}
 	return strings.Join(out, "\n")
+}
+
+// Every fixture is a database an earlier release wrote (testdata/upgrade).
+// Started on the newest release, each must keep everything upgradeFixture put
+// in it, read the way a person or agent reads it (through the MCP tools, not
+// raw SQL, so a step that keeps the rows but breaks how they are read fails
+// too), and end at the newest step. FR-012, SC-001.
+func TestUpgradeFixtures(t *testing.T) {
+	fixtures, err := filepath.Glob(filepath.Join("testdata", "upgrade", "step-*.db"))
+	if err != nil || len(fixtures) == 0 {
+		t.Fatalf("no fixtures in testdata/upgrade (%v)", err)
+	}
+	newest := upgradeSteps()[len(upgradeSteps())-1].Version
+	f := upgradeFixture
+	for _, fx := range fixtures {
+		t.Run(filepath.Base(fx), func(t *testing.T) {
+			path := copyFixture(t, filepath.Base(fx))
+			s, err := New(filepath.Dir(path), fstest.MapFS{"index.html": {Data: []byte("<html></html>")}})
+			if err != nil {
+				t.Fatalf("New on %s: %v", filepath.Base(fx), err)
+			}
+			t.Cleanup(func() { s.Close() })
+			if got := stepOf(t, path); got != newest {
+				t.Errorf("at step %d after starting, want the newest, %d", got, newest)
+			}
+
+			var uid string
+			if err := s.db.QueryRow(`SELECT id FROM users WHERE email = 'fixture@example.test'`).Scan(&uid); err != nil {
+				t.Fatalf("the fixture's account: %v", err)
+			}
+			u := &user{ID: uid, Name: "Test"}
+			tool := func(name, args string) string {
+				t.Helper()
+				res, err := callTool(t, s, u, name, args)
+				if err != nil {
+					t.Fatalf("%s: %v", name, err)
+				}
+				return res
+			}
+			js := func(v string) string { b, _ := json.Marshal(v); return string(b) }
+			idOf := func(title string) string {
+				t.Helper()
+				var id string
+				if err := s.db.QueryRow(`SELECT id FROM pages WHERE title = ?`, title).Scan(&id); err != nil {
+					t.Fatalf("page %q: %v", title, err)
+				}
+				return id
+			}
+
+			if res := tool("search", `{"query":`+js(f.SearchWord)+`}`); !strings.Contains(res, f.Page) {
+				t.Errorf("search for %q no longer finds %q: %s", f.SearchWord, f.Page, res)
+			}
+			page := idOf(f.Page)
+			if res := tool("get_page", `{"page_id":"`+page+`","include_children":true}`); !strings.Contains(res, f.SearchWord) || !strings.Contains(res, f.Child) {
+				t.Errorf("the page lost its text or its child page: %s", res)
+			}
+			if res := tool("comments", `{"page_id":"`+page+`"}`); !strings.Contains(res, f.Comment) {
+				t.Errorf("the comment is gone: %s", res)
+			}
+			var files int
+			if err := s.db.QueryRow(`SELECT COUNT(*) FROM files WHERE page_id = ? AND display_name = ?`, page, f.FileName).Scan(&files); err != nil || files != 1 {
+				t.Errorf("the file reference %q: %d rows, %v", f.FileName, files, err)
+			}
+			db := idOf(f.Database)
+			rows := tool("query_rows", `{"page_id":"`+db+`"}`)
+			for _, r := range f.Rows {
+				if !strings.Contains(rows, r) {
+					t.Errorf("row %q is gone: %s", r, rows)
+				}
+			}
+			if res := tool("get_collection", `{"page_id":"`+db+`"}`); !strings.Contains(res, f.ChartView) {
+				t.Errorf("the chart view %q is gone: %s", f.ChartView, res)
+			}
+		})
+	}
 }
