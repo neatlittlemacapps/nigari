@@ -6,6 +6,7 @@ import (
 	"errors"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/pressly/goose/v3"
 )
@@ -155,5 +156,27 @@ func TestGooseRunDBStepRuns(t *testing.T) {
 	}
 	if !gooseTableExists(t, db, "a") {
 		t.Fatal("the RunDB step did not run")
+	}
+}
+
+// goose holds one connection for the whole run and runs a RunDB step on the
+// pool beside it. On salt.md's writer (SetMaxOpenConns(1), db.go) such a step
+// waits forever for a second connection. So the upgrade runs on a pool of its
+// own with room for two (plan P5), never on the writer.
+func TestGooseRunDBStepNeedsASecondConnection(t *testing.T) {
+	db := gooseTestDB(t)
+	db.SetMaxOpenConns(1)
+	step := goose.NewGoMigration(1, &goose.GoFunc{RunDB: func(ctx context.Context, db *sql.DB) error {
+		_, err := db.ExecContext(ctx, `CREATE TABLE a (n INTEGER)`)
+		return err
+	}}, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if _, err := gooseTestProvider(t, db, step).Up(ctx); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("a RunDB step on one connection: want it to wait until the deadline, got %v", err)
+	}
+	db.SetMaxOpenConns(2)
+	if _, err := gooseTestProvider(t, db, step).Up(context.Background()); err != nil {
+		t.Fatalf("with two connections: %v", err)
 	}
 }

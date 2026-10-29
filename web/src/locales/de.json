@@ -1264,5 +1264,7 @@
   "No chart was added to this database: {reason}": "Dieser Datenbank wurde kein Diagramm hinzugefügt: {reason}",
   "Number chart": "Zahlendiagramm",
   "One total, count or average": "Eine Summe, Anzahl oder ein Durchschnitt",
-  "Parts of a whole": "Teile eines Ganzen"
+  "Parts of a whole": "Teile eines Ganzen",
+  "system": "System",
+  "upgraded the database": "hat die Datenbank aktualisiert"
 }

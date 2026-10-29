@@ -16,7 +16,11 @@ import (
 // the full schema/migrations, plus one workspace + user the import can attach to.
 func newImportTestServer(t *testing.T) (*Server, string, string) {
 	t.Helper()
-	db, err := openDB(filepath.Join(t.TempDir(), "test.db"))
+	path := filepath.Join(t.TempDir(), "test.db")
+	if _, err := upgradeDB(path); err != nil {
+		t.Fatalf("upgradeDB: %v", err)
+	}
+	db, err := openDB(path)
 	if err != nil {
 		t.Fatalf("openDB: %v", err)
 	}

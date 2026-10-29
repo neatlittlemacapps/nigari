@@ -26,10 +26,10 @@ description: "Tasks for safe upgrades"
 
 ## Phase 2: Foundational (blocks every story)
 
-- [ ] T003 [backend] `server/db.go`: `ensureColumn` takes an `execer` (`*sql.DB` or `*sql.Tx`); `openDB` keeps only opening and configuring the connection; the schema work moves unchanged into `baseSchema(tx)` in new `server/upgrade_steps.go` as step 1
-- [ ] T004 [backend] New `server/upgrade.go`: `upgradeDB(db, dataDir)` builds the goose provider from the step list and runs `Up`; `UpgradeRefusal{Code, Sentence}`; `schema_meta.version` written after the check (FR-008); `audit` once per start that ran steps; log lines naming each step run
-- [ ] T005 [backend] `server/server.go` `New` and `server/import_csv.go` `FixNotionRows` open through `openDB` + `upgradeDB`, before the read pool opens
-- [ ] T006 [test] `server/upgrade_test.go`: `TestUpgradeFromNoStep` (a database without a step number ends at step 1 with exactly today's tables, columns and indexes, compared against `step-0.db` upgraded) and `TestUpgradeStepOneIsFrozen` (hash of `schema` and step 1's column list; message "add a new step instead")
+- [x] T003 [backend] `server/db.go`: `ensureColumn` takes an `execer` (`*sql.DB` or `*sql.Tx`); `openDB` keeps only opening and configuring the connection; the schema work moves unchanged into `baseSchema(tx)` in new `server/upgrade_steps.go` as step 1
+- [x] T004 [backend] New `server/upgrade.go`: `upgradeDB(db, dataDir)` builds the goose provider from the step list and runs `Up`; `UpgradeRefusal{Code, Sentence}`; `schema_meta.version` written after the check (FR-008); `audit` once per start that ran steps; log lines naming each step run
+- [x] T005 [backend] `server/server.go` `New` and `server/import_csv.go` `FixNotionRows` open through `openDB` + `upgradeDB`, before the read pool opens
+- [x] T006 [test] `server/upgrade_test.go`: `TestUpgradeFromNoStep` (a database without a step number ends at step 1 with exactly today's tables, columns and indexes, compared against `step-0.db` upgraded) and `TestUpgradeStepOneIsFrozen` (hash of `schema` and step 1's column list; message "add a new step instead")
 
 **Checkpoint**: every existing database starts through step 1 and nothing else changes.
 
@@ -44,7 +44,7 @@ description: "Tasks for safe upgrades"
 
 ## Phase 4: User Story 2: a copy before anything changes (P1)
 
-- [ ] T009 [US2] [backend] `copyBeforeUpgrade` (only when `HasPending`; `VACUUM INTO salt.db.before-step-<n>`; log line with the restore command) and `pruneCopies` (newest 3 by step); a failed copy refuses with `upgrade_copy_failed` and the database's size, before any step
+- [ ] T009 [US2] [backend] `copyBeforeUpgrade` (only when a step is pending, read with plain SQL as plan P3 says, not `HasPending`, which writes; `VACUUM INTO salt.db.before-step-<n>`; log line with the restore command) and `pruneCopies` (newest 3 by step); a failed copy refuses with `upgrade_copy_failed` and the database's size, before any step
 - [ ] T010 [P] [US2] [backend] `server/backup.go` `Backup` leaves `salt.db.before-step-*` and `upgrade.lock` out
 - [ ] T011 [US2] [test] Copy taken only when a step is pending, named after it, the fourth prunes the oldest, the copy opens; a read-only data directory refuses with `upgrade_copy_failed` and runs no step
 
