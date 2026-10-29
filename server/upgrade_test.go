@@ -415,3 +415,109 @@ func TestBackupLeavesUpgradeCopiesOut(t *testing.T) {
 		}
 	}
 }
+
+// A step that fails after it wrote something leaves the database file
+// byte-for-byte as it was before that step (SC-003), the step number at the
+// last success, and a refusal that names the step, the reason and the copy;
+// the next start runs the step again (FR-004).
+func TestUpgradeFailedStepChangesNothing(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	if _, err := upgradeWith(path, testSteps()); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	failing := goose.NewGoMigration(2, &goose.GoFunc{RunTx: func(ctx context.Context, tx *sql.Tx) error {
+		if _, err := tx.Exec(`UPDATE pages SET title = 'changed by a failing step'`); err != nil {
+			return err
+		}
+		return errors.New("the disk said no")
+	}}, nil)
+	_, err = upgradeWith(path, append(testSteps(), failing))
+	var r *UpgradeRefusal
+	if !errors.As(err, &r) || r.Code != "upgrade_failed" {
+		t.Fatalf("want an upgrade_failed refusal, got %v", err)
+	}
+	for _, want := range []string{"Upgrade step 2 failed", "the disk said no", "at step 1", ".before-step-2"} {
+		if !strings.Contains(r.Sentence, want) {
+			t.Errorf("the sentence lacks %q: %s", want, r.Sentence)
+		}
+	}
+	after, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(after) != string(before) {
+		t.Error("the database file changed although its only pending step failed")
+	}
+	if got := stepOf(t, path); got != 1 {
+		t.Errorf("after the failure the database is at step %d, want 1", got)
+	}
+	ran, err := upgradeWith(path, testSteps(2))
+	if err != nil || len(ran) != 1 || ran[0] != 2 {
+		t.Fatalf("the next start should run step 2: ran %v, %v", ran, err)
+	}
+}
+
+// rebuildTable: a rebuild runs with foreign keys off, so rows that refer to
+// the rebuilt table survive it (with them on, the DROP would cascade), and a
+// rebuild that leaves a reference pointing at nothing fails and is rolled
+// back whole (FR-011).
+func TestUpgradeRebuildTable(t *testing.T) {
+	tables := goose.NewGoMigration(2, &goose.GoFunc{RunTx: func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.Exec(`CREATE TABLE parent (id INTEGER PRIMARY KEY, name TEXT);
+			CREATE TABLE child (id INTEGER PRIMARY KEY, parent_id INTEGER REFERENCES parent(id) ON DELETE CASCADE);
+			INSERT INTO parent VALUES (1, 'a'), (2, 'b');
+			INSERT INTO child VALUES (10, 1), (20, 2);`)
+		return err
+	}}, nil)
+	rebuild := func(n int64, copy string) *goose.Migration {
+		return goose.NewGoMigration(n, &goose.GoFunc{RunDB: func(ctx context.Context, db *sql.DB) error {
+			return rebuildTable(ctx, db, "parent",
+				`CREATE TABLE parent_new (id INTEGER PRIMARY KEY, name TEXT NOT NULL DEFAULT '')`, copy,
+				`CREATE INDEX idx_parent_name ON parent(name)`)
+		}}, nil)
+	}
+	count := func(t *testing.T, path, table string) int {
+		t.Helper()
+		db, err := sql.Open("sqlite", "file:"+path+"?mode=ro")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer db.Close()
+		var n int
+		if err := db.QueryRow(`SELECT COUNT(*) FROM ` + table).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+
+	t.Run("keeps the rows that refer to it", func(t *testing.T) {
+		path := copyFixture(t, "step-0.db")
+		if _, err := upgradeWith(path, append(testSteps(), tables, rebuild(3, `INSERT INTO parent_new SELECT id, COALESCE(name, '') FROM parent`))); err != nil {
+			t.Fatal(err)
+		}
+		if p, c := count(t, path, "parent"), count(t, path, "child"); p != 2 || c != 2 {
+			t.Errorf("after the rebuild: %d parents, %d children; want 2 and 2", p, c)
+		}
+	})
+	t.Run("a broken reference fails it", func(t *testing.T) {
+		path := copyFixture(t, "step-0.db")
+		if _, err := upgradeWith(path, append(testSteps(), tables)); err != nil {
+			t.Fatal(err)
+		}
+		_, err := upgradeWith(path, append(testSteps(), tables, rebuild(3, `INSERT INTO parent_new SELECT id, name FROM parent WHERE id = 1`)))
+		var r *UpgradeRefusal
+		if !errors.As(err, &r) || r.Code != "upgrade_failed" || !strings.Contains(r.Sentence, "broken reference") {
+			t.Fatalf("want upgrade_failed naming the broken reference, got %v", err)
+		}
+		if p, c := count(t, path, "parent"), count(t, path, "child"); p != 2 || c != 2 {
+			t.Errorf("after the failed rebuild: %d parents, %d children; want 2 and 2, as before", p, c)
+		}
+		if got := stepOf(t, path); got != 2 {
+			t.Errorf("at step %d, want 2", got)
+		}
+	})
+}

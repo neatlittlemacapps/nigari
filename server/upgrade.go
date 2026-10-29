@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -74,12 +75,29 @@ func upgradeWith(path string, steps []*goose.Migration) ([]int64, error) {
 		return nil, fmt.Errorf("upgrade: %w", err)
 	}
 	results, err := p.Up(context.Background())
+	var partial *goose.PartialError
+	if errors.As(err, &partial) {
+		results = partial.Applied
+	}
 	var ran []int64
 	for _, r := range results {
 		if r.Error == nil {
 			ran = append(ran, r.Source.Version)
 			log.Printf("upgrade: step %d done in %s", r.Source.Version, r.Duration.Round(time.Millisecond))
 		}
+	}
+	if partial != nil && partial.Failed != nil {
+		// goose ran the step in its own transaction and rolled it back; the
+		// version table still names the last step that succeeded, so the next
+		// start begins with the failed step again (FR-004).
+		n := partial.Failed.Source.Version
+		sentence := fmt.Sprintf("Upgrade step %d failed: %v. The database is as it was before that step (at step %d).",
+			n, partial.Err, n-1)
+		if copied := fmt.Sprintf("%s.before-step-%d", path, stored+1); tables > 0 {
+			sentence += fmt.Sprintf(" A copy from before the upgrade is at %s.", copied)
+		}
+		sentence += " Fix the cause and start salt.md again."
+		return ran, &UpgradeRefusal{Code: "upgrade_failed", Sentence: sentence}
 	}
 	if err != nil {
 		return ran, fmt.Errorf("upgrade: %w", err)

@@ -52,8 +52,8 @@ description: "Tasks for safe upgrades"
 
 ## Phase 5: User Story 3: a failed step changes nothing (P1)
 
-- [ ] T012 [US3] [backend] A failing step: its transaction rolled back, the step number left at the last success, `upgrade_failed` with the step, the reason and the copy; `rebuildTable` helper (foreign keys off around its own transaction, `PRAGMA foreign_key_check` before commit, FR-011)
-- [ ] T013 [US3] [test] `TestUpgradeFailedStepChangesNothing` (an injected step that fails after a write: the file is byte-for-byte as before that step, SC-003; the next start continues from it) and a `rebuildTable` case with a broken reference
+- [x] T012 [US3] [backend] A failing step: its transaction rolled back, the step number left at the last success, `upgrade_failed` with the step, the reason and the copy; `rebuildTable` helper (foreign keys off around its own transaction, `PRAGMA foreign_key_check` before commit, FR-011)
+- [x] T013 [US3] [test] `TestUpgradeFailedStepChangesNothing` (an injected step that fails after a write: the file is byte-for-byte as before that step, SC-003; the next start continues from it) and a `rebuildTable` case with a broken reference
 
 ---
 

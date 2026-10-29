@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/pressly/goose/v3"
 )
@@ -254,4 +255,65 @@ func baseSchema(ctx context.Context, tx *sql.Tx) error {
 		}
 	}
 	return nil
+}
+
+// rebuildTable changes a table in a way ALTER TABLE cannot (a column's type,
+// a constraint, a dropped column with an index on it): SQLite's own recipe of
+// creating the new table, copying the rows, dropping the old one and renaming
+// the new (https://www.sqlite.org/lang_altertable.html, "other kinds of table
+// schema changes"). A step that needs it runs as goose.GoFunc{RunDB: …} and
+// calls this; every later step uses the one helper, so the recipe is written
+// once.
+//
+// create makes "<table>_new"; copy fills it from <table>; after recreates the
+// table's indexes and triggers, which the DROP took with it.
+//
+// Foreign keys must be off during the swap: with them on, dropping the old
+// table would run its ON DELETE actions and empty the tables that refer to it.
+// foreign_keys cannot change inside a transaction, so it is switched on the
+// connection around one, and the references are checked with
+// foreign_key_check before the commit: a row left pointing at nothing fails
+// the step, and the transaction rolls the whole rebuild back (FR-011).
+func rebuildTable(ctx context.Context, db *sql.DB, table, create, copy string, after ...string) error {
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	if _, err := conn.ExecContext(ctx, `PRAGMA foreign_keys = OFF`); err != nil {
+		return err
+	}
+	// Back on for the connection, whatever happens: it returns to the pool.
+	defer conn.ExecContext(context.WithoutCancel(ctx), `PRAGMA foreign_keys = ON`)
+	tx, err := conn.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	stmts := append([]string{create, copy, `DROP TABLE ` + table, `ALTER TABLE ` + table + `_new RENAME TO ` + table}, after...)
+	for _, q := range stmts {
+		if _, err := tx.ExecContext(ctx, q); err != nil {
+			return fmt.Errorf("rebuild %s: %w", table, err)
+		}
+	}
+	rows, err := tx.QueryContext(ctx, `PRAGMA foreign_key_check`)
+	if err != nil {
+		return err
+	}
+	var broken []string
+	for rows.Next() {
+		var tbl, parent string
+		var rowid sql.NullInt64
+		var fkid int
+		if err := rows.Scan(&tbl, &rowid, &parent, &fkid); err != nil {
+			rows.Close()
+			return err
+		}
+		broken = append(broken, fmt.Sprintf("%s row %d refers to a missing %s", tbl, rowid.Int64, parent))
+	}
+	rows.Close()
+	if len(broken) > 0 {
+		return fmt.Errorf("rebuild %s leaves %d broken reference(s): %s", table, len(broken), strings.Join(broken, "; "))
+	}
+	return tx.Commit()
 }
