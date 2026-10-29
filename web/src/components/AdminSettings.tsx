@@ -747,7 +747,7 @@ ingress:
                   {t(
                     'Cloudflare: leave the DNS record “Proxied” (orange cloud); WebSockets are on by default. Caddy handles certificates and WebSockets by itself. Alternatively, direct TLS without a proxy via',
                   )}{' '}
-                  <code>SALT_TLS_CERT</code>/<code>SALT_TLS_KEY</code>.
+                  <code>NIGARI_TLS_CERT</code>/<code>NIGARI_TLS_KEY</code>.
                 </p>
               </>
             )}

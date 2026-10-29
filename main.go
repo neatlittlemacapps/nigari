@@ -30,6 +30,17 @@ var distFS embed.FS
 var noticesMD string
 
 func main() {
+	// Before anything reads a variable or opens a file: an old SALT_ name
+	// left in a service file must stop the start, not be ignored (spec 011).
+	ignored, envRefusal := server.CheckOldEnv(os.Environ())
+	if envRefusal != nil {
+		log.Print(envRefusal)
+		os.Exit(2)
+	}
+	for _, line := range ignored {
+		log.Print(line)
+	}
+
 	dataDir := server.EnvOr("DATA", "./data")
 
 	// CLI subcommands for operations (backup/restore). No server needed.

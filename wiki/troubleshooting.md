@@ -517,7 +517,7 @@ rebuilt the file index, and what address it is listening on. Most answers are
 there.
 
 **A restore refuses to run.** `salt restore` will not overwrite an existing
-database. Empty the data directory, or set `SALT_RESTORE_FORCE=1`. The guard is
+database. Empty the data directory, or set `NIGARI_RESTORE_FORCE=1`. The guard is
 deliberate: restoring over a live instance is the mistake it exists to prevent.
 
 **A backup restored, but did the schema survive?** The proof is the *absence* of
@@ -535,7 +535,7 @@ a running instance.
 treated as a small machine on purpose, because the host's figure is not a
 promise about what the container will be given. That reading does two things: it
 sizes what gets indexed, and it tells the garbage collector where the ceiling
-is. Set `--memory=` on the container or `SALT_MEMORY_MB` to tell it the truth,
+is. Set `--memory=` on the container or `NIGARI_MEMORY_MB` to tell it the truth,
 and note which direction is dangerous: reading **too high** is, because the
 collector then aims at memory the container will never get and the kernel
 arrives first. Reading too low costs indexing and nothing else: the file is

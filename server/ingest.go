@@ -102,11 +102,11 @@ func (reg *ingestRegistry) update(id string, fn func(*ingestJob)) {
 // --- Fetching the source -----------------------------------------------------
 
 // allowPrivateImport opens imports up to private networks. Deliberately ONLY
-// through an environment variable at startup (SALT_IMPORT_ALLOW_PRIVATE=1), not
+// through an environment variable at startup (NIGARI_IMPORT_ALLOW_PRIVATE=1), not
 // through the API and certainly not through MCP: whoever starts the service
 // makes that decision — an agent cannot. Meant for self-hosted sources on your
 // own network (your own Jira, your own wiki).
-var allowPrivateImport = os.Getenv("SALT_IMPORT_ALLOW_PRIVATE") == "1"
+var allowPrivateImport = os.Getenv("NIGARI_IMPORT_ALLOW_PRIVATE") == "1"
 
 // blockedIP decides whether an address is off limits for the server. Everything
 // that is not publicly routable is refused: loopback, private networks,

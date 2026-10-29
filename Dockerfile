@@ -20,7 +20,7 @@ RUN npm ci || npm install
 COPY . /src
 # Same VERSION the backend is stamped with, so the two never disagree and the
 # "reload" banner only fires after an actual deploy.
-RUN SALT_VERSION=${VERSION} npm run build
+RUN NIGARI_VERSION=${VERSION} npm run build
 
 # --- Backend build (cross-compiled to the requested target arch) ---
 FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS build
@@ -41,7 +41,7 @@ RUN go mod tidy && CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
 FROM alpine:3.20
 RUN adduser -D -H salt && mkdir -p /data && chown salt /data
 USER salt
-ENV SALT_ADDR=:8420 SALT_DATA=/data
+ENV NIGARI_ADDR=:8420 NIGARI_DATA=/data
 VOLUME /data
 EXPOSE 8420
 COPY --from=build /salt /usr/local/bin/salt

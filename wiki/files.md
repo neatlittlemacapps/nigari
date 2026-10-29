@@ -228,7 +228,7 @@ database weight.
 The startup log prints what the instance decided:
 `memory: 16000 MB available, soft limit 12800 MB, PDF indexing up to 50 MB,
 3 extraction(s) at a time`. If that figure is wrong (which happens in nested
-setups, a container inside a virtual machine), set `SALT_MEMORY_MB` to the real
+setups, a container inside a virtual machine), set `NIGARI_MEMORY_MB` to the real
 number of megabytes. See [Self-hosting](self-hosting.md).
 
 Extraction runs for PDFs only. No other format's contents are read.

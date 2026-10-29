@@ -126,7 +126,7 @@ and its revisions go together. That period is a setting, not a fixture: *Instanc
 settings* → *Empty the trash automatically after (days, 0 = never)*, 30 days
 unless an admin changes it, and **0 turns the automatic emptying off entirely**,
 which makes revisions survive until somebody deletes the page for good.
-Self-hosters can set the same number with `SALT_TRASH_DAYS`, and the admin
+Self-hosters can set the same number with `NIGARI_TRASH_DAYS`, and the admin
 setting wins over it. See [Trash and recovery](trash-and-recovery.md) and
 [Administration](administration.md).
 

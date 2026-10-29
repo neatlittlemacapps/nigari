@@ -1406,7 +1406,7 @@ mapping.
 Only public hosts can be fetched: loopback, private ranges and link-local
 addresses (where cloud metadata services live) are refused. A self-hosted
 source needs the operator to start the server with
-`SALT_IMPORT_ALLOW_PRIVATE=1`; an agent cannot open that door.
+`NIGARI_IMPORT_ALLOW_PRIVATE=1`; an agent cannot open that door.
 
 Returns immediately with `{job_id, status, total, target, note, next}`. Ceilings:
 64 MB of fetched source, 20000 records.

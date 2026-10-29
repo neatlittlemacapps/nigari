@@ -36,8 +36,8 @@ async function freePort() {
 }
 
 function start(binary, port) {
-  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('SALT_')));
-  return spawn(binary, [], { env: { ...env, SALT_DATA: data, SALT_ADDR: `127.0.0.1:${port}` }, stdio: 'ignore' });
+  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('NIGARI_')));
+  return spawn(binary, [], { env: { ...env, NIGARI_DATA: data, NIGARI_ADDR: `127.0.0.1:${port}` }, stdio: 'ignore' });
 }
 
 async function stop(proc) {

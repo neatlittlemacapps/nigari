@@ -9,7 +9,7 @@ import react from '@vitejs/plugin-react';
 // backend, and so the production build (vite.config.ts, index.html only) never
 // picks the catalogue up (spec 001, research P6).
 export default defineConfig({
-  define: { __SALT_VERSION__: JSON.stringify('catalog'), __SALT_DEMO__: false },
+  define: { __NIGARI_VERSION__: JSON.stringify('catalog'), __NIGARI_DEMO__: false },
   plugins: [react()],
   server: { open: process.env.CI ? false : '/catalog.html' },
 });

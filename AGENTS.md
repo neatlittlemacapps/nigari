@@ -66,7 +66,7 @@ status lives on the GitHub Projects board (see "How work flows").
 
 ```sh
 make build                                   # frontend + backend, frontend embedded
-SALT_DATA=/tmp/salt-dev SALT_ADDR=:8420 go run .   # backend for development
+NIGARI_DATA=/tmp/salt-dev NIGARI_ADDR=:8420 go run .   # backend for development
 cd web && npx vite                           # frontend dev server
 go test ./...                                # Go tests
 cd web && npm run check                      # tsc + every check-*.mjs (also runs inside npm run build)

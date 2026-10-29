@@ -217,7 +217,7 @@ days; **0 switches the sweep off entirely**, and then nothing ever leaves the
 trash on its own. Instance settings → **Maintenance** shows the live figure as
 *Pages (trashed)*.
 
-Self-hosters can set the same number with the `SALT_TRASH_DAYS` environment
+Self-hosters can set the same number with the `NIGARI_TRASH_DAYS` environment
 variable, which is read afresh at every sweep: change it and restart, and the
 next sweep uses it. The admin setting wins over it, and there is a trap in that:
 the settings dialog sends the retention value with every save, so the first time

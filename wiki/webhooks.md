@@ -265,7 +265,7 @@ following a redirect is how a checked address turns into an unchecked one. A
 `301` or `302` from your receiver is recorded as a failure.
 
 There is one override, and it belongs to whoever runs the server, not to an
-admin in the interface: starting Salt with `SALT_IMPORT_ALLOW_PRIVATE=1` lifts
+admin in the interface: starting Salt with `NIGARI_IMPORT_ALLOW_PRIVATE=1` lifts
 the restriction for the whole process. Its name says import, but it opens
 webhooks as well. Set it only on an instance where every URL in the settings
 dialog is one you put there (see [Self-hosting](self-hosting.md)).

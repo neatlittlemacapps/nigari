@@ -1,16 +1,16 @@
 #!/bin/sh
 # salt.md installer: downloads the right prebuilt binary, installs it, and
-# starts it. Set SALT_NO_START=1 to install without starting.
+# starts it. Set NIGARI_NO_START=1 to install without starting.
 #
 #   curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
 #
 # The binary is fully self-contained (frontend embedded, no CGO, no runtime
 # deps). Override the target dir with BIN_DIR=/path, pin a version with
-# SALT_VERSION=v1.6.9, or install from another repository with
-# SALT_REPO=owner/name (upstream: SALT_REPO=saltmd/salt.md).
+# NIGARI_VERSION=v1.6.9, or install from another repository with
+# NIGARI_REPO=owner/name (upstream: NIGARI_REPO=saltmd/salt.md).
 set -eu
 
-REPO="${SALT_REPO:-neatlittlemacapps/salt.md}"
+REPO="${NIGARI_REPO:-neatlittlemacapps/salt.md}"
 
 say()  { printf '\033[1;32m»\033[0m %s\n' "$*"; }
 err()  { printf '\033[1;31m✗\033[0m %s\n' "$*" >&2; exit 1; }
@@ -30,7 +30,7 @@ esac
 asset="salt-${os}-${arch}"
 
 # --- resolve download URL ---------------------------------------------------
-ver="${SALT_VERSION:-latest}"
+ver="${NIGARI_VERSION:-latest}"
 if [ "$ver" = "latest" ]; then
   url="https://github.com/$REPO/releases/latest/download/$asset"
 else
@@ -96,14 +96,14 @@ lan=$(hostname -I 2>/dev/null | awk '{ print $1 }' || true)
 [ -n "$lan" ] || lan=$(ip route get 1.1.1.1 2>/dev/null | awk '{ for (i = 1; i < NF; i++) if ($i == "src") { print $(i + 1); exit } }' || true)
 [ -n "$lan" ] || lan=$(ipconfig getifaddr en0 2>/dev/null || true)
 
-# The port is not always 8420: SALT_ADDR moves it, and printing the default
+# The port is not always 8420: NIGARI_ADDR moves it, and printing the default
 # regardless sends people to a port nothing is listening on. Take whatever
-# follows the last colon, fall back to the default when SALT_ADDR is unset or
+# follows the last colon, fall back to the default when NIGARI_ADDR is unset or
 # is a bare address.
-# `set -u` is on, so SALT_ADDR has to be defaulted before it is expanded —
-# ${SALT_ADDR##*:} on its own aborts the whole install when nobody set it,
+# `set -u` is on, so NIGARI_ADDR has to be defaulted before it is expanded —
+# ${NIGARI_ADDR##*:} on its own aborts the whole install when nobody set it,
 # which is every ordinary run.
-addr=${SALT_ADDR:-}
+addr=${NIGARI_ADDR:-}
 port=${addr##*:}
 case "$port" in ''|*[!0-9]*) port=8420 ;; esac
 
@@ -147,8 +147,8 @@ Wants=network-online.target
 User=salt
 Group=salt
 ExecStart=$bindir/salt
-Environment=SALT_ADDR=:$port
-Environment=SALT_DATA=$svcdata
+Environment=NIGARI_ADDR=:$port
+Environment=NIGARI_DATA=$svcdata
 WorkingDirectory=$svcdata
 Restart=on-failure
 RestartSec=2
@@ -174,7 +174,7 @@ svcdata=/var/lib/salt
 # will actually be used. Printing $PWD/data and then installing a service that
 # reads /var/lib/salt is how somebody goes looking for a database that was never
 # there.
-if [ -z "${SALT_NO_SERVICE:-}" ] && service_possible; then
+if [ -z "${NIGARI_NO_SERVICE:-}" ] && service_possible; then
   as_service=yes
   datadir=$svcdata
 else
@@ -240,7 +240,7 @@ fi
 # Not a systemd server. Piped into a Dockerfile or a provisioning script a
 # foreground process would block forever, so a non-tty install prints the
 # command and gets out of the way.
-if [ -n "${SALT_NO_START:-}" ] || [ ! -t 1 ]; then
+if [ -n "${NIGARI_NO_START:-}" ] || [ ! -t 1 ]; then
   case ":$PATH:" in
     *":$bindir:"*) printf '  Run it:   salt\n' ;;
     *)             printf '  %s is not on your PATH. Run it with:\n            %s/salt\n' "$bindir" "$bindir" ;;

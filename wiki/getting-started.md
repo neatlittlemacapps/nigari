@@ -32,7 +32,7 @@ machine you reached over SSH that is the machine's own address, not
 `localhost`. Sending somebody to `localhost` from an SSH session is the most
 common way a fresh install goes nowhere.
 
-Set `SALT_NO_START=1` to install without starting, which is what you want from
+Set `NIGARI_NO_START=1` to install without starting, which is what you want from
 a provisioning script. A non-interactive install does not start it either, and
 prints the command instead.
 
@@ -41,7 +41,7 @@ Two variables change what it does:
 | Variable | Effect |
 | --- | --- |
 | `BIN_DIR=/path` | install there instead of the default |
-| `SALT_VERSION=v1.6.0` | fetch that release rather than the latest |
+| `NIGARI_VERSION=v1.6.0` | fetch that release rather than the latest |
 
 Each release carries five binaries and a checksum file:
 
@@ -76,7 +76,7 @@ large the host is) and indexes the text of fewer and smaller PDFs than it
 could. It says so in its startup log. This never affects whether an upload
 succeeds, only how much of a document's text reaches the search index. In a
 nested setup where even the cgroup cap is a lie (Docker inside LXC), say it
-outright with `SALT_MEMORY_MB`. [Self-hosting](self-hosting.md) covers memory,
+outright with `NIGARI_MEMORY_MB`. [Self-hosting](self-hosting.md) covers memory,
 HTTPS and reverse proxies.
 
 ### Or from source
@@ -106,7 +106,7 @@ order:
 **The last line is the one to read.** `./data` is relative to the directory you
 were in when you started it. Start salt.md from somewhere else tomorrow and it
 will create a second, empty data directory and look as if everything is gone.
-Set `SALT_DATA` to an absolute path on any instance you intend to keep.
+Set `NIGARI_DATA` to an absolute path on any instance you intend to keep.
 
 Inside that directory: `salt.db` (the SQLite database, plus its `-wal` and
 `-shm` companions while the server runs) and a `files` directory holding every
@@ -114,15 +114,15 @@ upload. Those two things are the entire instance. See
 [Self-hosting](self-hosting.md) for backups.
 
 Five environment variables decide the rest. Every one of them starts with
-`SALT_`; a bare `DATA=…` is ignored in silence.
+`NIGARI_`; a bare `DATA=…` is ignored in silence.
 
 | Variable | Effect |
 | --- | --- |
-| `SALT_DATA` | where the database and the uploads live (default `./data`) |
-| `SALT_ADDR` | the address to listen on (default `:8420`; `127.0.0.1:9000` binds to this machine only) |
-| `SALT_TLS_CERT` and `SALT_TLS_KEY` | serve HTTPS directly from your own certificate and key, with no proxy in front. Both or neither |
-| `SALT_MEMORY_MB` | how much memory to assume, when neither the container nor the machine reports the truth |
-| `SALT_RESTORE_FORCE=1` | permit `salt restore` to overwrite a data directory that already holds a database |
+| `NIGARI_DATA` | where the database and the uploads live (default `./data`) |
+| `NIGARI_ADDR` | the address to listen on (default `:8420`; `127.0.0.1:9000` binds to this machine only) |
+| `NIGARI_TLS_CERT` and `NIGARI_TLS_KEY` | serve HTTPS directly from your own certificate and key, with no proxy in front. Both or neither |
+| `NIGARI_MEMORY_MB` | how much memory to assume, when neither the container nor the machine reports the truth |
+| `NIGARI_RESTORE_FORCE=1` | permit `salt restore` to overwrite a data directory that already holds a database |
 
 An admin can also switch on automatic HTTPS from the settings dialog, which
 takes over ports 80 and 443 and fetches its own certificate
@@ -134,7 +134,7 @@ The binary answers four subcommands without starting a server at all:
 | --- | --- |
 | `salt version` | prints the version and exits |
 | `salt backup <file.tar.gz>` | writes a consistent snapshot of database and uploads |
-| `salt restore <file.tar.gz>` | unpacks one into the data directory; it refuses when a `salt.db` is already there, unless `SALT_RESTORE_FORCE=1` is set |
+| `salt restore <file.tar.gz>` | unpacks one into the data directory; it refuses when a `salt.db` is already there, unless `NIGARI_RESTORE_FORCE=1` is set |
 | `salt fix-notion-rows` | strips the repeated title-and-properties preamble Notion writes into every exported row, from rows already imported, and reports how many it cleaned |
 
 `salt backup` is safe against a running instance: it takes a transactionally

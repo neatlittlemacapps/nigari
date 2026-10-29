@@ -181,7 +181,7 @@ and what you have to set up there is:
 - a **public hostname** on that tunnel (`notes.example.com`) pointing at this
   machine's own address. That is `http://localhost:8420` with the default listen
   address. The dialog's example says `http://localhost:80`, which is the port
-  the systemd unit in the repository uses; match it to your own `SALT_ADDR`.
+  the systemd unit in the repository uses; match it to your own `NIGARI_ADDR`.
 
 Then, in salt.md:
 
@@ -248,7 +248,7 @@ certificate.
 
 What this changes at startup:
 
-- it listens on **`:443`**, whatever `SALT_ADDR` says;
+- it listens on **`:443`**, whatever `NIGARI_ADDR` says;
 - a second listener on **`:80`** answers the certificate challenge and redirects
   everything else to HTTPS;
 - certificates are cached in `certs/` inside the data directory, so a restart
@@ -270,10 +270,10 @@ while the certificate is never issued, because the challenge has nowhere to land
 An instance answering on `:443` with every browser complaining about the
 certificate is that line, in the log, from startup.
 
-`SALT_TLS_CERT` wins over this setting, and the check is on that one variable
-alone. Set it without `SALT_TLS_KEY` and you get the worst of both: the
+`NIGARI_TLS_CERT` wins over this setting, and the check is on that one variable
+alone. Set it without `NIGARI_TLS_KEY` and you get the worst of both: the
 automatic path switches off, the incomplete pair is not used either, and the
-server serves plain HTTP on `SALT_ADDR` without saying so.
+server serves plain HTTP on `NIGARI_ADDR` without saying so.
 
 ## Route 3: your own reverse proxy
 
@@ -320,7 +320,7 @@ the checkbox also mentions the audit log; that is the one place an address never
 goes. The activity log records who did what, never from where.
 
 **Bind the instance to loopback while you are at it.** With a proxy in front,
-nothing needs to reach the port from outside: `SALT_ADDR=127.0.0.1:8420` makes
+nothing needs to reach the port from outside: `NIGARI_ADDR=127.0.0.1:8420` makes
 the instance answer on the machine itself only, and both a proxy and the built-in
 tunnel reach it there. (With built-in HTTPS switched on this has no effect:
 that route takes `:443` regardless.)
@@ -366,11 +366,11 @@ after a round of settings changes, re-open the dialog and tick the box again.
 Two environment variables, both required:
 
 ```sh
-SALT_TLS_CERT=/path/fullchain.pem SALT_TLS_KEY=/path/key.pem salt
+NIGARI_TLS_CERT=/path/fullchain.pem NIGARI_TLS_KEY=/path/key.pem salt
 ```
 
 Only one set and the server quietly serves plain HTTP. And, as above,
-`SALT_TLS_CERT` on its own also disables the built-in HTTPS route. The rest of
+`NIGARI_TLS_CERT` on its own also disables the built-in HTTPS route. The rest of
 the environment is in [Self-hosting](self-hosting.md).
 
 ## Where a fresh installation listens
@@ -383,7 +383,7 @@ salt
 The installer detects the platform (Linux and macOS, x86-64 and arm64), downloads
 the matching prebuilt binary and puts it in `/usr/local/bin`, or `$HOME/.local/bin`
 when that is not writable and there is no `sudo`. `BIN_DIR=/path` overrides it,
-`SALT_VERSION=v1.0.0` pins a version. It then tells you to open
+`NIGARI_VERSION=v1.0.0` pins a version. It then tells you to open
 `http://localhost:8420`.
 
 It installs a program; it does not open a port, register a service or configure a

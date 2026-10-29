@@ -11,7 +11,7 @@ all: build
 VERSION ?= $(shell git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]*' 2>/dev/null || sed -n 's/^var Version = "\(.*\)"$$/v\1/p' server/backup.go)
 
 frontend:
-	cd web && (npm ci || npm install) && SALT_VERSION=$(VERSION) npm run build
+	cd web && (npm ci || npm install) && NIGARI_VERSION=$(VERSION) npm run build
 
 backend:
 	go mod tidy

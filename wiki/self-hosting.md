@@ -19,7 +19,7 @@ one. Everything the instance owns lives in one directory.
 curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
 ```
 
-That installs it and starts it, and prints the address to open. `SALT_NO_START=1`
+That installs it and starts it, and prints the address to open. `NIGARI_NO_START=1`
 installs without starting, and a non-interactive run never starts it, so this is
 safe in a provisioning script.
 
@@ -29,7 +29,7 @@ system account `salt`, writes `/etc/systemd/system/salt.service`, keeps the data
 in `/var/lib/salt` and enables the unit. The instance then starts on boot, comes
 back by itself after a crash, and your shell is free. Running it again later
 replaces the binary and restarts the service, so the same command is also the
-upgrade. `SALT_NO_SERVICE=1` opts out.
+upgrade. `NIGARI_NO_SERVICE=1` opts out.
 
 Anywhere else (a Mac, a machine without systemd, or without root) it runs in
 the foreground, which is what you want when you are only trying it out.
@@ -54,8 +54,8 @@ Two variables change what it does:
 | Variable | Effect |
 | --- | --- |
 | `BIN_DIR=/path` | install there instead of the automatic choice |
-| `SALT_VERSION=v1.6.13` | download that release tag instead of `latest` |
-| `SALT_REPO=owner/name` | install from another repository's releases (default `neatlittlemacapps/salt.md`) |
+| `NIGARI_VERSION=v1.6.13` | download that release tag instead of `latest` |
+| `NIGARI_REPO=owner/name` | install from another repository's releases (default `neatlittlemacapps/salt.md`) |
 
 The tag needs its leading `v`: it goes into the download URL unchanged.
 
@@ -74,7 +74,7 @@ docker run -d --name salt --restart unless-stopped \
 ```
 
 The image is published for `linux/amd64` and `linux/arm64`. It runs as an
-unprivileged user, sets `SALT_ADDR=:8420` and `SALT_DATA=/data`, declares
+unprivileged user, sets `NIGARI_ADDR=:8420` and `NIGARI_DATA=/data`, declares
 `/data` as a volume and exposes 8420.
 
 **Set `--memory`.** A container with no limit cannot tell how much of the host
@@ -131,9 +131,9 @@ docker compose up -d
 By default it **builds the image from the source in that directory** (`build: .`).
 To use the published image instead, uncomment the `image:` line and comment out
 `build:`. The rest of the file sets `mem_limit: 4g`, the named volume
-`salt-data` mounted at `/data`, `SALT_ADDR` and `SALT_DATA`, and
+`salt-data` mounted at `/data`, `NIGARI_ADDR` and `NIGARI_DATA`, and
 `restart: unless-stopped`. Two entries are commented out and waiting for you:
-`SALT_MEMORY_MB`, and the pair `SALT_TLS_CERT` / `SALT_TLS_KEY` for serving
+`NIGARI_MEMORY_MB`, and the pair `NIGARI_TLS_CERT` / `NIGARI_TLS_KEY` for serving
 HTTPS directly; you supply the mount for the certificate files yourself.
 
 ### From source
@@ -176,8 +176,8 @@ User=salt
 Group=salt
 WorkingDirectory=/opt/salt
 ExecStart=/opt/salt/salt
-Environment=SALT_ADDR=:80
-Environment=SALT_DATA=/opt/salt/data
+Environment=NIGARI_ADDR=:80
+Environment=NIGARI_DATA=/opt/salt/data
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 Restart=on-failure
 RestartSec=2
@@ -226,8 +226,8 @@ Three things about this list are easy to get wrong.
 without starting the server or opening the database. Use `salt version`, the
 startup log, or `/api/health` to read the version.
 
-**The subcommands read `SALT_DATA` too.** `salt backup` run from cron without
-the same `SALT_DATA` as the service looks in `./data`, finds nothing, and stops
+**The subcommands read `NIGARI_DATA` too.** `salt backup` run from cron without
+the same `NIGARI_DATA` as the service looks in `./data`, finds nothing, and stops
 with "no database at …". A systemd unit's `Environment=` lines are not inherited
 by your shell, so set the variable on every command line.
 
@@ -239,33 +239,33 @@ live instance, and `version` touches nothing.
 
 ## Configuration
 
-Every variable carries the `SALT_` prefix. The prefix is not optional: a bare
+Every variable carries the `NIGARI_` prefix. The prefix is not optional: a bare
 `DATA=/srv/salt` is silently ignored and the server writes into `./data`.
 
 | Variable | Default | What it does |
 | --- | --- | --- |
-| `SALT_ADDR` | `:8420` | listen address |
-| `SALT_DATA` | `./data` | data directory: database and uploads |
-| `SALT_MEMORY_MB` | detected | how much memory to assume (below) |
-| `SALT_TRASH_DAYS` | `30` | days before trashed pages are purged; `0` disables |
-| `SALT_TLS_CERT` | empty | certificate file; serves HTTPS directly |
-| `SALT_TLS_KEY` | empty | matching key file |
-| `SALT_RESTORE_FORCE` | empty | any value lets `salt restore` overwrite an existing database |
-| `SALT_IMPORT_ALLOW_PRIVATE` | empty | must be exactly `1`; lets the URL importer reach private addresses |
-| `SALT_UPDATE_CHECK` | empty | set to `0` to stop the daily check for a newer release |
+| `NIGARI_ADDR` | `:8420` | listen address |
+| `NIGARI_DATA` | `./data` | data directory: database and uploads |
+| `NIGARI_MEMORY_MB` | detected | how much memory to assume (below) |
+| `NIGARI_TRASH_DAYS` | `30` | days before trashed pages are purged; `0` disables |
+| `NIGARI_TLS_CERT` | empty | certificate file; serves HTTPS directly |
+| `NIGARI_TLS_KEY` | empty | matching key file |
+| `NIGARI_RESTORE_FORCE` | empty | any value lets `salt restore` overwrite an existing database |
+| `NIGARI_IMPORT_ALLOW_PRIVATE` | empty | must be exactly `1`; lets the URL importer reach private addresses |
+| `NIGARI_UPDATE_CHECK` | empty | set to `0` to stop the daily check for a newer release |
 
 Notes worth having before you hit them:
 
-- **TLS needs both halves.** With only `SALT_TLS_CERT` set and no key, neither
+- **TLS needs both halves.** With only `NIGARI_TLS_CERT` set and no key, neither
   TLS branch applies and the server listens as plain HTTP without complaining.
-- **`SALT_TLS_CERT` also switches off the built-in Let's Encrypt path**, even
+- **`NIGARI_TLS_CERT` also switches off the built-in Let's Encrypt path**, even
   when the certificate setting in the admin dialog is active. One or the other.
-- **`SALT_TRASH_DAYS` loses to the admin setting.** The retention is read from
+- **`NIGARI_TRASH_DAYS` loses to the admin setting.** The retention is read from
   the setting first, the variable second, and 30 last. The Instance settings
   dialog shows the effective number in *Empty the trash automatically after
   (days, 0 = never)* and writes it as a setting when you press **Save**, after
   which the variable no longer has any effect.
-- **`SALT_IMPORT_ALLOW_PRIVATE` opens a door that is shut on purpose.**
+- **`NIGARI_IMPORT_ALLOW_PRIVATE` opens a door that is shut on purpose.**
   Importing a page from a URL refuses every address that is not publicly
   routable: loopback, private ranges, link-local (which is where the cloud
   metadata endpoint `169.254.169.254` lives), multicast. Set the variable to `1`
@@ -281,7 +281,7 @@ Notes worth having before you hit them:
 
 ## Where things live
 
-Everything is under `SALT_DATA`. The admin dialog shows the **configured** path
+Everything is under `NIGARI_DATA`. The admin dialog shows the **configured** path
 as *Data directory* under Instance settings → **Maintenance**, as given, not
 resolved, so an instance started with the default shows `./data` there rather
 than an absolute path.
@@ -310,7 +310,7 @@ a recent change may be sitting in `salt.db-wal` rather than in `salt.db`. See [B
 salt.md sizes its most expensive work (extracting text out of PDFs so it is
 searchable) to the memory it believes it has. It looks in this order:
 
-1. `SALT_MEMORY_MB`, if it is a positive number.
+1. `NIGARI_MEMORY_MB`, if it is a positive number.
 2. The container's cgroup limit (`memory.max` on cgroup v2,
    `memory.limit_in_bytes` on v1).
 3. `/proc/meminfo`.
@@ -350,7 +350,7 @@ listed, previewed and downloadable exactly as usual; only its text stays out of
 the search index. That is the whole cost, and it is why the limit scales itself
 instead of asking you.
 
-Set `SALT_MEMORY_MB` by hand in one case: **nested containers**, such as Docker
+Set `NIGARI_MEMORY_MB` by hand in one case: **nested containers**, such as Docker
 inside an LXC container. There the cgroup file says "no limit" and
 `/proc/meminfo` reports the outermost host, so neither source knows the truth.
 Elsewhere, `--memory` on the container is the better answer because it is also
@@ -383,14 +383,14 @@ they hang off a workspace or an account rather than a page. See
 The conclusion of the section above. If a PDF is not searchable, this line says
 why. It is **missing entirely when the memory figure cannot be read** (on
 macOS, for instance), and in that case the conservative defaults apply: 10 MB
-per PDF, one extraction at a time. Setting `SALT_MEMORY_MB` brings the line
+per PDF, one extraction at a time. Setting `NIGARI_MEMORY_MB` brings the line
 back.
 
 **`memory: no container limit is set, so this assumes a small instance. Run with --memory=<size> …`**
 Printed only when the process is in a container, has no cgroup limit and no
-`SALT_MEMORY_MB`. It is the 2 GiB assumption announcing itself.
+`NIGARI_MEMORY_MB`. It is the 2 GiB assumption announcing itself.
 
-**`memory: SALT_MEMORY_MB="…" is not a positive number of megabytes — ignoring it`**
+**`memory: NIGARI_MEMORY_MB="…" is not a positive number of megabytes — ignoring it`**
 A typo in the variable. Detection continues as if it were unset. This one is
 written whenever the figure is worked out, which happens before anything else at
 startup, so it appears above every other line here, and again later whenever a
@@ -503,7 +503,7 @@ matches nothing looks exactly like a jail with nothing to do.
 
 ## Backing up
 
-Two things need saving, and they are both under `SALT_DATA`: the database and
+Two things need saving, and they are both under `NIGARI_DATA`: the database and
 the `files/` directory. Nothing else in that directory is irreplaceable.
 
 **Use the built-in command.** It takes a transactionally consistent snapshot of
@@ -511,7 +511,7 @@ the database (`VACUUM INTO`, so anything still in the write-ahead log is
 included) and adds every upload, into one gzip'd tar:
 
 ```sh
-SALT_DATA=/opt/salt/data salt backup /var/backups/salt-$(date +%F).tar.gz
+NIGARI_DATA=/opt/salt/data salt backup /var/backups/salt-$(date +%F).tar.gz
 ```
 
 This is **safe against a running instance**: it opens its own read connection,
@@ -555,7 +555,7 @@ export](import-export.md) covers them.
 
 ```sh
 systemctl stop salt
-SALT_DATA=/opt/salt/data salt restore /var/backups/salt-2026-08-07.tar.gz
+NIGARI_DATA=/opt/salt/data salt restore /var/backups/salt-2026-08-07.tar.gz
 systemctl start salt
 ```
 
@@ -564,7 +564,7 @@ the very file the archive replaces. (The restore itself never opens the
 database; it only unpacks the archive.)
 
 It **refuses to overwrite**: with a `salt.db` already in the directory you get
-"…/salt.db already exists; set SALT_RESTORE_FORCE=1 to overwrite". That guard is
+"…/salt.db already exists; set NIGARI_RESTORE_FORCE=1 to overwrite". That guard is
 there because the mistake it prevents is unrecoverable. Any non-empty value of
 the variable lifts it.
 
@@ -584,7 +584,7 @@ Every change merged into `main` is released: it gets the next version on the
 five binaries plus a `SHA256SUMS.txt` on the GitHub Release (which is where the
 installer fetches from), and a container image on GHCR tagged both with the
 version and as `latest`. These are this fork's releases; to install upstream
-salt.md instead, run the script with `SALT_REPO=saltmd/salt.md`.
+salt.md instead, run the script with `NIGARI_REPO=saltmd/salt.md`.
 
 Two settings on GitHub, set once by whoever owns the repository, make this
 work:
@@ -597,7 +597,7 @@ work:
   → Change visibility → **Public**. Until then `docker pull` asks for a login.
 
 **Installed with the script:** re-run it. Pin with
-`SALT_VERSION=v1.6.13` if you do not want the newest.
+`NIGARI_VERSION=v1.6.13` if you do not want the newest.
 
 **By hand, with the checksum verified:**
 
@@ -610,13 +610,13 @@ wget -O SHA256SUMS.txt \
 grep salt-linux-amd64 SHA256SUMS.txt | sha256sum -c -
 
 systemctl stop salt
-SALT_DATA=/opt/salt/data /opt/salt/salt backup /var/backups/salt-before-1.6.16.tar.gz
+NIGARI_DATA=/opt/salt/data /opt/salt/salt backup /var/backups/salt-before-1.6.16.tar.gz
 cp -a /opt/salt/salt /opt/salt/salt.bak
 install -m 755 salt-linux-amd64 /opt/salt/salt
 systemctl start salt
 ```
 
-The `SALT_DATA=` on the backup line is not decoration. That shell is sitting in
+The `NIGARI_DATA=` on the backup line is not decoration. That shell is sitting in
 the download directory and knows nothing about the unit's `Environment=` lines,
 so without it the command looks in `/tmp/salt-1.6.16/data` and stops with
 "no database at …".
@@ -685,7 +685,7 @@ reverse proxy)*:
   port needed)** and **nginx**. Each has a copy button; nothing has to be typed
   out by hand.
 
-`SALT_TLS_CERT` and `SALT_TLS_KEY` are the fifth way: your own certificate pair,
+`NIGARI_TLS_CERT` and `NIGARI_TLS_KEY` are the fifth way: your own certificate pair,
 served directly by salt.md, no proxy and no Let's Encrypt.
 
 ## When something is wrong

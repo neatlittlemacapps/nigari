@@ -559,10 +559,10 @@ func (srv *Server) pageHTML(p *page, printMode bool, o printOptions) string {
 		nonce = ` nonce="` + o.Nonce + `"`
 	}
 	b.WriteString(`<script` + nonce + `>` + paginateJS + "\n" +
-		`SALT_TITLE=` + jsString(title) + `;` +
-		`SALT_DAY=` + jsString(o.Date) + `;` +
-		`SALT_REGION=` + jsString(o.Region) + `;` +
-		`SALT_LANG=` + jsString(o.Language) + `;` +
+		`NIGARI_TITLE=` + jsString(title) + `;` +
+		`NIGARI_DAY=` + jsString(o.Date) + `;` +
+		`NIGARI_REGION=` + jsString(o.Region) + `;` +
+		`NIGARI_LANG=` + jsString(o.Language) + `;` +
 		`saltStart();` +
 		`document.querySelectorAll('[data-print]').forEach(function(b){b.addEventListener('click',function(){window.print()})});` +
 		`</script>`)
@@ -651,7 +651,7 @@ func applyPrintQuery(o printOptions, q url.Values) printOptions {
 // most documents that get printed are made of and the alternative is a page and
 // a half of white space.
 const paginateJS = `
-var SALT_TITLE='',SALT_DAY='',SALT_REGION='',SALT_LANG='';
+var NIGARI_TITLE='',NIGARI_DAY='',NIGARI_REGION='',NIGARI_LANG='';
 
 // saltLocale is the same rule i18n.ts follows: the account's region wins, and
 // with none, the browser tag whose base matches the interface language — so a
@@ -660,11 +660,11 @@ var SALT_TITLE='',SALT_DAY='',SALT_REGION='',SALT_LANG='';
 // exactly that case, which is the common one for anybody who keeps their
 // browser in English.
 function saltLocale(){
-  if(SALT_REGION)return SALT_REGION;
+  if(NIGARI_REGION)return NIGARI_REGION;
   var tags=navigator.languages||[navigator.language||''];
-  if(SALT_LANG){
-    for(var i=0;i<tags.length;i++)if(tags[i].split('-')[0]===SALT_LANG)return tags[i];
-    return SALT_LANG;
+  if(NIGARI_LANG){
+    for(var i=0;i<tags.length;i++)if(tags[i].split('-')[0]===NIGARI_LANG)return tags[i];
+    return NIGARI_LANG;
   }
   return tags[0]||undefined;
 }
@@ -744,8 +744,8 @@ function saltAfterImages(cb){
 }
 
 function saltStart(){
-  var day=saltDay(SALT_DAY);
-  SALT_FOOT=day?SALT_TITLE+' \u00b7 '+day:SALT_TITLE;
+  var day=saltDay(NIGARI_DAY);
+  NIGARI_FOOT=day?NIGARI_TITLE+' \u00b7 '+day:NIGARI_TITLE;
   var c=document.querySelector('#doc-cover');
   if(c){
     var slot=c.content.querySelector('.cover-day');
@@ -759,7 +759,7 @@ function saltRepaginate(){
   saltPaginate();
   saltAfterImages(saltPaginate);
 }
-var SALT_FOOT='';
+var NIGARI_FOOT='';
 function saltPaginate(){
   saltPageRule();
   var src=document.getElementById('doc-src'),cov=document.getElementById('doc-cover');
@@ -774,7 +774,7 @@ function saltPaginate(){
     var b=document.createElement('div');b.className='sheet-body';s.appendChild(b);
     var f=document.createElement('div');f.className='sheet-foot';
     f.innerHTML='<span class="foot-title"></span><span class="foot-num"></span>';
-    f.firstChild.textContent=SALT_FOOT;
+    f.firstChild.textContent=NIGARI_FOOT;
     s.appendChild(f);host.appendChild(s);return b;
   }
   function over(b){return b.scrollHeight>b.clientHeight+1;}

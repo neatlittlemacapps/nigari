@@ -22,7 +22,7 @@ make build      # frontend and backend, with the frontend embedded
 While developing, run the two halves separately:
 
 ```sh
-SALT_DATA=/tmp/salt-dev SALT_ADDR=:8420 go run .
+NIGARI_DATA=/tmp/salt-dev NIGARI_ADDR=:8420 go run .
 cd web && npx vite
 ```
 

@@ -44,7 +44,7 @@ import type { PeekMode } from './peek';
 import { guardDrops } from './dropFiles';
 
 /** Injected by the build; false everywhere except the website's framed demo. */
-declare const __SALT_DEMO__: boolean;
+declare const __NIGARI_DEMO__: boolean;
 
 /** Schriftwahl: 'system' laesst alles wie bisher, 'brand' schaltet die
  *  mitgelieferten Inter- und JetBrains-Mono-Schriften ein. */
@@ -87,8 +87,8 @@ if (mailOauthMsg) {
 //
 // Never hardcode this again: as two hand-kept numbers they drifted, and the
 // reload banner then fired on every load forever.
-declare const __SALT_VERSION__: string;
-const BUILD_VERSION = __SALT_VERSION__;
+declare const __NIGARI_VERSION__: string;
+const BUILD_VERSION = __NIGARI_VERSION__;
 
 function pageIdFromLocation(): string | null {
   const m = window.location.pathname.match(/^\/p\/([0-9a-f]+)$/);
@@ -1270,7 +1270,7 @@ export default function App() {
           // page — loaded into the frame, with no way back to the application.
           // There the session IS the in-memory store, so a reload is the
           // sign-out: everything resets and the demo starts over.
-          if (__SALT_DEMO__) window.location.reload();
+          if (__NIGARI_DEMO__) window.location.reload();
           else window.location.href = '/';
         }}
         notesMode={notesMode}

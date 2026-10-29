@@ -29,7 +29,7 @@ screen with a link to the release notes. Dismissing it hides that version, not
 the next one. Members never see it, and the endpoint behind it refuses anybody
 who is not an administrator.
 
-**To turn it off**, set `SALT_UPDATE_CHECK=0` on the server. An instance with no
+**To turn it off**, set `NIGARI_UPDATE_CHECK=0` on the server. An instance with no
 internet needs nothing: the call fails, the failure is remembered instead of
 logged, and no banner appears.
 

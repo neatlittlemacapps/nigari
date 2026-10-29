@@ -30,7 +30,7 @@ CGO_ENABLED=0 go build -trimpath -o salt .
 # nohup alone is enough (it failed with "setsid: command not found").
 detach=(nohup)
 command -v setsid >/dev/null && detach=(setsid nohup)
-SALT_DATA="$data" SALT_ADDR=:8420 "${detach[@]}" ./salt >"$log" 2>&1 < /dev/null &
+NIGARI_DATA="$data" NIGARI_ADDR=:8420 "${detach[@]}" ./salt >"$log" 2>&1 < /dev/null &
 echo $! >"$pidfile"
 
 for _ in $(seq 1 60); do
@@ -41,7 +41,7 @@ curl -fs -o /dev/null http://127.0.0.1:8420/ || { echo "start: the server did no
 
 # The seeder refuses an instance that already has an account, so this only
 # fills a fresh data folder.
-SALT_SEED_URL=http://127.0.0.1:8420 node web/scripts/seed-wiki-instance.mjs || true
+NIGARI_SEED_URL=http://127.0.0.1:8420 node web/scripts/seed-wiki-instance.mjs || true
 
 cat <<MSG
 

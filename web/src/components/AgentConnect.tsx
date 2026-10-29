@@ -8,7 +8,7 @@ import { Bot, Check, Copy, Download, ShieldCheck, KeyRound } from 'lucide-react'
 import { t } from '../i18n';
 
 /** Injected by the build; false everywhere except the website's framed demo. */
-declare const __SALT_DEMO__: boolean;
+declare const __NIGARI_DEMO__: boolean;
 
 // "Connect an agent" (wave 44): salt.md is AI-native — every agent talks to the
 // workspace through the built-in MCP server. This modal turns connecting into a
@@ -168,7 +168,7 @@ export default function AgentConnectModal({
   // speaks no MCP and that a visitor might really paste into their client. An
   // obviously invented host says "put your own instance here" instead.
   const [url, setUrl] = useState(
-    __SALT_DEMO__ ? 'https://salt.example.com' : window.location.origin,
+    __NIGARI_DEMO__ ? 'https://salt.example.com' : window.location.origin,
   );
   useEffect(() => {
     api

@@ -52,16 +52,16 @@ func pageIDIn(t *testing.T, answer string) string {
 // TestWriteUpgradeFixture writes a fixture; it is not a test of anything and
 // skips unless asked:
 //
-//	SALT_WRITE_UPGRADE_FIXTURE=$PWD/server/testdata/upgrade/step-0.db \
+//	NIGARI_WRITE_UPGRADE_FIXTURE=$PWD/server/testdata/upgrade/step-0.db \
 //	  go test ./server -run TestWriteUpgradeFixture -count=1
 //
 // It goes through the MCP tools, the same write paths an agent uses, so the
 // search index, revisions and document generations are written the way a real
 // instance writes them, not by hand-made INSERTs that skip half of it.
 func TestWriteUpgradeFixture(t *testing.T) {
-	out := os.Getenv("SALT_WRITE_UPGRADE_FIXTURE")
+	out := os.Getenv("NIGARI_WRITE_UPGRADE_FIXTURE")
 	if out == "" {
-		t.Skip("set SALT_WRITE_UPGRADE_FIXTURE to the path of the fixture to write")
+		t.Skip("set NIGARI_WRITE_UPGRADE_FIXTURE to the path of the fixture to write")
 	}
 	if _, err := os.Stat(out); err == nil {
 		// A fixture is written once, by the code before its step; rewriting it

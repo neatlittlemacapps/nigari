@@ -96,7 +96,7 @@ settings"*, worth knowing if somebody quotes a message at you. See
 **The trash setting** is swept by a background pass every 30 minutes: pages
 trashed longer ago than the limit are deleted for good. `0` disables the sweep
 and the trash keeps everything. Without a stored setting the environment
-variable `SALT_TRASH_DAYS` decides, and failing that 30 days. See
+variable `NIGARI_TRASH_DAYS` decides, and failing that 30 days. See
 [Trash and recovery](trash-and-recovery.md).
 
 **The session length** applies to sessions created from then on: it is both the
@@ -307,7 +307,7 @@ Restoring, and taking backups on a schedule, happen on the server:
 `salt backup` is safe against a running instance. `salt restore` is not a wipe:
 it unpacks the archive over whatever is in the data directory, so anything the
 archive does not contain stays behind. And it refuses outright if a database is
-already there: *"…/salt.db already exists; set SALT_RESTORE_FORCE=1 to
+already there: *"…/salt.db already exists; set NIGARI_RESTORE_FORCE=1 to
 overwrite"*. Restore into an empty directory, or set that variable deliberately.
 The full procedure is in [Self-hosting](self-hosting.md).
 

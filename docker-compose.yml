@@ -12,15 +12,15 @@ services:
     # PDFs than it could. Raise this to what you actually want to give it —
     # it only affects how much text reaches the search index, never whether an
     # upload succeeds. In nested setups (Docker inside LXC) neither the cgroup
-    # nor /proc/meminfo tells the truth; use SALT_MEMORY_MB there.
+    # nor /proc/meminfo tells the truth; use NIGARI_MEMORY_MB there.
     mem_limit: 4g
     environment:
-      SALT_ADDR: ":8420"
-      SALT_DATA: "/data"
-      # SALT_MEMORY_MB: "4096"
+      NIGARI_ADDR: ":8420"
+      NIGARI_DATA: "/data"
+      # NIGARI_MEMORY_MB: "4096"
       # For HTTPS, mount certs and point these at them:
-      # SALT_TLS_CERT: "/certs/fullchain.pem"
-      # SALT_TLS_KEY: "/certs/privkey.pem"
+      # NIGARI_TLS_CERT: "/certs/fullchain.pem"
+      # NIGARI_TLS_KEY: "/certs/privkey.pem"
     restart: unless-stopped
 
 volumes:
