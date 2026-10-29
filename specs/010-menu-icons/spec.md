@@ -28,6 +28,17 @@ workspace", the same document icon on "Page", "Export as Markdown" and
 menu by its icons cannot tell those apart, and an agent describing the
 interface cannot rely on them.
 
+## Clarifications
+
+### Session 2026-10-29
+
+- Q: Is a function the verb alone ("delete", one icon for every delete) or the
+  verb with its object ("delete a page" and "delete a view" get different
+  icons)? → A: The verb alone (owner: "A"). What the item acts on comes from
+  the menu it is in. Two verbs that do different things are different
+  functions even when they sound alike: "Move to trash" can be undone,
+  "Delete" cannot, so they get different icons.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Find an action by its icon (Priority: P1)
@@ -130,10 +141,10 @@ both. Fix it; the check passes.
   does not replace it.
 - **The same verb on different things** ("Delete option", "Delete
   workspace", "Move to trash", "Remove view"): whether these are one function
-  or several is the definition of "function" this spec has to settle;
-  [NEEDS CLARIFICATION: Is a function the verb alone ("delete", one icon for
-  every delete) or the verb with its object ("delete a page" and "delete a
-  view" get different icons)?]
+  or several is settled in Clarifications: a function is the verb alone, so
+  "Delete option" and "Delete workspace" share one icon; "Move to trash" (can
+  be undone) and "Delete" (permanent) do different things and get different
+  icons, and so does "Remove view" if it differs from both.
 - **Icons outside menus** (toolbar buttons, property type icons, side panel
   headers) are not covered by this rule; a toolbar may show the bin icon for
   the same "delete" function, but nothing outside menus is checked.
@@ -174,8 +185,9 @@ both. Fix it; the check passes.
 
 - **Menu item**: one action in a menu, with a label and the function it
   performs.
-- **Function**: what an item does, independent of the menu it is in (the
-  definition is the open question above).
+- **Function**: what an item does, independent of the menu it is in: the verb
+  ("duplicate", "move to trash", "delete permanently"), not the thing it acts
+  on.
 - **Icon pairing**: the one list of functions and their icons, which every
   menu reads.
 
