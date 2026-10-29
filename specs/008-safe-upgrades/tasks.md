@@ -19,7 +19,7 @@ description: "Tasks for safe upgrades"
 
 ## Phase 1: Setup
 
-- [ ] T001 [backend] Add `github.com/pressly/goose/v3` v3.29.0 with `go get` (go.mod/go.sum through Go tooling); confirm against v3.29.0 the API the plan names (`NewProvider`, `DialectSQLite3`, `WithGoMigrations`, `NewGoMigration`, `GoFunc{RunTx,RunDB}`, `HasPending`, `GetDBVersion`); record binary size and module count before/after with `CGO_ENABLED=0`; `scripts/licenses.mjs` for the new notices (`go mod download all` first, then revert `go.sum` if it changed beyond `go get`)
+- [x] T001 [backend] Add `github.com/pressly/goose/v3` v3.29.0 with `go get` (go.mod/go.sum through Go tooling); confirm against v3.29.0 the API the plan names (`NewProvider`, `DialectSQLite3`, `WithGoMigrations`, `NewGoMigration`, `GoFunc{RunTx,RunDB}`, `HasPending`, `GetDBVersion`); record binary size and module count before/after with `CGO_ENABLED=0`; `scripts/licenses.mjs` for the new notices (`go mod download all` first, then revert `go.sum` if it changed beyond `go get`)
 - [ ] T002 [test] Write the first fixture `server/testdata/upgrade/step-0.db` with today's `main` (before any step exists): a small seeded workspace (two pages, a database with rows and a chart view, a comment, a file reference, searchable text), plus `server/testdata/upgrade/README.md` saying how each fixture is made
 
 ---
