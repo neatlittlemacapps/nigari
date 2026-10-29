@@ -6,8 +6,10 @@ name: Release
 # Before, the fork had no releases, so installing it gave upstream's v1.1.4.
 #
 # The version: the fork's own patch line. The next number after the highest
-# fork tag on the line named by server.Version's major.minor (1.6 today), so
-# every release sorts above upstream's v1.1.x tags that the fork carries.
+# fork tag on the line named by server.Version's major.minor, so every release
+# sorts above upstream's v1.1.x tags that the fork carries. A line with no tag
+# yet releases server.Version itself: the first nigari release is v2.0.0, not
+# v2.0.1 (spec 011, research R11).
 # server/update.go only treats plain x.y.z as a release, which is why this is
 # not "1.6.8+42". A pushed v* tag still releases as itself.
 on:
@@ -45,8 +47,9 @@ jobs:
             base=$(sed -n 's/^var Version = "\(.*\)"$/\1/p' server/backup.go)
             line="${base%.*}"
             last=$(git tag -l "v${line}.*" --sort=-v:refname | head -n1)
-            if [ -n "$last" ]; then n="${last##*.}"; else n="${base##*.}"; fi
-            version="v${line}.$((n + 1))"
+            # A line with releases continues from its last; a line nobody has
+            # released yet starts at server.Version itself (v2.0.0, spec 011).
+            if [ -n "$last" ]; then version="v${line}.$(( ${last##*.} + 1 ))"; else version="v${base}"; fi
           fi
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "Releasing ${version}" >> "$GITHUB_STEP_SUMMARY"
