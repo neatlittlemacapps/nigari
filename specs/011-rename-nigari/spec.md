@@ -1,4 +1,4 @@
-# Feature Specification: The fork becomes salty.md
+# Feature Specification: The fork becomes nigari
 
 **Feature Branch**: `claude/serene-planck-ie0e6w`
 
@@ -12,7 +12,8 @@
 ever contribute back … how about entirely replacing salt with salty and
 basically consider this an official forked version?" Options offered: A keep
 the name, B rename the product but keep internal names, C rename everything.
-Owner: "C. Rename everything, internals too"; the name: "salty.md". Specified
+Owner: "C. Rename everything, internals too"; the name: first "salty.md",
+then, after checking it: “go with "nigari"”. Specified
 now, built after spec 008 (its data-file rename is an upgrade step).
 
 ## Context
@@ -39,10 +40,10 @@ operating system knows by its id. Renaming them at once breaks every one.
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - The product is called salty.md (Priority: P1)
+### User Story 1 - The product is called nigari (Priority: P1)
 
 A person opens the app, the website, the docs, the installer or the release
-page and sees **salty.md** everywhere: the title bar, the sign-in screen, the
+page and sees **nigari** everywhere: the title bar, the sign-in screen, the
 About screen, the emails it sends, the desktop app, the wiki. Nothing calls it
 salt.md, except the line that says where it comes from.
 
@@ -54,23 +55,23 @@ settings and an export; no visible text says "salt.md" except the origin line.
 **Acceptance Scenarios**:
 
 1. **Given** the interface in English, German or Spanish, **When** a person
-   uses it, **Then** every mention of the product says salty.md.
+   uses it, **Then** every mention of the product says nigari.
 2. **Given** the About screen and the README, **When** a person reads them,
-   **Then** they say that salty.md is a modified version of salt.md
+   **Then** they say that nigari is a modified version of salt.md
    (`saltmd/salt.md`), since when, and under which licence, with a link to the
    source.
 3. **Given** the release page, the installer and the container image, **When**
-   a person installs, **Then** they get `salty` binaries and a `salty.md`
+   a person installs, **Then** they get `nigari` binaries and a `nigari`
    image, with install commands that say so.
 4. **Given** an agent connecting over MCP, **When** it reads the server's name
-   and instructions, **Then** they say salty.md.
+   and instructions, **Then** they say nigari.
 
 ---
 
 ### User Story 2 - An existing install keeps working after the update (Priority: P1)
 
 An admin runs salt.md v1.6.x from a service file with `SALT_DATA=/srv/salt`
-and `SALT_ADDR=:8420`. They update to the first salty.md release. It starts on
+and `SALT_ADDR=:8420`. They update to the first nigari release. It starts on
 the same data, with the same settings, and every person stays signed in. The
 admin finds a line in the log saying which old names it found and what they
 are now called; nothing breaks the day they update.
@@ -86,14 +87,14 @@ cookie and old stored preferences is still signed in with its preferences.
 **Acceptance Scenarios**:
 
 1. **Given** a data directory with `salt.db`, **When** the new release starts,
-   **Then** it renames the database to `salty.db` as an upgrade step (with the
+   **Then** it renames the database to `nigari.db` as an upgrade step (with the
    copy before it that spec 008 takes), and the data is unchanged.
 2. **Given** an environment that sets `SALT_DATA`, `SALT_ADDR` or any other
    `SALT_*` variable, **When** the new release starts, **Then** it uses each
-   one as if the matching `SALTY_*` variable were set, and logs one line
+   one as if the matching `NIGARI_*` variable were set, and logs one line
    naming the old variables found and their new names.
-3. **Given** both `SALT_X` and `SALTY_X` set, **When** it starts, **Then**
-   `SALTY_X` wins and the log says so.
+3. **Given** both `SALT_X` and `NIGARI_X` set, **When** it starts, **Then**
+   `NIGARI_X` wins and the log says so.
 4. **Given** a browser with a `salt_session` cookie, **When** it makes its
    first request to the new release, **Then** the person is still signed in and
    the browser gets the new cookie in exchange; the same for the OAuth cookies
@@ -107,9 +108,9 @@ cookie and old stored preferences is still signed in with its preferences.
 7. **Given** a `salt-workspace.json` export from an older release, **When** it
    is imported, **Then** it is accepted as before.
 8. **Given** the command `salt backup` in an admin's cron job, **When** the
-   binary is now called `salty`, **Then** the release notes and the installer
+   binary is now called `nigari`, **Then** the release notes and the installer
    say how to keep the old command working (the installer leaves a `salt`
-   link to `salty` when it replaces an existing `salt`).
+   link to `nigari` when it replaces an existing `salt`).
 9. **Given** the desktop app installed as salt.md, **When** it updates,
    **Then** it keeps its saved server and window settings.
 
@@ -146,7 +147,7 @@ that renamed the database remain.
   renamed line conflicts. The fork stops tracking upstream as a matter of
   course; a fix from there is ported by hand when wanted.
 - **The repository rename** (`neatlittlemacapps/salt.md` →
-  `neatlittlemacapps/salty.md`) is done by the owner on GitHub; GitHub
+  `neatlittlemacapps/nigari`) is done by the owner on GitHub; GitHub
   redirects old URLs, so the update check and the installer of older releases
   keep finding new releases. The image under the old name stays where it is
   and gets no new tags.
@@ -161,7 +162,7 @@ that renamed the database remain.
   stops with a sentence saying so, as every failed step does (spec 008).
 - **Two processes**, one old and one new release, on the same data directory:
   spec 008's lock and refusal handle it.
-- **Version number**: [NEEDS CLARIFICATION: Does the first salty.md release
+- **Version number**: [NEEDS CLARIFICATION: Does the first nigari release
   continue the 1.6 line (v1.6.x) or start a new one (v2.0.0)?]
 
 ## Requirements *(mandatory)*
@@ -171,16 +172,16 @@ that renamed the database remain.
 - **FR-001**: Every user-visible mention of the product (interface in every
   language, emails, sign-in, About, MCP server name and instructions, desktop
   app, wiki, README, website source material, install and release text) MUST
-  say salty.md.
-- **FR-002**: The README and the About screen MUST say that salty.md is a
+  say nigari.
+- **FR-002**: The README and the About screen MUST say that nigari is a
   modified version of salt.md, since when, under AGPL-3.0, with a link to the
   source; `LICENSE` and the original copyright notices MUST stay unchanged.
 - **FR-003**: The binary, the container image, the release assets, the
   installer, the desktop app and the Go module MUST carry the new name.
-- **FR-004**: The database file MUST be renamed from `salt.db` to `salty.db`
+- **FR-004**: The database file MUST be renamed from `salt.db` to `nigari.db`
   by an upgrade step of spec 008, with its copy before and its refusal rules.
 - **FR-005**: Every `SALT_*` environment variable MUST be read as its
-  `SALTY_*` name during the transition, the new name winning when both are
+  `NIGARI_*` name during the transition, the new name winning when both are
   set, with one log line naming what was found.
 - **FR-006**: Old session and OAuth cookies MUST be accepted during the
   transition and exchanged for the new ones on first use, so nobody is signed
@@ -190,7 +191,7 @@ that renamed the database remain.
 - **FR-008**: Webhooks MUST carry the signature under both the old and the new
   header name during the transition.
 - **FR-009**: Imports MUST accept exports made under the old name.
-- **FR-010**: The installer MUST leave a `salt` command pointing at `salty`
+- **FR-010**: The installer MUST leave a `salt` command pointing at `nigari`
   when it replaces an existing install, for the transition.
 - **FR-011**: The desktop app MUST keep its saved settings across the rename.
 - **FR-012**: Each old name MUST stop working at the end of the transition,
@@ -206,13 +207,13 @@ that renamed the database remain.
 - **Old name**: a name a running install or something outside it may still
   use (variable, cookie, header, storage key, file, command, app id), with its
   new name and the release it stops working in.
-- **Origin notice**: the statement that salty.md is a modified salt.md.
+- **Origin notice**: the statement that nigari is a modified salt.md.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: An install of salt.md v1.6.10 updated to the first salty.md
+- **SC-001**: An install of salt.md v1.6.10 updated to the first nigari
   release starts on the first try with its data, settings and signed-in
   sessions intact (tested from the spec 008 fixture and a v1.6.10
   environment).
@@ -240,6 +241,6 @@ that renamed the database remain.
 - The owner renames the GitHub repository by hand when the pull request is
   ready; the plan says exactly when and how, since the release workflow and
   the update check read the repository name.
-- "salty.md" is free to use: the owner checks domain, GitHub name and
+- "nigari" is free to use: the owner checks domain, GitHub name and
   trademarks; nothing in this spec checked them.
 - The website and its domain, if any, are outside this repository.

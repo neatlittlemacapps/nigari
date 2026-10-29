@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Rename to salty.md
+# Specification Quality Checklist: Rename to nigari
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-10-29
