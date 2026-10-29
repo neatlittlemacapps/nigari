@@ -1,8 +1,13 @@
 package server
 
 import (
+	"database/sql"
+	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
 
 // Spec 011 FR-006: an old variable on its own refuses, naming its new name;
@@ -36,5 +41,140 @@ func TestOldEnvNoneSet(t *testing.T) {
 	ignored, err := CheckOldEnv([]string{"NIGARI_DATA=/srv/nigari", "HOME=/root", "BASALT_X=1"})
 	if err != nil || len(ignored) != 0 {
 		t.Fatalf("no old names: want nothing, got %q, %v", ignored, err)
+	}
+}
+
+// Spec 011 FR-004: salt.db becomes nigari.db once, before the steps.
+
+// The case the checkpoint exists for: committed pages that live only in
+// salt.db-wal, as a crash or a kill leaves them. Renaming salt.db alone would
+// leave them in a WAL nothing opens again.
+func TestRenameKeepsWALContent(t *testing.T) {
+	live := t.TempDir()
+	db, err := sql.Open("sqlite", writerDSN(filepath.Join(live, oldDBFile)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	db.SetMaxOpenConns(1)
+	for _, q := range []string{
+		`PRAGMA wal_autocheckpoint=0`,
+		`CREATE TABLE notes (body TEXT)`,
+		`INSERT INTO notes VALUES ('only in the WAL')`,
+	} {
+		if _, err := db.Exec(q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Copy the files while the connection still holds them: what a crash leaves.
+	dir := t.TempDir()
+	for _, f := range []string{oldDBFile, oldDBFile + "-wal"} {
+		b, err := os.ReadFile(filepath.Join(live, f))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, f), b, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if fi, _ := os.Stat(filepath.Join(dir, oldDBFile+"-wal")); fi == nil || fi.Size() == 0 {
+		t.Fatal("setup: the copied WAL is empty, so this test would prove nothing")
+	}
+
+	if _, err := moveOldDatabase(dir); err != nil {
+		t.Fatalf("move: %v", err)
+	}
+	for _, gone := range []string{oldDBFile, oldDBFile + "-wal", oldDBFile + "-shm"} {
+		if fileExists(filepath.Join(dir, gone)) {
+			t.Errorf("%s is still there after the move", gone)
+		}
+	}
+	moved, err := sql.Open("sqlite", writerDSN(filepath.Join(dir, DBFile)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer moved.Close()
+	var body string
+	if err := moved.QueryRow(`SELECT body FROM notes`).Scan(&body); err != nil || body != "only in the WAL" {
+		t.Fatalf("the row that was only in the WAL: %q, %v", body, err)
+	}
+}
+
+func TestRenameConflictChangesNothing(t *testing.T) {
+	dir := t.TempDir()
+	want := map[string]string{oldDBFile: "old", DBFile: "new"}
+	for f, body := range want {
+		if err := os.WriteFile(filepath.Join(dir, f), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	_, err := moveOldDatabase(dir)
+	var r *UpgradeRefusal
+	if !errors.As(err, &r) || r.Code != "rename_conflict" {
+		t.Fatalf("want rename_conflict, got %v", err)
+	}
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 2 {
+		t.Fatalf("the refusal changed the directory: %v", entries)
+	}
+	for f, body := range want {
+		if b, _ := os.ReadFile(filepath.Join(dir, f)); string(b) != body {
+			t.Errorf("%s changed: %q", f, b)
+		}
+	}
+}
+
+func TestRenameMovesCopies(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	dir := filepath.Dir(path)
+	if err := os.Rename(path, filepath.Join(dir, oldDBFile)); err != nil {
+		t.Fatal(err)
+	}
+	for _, n := range []string{"1", "2"} {
+		if err := os.WriteFile(filepath.Join(dir, oldDBFile+".before-step-"+n), []byte("copy"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	moved, err := moveOldDatabase(dir)
+	if err != nil || moved != 3 {
+		t.Fatalf("want 3 files moved, got %d, %v", moved, err)
+	}
+	for _, n := range []string{"1", "2"} {
+		if !fileExists(filepath.Join(dir, DBFile+".before-step-"+n)) || fileExists(filepath.Join(dir, oldDBFile+".before-step-"+n)) {
+			t.Errorf("copy before step %s was not moved", n)
+		}
+	}
+	if fileExists(filepath.Join(dir, lockFile)) {
+		t.Error("the lock was left behind")
+	}
+}
+
+// SC-001: a data directory written by salt.md v1.6.10 starts on nigari with
+// its content, and its database is nigari.db from then on.
+func TestRenameFromFixture(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	dir := filepath.Dir(path)
+	if err := os.Rename(path, filepath.Join(dir, oldDBFile)); err != nil {
+		t.Fatal(err)
+	}
+	s, err := New(dir, fstest.MapFS{"index.html": {Data: []byte("<html></html>")}})
+	if err != nil {
+		t.Fatalf("New on a salt.md data directory: %v", err)
+	}
+	t.Cleanup(func() { s.Close() })
+	if fileExists(filepath.Join(dir, oldDBFile)) || !fileExists(filepath.Join(dir, DBFile)) {
+		t.Fatal("the database was not renamed")
+	}
+	var uid string
+	if err := s.db.QueryRow(`SELECT id FROM users WHERE email = 'fixture@example.test'`).Scan(&uid); err != nil {
+		t.Fatalf("the fixture's account: %v", err)
+	}
+	res, err := callTool(t, s, &user{ID: uid, Name: "Test"}, "search", `{"query":"`+upgradeFixture.SearchWord+`"}`)
+	if err != nil || !strings.Contains(res, upgradeFixture.Page) {
+		t.Fatalf("search after the rename: %s, %v", res, err)
+	}
+	var n int
+	if err := s.db.QueryRow(`SELECT COUNT(*) FROM audit_log WHERE action = 'rename'`).Scan(&n); err != nil || n != 1 {
+		t.Errorf("want one rename entry in the activity log, got %d (%v)", n, err)
 	}
 }

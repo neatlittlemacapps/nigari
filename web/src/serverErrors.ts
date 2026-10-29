@@ -60,6 +60,10 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
       return t('salt.md could not write the copy it takes before an upgrade, so no step ran. Free space in the data directory and start it again.');
     case 'upgrade_busy':
       return t('Another salt.md is upgrading this database. Wait for it to finish, then reload.');
+    // The rename to nigari (spec 011): both database names in one data
+    // directory, and the server will not pick one.
+    case 'rename_conflict':
+      return t('This data directory holds both salt.db and nigari.db, so nigari did not start and changed nothing. Keep the one with your data, move the other out, and start again.');
 
     // ---- read-only workspaces ----
     case 'workspace_read_only':

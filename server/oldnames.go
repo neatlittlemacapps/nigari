@@ -1,7 +1,12 @@
 package server
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -51,4 +56,98 @@ func CheckOldEnv(environ []string) (ignored []string, refusal error) {
 			". Rename them where they are set (service file, compose file, shell) and start again. Nothing was changed.")
 	}
 	return ignored, nil
+}
+
+// oldDBFile is the database's name before v2.0.0.
+const oldDBFile = "salt.db"
+
+// moveOldDatabase renames a salt.md data directory's database to its nigari
+// name, once, before the upgrade steps run (spec 011, FR-004, plan P2). It
+// returns how many files it moved: 0 when there was nothing to move.
+//
+// A rename changes no byte, so no copy is taken first (owner: "No copy").
+// The WAL is the one way to lose data here: it holds committed pages not yet
+// written into salt.db, and renaming salt.db alone would leave them behind in
+// a salt.db-wal nothing opens again. So the file is checkpointed first, by
+// SQLite itself, and the rename happens only once the WAL is empty.
+//
+// With both salt.db and nigari.db present nothing is chosen for the admin:
+// the start is refused and both files stay as they are.
+func moveOldDatabase(dataDir string) (int, error) {
+	oldPath := filepath.Join(dataDir, oldDBFile)
+	newPath := filepath.Join(dataDir, DBFile)
+	if !fileExists(oldPath) {
+		return 0, nil
+	}
+	if fileExists(newPath) {
+		return 0, renameConflict()
+	}
+	unlock, err := takeUpgradeLock(dataDir)
+	if err != nil {
+		return 0, err
+	}
+	defer unlock()
+	// Again under the lock: another process may have moved it meanwhile.
+	if !fileExists(oldPath) {
+		return 0, nil
+	}
+	if fileExists(newPath) {
+		return 0, renameConflict()
+	}
+
+	db, err := sql.Open("sqlite", writerDSN(oldPath))
+	if err != nil {
+		return 0, fmt.Errorf("rename: open %s: %w", oldDBFile, err)
+	}
+	var busy, logFrames, done int
+	err = db.QueryRow(`PRAGMA wal_checkpoint(TRUNCATE)`).Scan(&busy, &logFrames, &done)
+	db.Close()
+	if err != nil {
+		return 0, fmt.Errorf("rename: checkpoint %s: %w", oldDBFile, err)
+	}
+	if busy != 0 {
+		return 0, &UpgradeRefusal{Code: "upgrade_busy", Sentence: "nigari did not start: another process still has " +
+			oldDBFile + " open, so it cannot be renamed safely. Stop it and start again. Nothing was changed."}
+	}
+	for _, side := range []string{"-wal", "-shm"} {
+		p := oldPath + side
+		if fi, err := os.Stat(p); err == nil {
+			if side == "-wal" && fi.Size() > 0 {
+				return 0, fmt.Errorf("rename: %s is not empty after the checkpoint; nothing was renamed", p)
+			}
+			os.Remove(p)
+		}
+	}
+	if err := os.Rename(oldPath, newPath); err != nil {
+		return 0, fmt.Errorf("rename: %s to %s: %w", oldDBFile, DBFile, err)
+	}
+	moved := 1
+	copies, _ := filepath.Glob(oldPath + ".before-step-*")
+	for _, c := range copies {
+		if err := os.Rename(c, newPath+strings.TrimPrefix(c, oldPath)); err == nil {
+			moved++
+		}
+	}
+	msg := "rename: " + oldDBFile + " is now " + DBFile
+	if moved > 1 {
+		msg += fmt.Sprintf(" (and %d copies from earlier upgrades)", moved-1)
+	}
+	log.Print(msg + ". Nothing inside it changed.")
+	return moved, nil
+}
+
+// renameDetail is the activity log's detail for the start that moved the
+// database (kept here, not in server.go, which is not gofmt-clean).
+func renameDetail(moved int) string {
+	return fmt.Sprintf("%s → %s, %d file(s)", oldDBFile, DBFile, moved)
+}
+
+func renameConflict() error {
+	return &UpgradeRefusal{Code: "rename_conflict", Sentence: "nigari did not start: this data directory holds both " +
+		oldDBFile + " and " + DBFile + ", and it will not choose between them. Keep the one with your data, move the other out of the directory, and start again. Nothing was changed."}
+}
+
+func fileExists(p string) bool {
+	_, err := os.Stat(p)
+	return err == nil
 }

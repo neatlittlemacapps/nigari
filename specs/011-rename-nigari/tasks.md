@@ -49,7 +49,7 @@ description: "Tasks for the rename to nigari"
 
 **Independent test**: quickstart §2 and §4.
 
-- [ ] T007 [US2] [backend] `server/server.go` `DBFile = "nigari.db"`. In `server/oldnames.go`, `moveOldDatabase(dataDir)` runs under `takeUpgradeLock`, before `upgradeDB`, from `New` and from `FixNotionRows` (spec 008 T005's two doors), per plan P2:
+- [x] T007 [US2] [backend] `server/server.go` `DBFile = "nigari.db"`. In `server/oldnames.go`, `moveOldDatabase(dataDir)` runs under `takeUpgradeLock`, before `upgradeDB`, from `New` and from `FixNotionRows` (spec 008 T005's two doors), per plan P2:
   1. if `salt.db` exists and `nigari.db` does not: open it, run `PRAGMA wal_checkpoint(TRUNCATE)`, close;
   2. rename `salt.db` → `nigari.db`;
   3. remove the emptied `salt.db-wal`/`salt.db-shm`;
@@ -57,12 +57,12 @@ description: "Tasks for the rename to nigari"
   5. write the log line from contracts/refusal.md and `audit("system", "rename", …)`.
 
   Both files present: return `*UpgradeRefusal{Code: "rename_conflict"}` with the contract's sentence, before writing anything. `pruneCopies`, the restore line and `backup.go`'s exclusions use `DBFile`, so they follow
-- [ ] T008 [US2] [test] `server/oldnames_test.go`:
+- [x] T008 [US2] [test] `server/oldnames_test.go`:
   - `TestRenameKeepsWALContent`: write a row to `salt.db` with `wal_autocheckpoint=0` and close without a checkpoint, so the row exists only in `-wal`; move; the row is in `nigari.db`. Mutation-check: skip the checkpoint and the test fails;
   - `TestRenameConflictChangesNothing`: the hashes of both files and the directory listing are unchanged, and the code is `rename_conflict`;
   - `TestRenameMovesCopies`;
   - `TestRenameFromFixture`: `step-0.db` copied in as `salt.db`, then the content checks of `TestUpgradeFixtures` (SC-001)
-- [ ] T009 [US2] [i18n] `web/src/serverErrors.ts`: `rename_conflict` with its sentence, plus German in `de.json` (required) and Spanish in `es.json`
+- [x] T009 [US2] [i18n] `web/src/serverErrors.ts`: `rename_conflict` with its sentence, plus German in `de.json` (required) and Spanish in `es.json`
 - [ ] T010 [P] [US2] [backend] Backups: `main.go` default file `nigari-backup.tar.gz`. `server/backup.go` `Restore` accepts an archive whose database entry is `salt.db` and writes it as `nigari.db`. `Backup` leaves `nigari.db.before-step-*` and `upgrade.lock` out (spec 008 T010's rule, under the new name)
 - [ ] T011 [P] [US2] [test] `TestRestoreReadsOldArchive`: a tar holding `salt.db` restores to `nigari.db` with its content; the existing backup tests pass on the new names
 - [ ] T012 [P] [US2] [backend] Workspace archives (plan P4):

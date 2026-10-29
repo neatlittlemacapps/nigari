@@ -73,10 +73,16 @@ func (s *Server) Close() error {
 }
 
 // DBFile is the name of the SQLite file.
-const DBFile = "salt.db"
+const DBFile = "nigari.db"
 
 func New(dataDir string, dist fs.FS) (*Server, error) {
 	if err := os.MkdirAll(filepath.Join(dataDir, "files"), 0o755); err != nil {
+		return nil, err
+	}
+	// A salt.md data directory's salt.db becomes nigari.db first, once
+	// (oldnames.go); the steps then run on it like on any start.
+	moved, err := moveOldDatabase(dataDir)
+	if err != nil {
 		return nil, err
 	}
 	// The steps run before the writer and the read pool open: each holds the
@@ -148,6 +154,10 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	}
 	// One entry per start that changed what is stored, so the activity log
 	// says when the database was last upgraded and to which step.
+	if moved > 0 {
+		s.audit("system", "", "nigari", "rename", "", "",
+			renameDetail(moved))
+	}
 	if len(stepsRun) > 0 {
 		s.audit("system", "", "salt.md", "upgrade", "", "",
 			stepsDetail(stepsRun))
