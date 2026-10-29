@@ -124,3 +124,41 @@ func TestBackupDuringWritesIsConsistentAndSelfContained(t *testing.T) {
 		t.Fatalf("snapshot holds %d pages, want at least the %d committed before the backup", n, before)
 	}
 }
+
+// A backup made by salt.md holds salt.db. Restoring it into nigari must give
+// nigari.db with the same content (spec 011, FR-009), not a salt.db the
+// server would then have to rename, or ignore.
+func TestRestoreReadsOldArchive(t *testing.T) {
+	src, err := os.ReadFile(copyFixture(t, "step-0.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	archive := filepath.Join(t.TempDir(), "salt-backup.tar.gz")
+	f, err := os.Create(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gz := gzip.NewWriter(f)
+	tw := tar.NewWriter(gz)
+	if err := tw.WriteHeader(&tar.Header{Name: oldDBFile, Mode: 0o644, Size: int64(len(src))}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tw.Write(src); err != nil {
+		t.Fatal(err)
+	}
+	tw.Close()
+	gz.Close()
+	f.Close()
+
+	dir := t.TempDir()
+	if err := Restore(dir, archive); err != nil {
+		t.Fatalf("restore: %v", err)
+	}
+	if fileExists(filepath.Join(dir, oldDBFile)) {
+		t.Fatal("the restore wrote salt.db")
+	}
+	got, err := os.ReadFile(filepath.Join(dir, DBFile))
+	if err != nil || string(got) != string(src) {
+		t.Fatalf("nigari.db is not the archive's database (%d of %d bytes, %v)", len(got), len(src), err)
+	}
+}

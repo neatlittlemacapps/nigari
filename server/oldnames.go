@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -140,6 +141,25 @@ func moveOldDatabase(dataDir string) (int, error) {
 // database (kept here, not in server.go, which is not gofmt-clean).
 func renameDetail(moved int) string {
 	return fmt.Sprintf("%s → %s, %d file(s)", oldDBFile, DBFile, moved)
+}
+
+// manifestFile is a workspace archive's manifest; oldManifestFile is what
+// salt.md called it. Archives are files people keep, so imports and the
+// blueprint library read both (spec 011, FR-009).
+const (
+	manifestFile    = "nigari-workspace.json"
+	oldManifestFile = "salt-workspace.json"
+)
+
+// readManifest returns the archive's manifest under either name, nil if it
+// has none.
+func readManifest(fsys fs.FS) []byte {
+	for _, name := range []string{manifestFile, oldManifestFile} {
+		if b, err := fs.ReadFile(fsys, name); err == nil {
+			return b
+		}
+	}
+	return nil
 }
 
 func renameConflict() error {

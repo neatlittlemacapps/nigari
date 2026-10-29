@@ -1,8 +1,12 @@
 package server
 
 import (
+	"archive/zip"
+	"bytes"
 	"database/sql"
 	"errors"
+	"io/fs"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -176,5 +180,46 @@ func TestRenameFromFixture(t *testing.T) {
 	var n int
 	if err := s.db.QueryRow(`SELECT COUNT(*) FROM audit_log WHERE action = 'rename'`).Scan(&n); err != nil || n != 1 {
 		t.Errorf("want one rename entry in the activity log, got %d (%v)", n, err)
+	}
+}
+
+// Spec 011 FR-009: a workspace archive salt.md exported (salt-workspace.json,
+// saltVersion) still imports; a new export writes the nigari names.
+func TestImportReadsOldArchive(t *testing.T) {
+	s := testServer(t)
+	uid, cookie := signedIn(t, s, "owner@example.test")
+	u := &user{ID: uid, Name: "Test", IsAdmin: true}
+	old := fstest.MapFS{
+		oldManifestFile: {Data: []byte(`{"format":1,"saltVersion":"1.6.10","workspace":{"name":"Made by salt.md"}}`)},
+		"pages.json":    {Data: []byte(`[]`)},
+	}
+	if _, err := s.importWorkspaceFS(u, old, importOptions{}); err != nil {
+		t.Fatalf("an archive with salt-workspace.json: %v", err)
+	}
+
+	var ws string
+	if err := s.db.QueryRow(`SELECT id FROM workspaces WHERE name = 'Made by salt.md'`).Scan(&ws); err != nil {
+		t.Fatalf("the imported workspace: %v", err)
+	}
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/api/workspaces/"+ws+"/export", nil)
+	req.Header.Set("Cookie", cookie)
+	s.ServeHTTP(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("export: %d %s", rec.Code, rec.Body.String())
+	}
+	if cd := rec.Header().Get("Content-Disposition"); !strings.Contains(cd, ".nigari.zip") {
+		t.Errorf("export file name: %q", cd)
+	}
+	zr, err := zip.NewReader(bytes.NewReader(rec.Body.Bytes()), int64(rec.Body.Len()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := fs.ReadFile(zr, manifestFile)
+	if err != nil || !strings.Contains(string(b), `"nigariVersion"`) || strings.Contains(string(b), "saltVersion") {
+		t.Fatalf("the export's manifest: %s, %v", b, err)
+	}
+	if _, err := fs.ReadFile(zr, oldManifestFile); err == nil {
+		t.Error("the export still writes salt-workspace.json")
 	}
 }

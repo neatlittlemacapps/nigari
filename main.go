@@ -47,7 +47,7 @@ func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
 		case "backup":
-			dest := "salt-backup.tar.gz"
+			dest := "nigari-backup.tar.gz"
 			if len(os.Args) > 2 {
 				dest = os.Args[2]
 			}

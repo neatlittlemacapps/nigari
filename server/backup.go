@@ -32,7 +32,7 @@ var Version = "2.0.0"
 //
 // Only the database and files/ go in, by name, never "everything in the data
 // directory": the copies upgradeDB keeps beside the database
-// (salt.db.before-step-<n>, each the size of the database) and its lock file
+// (nigari.db.before-step-<n>, each the size of the database) and its lock file
 // would otherwise multiply every archive's size for nothing (spec 008, T010).
 func Backup(dataDir, dest string) error {
 	dbPath := filepath.Join(dataDir, DBFile)
@@ -130,6 +130,12 @@ func Restore(dataDir, src string) error {
 		clean := filepath.Clean(hdr.Name)
 		if strings.HasPrefix(clean, "..") || filepath.IsAbs(clean) {
 			return fmt.Errorf("unsafe path in archive: %s", hdr.Name)
+		}
+		// A backup made by salt.md holds salt.db: it restores as nigari.db,
+		// since an archive is data a person keeps, not a name the running
+		// app answers to (spec 011, FR-009).
+		if clean == oldDBFile {
+			clean = DBFile
 		}
 		target := filepath.Join(dataDir, clean)
 		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {

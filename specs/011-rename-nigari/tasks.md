@@ -63,14 +63,14 @@ description: "Tasks for the rename to nigari"
   - `TestRenameMovesCopies`;
   - `TestRenameFromFixture`: `step-0.db` copied in as `salt.db`, then the content checks of `TestUpgradeFixtures` (SC-001)
 - [x] T009 [US2] [i18n] `web/src/serverErrors.ts`: `rename_conflict` with its sentence, plus German in `de.json` (required) and Spanish in `es.json`
-- [ ] T010 [P] [US2] [backend] Backups: `main.go` default file `nigari-backup.tar.gz`. `server/backup.go` `Restore` accepts an archive whose database entry is `salt.db` and writes it as `nigari.db`. `Backup` leaves `nigari.db.before-step-*` and `upgrade.lock` out (spec 008 T010's rule, under the new name)
-- [ ] T011 [P] [US2] [test] `TestRestoreReadsOldArchive`: a tar holding `salt.db` restores to `nigari.db` with its content; the existing backup tests pass on the new names
-- [ ] T012 [P] [US2] [backend] Workspace archives (plan P4):
+- [x] T010 [P] [US2] [backend] Backups: `main.go` default file `nigari-backup.tar.gz`. `server/backup.go` `Restore` accepts an archive whose database entry is `salt.db` and writes it as `nigari.db`. `Backup` leaves `nigari.db.before-step-*` and `upgrade.lock` out (spec 008 T010's rule, under the new name)
+- [x] T011 [P] [US2] [test] `TestRestoreReadsOldArchive`: a tar holding `salt.db` restores to `nigari.db` with its content; the existing backup tests pass on the new names
+- [x] T012 [P] [US2] [backend] Workspace archives (plan P4):
   - `server/transfer.go` writes `nigari-workspace.json` with field `nigariVersion` and the file name `<name>.nigari.zip`, and reads `salt-workspace.json`/`saltVersion` when the new names are absent;
   - `server/library.go` reads both;
   - rename every `server/blueprints/**/salt-workspace.json` with `git mv`;
   - update `server/blueprints/README.md` and the `bad_archive` sentence
-- [ ] T013 [P] [US2] [test] `TestImportReadsOldArchive`: an archive with `salt-workspace.json` and `saltVersion` imports; a new export carries `nigari-workspace.json`; the blueprint library loads every blueprint (`credential_audit_test.go`'s archive fixture moves to the new name, and an old-name case stays)
+- [x] T013 [P] [US2] [test] `TestImportReadsOldArchive`: an archive with `salt-workspace.json` and `saltVersion` imports; a new export carries `nigari-workspace.json`; the blueprint library loads every blueprint (`credential_audit_test.go`'s archive fixture moves to the new name, and an old-name case stays)
 - [ ] T014 [US2] [ui] New `web/src/storageMove.ts`, from data-model.md "Browser":
   - the 10 keys and 3 prefixes move copy-if-absent, then the old key is removed;
   - the 4 legacy names (`salt-locale`, `salt:view:`, `salt:scroll:`, `salt:hscroll:`) are removed, and their handling moves out of `pageUiState.ts` and `i18n.ts`;
