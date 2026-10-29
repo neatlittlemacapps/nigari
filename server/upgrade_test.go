@@ -1,11 +1,14 @@
 package server
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -258,5 +261,157 @@ func TestUpgradeFixtures(t *testing.T) {
 				t.Errorf("the chart view %q is gone: %s", f.ChartView, res)
 			}
 		})
+	}
+}
+
+// testSteps is the real step list plus made-up later steps, each adding a
+// table t<n>, for tests that need more than one step to have something to do.
+func testSteps(extra ...int64) []*goose.Migration {
+	steps := upgradeSteps()
+	for _, n := range extra {
+		n := n
+		steps = append(steps, goose.NewGoMigration(n, &goose.GoFunc{RunTx: func(ctx context.Context, tx *sql.Tx) error {
+			_, err := tx.Exec(`CREATE TABLE t` + strconv.FormatInt(n, 10) + ` (n INTEGER)`)
+			return err
+		}}, nil))
+	}
+	return steps
+}
+
+func copiesOf(t *testing.T, path string) []string {
+	t.Helper()
+	m, err := filepath.Glob(path + ".before-step-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range m {
+		m[i] = strings.TrimPrefix(m[i], path)
+	}
+	return m
+}
+
+// The copy is taken before a pending step and only then, is named after the
+// first step it comes before, opens as a database at the step before it, and
+// only the newest three are kept (FR-005).
+func TestUpgradeCopyBeforePendingSteps(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	if _, err := upgradeWith(path, testSteps()); err != nil {
+		t.Fatal(err)
+	}
+	if got := copiesOf(t, path); len(got) != 1 || got[0] != ".before-step-1" {
+		t.Fatalf("after step 1: copies %v, want [.before-step-1]", got)
+	}
+	// Nothing pending: no new copy.
+	if _, err := upgradeWith(path, testSteps()); err != nil {
+		t.Fatal(err)
+	}
+	if got := copiesOf(t, path); len(got) != 1 {
+		t.Fatalf("a start with nothing pending made a copy: %v", got)
+	}
+	// Steps 2 and 3 in one start: one copy, before 2.
+	if _, err := upgradeWith(path, testSteps(2, 3)); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(copiesOf(t, path), " "); got != ".before-step-1 .before-step-2" {
+		t.Fatalf("after steps 2 and 3: copies %q", got)
+	}
+	if got := stepOf(t, path+".before-step-2"); got != 1 {
+		t.Errorf("the copy before step 2 is at step %d, want 1", got)
+	}
+	// Two more upgrades: four copies taken, the oldest (before step 1) goes.
+	if _, err := upgradeWith(path, testSteps(2, 3, 4)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := upgradeWith(path, testSteps(2, 3, 4, 5)); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(copiesOf(t, path), " "); got != ".before-step-2 .before-step-4 .before-step-5" {
+		t.Fatalf("after four upgrades: copies %q, want the newest three", got)
+	}
+}
+
+// A new, empty file has nothing to go back to: no copy.
+func TestUpgradeNoCopyOfANewFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), DBFile)
+	if _, err := upgradeDB(path); err != nil {
+		t.Fatal(err)
+	}
+	if got := copiesOf(t, path); len(got) != 0 {
+		t.Fatalf("a new database got copies: %v", got)
+	}
+}
+
+// When the copy cannot be written, no step runs: the start is refused with
+// upgrade_copy_failed, and the database is still at its old step.
+func TestUpgradeCopyFailedRunsNoStep(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	if _, err := upgradeWith(path, testSteps()); err != nil {
+		t.Fatal(err)
+	}
+	// A directory where the copy's file name should go makes VACUUM INTO fail
+	// the same way a full disk or a read-only directory does, and works as
+	// root too (a chmod does not stop root).
+	if err := os.Mkdir(path+".before-step-2", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(path+".before-step-2", "keep"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := upgradeWith(path, testSteps(2))
+	var r *UpgradeRefusal
+	if !errors.As(err, &r) || r.Code != "upgrade_copy_failed" {
+		t.Fatalf("want an upgrade_copy_failed refusal, got %v", err)
+	}
+	if !strings.Contains(r.Sentence, "No upgrade step ran") || !strings.Contains(r.Sentence, " MB)") {
+		t.Errorf("the sentence does not say what happened and how big the copy is: %s", r.Sentence)
+	}
+	if got := stepOf(t, path); got != 1 {
+		t.Errorf("step 2 ran without its copy: the database is at step %d", got)
+	}
+}
+
+// salt backup takes the database and files/, not the copies or the lock.
+func TestBackupLeavesUpgradeCopiesOut(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, DBFile)
+	src := copyFixture(t, "step-0.db")
+	b, err := os.ReadFile(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := upgradeDB(path); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "upgrade.lock"), []byte("1"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	archive := filepath.Join(t.TempDir(), "backup.tar.gz")
+	if err := Backup(dir, archive); err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.Open(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	gz, err := gzip.NewReader(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tr := tar.NewReader(gz)
+	for {
+		h, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(h.Name, "before-step") || strings.Contains(h.Name, "upgrade.lock") {
+			t.Errorf("the backup holds %s", h.Name)
+		}
 	}
 }

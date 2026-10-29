@@ -32,7 +32,7 @@ the refusal check passed (FR-008). For people and logs; nothing decides on it.
 
 `<data>/salt.db.before-step-<n>`: a `VACUUM INTO` copy taken before step `n` ran, the
 newest 3 kept (by step number), left out of `salt backup`. Restoring one: stop salt.md,
-then `cp salt.db.before-step-<n> salt.db` (the log prints the exact line with paths).
+then `cp salt.db.before-step-<n> salt.db && rm -f salt.db-wal salt.db-shm` (the log prints the exact line with paths). The `-wal` and `-shm` files belong to the newer database; left beside the copy, SQLite would replay the newer log onto it.
 
 ## Upgrade lock (file)
 
