@@ -44,24 +44,42 @@ func upgradeDB(path string) ([]int64, error) {
 // upgradeWith is upgradeDB with the step list as an argument, so tests can
 // run steps that fail, rebuild a table or come after the real ones.
 func upgradeWith(path string, steps []*goose.Migration) ([]int64, error) {
+	newest := steps[len(steps)-1].Version
+	// Everything before the refusal is read-only: a release that declines a
+	// database must leave it exactly as it found it (FR-007, SC-004).
+	tables, stored, err := inspectDB(path)
+	if err != nil {
+		return nil, fmt.Errorf("upgrade: %w", err)
+	}
+	if stored > newest {
+		return nil, refuseNewer(path, stored, newest)
+	}
+	pending := tables > 0 && stored < newest
+	if pending {
+		unlock, err := takeUpgradeLock(filepath.Dir(path))
+		if err != nil {
+			return nil, err
+		}
+		defer unlock()
+	}
+
 	db, err := sql.Open("sqlite", writerDSN(path))
 	if err != nil {
 		return nil, err
 	}
 	defer db.Close()
 	db.SetMaxOpenConns(2)
-	var tables int
-	if err := db.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table'`).Scan(&tables); err != nil {
-		return nil, fmt.Errorf("upgrade: %w", err)
-	}
-	newest := steps[len(steps)-1].Version
-	stored, err := storedStep(db)
-	if err != nil {
-		return nil, fmt.Errorf("upgrade: %w", err)
+	if pending {
+		// Read again under the lock: another process may have run the same
+		// steps between the read above and the lock.
+		if stored, err = storedStep(db); err != nil {
+			return nil, fmt.Errorf("upgrade: %w", err)
+		}
+		pending = stored < newest
 	}
 	// A new file has nothing to lose, so no copy; an existing one gets its
 	// copy before the first pending step touches it (FR-005).
-	if tables > 0 && stored < newest {
+	if pending {
 		if err := copyBeforeUpgrade(db, path, stored+1); err != nil {
 			return nil, err
 		}
@@ -194,4 +212,96 @@ func pruneCopies(path string) {
 			log.Printf("upgrade: removed the oldest copy %s (%d are kept)", copies[i].path, keepCopies)
 		}
 	}
+}
+
+// inspectDB reads, without writing anything, how many tables the database at
+// path has (0 for a new or missing file) and which step it is at.
+func inspectDB(path string) (tables int, step int64, err error) {
+	if fi, err := os.Stat(path); err != nil || fi.Size() == 0 {
+		return 0, 0, nil
+	}
+	// Even a read-only connection creates -wal and -shm beside a database in
+	// WAL mode, and a refused start must not leave files behind. Without a
+	// -wal file every change is already in the database file, so it can be
+	// read as immutable, which creates nothing. With one, a process may be
+	// using it right now and its log must be read; those files exist already.
+	dsn := "file:" + path + "?mode=ro&_pragma=busy_timeout(5000)"
+	if _, err := os.Stat(path + "-wal"); os.IsNotExist(err) {
+		dsn = "file:" + path + "?immutable=1"
+	}
+	db, err := sql.Open("sqlite", dsn)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer db.Close()
+	if err := db.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table'`).Scan(&tables); err != nil {
+		return 0, 0, err
+	}
+	step, err = storedStep(db)
+	return tables, step, err
+}
+
+// refuseNewer is the refusal for a database written by a newer release: this
+// one would run nothing (goose sees no pending step and reports no error,
+// TestGooseNewerDatabaseIsNotAnError) and then work on tables it does not
+// know. It says both numbers and the two ways out (FR-007).
+func refuseNewer(path string, stored, newest int64) *UpgradeRefusal {
+	back := "restore a backup made before that upgrade with salt restore <file>"
+	if copies, _ := filepath.Glob(path + ".before-step-*"); len(copies) > 0 {
+		best, bestStep := "", -1
+		for _, c := range copies {
+			if n, err := strconv.Atoi(strings.TrimPrefix(c, path+".before-step-")); err == nil && int64(n) <= newest+1 && n > bestStep {
+				best, bestStep = c, n
+			}
+		}
+		if best != "" {
+			back = fmt.Sprintf("stop salt.md and run cp %q %q && rm -f %q %q", best, path, path+"-wal", path+"-shm")
+		}
+	}
+	return &UpgradeRefusal{Code: "upgrade_refused", Sentence: fmt.Sprintf(
+		"This database is at upgrade step %d, but this salt.md (%s) only knows steps up to %d. It has not been changed. Run the salt.md release that upgraded it, or put back the copy taken before that upgrade: %s.",
+		stored, Version, newest, back)}
+}
+
+// lockFile is present in the data directory only while steps run.
+const lockFile = "upgrade.lock"
+
+// staleLock is how old a lock may be before the next start takes it over: a
+// process killed in the middle of a step leaves its lock behind, and a step is
+// all or nothing, so the version table already says where it stopped. No step
+// runs anywhere near this long.
+const staleLock = 15 * time.Minute
+
+// takeUpgradeLock makes sure only one process runs steps on a data directory
+// (FR-010): the lock file is created exclusively, holding the PID and the
+// time; a second process refuses with upgrade_busy. It is taken only when a
+// step is pending, so an ordinary start never touches it.
+func takeUpgradeLock(dir string) (unlock func(), err error) {
+	path := filepath.Join(dir, lockFile)
+	for attempt := 0; attempt < 2; attempt++ {
+		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+		if err == nil {
+			fmt.Fprintf(f, "%d %s\n", os.Getpid(), time.Now().UTC().Format(time.RFC3339))
+			f.Close()
+			return func() { os.Remove(path) }, nil
+		}
+		if !errors.Is(err, os.ErrExist) {
+			return nil, fmt.Errorf("upgrade: lock %s: %w", path, err)
+		}
+		fi, statErr := os.Stat(path)
+		if statErr == nil && time.Since(fi.ModTime()) > staleLock && attempt == 0 {
+			log.Printf("upgrade: taking over %s, left %s ago by a process that did not finish", path, time.Since(fi.ModTime()).Round(time.Second))
+			os.Remove(path)
+			continue
+		}
+		pid, since := "unknown", "an unknown time"
+		if b, err := os.ReadFile(path); err == nil {
+			if f := strings.Fields(string(b)); len(f) == 2 {
+				pid, since = f[0], f[1]
+			}
+		}
+		return nil, &UpgradeRefusal{Code: "upgrade_busy", Sentence: fmt.Sprintf(
+			"Another salt.md is upgrading this data directory (process %s, since %s). Wait for it to finish, or stop it.", pid, since)}
+	}
+	return nil, fmt.Errorf("upgrade: could not take %s", path)
 }

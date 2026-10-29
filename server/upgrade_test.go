@@ -10,12 +10,14 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"github.com/pressly/goose/v3"
 )
@@ -520,4 +522,129 @@ func TestUpgradeRebuildTable(t *testing.T) {
 			t.Errorf("at step %d, want 2", got)
 		}
 	})
+}
+
+// dirState is every file in dir with a hash of its contents: what "nothing in
+// the data directory was written" can be checked against.
+func dirState(t *testing.T, dir string) map[string]string {
+	t.Helper()
+	state := map[string]string{}
+	err := filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return err
+		}
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		sum := sha256.Sum256(b)
+		state[strings.TrimPrefix(p, dir)] = hex.EncodeToString(sum[:])
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return state
+}
+
+// An older release started on a database a newer one upgraded refuses it,
+// with both step numbers, its own version and the way back, and writes
+// nothing: no schema_meta stamp, no copy, no lock, not even a -wal file
+// (FR-007, SC-004). Through New, as a real start goes.
+func TestUpgradeRefusesNewerDatabase(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	dir := filepath.Dir(path)
+	if _, err := upgradeWith(path, testSteps(2)); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(dir, "files"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	before := dirState(t, dir)
+	_, err := New(dir, fstest.MapFS{"index.html": {Data: []byte("<html></html>")}})
+	var r *UpgradeRefusal
+	if !errors.As(err, &r) || r.Code != "upgrade_refused" {
+		t.Fatalf("want an upgrade_refused refusal from New, got %v", err)
+	}
+	// The copy to put back is the newest one this release can open: here the
+	// one before step 1, the only copy, since one start takes one copy, before
+	// its first pending step.
+	for _, want := range []string{"at upgrade step 2", "only knows steps up to 1", Version, "has not been changed", ".before-step-1"} {
+		if !strings.Contains(r.Sentence, want) {
+			t.Errorf("the sentence lacks %q: %s", want, r.Sentence)
+		}
+	}
+	after := dirState(t, dir)
+	for f, sum := range after {
+		if before[f] != sum {
+			t.Errorf("the refused start wrote %s", f)
+		}
+	}
+	for f := range before {
+		if _, ok := after[f]; !ok {
+			t.Errorf("the refused start removed %s", f)
+		}
+	}
+}
+
+// One process at a time runs steps on a data directory (FR-010): a second one
+// finding the lock refuses with upgrade_busy and runs nothing; a lock left
+// older than 15 minutes by a process that died is taken over; and the lock is
+// gone once the steps are done.
+func TestUpgradeLock(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	lock := filepath.Join(filepath.Dir(path), lockFile)
+	if err := os.WriteFile(lock, []byte("4242 2026-10-29T10:00:00Z\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := upgradeDB(path)
+	var r *UpgradeRefusal
+	if !errors.As(err, &r) || r.Code != "upgrade_busy" || !strings.Contains(r.Sentence, "process 4242") {
+		t.Fatalf("want upgrade_busy naming process 4242, got %v", err)
+	}
+	if _, step, _ := inspectDB(path); step != 0 {
+		t.Errorf("a step ran while another process held the lock: at step %d", step)
+	}
+	old := time.Now().Add(-staleLock - time.Minute)
+	if err := os.Chtimes(lock, old, old); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := upgradeDB(path); err != nil {
+		t.Fatalf("a stale lock was not taken over: %v", err)
+	}
+	if _, err := os.Stat(lock); !os.IsNotExist(err) {
+		t.Errorf("the lock is still there after the steps: %v", err)
+	}
+	// Nothing pending: an ordinary start does not care about a lock at all.
+	if err := os.WriteFile(lock, []byte("4242 2026-10-29T10:00:00Z\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := upgradeDB(path); err != nil {
+		t.Errorf("a start with nothing pending was stopped by a lock: %v", err)
+	}
+}
+
+// The refused start answers every request with 503 and the sentence: JSON
+// with the code for /api/ and /mcp, a page without scripts for the rest
+// (contracts/refusal.md).
+func TestRefusalHandler(t *testing.T) {
+	r := &UpgradeRefusal{Code: "upgrade_refused", Sentence: `This database is at upgrade step 3 <b>, but`}
+	h := RefusalHandler(r)
+	for _, path := range []string{"/api/me", "/mcp"} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+		var body map[string]string
+		if rec.Code != 503 || json.Unmarshal(rec.Body.Bytes(), &body) != nil || body["code"] != r.Code || body["error"] != r.Sentence {
+			t.Errorf("%s: %d %s", path, rec.Code, rec.Body.String())
+		}
+	}
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/p/abc", nil))
+	page := rec.Body.String()
+	if rec.Code != 503 || !strings.Contains(page, "upgrade step 3 &lt;b&gt;") || !strings.Contains(page, "upgrade_refused") {
+		t.Errorf("page: %d %s", rec.Code, page)
+	}
+	if strings.Contains(page, "<script") || strings.Contains(page, "<a ") {
+		t.Error("the refusal page carries a script or a link")
+	}
 }
