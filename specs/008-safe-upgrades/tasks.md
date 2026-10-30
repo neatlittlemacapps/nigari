@@ -91,7 +91,7 @@ description: "Tasks for safe upgrades"
 ## Phase 10: Polish and cross-cutting
 
 - [ ] T025 [P] [wiki] `wiki/self-hosting.md` (§ Updating, § Backing up, § Restoring, § Reading the startup log, new § "If salt.md refuses to start"), `wiki/administration.md` (maintenance), `docs/what-it-does.md`; screenshot `admin-maintenance` retaken
-- [ ] T026 [P] [backend] `capabilities.json`: `admin.instance` summary names the upgrade view (closed, no new route)
+- [x] T026 [P] [backend] `capabilities.json`: `admin.instance` summary names the upgrade view (closed, no new route)
 
 ---
 

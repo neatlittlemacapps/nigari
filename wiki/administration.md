@@ -301,7 +301,7 @@ Restoring, and taking backups on a schedule, happen on the server:
 
 ```
 ./nigari backup                    # writes nigari-backup.tar.gz — put this in cron
-./nigari restore backup.tar.gz     # unpacks the archive into the data directory
+./nigari restore backup.tar.gz     # unpacks it, says which upgrade step it is at
 ```
 
 `nigari backup` is safe against a running instance. `nigari restore` is not a wipe:
@@ -310,6 +310,13 @@ archive does not contain stays behind. And it refuses outright if a database is
 already there: *"…/nigari.db already exists; set NIGARI_RESTORE_FORCE=1 to
 overwrite"*. Restore into an empty directory, or set that variable deliberately.
 The full procedure is in [Self-hosting](self-hosting.md).
+
+**Database upgrades** shows what the database has been through: the **upgrade
+step** it is at (and whether that is the newest this release knows), when the
+**last upgrade** ran, and the **copies before upgrades** kept in the data
+directory, with their size and time. A release that changes how data is stored
+copies the database first and keeps the newest three copies. Going back to one
+is a command on the server: [Self-hosting → Updating](self-hosting.md#updating).
 
 **Keep the activity log for** decides how long the record of who changed what
 survives. It is **Forever** unless somebody changes it, and the presets are 30,

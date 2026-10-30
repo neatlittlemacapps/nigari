@@ -294,7 +294,7 @@
       "wiki": "wiki/administration.md"
     },
     "admin.instance": {
-      "summary": "Instance settings, mail, tunnel, updates, webhooks, audit retention",
+      "summary": "Instance settings, mail, tunnel, updates, webhooks, audit retention, the database's upgrade step and copies (spec 008)",
       "agent": "closed",
       "reason": "Listed in not_available_via_mcp: tunnel and instance settings.",
       "rest": ["GET /api/settings", "PUT /api/settings", "GET /api/admin/info", "GET /api/update", "GET /api/admin/public-access", "POST /api/admin/tunnel", "POST /api/admin/mail-oauth/disconnect", "POST /api/admin/mail-test", "POST /api/admin/audit-prune", "GET /api/webhooks", "POST /api/webhooks", "DELETE /api/webhooks/{id}"],
