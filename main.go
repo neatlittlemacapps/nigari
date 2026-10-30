@@ -23,7 +23,7 @@ import (
 var distFS embed.FS
 
 // The notices travel with the binary, not only with the repository. Somebody
-// who installs salt.md with one command never sees GitHub, and "the notice
+// who installs nigari with one command never sees GitHub, and "the notice
 // accompanies what you ship" is the one duty almost every licence here imposes.
 //
 //go:embed THIRD-PARTY-NOTICES.md
@@ -58,7 +58,7 @@ func main() {
 			return
 		case "restore":
 			if len(os.Args) < 3 {
-				log.Fatal("usage: salt restore <backup.tar.gz>")
+				log.Fatal("usage: nigari restore <backup.tar.gz>")
 			}
 			if err := server.Restore(dataDir, os.Args[2]); err != nil {
 				log.Fatalf("restore: %v", err)
@@ -80,7 +80,7 @@ func main() {
 			return
 		default:
 			fmt.Fprintf(os.Stderr, "unknown command %q\n", os.Args[1])
-			fmt.Fprintln(os.Stderr, "usage: salt [backup [file] | restore <file> | version | fix-notion-rows]")
+			fmt.Fprintln(os.Stderr, "usage: nigari [backup [file] | restore <file> | version | fix-notion-rows]")
 			os.Exit(2)
 		}
 	}
@@ -133,15 +133,15 @@ func main() {
 			}()
 			httpSrv.Addr = ":443"
 			httpSrv.TLSConfig = m.TLSConfig()
-			log.Printf("salt.md %s listening on :443 (auto-HTTPS for %s, data: %s)", server.Version, domain, dataDir)
+			log.Printf("nigari %s listening on :443 (auto-HTTPS for %s, data: %s)", server.Version, domain, dataDir)
 			serveErr <- httpSrv.ListenAndServeTLS("", "")
 			return
 		}
 		if certFile != "" && keyFile != "" {
-			log.Printf("salt.md %s listening on %s (TLS, data: %s)", server.Version, addr, dataDir)
+			log.Printf("nigari %s listening on %s (TLS, data: %s)", server.Version, addr, dataDir)
 			serveErr <- httpSrv.ListenAndServeTLS(certFile, keyFile)
 		} else {
-			log.Printf("salt.md %s listening on %s (data: %s)", server.Version, addr, dataDir)
+			log.Printf("nigari %s listening on %s (data: %s)", server.Version, addr, dataDir)
 			serveErr <- httpSrv.ListenAndServe()
 		}
 	}()
@@ -177,11 +177,11 @@ func main() {
 }
 
 // serveRefusal keeps a refused start reachable: the sentence goes to the log,
-// and the usual address answers every request with it until salt.md is
+// and the usual address answers every request with it until nigari is
 // stopped (FR-019), instead of the process exiting and leaving a browser with
 // nothing but "connection refused".
 func serveRefusal(r *server.UpgradeRefusal, addr, certFile, keyFile string) {
-	log.Printf("salt.md %s did not start (%s): %s", server.Version, r.Code, r.Sentence)
+	log.Printf("nigari %s did not start (%s): %s", server.Version, r.Code, r.Sentence)
 	httpSrv := &http.Server{Addr: addr, Handler: server.RefusalHandler(r)}
 	go func() {
 		var err error
@@ -194,7 +194,7 @@ func serveRefusal(r *server.UpgradeRefusal, addr, certFile, keyFile string) {
 			log.Fatal(err)
 		}
 	}()
-	log.Printf("serving the refusal on %s until salt.md is stopped", addr)
+	log.Printf("serving the refusal on %s until nigari is stopped", addr)
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop

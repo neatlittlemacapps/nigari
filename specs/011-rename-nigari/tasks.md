@@ -112,8 +112,8 @@ description: "Tasks for the rename to nigari"
 
 - [x] T019 [US3] [backend] Cookies (R5): `server/users.go` `nigari_session`, `server/oauth*.go` `nigari_oauth`, `server/mail_oauth.go` `nigari_mail_oauth`. The session middleware sends `Set-Cookie: <old>=; Max-Age=0; Path=/` for each of the three old names a request carries (the old names live in `oldnames.go`)
 - [x] T020 [US3] [test] `TestOldCookiesAreExpired`: a request with `salt_session` is not signed in, and gets the three expiring `Set-Cookie`s only for the names it carried. The existing session, OAuth and mail tests pass on the new names
-- [ ] T021 [P] [US3] [backend] Webhooks (R6): `server/webhooks.go` signs with `X-Nigari-Signature` only; `webhooks_test.go` checks the new header and that the old one is absent
-- [ ] T022 [P] [US3] [backend] The command: `main.go` usage text and the `restore` usage say `nigari`; log lines `nigari <v> listening on …`
+- [x] T021 [P] [US3] [backend] Webhooks (R6): `server/webhooks.go` signs with `X-Nigari-Signature` only; `webhooks_test.go` checks the new header and that the old one is absent
+- [x] T022 [P] [US3] [backend] The command: `main.go` usage text and the `restore` usage say `nigari`; log lines `nigari <v> listening on …`
 
 **Checkpoint**: an old variable refuses (T005), an old cookie signs out, the old header and command are gone.
 

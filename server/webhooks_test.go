@@ -82,7 +82,7 @@ func TestWebhookURLValidation(t *testing.T) {
 func TestWebhookDeliversASignedPayload(t *testing.T) {
 	var mu sync.Mutex
 	var gotBody []byte
-	var gotSig string
+	var gotSig, oldSig string
 	done := make(chan struct{}, 1)
 
 	recv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +91,8 @@ func TestWebhookDeliversASignedPayload(t *testing.T) {
 		buf := make([]byte, 4096)
 		n, _ := r.Body.Read(buf)
 		gotBody = buf[:n]
-		gotSig = r.Header.Get("X-Salt-Signature")
+		gotSig = r.Header.Get("X-Nigari-Signature")
+		oldSig = r.Header.Get("X-Salt-Signature")
 		select {
 		case done <- struct{}{}:
 		default:
@@ -152,6 +153,10 @@ func TestWebhookDeliversASignedPayload(t *testing.T) {
 	want := "sha256=" + hex.EncodeToString(mac.Sum(nil))
 	if gotSig != want {
 		t.Errorf("signature is %q, want %q — a receiver cannot tell our call from anyone else's", gotSig, want)
+	}
+	// spec 011: the old header is gone, not sent alongside (no transition).
+	if oldSig != "" {
+		t.Errorf("the webhook still carries X-Salt-Signature: %q", oldSig)
 	}
 }
 

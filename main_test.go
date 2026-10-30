@@ -19,7 +19,7 @@ func TestCLIProcess(t *testing.T) {
 	if os.Getenv("NIGARI_TEST_CLI") != "1" {
 		return
 	}
-	os.Args = []string{"salt", os.Args[len(os.Args)-1]}
+	os.Args = []string{"nigari", os.Args[len(os.Args)-1]}
 	main()
 	os.Exit(0)
 }
@@ -62,7 +62,7 @@ func TestUnknownCommandDoesNotStartServer(t *testing.T) {
 			if stdout != "" {
 				t.Fatalf("unexpected stdout: %q", stdout)
 			}
-			if !strings.Contains(stderr, "unknown command") || !strings.Contains(stderr, arg) || !strings.Contains(stderr, "usage: salt") {
+			if !strings.Contains(stderr, "unknown command") || !strings.Contains(stderr, arg) || !strings.Contains(stderr, "usage: nigari") {
 				t.Fatalf("missing command error or usage: %q", stderr)
 			}
 		})

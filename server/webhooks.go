@@ -235,7 +235,7 @@ func (s *Server) deliverWebhook(id, target, secret string, payload []byte) {
 	req.Header.Set("User-Agent", "salt.md/"+Version)
 	// The receiver verifies this over the RAW body with its own copy of the
 	// secret. Without it, anybody who learns the URL can forge our calls.
-	req.Header.Set("X-Salt-Signature", "sha256="+sig)
+	req.Header.Set("X-Nigari-Signature", "sha256="+sig)
 
 	// The same guard the bulk importer uses: resolve, check EVERY address, then
 	// dial the one that was checked. A webhook URL is attacker-shaped input even
