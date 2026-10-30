@@ -157,7 +157,7 @@ CREATE INDEX IF NOT EXISTS idx_files_ws ON files(workspace_id);
 -- the part that is verified, and both are shown together.
 --
 -- last_seen is refreshed by any call from that account, so an agent working
--- inside salt.md stays fresh without doing anything. It does NOT expire the
+-- inside nigari stays fresh without doing anything. It does NOT expire the
 -- entry: an agent has no clock and cannot wake itself to say "still here", so
 -- an entry that vanished after ten minutes would erase a three-hour job. It
 -- only fades in the interface, and a sweep removes what has been silent for
@@ -421,10 +421,10 @@ func openDB(path string) (*sql.DB, error) {
 func now() string { return time.Now().UTC().Format(time.RFC3339Nano) }
 
 const welcomeContent = `[
- {"type":"paragraph","content":[{"type":"text","text":"Welcome to ","styles":{}},{"type":"text","text":"salt.md","styles":{"bold":true}},{"type":"text","text":": a fast, lightweight, open-source workspace for your notes, docs and ideas. 🧂","styles":{}}]},
+ {"type":"paragraph","content":[{"type":"text","text":"Welcome to ","styles":{}},{"type":"text","text":"nigari","styles":{"bold":true}},{"type":"text","text":": a fast, lightweight, open-source workspace for your notes, docs and ideas. 🧂","styles":{}}]},
  {"type":"heading","props":{"level":2},"content":[{"type":"text","text":"Everything is a block","styles":{}}]},
  {"type":"paragraph","content":[{"type":"text","text":"Type ","styles":{}},{"type":"text","text":"/","styles":{"code":true}},{"type":"text","text":" anywhere to insert headings, lists, quotes, code blocks, images, tables and more. Drag blocks by their handle to rearrange them.","styles":{}}]},
- {"type":"checkListItem","props":{"checked":true},"content":[{"type":"text","text":"Install salt.md","styles":{}}]},
+ {"type":"checkListItem","props":{"checked":true},"content":[{"type":"text","text":"Install nigari","styles":{}}]},
  {"type":"checkListItem","props":{"checked":false},"content":[{"type":"text","text":"Create your first page (button in the sidebar)","styles":{}}]},
  {"type":"checkListItem","props":{"checked":false},"content":[{"type":"text","text":"Press Ctrl/Cmd + K to search everything","styles":{}}]},
  {"type":"heading","props":{"level":2},"content":[{"type":"text","text":"Your data stays yours","styles":{}}]},
@@ -458,7 +458,7 @@ func (s *Server) seed() error {
 	id := newID()
 	_, err = s.db.Exec(
 		`INSERT INTO pages (id, parent_id, title, icon, content, position, created_at, updated_at) VALUES (?, NULL, ?, ?, ?, 1, ?, ?)`,
-		id, "Welcome to salt.md", "🧂", welcomeContent, ts, ts,
+		id, "Welcome to nigari", "🧂", welcomeContent, ts, ts,
 	)
 	if err != nil {
 		return err

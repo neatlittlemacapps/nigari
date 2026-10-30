@@ -125,8 +125,8 @@ description: "Tasks for the rename to nigari"
 
 **Independent test**: quickstart §1 and §6.
 
-- [ ] T023 [US1] [mcp] `server/mcp.go`: `serverInfo.name` `nigari`, the instructions, the `import_url` description and `get_import_status`'s `next` ("Salt" → "nigari"), and the `claude mcp add … nigari …` comment. `server/skill.go`: the folder `saltmd/` → `nigari/` and the skill text. `capabilities.json` summaries that say Salt. `wiki/mcp-tools.md` follows in T028
-- [ ] T024 [US1] [backend] Server text (data-model "Server, files and network"):
+- [x] T023 [US1] [mcp] `server/mcp.go`: `serverInfo.name` `nigari`, the instructions, the `import_url` description and `get_import_status`'s `next` ("Salt" → "nigari"), and the `claude mcp add … nigari …` comment. `server/skill.go`: the folder `saltmd/` → `nigari/` and the skill text. `capabilities.json` summaries that say Salt. `wiki/mcp-tools.md` follows in T028
+- [x] T024 [US1] [backend] Server text (data-model "Server, files and network"):
   - `server/ics.go`: `PRODID`, `UID` suffix `@nigari`, calendar name, `nigari.ics` (R8);
   - `User-Agent: nigari/<v>` in `update.go`, `tunnel_update.go` and `ingest.go`;
   - `admin.go`: sender `nigari@<host>`;

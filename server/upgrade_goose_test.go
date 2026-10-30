@@ -12,7 +12,7 @@ import (
 )
 
 // These tests pin the behaviour of goose v3.29.0 that spec 008 builds on
-// (plan.md P1, P2). They test the library, not salt.md: when a goose upgrade
+// (plan.md P1, P2). They test the library, not nigari: when a goose upgrade
 // changes one of these, the upgrade runner's assumptions are wrong and must be
 // revisited before the new version goes in.
 
@@ -29,7 +29,7 @@ func gooseTestDB(t *testing.T) *sql.DB {
 func gooseTestProvider(t *testing.T, db *sql.DB, steps ...*goose.Migration) *goose.Provider {
 	t.Helper()
 	// The global registry is filled by goose.AddMigration in init functions;
-	// salt.md never uses it, and a stray registration must not become a step.
+	// nigari never uses it, and a stray registration must not become a step.
 	p, err := goose.NewProvider(goose.DialectSQLite3, db, nil,
 		goose.WithDisableGlobalRegistry(true), goose.WithGoMigrations(steps...))
 	if err != nil {
@@ -93,7 +93,7 @@ func TestGooseFailingStepRollsBack(t *testing.T) {
 
 // A database written by a newer release (more steps than this binary knows)
 // is not an error to goose: nothing pending, Up runs nothing and succeeds.
-// So the refusal (FR-007) cannot lean on goose; salt.md has to compare the
+// So the refusal (FR-007) cannot lean on goose; nigari has to compare the
 // version itself, before any goose call.
 func TestGooseNewerDatabaseIsNotAnError(t *testing.T) {
 	ctx := context.Background()
@@ -160,7 +160,7 @@ func TestGooseRunDBStepRuns(t *testing.T) {
 }
 
 // goose holds one connection for the whole run and runs a RunDB step on the
-// pool beside it. On salt.md's writer (SetMaxOpenConns(1), db.go) such a step
+// pool beside it. On nigari's writer (SetMaxOpenConns(1), db.go) such a step
 // waits forever for a second connection. So the upgrade runs on a pool of its
 // own with room for two (plan P5), never on the writer.
 func TestGooseRunDBStepNeedsASecondConnection(t *testing.T) {

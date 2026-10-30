@@ -86,7 +86,7 @@ func hashPassword(password string) string {
 // dummyHash is verified against for unknown emails so a login attempt costs
 // the same argon2 work whether or not the account exists (no enumeration via
 // timing). Computed once at startup.
-var dummyHash = hashPassword("salt-dummy-password-placeholder")
+var dummyHash = hashPassword("nigari-dummy-password-placeholder")
 
 func verifyPassword(password, phc string) bool {
 	parts := strings.Split(phc, "$")
@@ -415,7 +415,7 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 	orgID := s.defaultOrg()
 	if orgID == "" {
 		orgID = newID()
-		s.db.Exec(`INSERT INTO organizations (id, name, created_at) VALUES (?, ?, ?)`, orgID, "salt.md", now())
+		s.db.Exec(`INSERT INTO organizations (id, name, created_at) VALUES (?, ?, ?)`, orgID, "nigari", now())
 	}
 	s.db.Exec(`INSERT INTO org_members (org_id, user_id, role) VALUES (?, ?, ?) ON CONFLICT DO NOTHING`, orgID, id, roleOwner)
 	// Claim any orphaned pages (e.g. the seeded welcome page created before a

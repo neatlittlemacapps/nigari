@@ -125,15 +125,15 @@ func TestBackupDuringWritesIsConsistentAndSelfContained(t *testing.T) {
 	}
 }
 
-// A backup made by salt.md holds salt.db. Restoring it into nigari must give
-// nigari.db with the same content (spec 011, FR-009), not a salt.db the
+// A backup made by nigari holds nigari.db. Restoring it into nigari must give
+// nigari.db with the same content (spec 011, FR-009), not a nigari.db the
 // server would then have to rename, or ignore.
 func TestRestoreReadsOldArchive(t *testing.T) {
 	src, err := os.ReadFile(copyFixture(t, "step-0.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	archive := filepath.Join(t.TempDir(), "salt-backup.tar.gz")
+	archive := filepath.Join(t.TempDir(), "nigari-backup.tar.gz")
 	f, err := os.Create(archive)
 	if err != nil {
 		t.Fatal(err)
@@ -155,7 +155,7 @@ func TestRestoreReadsOldArchive(t *testing.T) {
 		t.Fatalf("restore: %v", err)
 	}
 	if fileExists(filepath.Join(dir, oldDBFile)) {
-		t.Fatal("the restore wrote salt.db")
+		t.Fatal("the restore wrote nigari.db")
 	}
 	got, err := os.ReadFile(filepath.Join(dir, DBFile))
 	if err != nil || string(got) != string(src) {

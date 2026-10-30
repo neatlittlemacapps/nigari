@@ -211,7 +211,7 @@ func (s *Server) handleMailTest(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 403, "admin only")
 		return
 	}
-	if err := s.sendMail(u.Email, "salt.md test message", "Sending mail works! 🧂"); err != nil {
+	if err := s.sendMail(u.Email, "nigari test message", "Sending mail works! 🧂"); err != nil {
 		httpErrorFrom(w, 400, err)
 		return
 	}

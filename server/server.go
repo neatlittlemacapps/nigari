@@ -79,7 +79,7 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	if err := os.MkdirAll(filepath.Join(dataDir, "files"), 0o755); err != nil {
 		return nil, err
 	}
-	// A salt.md data directory's salt.db becomes nigari.db first, once
+	// A nigari data directory's nigari.db becomes nigari.db first, once
 	// (oldnames.go); the steps then run on it like on any start.
 	moved, err := moveOldDatabase(dataDir)
 	if err != nil {
@@ -159,7 +159,7 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 			renameDetail(moved))
 	}
 	if len(stepsRun) > 0 {
-		s.audit("system", "", "salt.md", "upgrade", "", "",
+		s.audit("system", "", "nigari", "upgrade", "", "",
 			stepsDetail(stepsRun))
 	}
 	if err := s.migrateWorkspaces(); err != nil {
@@ -199,7 +199,7 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	m.HandleFunc("POST /api/logout", s.handleLogout)
 	m.HandleFunc("POST /api/signup", s.handleSelfSignup)
 	m.HandleFunc("GET /api/signup-policy", s.handleSignupPolicy)
-	// salt.md AS an authorization server, so an agent can sign in instead of
+	// nigari AS an authorization server, so an agent can sign in instead of
 	// carrying a key that never dies (oauth_provider.go). Discovery is
 	// unauthenticated on purpose: it carries no data, only the addresses of the
 	// doors. Authorizing needs a browser SESSION — a token approving a grant
@@ -397,7 +397,7 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	m.HandleFunc("/mcp", s.handleMCP)
 	// Token-in-URL variant: many MCP clients (claude.ai/Desktop connectors,
 	// ChatGPT developer mode, …) only accept a plain URL and offer no way to
-	// set an Authorization header — one link makes Salt work everywhere.
+	// set an Authorization header — one link makes nigari work everywhere.
 	// Same trade-off as the ICS feed: the token rides in the URL.
 	m.HandleFunc("/mcp/{token}", s.handleMCP)
 

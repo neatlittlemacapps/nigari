@@ -182,7 +182,7 @@ func (s *Server) handleICSFeed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var b strings.Builder
-	name := "salt.md"
+	name := "nigari"
 	inScope := func(wsID string) bool {
 		for _, w := range ws {
 			if w == wsID {
@@ -194,7 +194,7 @@ func (s *Server) handleICSFeed(w http.ResponseWriter, r *http.Request) {
 	if scopeCol != "" {
 		// The calendar's NAME is what the subscriber sees in their app, so it
 		// says which collection or workspace this feed is — three feeds called
-		// "salt.md" would be indistinguishable there.
+		// "nigari" would be indistinguishable there.
 		//
 		// Only for a collection the subscriber may read. The title was looked
 		// up for any id, so the calendar name gave away the title of any page
@@ -202,16 +202,16 @@ func (s *Server) handleICSFeed(w http.ResponseWriter, r *http.Request) {
 		var title, colWS string
 		s.db.QueryRow(`SELECT title, workspace_id FROM pages WHERE id = ?`, scopeCol).Scan(&title, &colWS)
 		if title != "" && inScope(colWS) && !s.forbiddenPrivateAncestor(userID, scopeCol, colWS) {
-			name = "salt.md · " + title
+			name = "nigari · " + title
 		}
 	} else if scopeWS != "" && inScope(scopeWS) {
 		var title string
 		s.db.QueryRow(`SELECT name FROM workspaces WHERE id = ?`, scopeWS).Scan(&title)
 		if title != "" {
-			name = "salt.md · " + title
+			name = "nigari · " + title
 		}
 	}
-	b.WriteString("BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//salt.md//Calendar//EN\r\nCALSCALE:GREGORIAN\r\nX-WR-CALNAME:" + icsEscape(name) + "\r\n")
+	b.WriteString("BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//nigari//Calendar//EN\r\nCALSCALE:GREGORIAN\r\nX-WR-CALNAME:" + icsEscape(name) + "\r\n")
 
 	if len(ws) > 0 {
 		wargs := make([]any, len(ws))
@@ -292,7 +292,7 @@ func (s *Server) handleICSFeed(w http.ResponseWriter, r *http.Request) {
 							title = "Untitled"
 						}
 						b.WriteString("BEGIN:VEVENT\r\n")
-						b.WriteString("UID:" + rw.id + "-" + pid + "@salt.md\r\n")
+						b.WriteString("UID:" + rw.id + "-" + pid + "@nigari\r\n")
 						b.WriteString("DTSTAMP:" + stamp + "\r\n")
 						b.WriteString(dt + "\r\n")
 						b.WriteString("SUMMARY:" + icsEscape(title) + " (" + icsEscape(pname) + ")\r\n")
@@ -306,6 +306,6 @@ func (s *Server) handleICSFeed(w http.ResponseWriter, r *http.Request) {
 	b.WriteString("END:VCALENDAR\r\n")
 
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
-	w.Header().Set("Content-Disposition", `inline; filename="salt.ics"`)
+	w.Header().Set("Content-Disposition", `inline; filename="nigari.ics"`)
 	fmt.Fprint(w, b.String())
 }

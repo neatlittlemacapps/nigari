@@ -16,7 +16,7 @@ import (
 // has 64 GB, sizes its work accordingly, and gets killed by the first large
 // document. The cgroup files below are the only place the real cap is written.
 
-// containerWithoutCap is what a plain `docker run ghcr.io/neatlittlemacapps/salt.md`
+// containerWithoutCap is what a plain `docker run ghcr.io/neatlittlemacapps/nigari`
 // produces: a container with no --memory, on a host with plenty. There the
 // host's figure is NOT a promise — the operator may hand this container 512 MB
 // tomorrow, and nothing in the container would notice. Assuming the host's
@@ -108,7 +108,7 @@ func resolveMemory(declared, cgroupCap, host int64, container bool) int64 {
 }
 
 // hostMemory reads the machine's total memory from /proc/meminfo. Linux only,
-// which is where salt.md is deployed; elsewhere (a developer's Mac) it returns
+// which is where nigari is deployed; elsewhere (a developer's Mac) it returns
 // 0 and every caller falls back to its conservative default. Guessing a figure
 // would be worse than admitting we do not know one.
 func hostMemory() int64 {

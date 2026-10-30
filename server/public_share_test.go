@@ -166,12 +166,12 @@ func TestPublicReaderHasNativeThemeAndNoPrintOrComments(t *testing.T) {
 	if r.Code != 200 {
 		t.Fatal(r.Code)
 	}
-	for _, want := range []string{"/assets/native-test.css", "data-public-theme=\"dark\"", "salt-theme", "prefers-color-scheme", "role=\"radiogroup\"", "/public/" + token + "/files/shared.png", "/public/" + token + "/files/inline.txt"} {
+	for _, want := range []string{"/assets/native-test.css", "data-public-theme=\"dark\"", "nigari-theme", "prefers-color-scheme", "role=\"radiogroup\"", "/public/" + token + "/files/shared.png", "/public/" + token + "/files/inline.txt"} {
 		if !strings.Contains(h, want) {
 			t.Fatalf("missing %s", want)
 		}
 	}
-	for _, bad := range []string{"210mm", "saltPaginate", "doc-src", "COMMENT-MUST-NOT-LEAK", "child.png", "private.txt", "src=\"/files/"} {
+	for _, bad := range []string{"210mm", "nigariPaginate", "doc-src", "COMMENT-MUST-NOT-LEAK", "child.png", "private.txt", "src=\"/files/"} {
 		if strings.Contains(h, bad) {
 			t.Fatalf("public reader exposed %s", bad)
 		}

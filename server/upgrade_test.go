@@ -48,7 +48,7 @@ func copyFixture(t *testing.T, name string) string {
 // dbShape is what a database stores, as SQLite describes it: every table,
 // index and trigger with the statement that makes it, and every column of
 // every table. goose's own table is left out; it is the step counter, not
-// salt.md's data.
+// nigari's data.
 func dbShape(t *testing.T, path string) string {
 	t.Helper()
 	db, err := sql.Open("sqlite", "file:"+path+"?mode=ro")
@@ -372,7 +372,7 @@ func TestUpgradeCopyFailedRunsNoStep(t *testing.T) {
 	}
 }
 
-// salt backup takes the database and files/, not the copies or the lock.
+// nigari backup takes the database and files/, not the copies or the lock.
 func TestBackupLeavesUpgradeCopiesOut(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, DBFile)

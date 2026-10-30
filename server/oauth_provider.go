@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// salt.md as an OAuth authorization server, so an agent can SIGN IN instead of
+// nigari as an OAuth authorization server, so an agent can SIGN IN instead of
 // carrying a key that never dies (OAuth 2.1 + the MCP authorization spec).
 //
 // WHY, in one paragraph, because the reason shapes every decision below. An API
@@ -101,7 +101,7 @@ func (s *Server) handleProtectedResourceMetadata(w http.ResponseWriter, r *http.
 		"resource":                 base + "/mcp",
 		"authorization_servers":    []string{base},
 		"bearer_methods_supported": []string{"header"},
-		"resource_name":            "salt.md",
+		"resource_name":            "nigari",
 	})
 }
 
@@ -166,7 +166,7 @@ func (s *Server) handleOAuthRegister(w http.ResponseWriter, r *http.Request) {
 	if len([]rune(name)) > 80 {
 		name = string([]rune(name)[:80])
 	}
-	id := "salt-" + randomToken(12)
+	id := "nigari-" + randomToken(12)
 	uris, _ := json.Marshal(body.RedirectURIs)
 
 	// A public client (PKCE only, no secret) is the normal case for the kind of
@@ -645,7 +645,7 @@ func (s *Server) handleOAuthRequestInfo(w http.ResponseWriter, r *http.Request) 
 		"clientId":   c.ID,
 		"workspaces": list,
 		// WHICH instance is being asked about. Without it the screen could be
-		// any salt.md anywhere — and "which server am I handing this to" is the
+		// any nigari anywhere — and "which server am I handing this to" is the
 		// first question somebody should be able to answer at a glance.
 		"instanceName": s.setting("instance_name", ""),
 		"host":         r.Host,

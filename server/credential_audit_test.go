@@ -251,7 +251,7 @@ func TestTheSkillCarriesOnlyWhatTheTokenMayEnter(t *testing.T) {
 			t.Errorf("%s: the bundle lost the workspace this token may enter", c.name)
 		}
 	}
-	if files := downloadSkill(t, f.s, f.cookie, "?workspace="+f.other); !strings.Contains(files["saltmd/SKILL.md"], "Salaries") {
+	if files := downloadSkill(t, f.s, f.cookie, "?workspace="+f.other); !strings.Contains(files["nigari/SKILL.md"], "Salaries") {
 		t.Error("the person's skill lost the chosen workspace's rules")
 	}
 }

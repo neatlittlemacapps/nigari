@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-// salt.md keeps the cloudflared it manages current.
+// nigari keeps the cloudflared it manages current.
 //
 // It downloads cloudflared once, into the data directory, the first time a
 // tunnel starts, and runs it with --no-autoupdate: cloudflared replacing itself
@@ -32,7 +32,7 @@ import (
 // instance lived. Cloudflare's dashboard marks such a connector as outdated,
 // fixes never arrive, and Cloudflare supports a release for about a year.
 //
-// So salt.md looks once a day (and when an admin asks) for a newer release,
+// So nigari looks once a day (and when an admin asks) for a newer release,
 // downloads the asset for this platform from the release itself, checks it
 // against the SHA256 GitHub records for that asset, swaps it in, and restarts a
 // named tunnel, which is gone for a few seconds.
@@ -43,7 +43,7 @@ import (
 // two agree. The notes are the fallback for a release GitHub has no digest for. A quick tunnel keeps running on the
 // old binary until its next start, because a restart would change its address.
 //
-// Only the copy salt.md downloaded itself is ever replaced. A cloudflared from
+// Only the copy nigari downloaded itself is ever replaced. A cloudflared from
 // the PATH belongs to the system's package manager; for that one the settings
 // only say that it is behind.
 
@@ -79,7 +79,7 @@ func fetchCloudflaredRelease(ctx context.Context) (cloudflaredRelease, error) {
 		return cloudflaredRelease{}, err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", "salt.md/"+Version)
+	req.Header.Set("User-Agent", "nigari/"+Version)
 	resp, err := (&http.Client{Timeout: 30 * time.Second}).Do(req)
 	if err != nil {
 		return cloudflaredRelease{}, fmt.Errorf("release list unreachable: %w", err)
@@ -254,7 +254,7 @@ func extractCloudflared(archive, dest string) error {
 	}
 }
 
-// managedCloudflared is the path of the copy salt.md downloads itself.
+// managedCloudflared is the path of the copy nigari downloads itself.
 func (s *Server) managedCloudflared() string {
 	name := "cloudflared"
 	if runtime.GOOS == "windows" {

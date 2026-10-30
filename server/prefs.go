@@ -34,7 +34,7 @@ type userPrefs struct {
 	// Language to TRANSLATE into. "" follows navigator.languages.
 	Language string `json:"language"`
 	// Regional tag to FORMAT with — dates, numbers, sorting. Deliberately
-	// separate from Language: Salt ships one catalog per language, but 'de-AT'
+	// separate from Language: nigari ships one catalog per language, but 'de-AT'
 	// and 'de-DE' format differently, and somebody may want English text with
 	// German dates. "" takes the browser's regional variant of Language.
 	Region string `json:"region"`

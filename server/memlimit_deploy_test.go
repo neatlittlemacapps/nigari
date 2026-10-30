@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// The shapes salt.md actually gets deployed into, walked through end to end:
+// The shapes nigari actually gets deployed into, walked through end to end:
 // what each source says, what comes out, and what that means for indexing.
 //
 // The owner's instance is the awkward one — Docker inside an LXC inside

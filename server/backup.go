@@ -131,7 +131,7 @@ func Restore(dataDir, src string) error {
 		if strings.HasPrefix(clean, "..") || filepath.IsAbs(clean) {
 			return fmt.Errorf("unsafe path in archive: %s", hdr.Name)
 		}
-		// A backup made by salt.md holds salt.db: it restores as nigari.db,
+		// A backup made by nigari holds nigari.db: it restores as nigari.db,
 		// since an archive is data a person keeps, not a name the running
 		// app answers to (spec 011, FR-009).
 		if clean == oldDBFile {
