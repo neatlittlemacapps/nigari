@@ -22,10 +22,17 @@ Dutch in your translation related actions from now on").
   Netherlands rather than Flemish or Hollands specifically; dates and numbers already
   follow the browser's region (`nl-BE` or `nl-NL`) through `format.ts`.
 - **Written by a helper, reviewed by Claude, not yet by a native speaker.** The owner
-  is the first native reader. No `nl.machine.json` (the list `translate.mjs` keeps of
-  unread lines): `check-i18n.mjs` and `i18n.ts` read every `*.json` in the folder as a
-  catalogue, so the list would itself load as a language. Corrections go straight into
-  `nl.json`.
+  is the first native reader; corrections go straight into `nl.json`. No
+  `nl.machine.json` (the list `translate.mjs` keeps of unread lines): every line would be
+  on it, so it would say nothing a sentence here does not, and `check-i18n.mjs` reads
+  every `*.json` in the folder as a catalogue and would print a "behind" note for it on
+  every run. `translate.mjs --list` therefore shows Dutch as fully read; this entry is
+  the record that it is not.
+- **Plural forms only where `plural()` asks.** The helpers' first pass, like
+  `translate.mjs`, made `{one, other}` objects of every key holding `{n}`. Three of those
+  keys are read by `t()`, which shows the English for an object, so "{n} skipped" stayed
+  English in Spanish since it was contributed. `check-i18n.mjs` now fails on that shape in
+  any catalogue.
 - **Glossary**, so later strings use the same words: workspace *werkruimte*, page
   *pagina*, database *database*, collection *verzameling*, property *eigenschap*, view
   *weergave*, board *bord*, chart *grafiek*, template *sjabloon*, comment *opmerking*,

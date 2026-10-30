@@ -1,7 +1,7 @@
 <!--
 Sync Impact Report
-- Version: 1.1.0 → 1.1.1 (2026-10-30): V names Dutch (`nl.json`) beside German
-  as a required catalogue; the owner's call (#324, "include Dutch in your
+- Version: 1.1.0 → 1.2.0 (2026-10-30): V makes Dutch (`nl.json`) a required catalogue
+  beside German, a new enforced rule, hence MINOR; the owner's call (#324, "include Dutch in your
   translation related actions from now on"). Updated: AGENTS.md,
   .claude/rules/i18n.md, surfaces.md (Translations row), check-i18n.mjs.
 - Version: 1.0.0 → 1.1.0 (2026-10-26): VI now points at the surfaces registry
@@ -109,4 +109,4 @@ a person, in a pull request that updates the version, says why, and updates the 
 and tasks overrides and `AGENTS.md` where they depend on the change. Versioning:
 MAJOR for a removed or redefined principle, MINOR for a new one, PATCH for wording.
 
-**Version**: 1.1.1 | **Ratified**: 2026-10-25 | **Last Amended**: 2026-10-30
+**Version**: 1.2.0 | **Ratified**: 2026-10-25 | **Last Amended**: 2026-10-30

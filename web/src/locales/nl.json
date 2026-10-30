@@ -220,7 +220,7 @@
   "Disconnecting failed": "Verbinding verbreken mislukt",
   "Dismiss": "Verbergen",
   "Dismiss proposal": "Voorstel verwerpen",
-  "Display": "Weergave",
+  "Display": "Notatie",
   "Documents": "Documenten",
   "Documents and collections apart": "Documenten en verzamelingen gescheiden",
   "Domain & proxy": "Domein en proxy",
@@ -682,10 +682,7 @@
   "Show the document's icon": "Het pictogram van het document tonen",
   "Show what happened to this row": "Tonen wat er met deze rij is gebeurd",
   "Show where pages are filed": "Tonen waar pagina's zijn ingedeeld",
-  "Show {n} resolved": {
-    "one": "{n} opgeloste tonen",
-    "other": "{n} opgeloste tonen"
-  },
+  "Show {n} resolved": "{n} opgeloste tonen",
   "Shown": "Getoond",
   "Shown in the switcher and on cards": "Getoond in de schakelaar en op kaarten",
   "Shown in your time zone.": "Getoond in jouw tijdzone.",
@@ -845,7 +842,7 @@
   "Version history": "Versiegeschiedenis",
   "Version restored": "Versie hersteld",
   "Via relation": "Via relatie",
-  "View options": "Weergave-opties",
+  "View options": "Weergaveopties",
   "Viewer": "Lezer",
   "Viewer (read only)": "Lezer (alleen lezen)",
   "Visibility not saved": "Zichtbaarheid niet opgeslagen",
@@ -1024,10 +1021,7 @@
     "one": "{n} bestand toegevoegd",
     "other": "{n} bestanden toegevoegd"
   },
-  "{n} filled": {
-    "one": "{n} ingevuld",
-    "other": "{n} ingevuld"
-  },
+  "{n} filled": "{n} ingevuld",
   "{n} links": {
     "one": "{n} link",
     "other": "{n} links"
@@ -1057,10 +1051,7 @@
     "one": "{n} rij",
     "other": "{n} rijen"
   },
-  "{n} skipped": {
-    "one": "{n} overgeslagen",
-    "other": "{n} overgeslagen"
-  },
+  "{n} skipped": "{n} overgeslagen",
   "{n} taken back, {m} left alone because they changed since.": "{n} teruggenomen, {m} met rust gelaten omdat ze sindsdien zijn gewijzigd.",
   "{n} templates": {
     "one": "{n} sjabloon",
