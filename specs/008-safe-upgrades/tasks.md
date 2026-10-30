@@ -77,7 +77,7 @@ description: "Tasks for safe upgrades"
 
 ## Phase 8: User Story 6: the gate (P2)
 
-- [ ] T022 [US6] [test] New `web/scripts/check-upgrades.mjs` in `npm run check`: every step N > 1 in `server/upgrade_steps.go` has `server/testdata/upgrade/step-<N-1>.db`; steps numbered 1…N without gaps; added to `web/package.json`
+- [x] T022 [US6] [test] New `web/scripts/check-upgrades.mjs` in `npm run check`: every step N > 1 in `server/upgrade_steps.go` has `server/testdata/upgrade/step-<N-1>.db`; steps numbered 1…N without gaps; added to `web/package.json`
 
 ---
 
