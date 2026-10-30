@@ -218,7 +218,7 @@ func restoreReport(tables int, step, newest int64) string {
 
 // archiveName is an archive entry's path inside dataDir, refused when it
 // would land outside it, with salt.db read as nigari.db: a backup made by
-// salt.md holds salt.db, and it restores as nigari.db, since an archive is
+// salt.md restores under the new name, since an archive is
 // data a person keeps, not a name the running app answers to (spec 011,
 // FR-009).
 func archiveName(name string) (string, error) {
