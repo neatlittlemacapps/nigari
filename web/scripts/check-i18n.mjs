@@ -496,4 +496,4 @@ if (errors.length || unwrapped > 0 || stale.length || germanLines.length || germ
   console.log('  For the German list: node scripts/check-i18n.mjs --german');
   process.exit(1);
 }
-console.log('  ok — every string wrapped, the German catalog current, source is English');
+console.log('  ok — every string wrapped, the German and Dutch catalogs current, source is English');
