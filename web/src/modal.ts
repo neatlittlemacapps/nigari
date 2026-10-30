@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { escapeTarget, FOCUSABLE, trapStep } from './modalKeys';
 
 // Global single-modal coordinator. Every modal calls useExclusiveModal(onClose)
-// on mount: it announces itself on the "salt:modal" event (which closes any
+// on mount: it announces itself on the "nigari:modal" event (which closes any
 // other open modal and collapses the sidebar drawer via App's listener) and
 // closes itself when a *different* modal announces. Confirm/prompt dialogs
 // (DialogHost) deliberately do NOT participate, so a confirmation can layer on
@@ -10,7 +10,7 @@ import { escapeTarget, FOCUSABLE, trapStep } from './modalKeys';
 
 export function announceModal(): symbol {
   const id = Symbol('modal');
-  window.dispatchEvent(new CustomEvent('salt:modal', { detail: id }));
+  window.dispatchEvent(new CustomEvent('nigari:modal', { detail: id }));
   return id;
 }
 
@@ -119,7 +119,7 @@ export function useExclusiveModal(onClose: () => void, options: ModalOptions = {
     const onOther = (e: Event) => {
       if ((e as CustomEvent<symbol>).detail !== myId) closeRef.current();
     };
-    window.addEventListener('salt:modal', onOther);
+    window.addEventListener('nigari:modal', onOther);
 
     // Where focus was before the modal took it, to put it back on close.
     const returnTo = focusBefore();
@@ -145,7 +145,7 @@ export function useExclusiveModal(onClose: () => void, options: ModalOptions = {
     });
     return () => {
       cancelAnimationFrame(frame);
-      window.removeEventListener('salt:modal', onOther);
+      window.removeEventListener('nigari:modal', onOther);
       const i = stack.indexOf(entry);
       if (i >= 0) stack.splice(i, 1);
       // Back where it came from, but only if nothing else has taken focus

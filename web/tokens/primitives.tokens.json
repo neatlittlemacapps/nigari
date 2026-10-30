@@ -357,7 +357,7 @@
         },
         "$description": "Page titles and empty states: fluid from 28px to 40px.",
         "$extensions": {
-          "md.salt.cssValue": "clamp(28px, 4vw, 40px)"
+          "io.github.neatlittlemacapps.nigari.cssValue": "clamp(28px, 4vw, 40px)"
         }
       }
     },
@@ -389,7 +389,7 @@
         ],
         "$description": "Labels and buttons in the brand typeface; code.",
         "$extensions": {
-          "md.salt.css": "--mono"
+          "io.github.neatlittlemacapps.nigari.css": "--mono"
         }
       }
     }

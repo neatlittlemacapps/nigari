@@ -1,4 +1,4 @@
-/* salt.md service worker: app-shell caching only.
+/* nigari service worker: app-shell caching only.
  *
  * Strategy:
  *  - Hashed /assets/* → cache-first (immutable by construction).

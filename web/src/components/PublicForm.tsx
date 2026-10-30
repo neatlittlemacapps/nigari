@@ -128,7 +128,7 @@ export default function PublicForm({ token }: { token: string }) {
           </button>
         </div>
         <div className="public-form-footer">
-          {t('Made with')} <b>salt.md</b>
+          {t('Made with')} <b>nigari</b>
         </div>
       </div>
     </div>

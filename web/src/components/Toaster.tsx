@@ -23,8 +23,8 @@ export default function Toaster() {
       // button takes longer than reading alone.
       window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), action ? 8000 : 4000);
     };
-    window.addEventListener('salt:toast', onToast);
-    return () => window.removeEventListener('salt:toast', onToast);
+    window.addEventListener('nigari:toast', onToast);
+    return () => window.removeEventListener('nigari:toast', onToast);
   }, []);
 
   // Toasts are the app's only failure feedback, so the region must announce to

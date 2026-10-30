@@ -1,5 +1,5 @@
 /* =============================================================================
-   salt.md — the app in the website's language
+   nigari — the app in the website's language
 
    Loaded AFTER styles.css and tokens.css, and only re-states the few
    components whose look is not already carried by a token. Nothing here adds a
@@ -11,7 +11,8 @@
    contributor a conflict for a change that is purely visual. Here, a merged PR
    lands underneath and simply inherits the new look.
 
-   Where the values come from — the website (salt.md, src/styles):
+   Where the values come from — the website of salt.md, which nigari was
+   forked from (its src/styles):
    - dark is the site itself: near-black ground with a trace of blue, surfaces
      lifted by white washes rather than by greys, hairlines instead of borders;
    - light is the site's own light vocabulary (/alt/): warm paper and stone,

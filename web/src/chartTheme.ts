@@ -105,7 +105,7 @@ export function onThemeChange(cb: () => void): () => void {
  *  or a gridline, whatever the palette. */
 export function valueLabels(ink: ChartInk, kind: 'bar' | 'hbar' | 'line' | 'donut', format: (v: number) => string): Plugin {
   return {
-    id: 'saltValueLabels',
+    id: 'nigariValueLabels',
     afterDatasetsDraw(chart: Chart) {
       const meta = chart.getDatasetMeta(0);
       const data = chart.data.datasets[0]?.data as (number | null)[] | undefined;

@@ -21,7 +21,7 @@ import {
   sameWidths,
 } from './columnWidths';
 
-// Custom salt.md block types (Welle 17): callout, table of contents, bookmark.
+// Custom nigari block types (Welle 17): callout, table of contents, bookmark.
 // Columns are ours (columnsSpec, at the end of this file) and wired in pageLink.tsx.
 
 // safeHref collapses any non-http(s)/mailto URL to '#'. A bookmark url can be
@@ -477,7 +477,7 @@ export const databaseSpec = createReactBlockSpec(
 //
 // What we give up against the paid one: dragging a block SIDEWAYS to make a new
 // column. Worth having, and not worth a licence that has to be renegotiated the
-// day part of salt.md is closed. Column WIDTHS are ours: preset layouts on the
+// day part of nigari is closed. Column WIDTHS are ours: preset layouts on the
 // bar, and a grip between columns that drags like a table column's.
 export const columnsSpec = createReactBlockSpec(
   {

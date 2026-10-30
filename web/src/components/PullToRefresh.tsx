@@ -7,7 +7,7 @@ const MAX_PULL = 108; // where the rubber band stops giving
 
 /** The nearest ancestor that scrolls VERTICALLY, or null if nothing does.
  *
- *  salt.md does not scroll the window — `.page-body` scrolls, and inside it a
+ *  nigari does not scroll the window — `.page-body` scrolls, and inside it a
  *  table scrolls sideways on its own. Asking `window.scrollY` (the obvious
  *  check, and the one every example uses) would answer 0 halfway down a
  *  document and pull-to-refresh would fire in the middle of reading. */
@@ -32,7 +32,7 @@ export default function PullToRefresh() {
   const startX = useRef(0);
   // Decided ONCE per touch and then held. Without the lock, a sideways swipe
   // across a wide table that drifts down by a few pixels turns into a refresh —
-  // and salt.md's tables scroll sideways by design now.
+  // and nigari's tables scroll sideways by design now.
   const mode = useRef<'idle' | 'pull' | 'reject'>('idle');
 
   useEffect(() => {

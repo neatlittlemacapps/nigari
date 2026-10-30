@@ -157,16 +157,16 @@
         "$type": "color",
         "$value": "{color.surface.glass}",
         "$extensions": {
-          "md.salt.css": "--bn-colors-menu-background",
-          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+          "io.github.neatlittlemacapps.nigari.css": "--bn-colors-menu-background",
+          "io.github.neatlittlemacapps.nigari.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
         }
       },
       "text": {
         "$type": "color",
         "$value": "{color.text.default}",
         "$extensions": {
-          "md.salt.css": "--bn-colors-menu-text",
-          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+          "io.github.neatlittlemacapps.nigari.css": "--bn-colors-menu-text",
+          "io.github.neatlittlemacapps.nigari.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
         }
       }
     },
@@ -175,8 +175,8 @@
         "$type": "color",
         "$value": "{color.surface.raised}",
         "$extensions": {
-          "md.salt.css": "--bn-colors-tooltip-background",
-          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+          "io.github.neatlittlemacapps.nigari.css": "--bn-colors-tooltip-background",
+          "io.github.neatlittlemacapps.nigari.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
         },
         "$description": "BlockNote uses its tooltip pair for three things at once: the icon box beside each slash-menu entry, the shortcut badge and the real tooltip. Ink here turned the slash menu into a column of black squares, so the pair stays quiet; theme.css gives the real tooltip its ink on its own."
       },
@@ -184,8 +184,8 @@
         "$type": "color",
         "$value": "{color.text.default}",
         "$extensions": {
-          "md.salt.css": "--bn-colors-tooltip-text",
-          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+          "io.github.neatlittlemacapps.nigari.css": "--bn-colors-tooltip-text",
+          "io.github.neatlittlemacapps.nigari.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
         }
       }
     },
@@ -194,16 +194,16 @@
         "$type": "color",
         "$value": "{color.active}",
         "$extensions": {
-          "md.salt.css": "--bn-colors-hovered-background",
-          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+          "io.github.neatlittlemacapps.nigari.css": "--bn-colors-hovered-background",
+          "io.github.neatlittlemacapps.nigari.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
         }
       },
       "text": {
         "$type": "color",
         "$value": "{color.text.default}",
         "$extensions": {
-          "md.salt.css": "--bn-colors-hovered-text",
-          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+          "io.github.neatlittlemacapps.nigari.css": "--bn-colors-hovered-text",
+          "io.github.neatlittlemacapps.nigari.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
         }
       }
     },
@@ -212,16 +212,16 @@
         "$type": "color",
         "$value": "{color.active}",
         "$extensions": {
-          "md.salt.css": "--bn-colors-selected-background",
-          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+          "io.github.neatlittlemacapps.nigari.css": "--bn-colors-selected-background",
+          "io.github.neatlittlemacapps.nigari.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
         }
       },
       "text": {
         "$type": "color",
         "$value": "{color.text.default}",
         "$extensions": {
-          "md.salt.css": "--bn-colors-selected-text",
-          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+          "io.github.neatlittlemacapps.nigari.css": "--bn-colors-selected-text",
+          "io.github.neatlittlemacapps.nigari.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
         }
       }
     },
@@ -230,8 +230,8 @@
         "$type": "color",
         "$value": "{color.text.muted}",
         "$extensions": {
-          "md.salt.css": "--bn-colors-disabled-text",
-          "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+          "io.github.neatlittlemacapps.nigari.css": "--bn-colors-disabled-text",
+          "io.github.neatlittlemacapps.nigari.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
         }
       }
     },
@@ -239,16 +239,16 @@
       "$type": "color",
       "$value": "{color.border.default}",
       "$extensions": {
-        "md.salt.css": "--bn-colors-border",
-        "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+        "io.github.neatlittlemacapps.nigari.css": "--bn-colors-border",
+        "io.github.neatlittlemacapps.nigari.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
       }
     },
     "radius": {
       "$type": "dimension",
       "$value": "{radius.legacy.md}",
       "$extensions": {
-        "md.salt.css": "--bn-border-radius",
-        "md.salt.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
+        "io.github.neatlittlemacapps.nigari.css": "--bn-border-radius",
+        "io.github.neatlittlemacapps.nigari.selector": "[data-theme] .bn-container, [data-theme] .bn-root"
       }
     }
   },

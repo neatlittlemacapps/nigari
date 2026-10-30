@@ -136,7 +136,7 @@ description: "Tasks for the rename to nigari"
   - the refusal sentences in `upgrade.go` and `refusal.go`;
   - `memlimit.go` messages;
   - comments that call the product Salt or salt.md, in every `server/*.go`
-- [ ] T025 [US1] [ui] Interface text:
+- [x] T025 [US1] [ui] Interface text:
   - `web/index.html` (`<title>`, `apple-mobile-web-app-title`), `web/public/manifest.webmanifest`, the `aria-label` in `web/public/logo.svg`, the comment in `web/public/sw.js`;
   - the 17 strings that name the product, in `web/src/**` (`t('…')` keys change, `Salt fonts` → `nigari fonts`);
   - DOM event names `salt:*` → `nigari:*` in every dispatch and listen;

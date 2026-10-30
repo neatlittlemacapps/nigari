@@ -38,7 +38,7 @@ export function loadMermaid(): Promise<void> {
           // draw, which matters for a picture whose job is to end up in a PDF.
           flowchart: { htmlLabels: false, padding: 12, nodeSpacing: 40, rankSpacing: 46 },
           htmlLabels: false,
-          // salt.md's own colours rather than mermaid's grey. A diagram in a
+          // nigari's own colours rather than mermaid's grey. A diagram in a
           // document should look like it belongs to the document: a white card
           // on the paper, a hairline round it and ink inside — the shapes
           // everything else on the page is drawn with. No hue of its own, so

@@ -1,29 +1,29 @@
 {
-  "$description": "Roles. Each holds its light value in $value and its dark value in $extensions[\"md.salt.dark\"]: one token, two themes (FR-002). md.salt.css keeps the name styles.css already reads.",
+  "$description": "Roles. Each holds its light value in $value and its dark value in $extensions[\"io.github.neatlittlemacapps.nigari.dark\"]: one token, two themes (FR-002). io.github.neatlittlemacapps.nigari.css keeps the name styles.css already reads.",
   "color": {
     "$type": "color",
     "surface": {
       "default": {
         "$value": "{color.paper.50}",
         "$extensions": {
-          "md.salt.css": "--bg",
-          "md.salt.dark": "{color.night.900}"
+          "io.github.neatlittlemacapps.nigari.css": "--bg",
+          "io.github.neatlittlemacapps.nigari.dark": "{color.night.900}"
         },
         "$description": "The document."
       },
       "sidebar": {
         "$value": "{color.paper.100}",
         "$extensions": {
-          "md.salt.css": "--sidebar-bg",
-          "md.salt.dark": "{color.night.950}"
+          "io.github.neatlittlemacapps.nigari.css": "--sidebar-bg",
+          "io.github.neatlittlemacapps.nigari.dark": "{color.night.950}"
         },
         "$description": "The sidebar: one step off the document."
       },
       "raised": {
         "$value": "{color.paper.0}",
         "$extensions": {
-          "md.salt.css": "--card",
-          "md.salt.dark": "{color.night.850}"
+          "io.github.neatlittlemacapps.nigari.css": "--card",
+          "io.github.neatlittlemacapps.nigari.dark": "{color.night.850}"
         },
         "$description": "Cards, dialogs, menus."
       },
@@ -39,8 +39,8 @@
           "hex": "#ffffff"
         },
         "$extensions": {
-          "md.salt.css": "--glass",
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.css": "--glass",
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               0.0745,
@@ -58,9 +58,9 @@
       "default": {
         "$value": "{color.ink.900}",
         "$extensions": {
-          "md.salt.css": "--fg",
-          "md.salt.dark": "{color.mist.100}",
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.css": "--fg",
+          "io.github.neatlittlemacapps.nigari.dark": "{color.mist.100}",
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 4.5
@@ -79,9 +79,9 @@
       "muted": {
         "$value": "{color.ink.500}",
         "$extensions": {
-          "md.salt.css": "--muted",
-          "md.salt.dark": "{color.mist.500}",
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.css": "--muted",
+          "io.github.neatlittlemacapps.nigari.dark": "{color.mist.500}",
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 4.5
@@ -103,9 +103,9 @@
       "default": {
         "$value": "{color.pink.700}",
         "$extensions": {
-          "md.salt.css": "--accent",
-          "md.salt.dark": "{color.pink.400}",
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.css": "--accent",
+          "io.github.neatlittlemacapps.nigari.dark": "{color.pink.400}",
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 4.5
@@ -119,7 +119,7 @@
               "min": 4.5
             }
           ],
-          "md.salt.rgb": "--accent-rgb"
+          "io.github.neatlittlemacapps.nigari.rgb": "--accent-rgb"
         },
         "$description": "Text-safe on its surfaces in both themes."
       },
@@ -135,8 +135,8 @@
           "hex": "#b3123f"
         },
         "$extensions": {
-          "md.salt.css": "--accent-soft",
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.css": "--accent-soft",
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               1,
@@ -153,9 +153,9 @@
     "danger": {
       "$value": "{color.orange.700}",
       "$extensions": {
-        "md.salt.css": "--danger",
-        "md.salt.dark": "{color.orange.400}",
-        "md.salt.contrast": [
+        "io.github.neatlittlemacapps.nigari.css": "--danger",
+        "io.github.neatlittlemacapps.nigari.dark": "{color.orange.400}",
+        "io.github.neatlittlemacapps.nigari.contrast": [
           {
             "on": "{color.surface.default}",
             "min": 4.5
@@ -188,8 +188,8 @@
         "hex": "#1c1a15"
       },
       "$extensions": {
-        "md.salt.css": "--hover",
-        "md.salt.dark": {
+        "io.github.neatlittlemacapps.nigari.css": "--hover",
+        "io.github.neatlittlemacapps.nigari.dark": {
           "colorSpace": "srgb",
           "components": [
             1,
@@ -214,8 +214,8 @@
         "hex": "#1c1a15"
       },
       "$extensions": {
-        "md.salt.css": "--active",
-        "md.salt.dark": {
+        "io.github.neatlittlemacapps.nigari.css": "--active",
+        "io.github.neatlittlemacapps.nigari.dark": {
           "colorSpace": "srgb",
           "components": [
             1,
@@ -241,8 +241,8 @@
           "hex": "#1c1a15"
         },
         "$extensions": {
-          "md.salt.css": "--border",
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.css": "--border",
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               1,
@@ -267,8 +267,8 @@
           "hex": "#1c1a15"
         },
         "$extensions": {
-          "md.salt.css": "--border-strong",
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.css": "--border-strong",
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               1,
@@ -285,22 +285,22 @@
       "default": {
         "$value": "{color.ink.900}",
         "$extensions": {
-          "md.salt.css": "--pill-dark",
-          "md.salt.dark": "{color.mist.50}"
+          "io.github.neatlittlemacapps.nigari.css": "--pill-dark",
+          "io.github.neatlittlemacapps.nigari.dark": "{color.mist.50}"
         },
         "$description": "The primary action is ink, as on the site: a filled pill in the text colour."
       },
       "hover": {
         "$value": "{color.ink.800}",
         "$extensions": {
-          "md.salt.css": "--pill-dark-hover",
-          "md.salt.dark": "{color.paper.0}"
+          "io.github.neatlittlemacapps.nigari.css": "--pill-dark-hover",
+          "io.github.neatlittlemacapps.nigari.dark": "{color.paper.0}"
         }
       },
       "text": {
         "$value": "{color.paper.50}",
         "$extensions": {
-          "md.salt.dark": "{color.night.950}"
+          "io.github.neatlittlemacapps.nigari.dark": "{color.night.950}"
         },
         "$description": "Text on the ink pill: the paper in light, near-black in dark."
       }
@@ -318,7 +318,7 @@
           "hex": "#2a80e2"
         },
         "$extensions": {
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               0.2745,
@@ -327,7 +327,7 @@
             ],
             "hex": "#4699fe"
           },
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 3
@@ -351,7 +351,7 @@
           "hex": "#c65e0b"
         },
         "$extensions": {
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               0.9098,
@@ -360,7 +360,7 @@
             ],
             "hex": "#e8721c"
           },
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 3
@@ -384,7 +384,7 @@
           "hex": "#25984d"
         },
         "$extensions": {
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               0.2706,
@@ -393,7 +393,7 @@
             ],
             "hex": "#45b164"
           },
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 3
@@ -417,7 +417,7 @@
           "hex": "#9860d0"
         },
         "$extensions": {
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               0.6941,
@@ -426,7 +426,7 @@
             ],
             "hex": "#b179eb"
           },
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 3
@@ -450,7 +450,7 @@
           "hex": "#0f9293"
         },
         "$extensions": {
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               0.0353,
@@ -459,7 +459,7 @@
             ],
             "hex": "#09aeae"
           },
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 3
@@ -483,7 +483,7 @@
           "hex": "#c74c8e"
         },
         "$extensions": {
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               0.8863,
@@ -492,7 +492,7 @@
             ],
             "hex": "#e266a7"
           },
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 3
@@ -516,7 +516,7 @@
           "hex": "#a1790c"
         },
         "$extensions": {
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               0.7451,
@@ -525,7 +525,7 @@
             ],
             "hex": "#be9014"
           },
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 3
@@ -549,7 +549,7 @@
           "hex": "#d74745"
         },
         "$extensions": {
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               0.9529,
@@ -558,7 +558,7 @@
             ],
             "hex": "#f3625d"
           },
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 3
@@ -582,7 +582,7 @@
           "hex": "#6674de"
         },
         "$extensions": {
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               0.4902,
@@ -591,7 +591,7 @@
             ],
             "hex": "#7d8df9"
           },
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 3
@@ -615,7 +615,7 @@
           "hex": "#6c8e03"
         },
         "$extensions": {
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               0.5098,
@@ -624,7 +624,7 @@
             ],
             "hex": "#82a821"
           },
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 3
@@ -648,7 +648,7 @@
           "hex": "#a17557"
         },
         "$extensions": {
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               0.7333,
@@ -657,7 +657,7 @@
             ],
             "hex": "#bb8d6f"
           },
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 3
@@ -681,7 +681,7 @@
           "hex": "#158eab"
         },
         "$extensions": {
-          "md.salt.dark": {
+          "io.github.neatlittlemacapps.nigari.dark": {
             "colorSpace": "srgb",
             "components": [
               0.0902,
@@ -690,7 +690,7 @@
             ],
             "hex": "#17a9cb"
           },
-          "md.salt.contrast": [
+          "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
               "min": 3
@@ -716,7 +716,7 @@
             "hex": "#484848"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.8431,
@@ -725,7 +725,7 @@
               ],
               "hex": "#d7d7d7"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -748,7 +748,7 @@
             "hex": "#636363"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.7176,
@@ -757,7 +757,7 @@
               ],
               "hex": "#b7b7b7"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -780,7 +780,7 @@
             "hex": "#808080"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.5961,
@@ -789,7 +789,7 @@
               ],
               "hex": "#989898"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -815,7 +815,7 @@
             "hex": "#02468b"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.7529,
@@ -824,7 +824,7 @@
               ],
               "hex": "#c0dafc"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -847,7 +847,7 @@
             "hex": "#0961bb"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.5294,
@@ -856,7 +856,7 @@
               ],
               "hex": "#87bafd"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -879,7 +879,7 @@
             "hex": "#2a80e2"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.2745,
@@ -888,7 +888,7 @@
               ],
               "hex": "#4699fe"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -914,7 +914,7 @@
             "hex": "#5b4404"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 1.0,
@@ -923,7 +923,7 @@
               ],
               "hex": "#ffd16b"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -946,7 +946,7 @@
             "hex": "#7d5e07"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.8902,
@@ -955,7 +955,7 @@
               ],
               "hex": "#e3ae28"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -978,7 +978,7 @@
             "hex": "#a1790c"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.7451,
@@ -987,7 +987,7 @@
               ],
               "hex": "#be9014"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1013,7 +1013,7 @@
             "hex": "#005725"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.5373,
@@ -1022,7 +1022,7 @@
               ],
               "hex": "#89f3a2"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1045,7 +1045,7 @@
             "hex": "#087736"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.4039,
@@ -1054,7 +1054,7 @@
               ],
               "hex": "#67d283"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1077,7 +1077,7 @@
             "hex": "#25984d"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.2706,
@@ -1086,7 +1086,7 @@
               ],
               "hex": "#45b164"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1112,7 +1112,7 @@
             "hex": "#5e218f"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.8863,
@@ -1121,7 +1121,7 @@
               ],
               "hex": "#e2ccfd"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1144,7 +1144,7 @@
             "hex": "#7a41af"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.8,
@@ -1153,7 +1153,7 @@
               ],
               "hex": "#cc9fff"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1176,7 +1176,7 @@
             "hex": "#9860d0"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.6941,
@@ -1185,7 +1185,7 @@
               ],
               "hex": "#b179eb"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1211,7 +1211,7 @@
             "hex": "#095252"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.3961,
@@ -1220,7 +1220,7 @@
               ],
               "hex": "#65f0f0"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1243,7 +1243,7 @@
             "hex": "#017272"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.2314,
@@ -1252,7 +1252,7 @@
               ],
               "hex": "#3bcfcf"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1275,7 +1275,7 @@
             "hex": "#0f9293"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.0353,
@@ -1284,7 +1284,7 @@
               ],
               "hex": "#09aeae"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1310,7 +1310,7 @@
             "hex": "#733301"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.9961,
@@ -1319,7 +1319,7 @@
               ],
               "hex": "#fecbaf"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1342,7 +1342,7 @@
             "hex": "#9b4805"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.9961,
@@ -1351,7 +1351,7 @@
               ],
               "hex": "#fe9b61"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1374,7 +1374,7 @@
             "hex": "#c65e0b"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.9098,
@@ -1383,7 +1383,7 @@
               ],
               "hex": "#e8721c"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1409,7 +1409,7 @@
             "hex": "#810354"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 1.0,
@@ -1418,7 +1418,7 @@
               ],
               "hex": "#ffc4de"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1441,7 +1441,7 @@
             "hex": "#a42c71"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.9961,
@@ -1450,7 +1450,7 @@
               ],
               "hex": "#fe8dc5"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1473,7 +1473,7 @@
             "hex": "#c74c8e"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.8863,
@@ -1482,7 +1482,7 @@
               ],
               "hex": "#e266a7"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1508,7 +1508,7 @@
             "hex": "#8a0314"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.9922,
@@ -1517,7 +1517,7 @@
               ],
               "hex": "#fdc9c4"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1540,7 +1540,7 @@
             "hex": "#b32228"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.9922,
@@ -1549,7 +1549,7 @@
               ],
               "hex": "#fd968f"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1572,7 +1572,7 @@
             "hex": "#d74745"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.9529,
@@ -1581,7 +1581,7 @@
               ],
               "hex": "#f3625d"
             },
-            "md.salt.contrast": [
+            "io.github.neatlittlemacapps.nigari.contrast": [
               {
                 "on": "{color.surface.default}",
                 "min": 3
@@ -1607,7 +1607,7 @@
             "hex": "#fcefe5"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.149,
@@ -1629,7 +1629,7 @@
             "hex": "#e6f4fe"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.0667,
@@ -1651,7 +1651,7 @@
             "hex": "#ffedef"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.1725,
@@ -1673,7 +1673,7 @@
             "hex": "#fef0d4"
           },
           "$extensions": {
-            "md.salt.dark": {
+            "io.github.neatlittlemacapps.nigari.dark": {
               "colorSpace": "srgb",
               "components": [
                 0.1569,
@@ -1777,8 +1777,8 @@
         }
       ],
       "$extensions": {
-        "md.salt.css": "--shadow",
-        "md.salt.dark": [
+        "io.github.neatlittlemacapps.nigari.css": "--shadow",
+        "io.github.neatlittlemacapps.nigari.dark": [
           {
             "color": {
               "colorSpace": "srgb",
@@ -1916,8 +1916,8 @@
         }
       ],
       "$extensions": {
-        "md.salt.css": "--grad-accent",
-        "md.salt.dark": [
+        "io.github.neatlittlemacapps.nigari.css": "--grad-accent",
+        "io.github.neatlittlemacapps.nigari.dark": [
           {
             "color": "{color.pink.400}",
             "position": 0
@@ -1927,29 +1927,29 @@
             "position": 1
           }
         ],
-        "md.salt.angle": 120
+        "io.github.neatlittlemacapps.nigari.angle": 120
       }
     },
     "rainbow": {
       "horizontal": {
         "$value": "{gradient.rainbow}",
         "$extensions": {
-          "md.salt.css": "--rainbow",
-          "md.salt.angle": 90
+          "io.github.neatlittlemacapps.nigari.css": "--rainbow",
+          "io.github.neatlittlemacapps.nigari.angle": 90
         }
       },
       "vertical": {
         "$value": "{gradient.rainbow}",
         "$extensions": {
-          "md.salt.css": "--rainbow-v",
-          "md.salt.angle": 180
+          "io.github.neatlittlemacapps.nigari.css": "--rainbow-v",
+          "io.github.neatlittlemacapps.nigari.angle": 180
         }
       },
       "up": {
         "$value": "{gradient.rainbow}",
         "$extensions": {
-          "md.salt.css": "--rainbow-up",
-          "md.salt.angle": 0
+          "io.github.neatlittlemacapps.nigari.css": "--rainbow-up",
+          "io.github.neatlittlemacapps.nigari.angle": 0
         }
       }
     }
@@ -1964,7 +1964,7 @@
           "unit": "px"
         },
         "$extensions": {
-          "md.salt.css": "--radius-sm"
+          "io.github.neatlittlemacapps.nigari.css": "--radius-sm"
         }
       },
       "md": {
@@ -1973,7 +1973,7 @@
           "unit": "px"
         },
         "$extensions": {
-          "md.salt.css": "--radius"
+          "io.github.neatlittlemacapps.nigari.css": "--radius"
         }
       },
       "lg": {
@@ -1982,7 +1982,7 @@
           "unit": "px"
         },
         "$extensions": {
-          "md.salt.css": "--radius-lg"
+          "io.github.neatlittlemacapps.nigari.css": "--radius-lg"
         }
       }
     }
@@ -1992,7 +1992,7 @@
     "out": {
       "$value": "{motion.easing.out}",
       "$extensions": {
-        "md.salt.css": "--ease-out"
+        "io.github.neatlittlemacapps.nigari.css": "--ease-out"
       }
     }
   }

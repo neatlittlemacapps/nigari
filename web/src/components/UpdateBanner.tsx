@@ -60,7 +60,7 @@ export default function UpdateBanner() {
     <div className="update-banner" role="status">
       <ArrowUpCircle size={14} />
       <span className="update-banner__text">
-        {t('salt.md {version} is out').replace('{version}', info.latest)}
+        {t('nigari {version} is out').replace('{version}', info.latest)}
       </span>
       <a
         className="update-banner__link"

@@ -418,13 +418,13 @@ export default function App() {
         return [...prev, id];
       });
     };
-    window.addEventListener('salt:unauthorized', onUnauthorized);
+    window.addEventListener('nigari:unauthorized', onUnauthorized);
     window.addEventListener('popstate', onPop);
-    window.addEventListener('salt:navigate', onLinkNav);
+    window.addEventListener('nigari:navigate', onLinkNav);
     return () => {
-      window.removeEventListener('salt:unauthorized', onUnauthorized);
+      window.removeEventListener('nigari:unauthorized', onUnauthorized);
       window.removeEventListener('popstate', onPop);
-      window.removeEventListener('salt:navigate', onLinkNav);
+      window.removeEventListener('nigari:navigate', onLinkNav);
     };
   }, []);
 
@@ -668,17 +668,17 @@ export default function App() {
         // this used to do, and a database with 50k rows re-crawled itself
         // whenever anybody renamed anything.
         if (msg.type === 'rows' && msg.collection) {
-          window.dispatchEvent(new CustomEvent('salt:rows', { detail: msg.collection }));
+          window.dispatchEvent(new CustomEvent('nigari:rows', { detail: msg.collection }));
         }
         // An agent checked in or out. Content-free on purpose: the list is
         // fetched through a route that checks permissions per page.
         if (msg.type === 'presence') {
-          window.dispatchEvent(new CustomEvent('salt:presence'));
+          window.dispatchEvent(new CustomEvent('nigari:presence'));
         }
         // A note landed on a page's trail. Names the page and nothing more —
         // the text would reach every browser on the instance.
         if (msg.type === 'notes' && msg.id) {
-          window.dispatchEvent(new CustomEvent('salt:notes', { detail: msg.id }));
+          window.dispatchEvent(new CustomEvent('nigari:notes', { detail: msg.id }));
         }
       } catch {
         /* ignore malformed events */
@@ -710,8 +710,8 @@ export default function App() {
   // menu should never be visible at once.
   useEffect(() => {
     const onModal = () => setSidebarOpen(false);
-    window.addEventListener('salt:modal', onModal);
-    return () => window.removeEventListener('salt:modal', onModal);
+    window.addEventListener('nigari:modal', onModal);
+    return () => window.removeEventListener('nigari:modal', onModal);
   }, []);
 
   const rememberRecent = (id: string) => {
@@ -1161,7 +1161,7 @@ export default function App() {
       <div className="empty-state">
         <div className="empty-emoji">🍂</div>
         <h2>{t('Cannot reach the server')}</h2>
-        <p>{t('salt.md could not load your workspace.')}</p>
+        <p>{t('nigari could not load your workspace.')}</p>
         <button className="btn primary" onClick={() => window.location.reload()}>
           {t('Retry')}
         </button>

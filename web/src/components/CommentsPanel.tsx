@@ -32,7 +32,7 @@ import { t, plural } from '../i18n';
 
 /** Fired after anything about this page's comments changed, so the count in the
  *  topbar stays right without the panel owning it. */
-export const COMMENTS_CHANGED = 'salt:comments-changed';
+export const COMMENTS_CHANGED = 'nigari:comments-changed';
 
 const PANEL_KEY = 'nigari-comments-open';
 

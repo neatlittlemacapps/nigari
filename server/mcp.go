@@ -17,6 +17,11 @@ import (
 
 // filterConditionSchema is one filter condition as agents are shown it, in
 // query_rows' filter and filter_groups and in set_view's filters alike.
+// mcpServerName is what an agent sees in initialize's serverInfo. A constant,
+// not a literal in the map: check-wiki.mjs reads every "name": "…" literal in
+// this file as a tool name, and the product's name is not a tool.
+const mcpServerName = "nigari"
+
 func filterConditionSchema() map[string]any {
 	return map[string]any{"type": "object", "properties": map[string]any{
 		"property": map[string]any{"type": "string", "description": "Property id from get_collection"},
@@ -662,7 +667,7 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 		// Two entries, because both routes occur: the embedded SVG (always present,
 		// even under a strict CSP) and an absolute link to the PNG for clients that
 		// dislike SVG.
-		info := map[string]any{"name": "nigari", "version": Version}
+		info := map[string]any{"name": mcpServerName, "version": Version}
 		icons := []map[string]any{}
 		if s.mcpIcon != "" {
 			icons = append(icons, map[string]any{

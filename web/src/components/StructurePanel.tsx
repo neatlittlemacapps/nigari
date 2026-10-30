@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
-import type { Backlink, PageMeta, SaltFile } from '../types';
+import type { Backlink, PageMeta, NigariFile } from '../types';
 import { PageIcon } from '../pageIcon';
 import { FilePreview, isPreviewable } from './FilePreview';
 import { formatBytes } from '../format';
@@ -110,7 +110,7 @@ export default function StructurePanel({
   onNavigate: (id: string | null) => void;
   onClose: () => void;
 }) {
-  const [files, setFiles] = useState<SaltFile[]>([]);
+  const [files, setFiles] = useState<NigariFile[]>([]);
   const [links, setLinks] = useState<Backlink[]>([]);
   const [preview, setPreview] = useState<{ name: string; url: string } | null>(null);
 
@@ -132,7 +132,7 @@ export default function StructurePanel({
     };
   }, [pageId, pagesById]);
 
-  const openFile = (f: SaltFile) => {
+  const openFile = (f: NigariFile) => {
     const url = '/files/' + f.name;
     if (isPreviewable(url)) setPreview({ name: f.displayName || f.name, url });
     else window.open(url, '_blank', 'noopener');

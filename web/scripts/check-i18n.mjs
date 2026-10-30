@@ -161,7 +161,7 @@ for (const file of files) {
 // else. Translating "Microsoft" or "nginx" would be wrong, not merely odd.
 const BRANDS = new Set([
   'Google', 'Microsoft', 'Gmail', 'Outlook', 'Cloudflare', 'Caddy', 'nginx',
-  'Notion', 'Markdown', 'GitHub', 'salt.md', 'salt.md', 'MCP', 'API', 'DB',
+  'Notion', 'Markdown', 'GitHub', 'nigari', 'MCP', 'API', 'DB',
   'md', 'JSON', 'CSV', 'ICS', 'SMTP', 'OAuth', 'HTTPS', 'URL', 'PWA',
 ]);
 

@@ -13,21 +13,21 @@
 // like every other script here (research P5).
 //
 // Three tiers. primitives: raw scales. semantic: roles, each with a light
-// value in $value and a dark one in $extensions["md.salt.dark"] (FR-002).
+// value in $value and a dark one in $extensions["io.github.neatlittlemacapps.nigari.dark"] (FR-002).
 // component: values only one component needs.
 //
 // What it checks, failing with the token's name:
 //   - every token has a $value and a $type (its own or its group's) from the
-//     DTCG type list, and only md.salt.* extensions are ours;
+//     DTCG type list, and only io.github.neatlittlemacapps.nigari.* extensions are ours;
 //   - every alias resolves, and none goes round in a circle;
-//   - every text colour that declares md.salt.contrast reaches its WCAG 2.x
+//   - every text colour that declares io.github.neatlittlemacapps.nigari.contrast reaches its WCAG 2.x
 //     ratio on each surface it names, in both themes (FR-004). Light muted text
 //     at 3.95:1 on the document was the first thing it found.
 //
 // What it writes: each token as --<path> (color.surface.default →
 // --color-surface-default), plus the name styles.css already reads
-// (md.salt.css: --bg, --fg, …) as a var() of it, so the old stylesheet follows
-// the tokens without a line of it changing. A token with md.salt.selector
+// (io.github.neatlittlemacapps.nigari.css: --bg, --fg, …) as a var() of it, so the old stylesheet follows
+// the tokens without a line of it changing. A token with io.github.neatlittlemacapps.nigari.selector
 // writes its legacy name on that selector instead of :root: BlockNote reads its
 // --bn-* properties on .bn-container.
 
@@ -83,9 +83,9 @@ function walk(node, path, inherited, tier) {
     else if (!TYPES.has(type)) fail(`${name}: $type "${type}" is not a DTCG 2025.10 type`);
     const ext = node.$extensions ?? {};
     for (const k of Object.keys(ext)) {
-      if (!k.startsWith('md.salt.')) fail(`${name}: extension "${k}" is not ours (md.salt.*)`);
+      if (!k.startsWith('io.github.neatlittlemacapps.nigari.')) fail(`${name}: extension "${k}" is not ours (io.github.neatlittlemacapps.nigari.*)`);
     }
-    tokens.set(name, { name, type, value: node.$value, dark: ext['md.salt.dark'], ext, tier });
+    tokens.set(name, { name, type, value: node.$value, dark: ext['io.github.neatlittlemacapps.nigari.dark'], ext, tier });
     return;
   }
   for (const [k, v] of Object.entries(node)) {
@@ -193,7 +193,7 @@ function css(t, theme) {
   if (isAlias(raw) && tokens.get(target(raw)) && themed(tokens.get(target(raw)))) {
     return `var(${prop(target(raw))})`;
   }
-  if (t.ext['md.salt.cssValue']) return t.ext['md.salt.cssValue'];
+  if (t.ext['io.github.neatlittlemacapps.nigari.cssValue']) return t.ext['io.github.neatlittlemacapps.nigari.cssValue'];
   const v = valueOf(t, theme);
   switch (t.type) {
     case 'color':
@@ -213,7 +213,7 @@ function css(t, theme) {
         .map((s) => `${s.inset ? 'inset ' : ''}${dim(s.offsetX)} ${dim(s.offsetY)} ${dim(s.blur)} ${dim(s.spread)} ${cssColor(s.color, t.name)}`)
         .join(', ');
     case 'gradient': {
-      const angle = t.ext['md.salt.angle'] ?? 90;
+      const angle = t.ext['io.github.neatlittlemacapps.nigari.angle'] ?? 90;
       const stops = v.map((s) => `${cssColor(s.color, t.name)} ${Math.round(s.position * 1000) / 10}%`);
       return `linear-gradient(${angle}deg, ${stops.join(', ')})`;
     }
@@ -232,7 +232,7 @@ function block(selector, lines, indent = '') {
 
 // Legacy names that belong on another element than :root, by selector: the
 // editor's --bn-* properties, which BlockNote reads on .bn-container
-// (md.salt.selector). Filled by declarations('light').
+// (io.github.neatlittlemacapps.nigari.selector). Filled by declarations('light').
 const scoped = new Map();
 
 function declarations(theme) {
@@ -250,10 +250,10 @@ function declarations(theme) {
     try {
       claim(prop(t.name), t.name);
       lines.push(`${prop(t.name)}: ${css(t, theme)};`);
-      const legacy = t.ext['md.salt.css'];
+      const legacy = t.ext['io.github.neatlittlemacapps.nigari.css'];
       if (theme === 'light' && legacy) {
         claim(legacy, t.name);
-        const selector = t.ext['md.salt.selector'];
+        const selector = t.ext['io.github.neatlittlemacapps.nigari.selector'];
         if (selector) {
           if (!scoped.has(selector)) scoped.set(selector, []);
           scoped.get(selector).push(`${legacy}: var(${prop(t.name)});`);
@@ -263,7 +263,7 @@ function declarations(theme) {
       }
       // styles.css builds translucent accents with rgba(var(--accent-rgb), a),
       // which needs the colour as a bare triplet. Derived, so it cannot drift.
-      const rgb = t.ext['md.salt.rgb'];
+      const rgb = t.ext['io.github.neatlittlemacapps.nigari.rgb'];
       if (rgb) claim(rgb, t.name);
       if (rgb) lines.push(`${rgb}: ${rgba(valueOf(t, theme), t.name).slice(0, 3).join(', ')};`);
     } catch (e) {
@@ -275,11 +275,11 @@ function declarations(theme) {
 
 function contrast() {
   for (const t of tokens.values()) {
-    const pairs = t.ext['md.salt.contrast'];
+    const pairs = t.ext['io.github.neatlittlemacapps.nigari.contrast'];
     if (!pairs) continue;
     for (const { on, min } of Array.isArray(pairs) ? pairs : [pairs]) {
       if (!isAlias(on) || !tokens.has(target(on))) {
-        fail(`${t.name}: md.salt.contrast names "${on}", which is not a token alias`);
+        fail(`${t.name}: io.github.neatlittlemacapps.nigari.contrast names "${on}", which is not a token alias`);
         continue;
       }
       for (const theme of ['light', 'dark']) {
