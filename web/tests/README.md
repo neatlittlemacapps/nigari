@@ -1,8 +1,8 @@
 # Browser regressions
 
-These tests use synthetic data only. They build a temporary Salt binary, start it
+These tests use synthetic data only. They build a temporary nigari binary, start it
 on a randomly selected loopback port with a fresh temporary data directory, and
-remove it afterwards. They never connect to an existing Salt instance.
+remove it afterwards. They never connect to an existing nigari instance.
 
 From the repository root, with Go and Node.js installed:
 

@@ -177,10 +177,10 @@ function DbRows({
     const onRows = (e: Event) => {
       if ((e as CustomEvent<string>).detail === collectionId) load();
     };
-    window.addEventListener('salt:rows', onRows);
+    window.addEventListener('nigari:rows', onRows);
     return () => {
       alive = false;
-      window.removeEventListener('salt:rows', onRows);
+      window.removeEventListener('nigari:rows', onRows);
     };
   }, [collectionId]);
   const pad = { paddingLeft: 6 + depth * 14 };
@@ -297,7 +297,7 @@ function SidebarSection({
   openOnGrowth?: boolean;
   children: React.ReactNode;
 }) {
-  const key = 'salt-sec-' + id;
+  const key = 'nigari-sec-' + id;
   const [open, setOpen] = useState(() => {
     const v = localStorage.getItem(key);
     return v === null ? defaultOpen : v === '1';
@@ -1305,7 +1305,7 @@ export default function Sidebar({
         <div className="ws-switcher" ref={wsMenuRef}>
           <button className="ws-btn" onClick={() => setWsMenuOpen((o) => !o)}>
             <WorkspaceAvatar ws={activeWs} />
-            <strong>{activeWs?.name ?? 'salt.md'}</strong>
+            <strong>{activeWs?.name ?? 'nigari'}</strong>
             <ChevronDown size={14} className="ws-caret" />
           </button>
           {wsMenuOpen && (
@@ -1728,7 +1728,7 @@ function WorkspaceAvatar({ ws }: { ws?: Workspace }) {
   // Not only an emoji: a workspace icon takes the same four forms a page icon
   // does, and printing it raw showed "lucide:Rocket" as text.
   if (ws?.icon) return <span className="ws-emoji"><PageIcon icon={ws.icon} size={16} /></span>;
-  const name = ws?.name ?? 'salt.md';
+  const name = ws?.name ?? 'nigari';
   return <span className={'ws-letter ' + tagColorClass(name)}>{name.charAt(0).toUpperCase()}</span>;
 }
 

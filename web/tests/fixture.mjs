@@ -21,11 +21,11 @@ export async function eventually(check) {
 // intentionally no URL or data-directory override pointing at an existing site.
 export async function withFixture(test) {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-  const temp = await mkdtemp(join(tmpdir(), 'salt-browser-test-'));
+  const temp = await mkdtemp(join(tmpdir(), 'nigari-browser-test-'));
   let server;
   let browser;
   try {
-    const binary = join(temp, process.platform === 'win32' ? 'salt.exe' : 'salt');
+    const binary = join(temp, process.platform === 'win32' ? 'nigari.exe' : 'nigari');
     const build = spawnSync(process.env.GO_BINARY || 'go', ['build', '-o', binary, '.'], {
       cwd: root, encoding: 'utf8',
     });
@@ -35,9 +35,9 @@ export async function withFixture(test) {
     await once(listener, 'listening');
     const port = listener.address().port;
     await new Promise(resolve => listener.close(resolve));
-    const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('SALT_')));
+    const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('NIGARI_')));
     server = spawn(binary, [], {
-      env: { ...env, SALT_DATA: join(temp, 'data'), SALT_ADDR: `127.0.0.1:${port}` },
+      env: { ...env, NIGARI_DATA: join(temp, 'data'), NIGARI_ADDR: `127.0.0.1:${port}` },
       stdio: 'ignore',
     });
     const base = `http://127.0.0.1:${port}`;

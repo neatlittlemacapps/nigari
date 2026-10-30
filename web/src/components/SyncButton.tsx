@@ -6,7 +6,7 @@ import { t } from '../i18n';
 /** The answer to the missing reload button, for the two windows that have none.
  *
  *  On a phone the pull gesture covers this; on a desktop there is no gesture,
- *  and neither an installed app window nor the salt.md desktop app shows any
+ *  and neither an installed app window nor the nigari desktop app shows any
  *  browser chrome — a window that has been open since Tuesday has nothing at
  *  all to press. (The desktop app's View → Reload exists, but it starts the
  *  window over, and nobody goes looking in a menu for it.) So the button appears

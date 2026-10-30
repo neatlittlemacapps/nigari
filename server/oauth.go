@@ -67,7 +67,7 @@ func (s *Server) oauthEnabled() (google, microsoft bool) {
 	return gid != "" && gsec != "", mid != "" && msec != ""
 }
 
-const oauthCookie = "salt_oauth"
+const oauthCookie = "nigari_oauth"
 
 type oauthTx struct {
 	Provider string `json:"p"`

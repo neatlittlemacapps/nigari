@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const web = join(here, '..');
-const tmp = mkdtempSync(join(tmpdir(), 'salt-colw-'));
+const tmp = mkdtempSync(join(tmpdir(), 'nigari-colw-'));
 const bundle = join(tmp, 'columnWidths.mjs');
 
 try {

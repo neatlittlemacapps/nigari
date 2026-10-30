@@ -9,7 +9,7 @@ writing in a page (that is [Pages](pages.md) and
 
 ## The layout
 
-Left to right, salt.md is up to four columns:
+Left to right, nigari is up to four columns:
 
 | Column | Width | When it is there |
 | --- | --- | --- |
@@ -250,7 +250,7 @@ and opening any of its dialogs closes whatever else was open.
 | **Two-factor (2FA)** | see [Account](account.md) |
 | **Language and time** | see [Language and time](language-and-time.md) |
 | **Notes mode** | toggle, with a dot showing its state |
-| **Salt fonts** | toggle, with a dot showing its state |
+| **nigari fonts** | toggle, with a dot showing its state |
 | **Manage users** | instance admins only (see [Administration](administration.md)) |
 | **Instance settings** | instance admins only |
 | **Sign out** | |
@@ -403,7 +403,7 @@ device can differ. And it is also offered on the sign-in screen, in the top
 right corner, so arriving at a login page at night does not mean a screen of
 white.
 
-**Salt fonts** in the account menu switches between the bundled typefaces (Inter
+**nigari fonts** in the account menu switches between the bundled typefaces (Inter
 for text, JetBrains Mono for code and labels) and your system font. Bundled is
 the default; the font files are only fetched once they are used.
 
@@ -491,7 +491,7 @@ is effectively switched off.
 
 ## Installed as an app
 
-Add salt.md to a home screen or install it from the browser's address bar and it
+Add nigari to a home screen or install it from the browser's address bar and it
 opens in its own window: no address bar, no tabs, its own icon in the dock or on
 the home screen. Everything works exactly as it does in a tab, with one thing
 to know about, and two things added for it.
@@ -552,7 +552,7 @@ dropped file and lose what you had open. See [Files](files.md).
 
 Two full-screen messages you may meet:
 
-- **Cannot reach the server**: "salt.md could not load your workspace", with a
+- **Cannot reach the server**: "nigari could not load your workspace", with a
   **Retry** button. See [Troubleshooting](troubleshooting.md).
 - **No pages yet**: the first-run state, with **New page** and
   **Import (.md / .zip)**. If your account is in no workspace at all it says

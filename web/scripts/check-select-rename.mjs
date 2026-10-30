@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const tmp = mkdtempSync(join(tmpdir(), 'salt-select-rename-'));
+const tmp = mkdtempSync(join(tmpdir(), 'nigari-select-rename-'));
 try {
   const outfile = join(tmp, 'rename.mjs');
   await build({

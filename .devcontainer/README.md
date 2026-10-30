@@ -28,4 +28,4 @@ Either way the instance is rebuilt from the current commit; the test data stays.
 Codespaces stop after 30 idle minutes and count against GitHub's free monthly
 allowance (this one uses 2 cores). Delete old ones under
 github.com → Codespaces. Data in a codespace is throwaway: never copy a real
-`salt.db` into one, because it runs on GitHub's machines.
+`nigari.db` into one, because it runs on GitHub's machines.

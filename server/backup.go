@@ -16,15 +16,15 @@ import (
 // Version is the app/API version. Bump on any client/server contract change so
 // a stale client can detect a mismatch (audit Q42).
 // A release build sets it from the git tag via -ldflags
-// "-X salt/server.Version=..."; locally it stays at the default below.
-// The frontend is stamped from the same string (SALT_VERSION → vite define),
+// "-X nigari/server.Version=..."; locally it stays at the default below.
+// The frontend is stamped from the same string (NIGARI_VERSION → vite define),
 // because two hand-kept numbers drift and the mismatch banner then fires
 // forever.
 //
 // It is also the LAST thing to trust when asking what is running on a box: it
 // is a string, and a mislabelled image proves nothing. Verify a deploy by
 // behaviour — a route that answers, a marker in the bundle.
-var Version = "1.6.8"
+var Version = "2.0.0"
 
 // Backup writes a consistent gzip'd tar of the workspace: the SQLite DB
 // (snapshotted with VACUUM INTO so WAL contents are included) plus all uploads.
@@ -32,12 +32,20 @@ var Version = "1.6.8"
 //
 // Only the database and files/ go in, by name, never "everything in the data
 // directory": the copies upgradeDB keeps beside the database
-// (salt.db.before-step-<n>, each the size of the database) and its lock file
+// (nigari.db.before-step-<n>, each the size of the database) and its lock file
 // would otherwise multiply every archive's size for nothing (spec 008, T010).
 func Backup(dataDir, dest string) error {
 	dbPath := filepath.Join(dataDir, DBFile)
 	if _, err := os.Stat(dbPath); err != nil {
-		return fmt.Errorf("no database at %s", dbPath)
+		// A salt.md data directory nigari has not started on yet: the
+		// careful admin backs it up before the first start. Read it where it
+		// is, and write it into the archive under the new name. A backup
+		// moves nothing (spec 011).
+		if old := filepath.Join(dataDir, oldDBFile); fileExists(old) {
+			dbPath = old
+		} else {
+			return fmt.Errorf("no database at %s", dbPath)
+		}
 	}
 	// VACUUM INTO a temp file for a transactionally-consistent snapshot.
 	snap := dest + ".db.tmp"
@@ -96,10 +104,14 @@ func tarFile(tw *tar.Writer, path, name string) error {
 }
 
 // Restore extracts a Backup archive into dataDir. Refuses to overwrite an
-// existing DB unless SALT_RESTORE_FORCE is set, to prevent accidents.
+// existing DB unless NIGARI_RESTORE_FORCE is set, to prevent accidents.
 func Restore(dataDir, src string) error {
-	if _, err := os.Stat(filepath.Join(dataDir, DBFile)); err == nil && Env("RESTORE_FORCE") == "" {
-		return fmt.Errorf("%s/"+DBFile+" already exists; set SALT_RESTORE_FORCE=1 to overwrite", dataDir)
+	// salt.db counts as an existing database too: restoring nigari.db beside
+	// it would leave two, and the next start refuses that (rename_conflict).
+	for _, name := range []string{DBFile, oldDBFile} {
+		if fileExists(filepath.Join(dataDir, name)) && Env("RESTORE_FORCE") == "" {
+			return fmt.Errorf("%s/%s already exists; set NIGARI_RESTORE_FORCE=1 to overwrite", dataDir, name)
+		}
 	}
 	in, err := os.Open(src)
 	if err != nil {
@@ -118,6 +130,7 @@ func Restore(dataDir, src string) error {
 	// Drop stale WAL/SHM so the restored DB isn't mixed with old journal state.
 	os.Remove(filepath.Join(dataDir, DBFile+"-wal"))
 	os.Remove(filepath.Join(dataDir, DBFile+"-shm"))
+	restoredDB := false
 	for {
 		hdr, err := tr.Next()
 		if err == io.EOF {
@@ -130,6 +143,15 @@ func Restore(dataDir, src string) error {
 		clean := filepath.Clean(hdr.Name)
 		if strings.HasPrefix(clean, "..") || filepath.IsAbs(clean) {
 			return fmt.Errorf("unsafe path in archive: %s", hdr.Name)
+		}
+		// A backup made by salt.md holds salt.db: it restores as nigari.db,
+		// since an archive is data a person keeps, not a name the running
+		// app answers to (spec 011, FR-009).
+		if clean == oldDBFile {
+			clean = DBFile
+		}
+		if clean == DBFile {
+			restoredDB = true
 		}
 		target := filepath.Join(dataDir, clean)
 		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
@@ -144,6 +166,14 @@ func Restore(dataDir, src string) error {
 			return err
 		}
 		f.Close()
+	}
+	// Forced over a salt.md data directory: the old database goes now that
+	// the archive's is safely written, or the two would sit side by side.
+	// Not before: a missing or broken archive must not cost the old one.
+	if restoredDB {
+		for _, side := range []string{"", "-wal", "-shm"} {
+			os.Remove(filepath.Join(dataDir, oldDBFile+side))
+		}
 	}
 	return nil
 }

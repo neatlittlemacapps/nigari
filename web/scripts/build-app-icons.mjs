@@ -112,8 +112,8 @@ if (process.argv.includes('--try')) {
     ['sand-dark', '#f7f6f3', '#37352f'],
   ];
   for (const [name, tile, ink] of VARIANTS) {
-    writeFileSync(`/tmp/salt-icon-${name}.png`, await render(512, INSET, tile, ink));
-    console.log(`  /tmp/salt-icon-${name}.png`);
+    writeFileSync(`/tmp/nigari-icon-${name}.png`, await render(512, INSET, tile, ink));
+    console.log(`  /tmp/nigari-icon-${name}.png`);
   }
   await browser.close();
   process.exit(0);

@@ -1,6 +1,6 @@
 // Fills a throwaway instance with the invented content the wiki screenshots show.
 //
-//   SALT_DATA=/tmp/salt-shots SALT_ADDR=:8421 go run .      # in another shell
+//   NIGARI_DATA=/tmp/nigari-shots NIGARI_ADDR=:8421 go run .      # in another shell
 //   node scripts/seed-wiki-instance.mjs                     # then this
 //   node scripts/shoot-wiki.mjs                             # then the pictures
 //
@@ -18,9 +18,9 @@
 // NEVER point this at an instance with real content: it creates the first
 // account and writes pages. It refuses an instance that already has one.
 
-const BASE = process.env.SALT_SEED_URL ?? 'http://127.0.0.1:8421';
-const EMAIL = process.env.SALT_SEED_EMAIL ?? 'ada@example.com';
-const PASSWORD = process.env.SALT_SEED_PASSWORD ?? 'WikiPruefung2026!';
+const BASE = process.env.NIGARI_SEED_URL ?? 'http://127.0.0.1:8421';
+const EMAIL = process.env.NIGARI_SEED_EMAIL ?? 'ada@example.com';
+const PASSWORD = process.env.NIGARI_SEED_PASSWORD ?? 'WikiPruefung2026!';
 
 let cookie = '';
 
@@ -150,7 +150,7 @@ const pages = await call('GET', '/api/pages');
 // would share the page and the dark one would find a different menu. Shared
 // from the start, every run sees the same thing, and the sidebar shows the
 // marker a shared page carries.
-const welcome = pages.find((p) => p.title === 'Welcome to salt.md');
+const welcome = pages.find((p) => p.title === 'Welcome to nigari');
 if (welcome) await call('POST', `/api/pages/${welcome.id}/share`, {});
 
 console.log(`\n  seeded ${BASE}: ${pages.length} pages, 2 collections, ${rows.length} rows`);

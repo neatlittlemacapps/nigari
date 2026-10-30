@@ -29,7 +29,7 @@ func TestPublicCollectionTableKeepsExportRowsAndEscapesText(t *testing.T) {
 			t.Fatalf("missing %s", want)
 		}
 	}
-	for _, bad := range []string{`BODY-MUST-NOT-LEAK`, `Page hidden-row`, `Page trashed-row`, `Page nested-row`, `href="/p/`, `<pre`, `doc-src`, `saltStart`} {
+	for _, bad := range []string{`BODY-MUST-NOT-LEAK`, `Page hidden-row`, `Page trashed-row`, `Page nested-row`, `href="/p/`, `<pre`, `doc-src`, `nigariStart`} {
 		if strings.Contains(got, bad) {
 			t.Fatalf("unexpected %s", bad)
 		}
@@ -71,7 +71,7 @@ func TestPublicCollectionTableMissingSchemaKeepsDocumentFallback(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{`<title>Untitled · salt.md</title>`, `<h1>Untitled</h1>`, `Fallback &lt;content&gt;`} {
+	for _, want := range []string{`<title>Untitled · nigari</title>`, `<h1>Untitled</h1>`, `Fallback &lt;content&gt;`} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("missing %s", want)
 		}

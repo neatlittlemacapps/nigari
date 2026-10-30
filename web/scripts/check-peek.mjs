@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const web = join(here, '..');
-const tmp = mkdtempSync(join(tmpdir(), 'salt-peek-'));
+const tmp = mkdtempSync(join(tmpdir(), 'nigari-peek-'));
 const bundle = join(tmp, 'peek.mjs');
 
 try {

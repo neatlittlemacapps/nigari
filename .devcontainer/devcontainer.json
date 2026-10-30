@@ -1,7 +1,7 @@
 // A test instance of whatever branch the codespace is opened on, reachable
 // from a phone's browser. See README.md beside this file.
 {
-  "name": "salt.md test instance",
+  "name": "nigari test instance",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
   "features": {
     // The versions CI builds with (.github/workflows/ci.yml).
@@ -17,6 +17,6 @@
   "postStartCommand": ".devcontainer/start.sh",
   "forwardPorts": [8420],
   "portsAttributes": {
-    "8420": { "label": "salt.md", "onAutoForward": "openBrowser" }
+    "8420": { "label": "nigari", "onAutoForward": "openBrowser" }
   }
 }

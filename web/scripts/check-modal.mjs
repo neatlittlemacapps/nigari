@@ -20,7 +20,7 @@ const web = join(here, '..');
 const out = [];
 const check = (name, got, want) => out.push({ name, got: String(got), want: String(want), ok: String(got) === String(want) });
 
-const tmp = mkdtempSync(join(tmpdir(), 'salt-modal-'));
+const tmp = mkdtempSync(join(tmpdir(), 'nigari-modal-'));
 const bundle = join(tmp, 'modalKeys.mjs');
 try {
   try {

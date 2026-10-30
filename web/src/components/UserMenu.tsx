@@ -301,7 +301,7 @@ export default function UserMenu({ user, onLogout, onUserChanged, onOpenAgents, 
               onClick={() => onSetFont(fontPref === 'brand' ? 'system' : 'brand')}
               title={t('Inter for text, JetBrains Mono for code and labels (the fonts from the website)')}
             >
-              <Type size={16} /> {t('Salt fonts')}
+              <Type size={16} /> {t('nigari fonts')}
               <span className={'mode-dot' + (fontPref === 'brand' ? ' on' : '')} aria-hidden />
             </button>
           )}
@@ -1035,7 +1035,7 @@ function TokensModal({ onClose }: { onClose: () => void }) {
   // address (domain/tunnel) when one is configured — an agent host outside the
   // LAN can't reach the internal address this browser happens to use. The token
   // rides in the URL so clients without a headers UI work too.
-  const mcpCommand = fresh ? `claude mcp add --transport http salt ${publicBase}/mcp/${fresh}` : '';
+  const mcpCommand = fresh ? `claude mcp add --transport http nigari ${publicBase}/mcp/${fresh}` : '';
 
   return (
     <Portal>

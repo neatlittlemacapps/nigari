@@ -53,7 +53,7 @@ export interface Workspace {
 }
 
 /** One entry of the file index (W125): a file plus the page carrying it. */
-export interface SaltFile {
+export interface NigariFile {
   /** Stored name — the segment behind /files/. */
   name: string;
   displayName: string;
@@ -124,7 +124,7 @@ export interface Me {
   prefs?: Prefs;
 }
 
-/** An outbound webhook: salt.md calls this URL when something happens, so
+/** An outbound webhook: nigari calls this URL when something happens, so
  *  other tools do not have to keep asking. The secret is returned once, when
  *  it is created, and never again. */
 export interface Webhook {

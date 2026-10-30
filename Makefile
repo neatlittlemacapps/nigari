@@ -11,16 +11,16 @@ all: build
 VERSION ?= $(shell git describe --tags --match 'v[0-9]*.[0-9]*.[0-9]*' 2>/dev/null || sed -n 's/^var Version = "\(.*\)"$$/v\1/p' server/backup.go)
 
 frontend:
-	cd web && (npm ci || npm install) && SALT_VERSION=$(VERSION) npm run build
+	cd web && (npm ci || npm install) && NIGARI_VERSION=$(VERSION) npm run build
 
 backend:
 	go mod tidy
 	# -trimpath: without it the builder's absolute paths (including their
 	# username) end up inside the binary — needlessly disclosed, and it breaks
 	# reproducible builds.
-	CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X salt/server.Version=$(VERSION)" -o salt .
+	CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X nigari/server.Version=$(VERSION)" -o nigari .
 
 build: frontend backend
 
 clean:
-	rm -rf web/dist web/node_modules salt
+	rm -rf web/dist web/node_modules nigari

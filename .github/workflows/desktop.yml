@@ -155,7 +155,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: salt-desktop-${{ matrix.name }}
+          name: nigari-desktop-${{ matrix.name }}
           path: |
             desktop/dist/*.dmg
             desktop/dist/*.exe
@@ -189,10 +189,10 @@ jobs:
           # /releases/latest and must land on a server release (#265).
           make_latest: "false"
           body: |
-            The salt.md desktop app — a window onto a server you run.
+            The nigari desktop app — a window onto a server you run.
 
-            It is **not** how you install salt.md. The server is a separate
-            download; see https://salt.md/self-host/. Install that first, then
+            It is **not** how you install nigari. The server is a separate
+            download; see https://github.com/neatlittlemacapps/nigari/blob/main/wiki/self-hosting.md. Install that first, then
             point this at it.
 
             macOS builds are signed and notarised by Apple — they open with no

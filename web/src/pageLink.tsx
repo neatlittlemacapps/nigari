@@ -3,7 +3,7 @@ import { createReactInlineContentSpec } from '@blocknote/react';
 import { bookmarkSpec, databaseSpec, calloutSpec, tocSpec, subpagesSpec, columnsSpec, mermaidSpec } from './blocks';
 import { t } from './i18n';
 
-// A "pageLink" is an inline mention of another salt.md page. It stores the target
+// A "pageLink" is an inline mention of another nigari page. It stores the target
 // page id and a display label. Clicking it dispatches a navigation event that
 // App listens for (keeps BlockNote's render decoupled from React routing).
 export const pageLinkSpec = createReactInlineContentSpec(
@@ -23,7 +23,7 @@ export const pageLinkSpec = createReactInlineContentSpec(
         contentEditable={false}
         onClick={() =>
           window.dispatchEvent(
-            new CustomEvent('salt:navigate', { detail: props.inlineContent.props.pageId }),
+            new CustomEvent('nigari:navigate', { detail: props.inlineContent.props.pageId }),
           )
         }
       >
@@ -42,7 +42,7 @@ export const pageLinkSpec = createReactInlineContentSpec(
 // PAID tier ("GPL-3.0 OR PROPRIETARY"). Nobody used it — 0 of 1410 pages — and
 // keeping it would have forced a licence decision the day any closed part
 // exists. Ours is below in blocks.tsx.
-export const saltSchema =
+export const nigariSchema =
   BlockNoteSchema.create({
     blockSpecs: {
       ...defaultBlockSpecs,
@@ -60,4 +60,4 @@ export const saltSchema =
     },
   });
 
-export type SaltEditor = typeof saltSchema.BlockNoteEditor;
+export type NigariEditor = typeof nigariSchema.BlockNoteEditor;

@@ -1,6 +1,6 @@
-# fail2ban for salt.md
+# fail2ban for nigari
 
-salt.md throttles wrong credentials by itself — 30 password attempts a minute
+nigari throttles wrong credentials by itself — 30 password attempts a minute
 per address, and a separate budget for rejected API tokens. That happens inside
 the process and stops when the process does. fail2ban puts the ban in the
 firewall instead, where it costs the attacker a TCP connection rather than a
@@ -9,7 +9,7 @@ request.
 Both are worth having. The in-process limit is the one that always works; the
 jail is the one that makes a night of knocking expensive.
 
-## What salt.md writes
+## What nigari writes
 
 One line per rejected credential, to stdout — which under systemd means the
 journal:
@@ -41,10 +41,10 @@ directly, and a Cloudflare WAF rate-limit rule on a tunnelled one.
 ## Install
 
 ```bash
-sudo cp salt.conf /etc/fail2ban/filter.d/salt.conf
-sudo cp jail.local /etc/fail2ban/jail.d/salt.conf
+sudo cp nigari.conf /etc/fail2ban/filter.d/nigari.conf
+sudo cp jail.local /etc/fail2ban/jail.d/nigari.conf
 sudo systemctl reload fail2ban
-sudo fail2ban-client status salt
+sudo fail2ban-client status nigari
 ```
 
 **Check the filter against the real journal before trusting it.** A jail that
@@ -54,5 +54,5 @@ and would never have fired, because Go prefixes every line with its own
 timestamp:
 
 ```bash
-journalctl -u salt --since -7d | fail2ban-regex - /etc/fail2ban/filter.d/salt.conf
+journalctl -u nigari --since -7d | fail2ban-regex - /etc/fail2ban/filter.d/nigari.conf
 ```

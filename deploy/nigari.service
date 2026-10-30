@@ -1,14 +1,14 @@
 [Unit]
-Description=salt.md — lightweight open-source workspace
+Description=nigari — lightweight open-source workspace
 After=network.target
 
 [Service]
-User=salt
-Group=salt
-WorkingDirectory=/opt/salt
-ExecStart=/opt/salt/salt
-Environment=SALT_ADDR=:80
-Environment=SALT_DATA=/opt/salt/data
+User=nigari
+Group=nigari
+WorkingDirectory=/opt/nigari
+ExecStart=/opt/nigari/nigari
+Environment=NIGARI_ADDR=:80
+Environment=NIGARI_DATA=/opt/nigari/data
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 NoNewPrivileges=false
 Restart=on-failure

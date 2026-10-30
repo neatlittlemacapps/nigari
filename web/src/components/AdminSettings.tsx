@@ -257,9 +257,9 @@ export function AdminSettingsModal({ onClose, returnFocus }: { onClose: () => vo
   // Domain for the generated proxy configs, derived from the public base URL.
   const domain = (() => {
     try {
-      return new URL(s.publicBaseUrl || '').host || 'salt.example.com';
+      return new URL(s.publicBaseUrl || '').host || 'nigari.example.com';
     } catch {
-      return 'salt.example.com';
+      return 'nigari.example.com';
     }
   })();
 
@@ -273,17 +273,17 @@ export function AdminSettingsModal({ onClose, returnFocus }: { onClose: () => vo
   // person who copied it.
   const cloudflaredConf = `# 1) Create the tunnel (once):
 #    cloudflared tunnel login
-#    cloudflared tunnel create salt
-#    cloudflared tunnel route dns salt ${domain}
+#    cloudflared tunnel create nigari
+#    cloudflared tunnel route dns nigari ${domain}
 # 2) ~/.cloudflared/config.yml:
-tunnel: salt
+tunnel: nigari
 credentials-file: /root/.cloudflared/<TUNNEL-ID>.json
 ingress:
   - hostname: ${domain}
     service: http://${upstream}
   - service: http_status:404
 # 3) Run it / install as a service:
-#    cloudflared tunnel run salt
+#    cloudflared tunnel run nigari
 #    (or: cloudflared service install)`;
 
   const nginxConf = `server {
@@ -374,7 +374,7 @@ ingress:
                 {s.signupMode === 'domain' && (
                   <>
                     <label>{t('Allowed domains (comma separated)')}</label>
-                    <input className="prop-input" placeholder="salt.md, example.com" value={s.allowedDomains} onChange={(e) => set('allowedDomains', e.target.value)} /> {/* i18n-ok: example domains, not prose */}
+                    <input className="prop-input" placeholder="nigari, example.com" value={s.allowedDomains} onChange={(e) => set('allowedDomains', e.target.value)} /> {/* i18n-ok: example domains, not prose */}
                   </>
                 )}
                 <p className="dialog-hint settings-hint">
@@ -576,7 +576,7 @@ ingress:
                 <label>{t('Password')}</label>
                 <input className="prop-input" type="password" placeholder={passSet ? t('•••••• (unchanged)') : t('not set')} value={s.smtpPass} onChange={(e) => set('smtpPass', e.target.value)} />
                 <label>{t('Sender (From)')}</label>
-                <input className="prop-input" placeholder="salt@example.com" value={s.smtpFrom} onChange={(e) => set('smtpFrom', e.target.value)} />
+                <input className="prop-input" placeholder="nigari@example.com" value={s.smtpFrom} onChange={(e) => set('smtpFrom', e.target.value)} />
               </>
             )}
 
@@ -615,7 +615,7 @@ ingress:
                     {t(
                       'URL pointing at this instance. The URL changes on every start. Ideal for trying things out and sharing quickly.',
                     )}{' '}
-                    {!pa?.cloudflaredHere && t('On first start salt.md downloads the official cloudflared automatically.')}
+                    {!pa?.cloudflaredHere && t('On first start nigari downloads the official cloudflared automatically.')}
                   </p>
                   <div className="settings-row">
                     <button
@@ -636,7 +636,7 @@ ingress:
                     {t('→ copy the token and paste it here. You set the hostname (e.g.')}{' '}
                     <code>{domain}</code> → <code>http://localhost:80</code>){' '}
                     {t(
-                      'in the dashboard. salt.md keeps the tunnel running, restarts included. No port forwarding needed.',
+                      'in the dashboard. nigari keeps the tunnel running, restarts included. No port forwarding needed.',
                     )}
                   </p>
                   <div className="settings-row">
@@ -671,7 +671,7 @@ ingress:
                       {!pa.cloudflaredManaged &&
                         ' ' +
                           t(
-                            'This copy was installed on the system, not by salt.md, so it is updated by whatever installed it.',
+                            'This copy was installed on the system, not by nigari, so it is updated by whatever installed it.',
                           )}
                     </p>
                     {pa.cloudflaredCheckError && (
@@ -704,7 +704,7 @@ ingress:
                   <strong>{t('3 · Straight to HTTPS (no Cloudflare, e.g. a VPS)')}</strong>
                   <p className="dialog-hint settings-hint">
                     {t(
-                      'salt.md fetches its own Let’s Encrypt certificate and listens on 80/443, no Caddy or nginx needed. Requirements: the domain’s DNS A record points at this server and ports 80 and 443 are reachable. Restart after saving.',
+                      'nigari fetches its own Let’s Encrypt certificate and listens on 80/443, no Caddy or nginx needed. Requirements: the domain’s DNS A record points at this server and ports 80 and 443 are reachable. Restart after saving.',
                     )}
                   </p>
                   <div className="settings-row">
@@ -731,7 +731,7 @@ ingress:
                 </label>
                 <p className="dialog-hint settings-hint">
                   {t(
-                    'Only switch this on when salt.md runs behind Caddy, nginx or a Cloudflare tunnel. The instance then sees real client IPs (sign-in protection, audit log). Leave it off without a proxy, or an attacker could forge their IP.',
+                    'Only switch this on when nigari runs behind Caddy, nginx or a Cloudflare tunnel. The instance then sees real client IPs (sign-in protection, audit log). Leave it off without a proxy, or an attacker could forge their IP.',
                   )}
                 </p>
                 <label>{t('Internal address of the instance (upstream)')}</label>
@@ -747,7 +747,7 @@ ingress:
                   {t(
                     'Cloudflare: leave the DNS record “Proxied” (orange cloud); WebSockets are on by default. Caddy handles certificates and WebSockets by itself. Alternatively, direct TLS without a proxy via',
                   )}{' '}
-                  <code>SALT_TLS_CERT</code>/<code>SALT_TLS_KEY</code>.
+                  <code>NIGARI_TLS_CERT</code>/<code>NIGARI_TLS_KEY</code>.
                 </p>
               </>
             )}
@@ -757,7 +757,7 @@ ingress:
                 <h3>{t('Tell other tools when something changes')}</h3>
                 <p className="dialog-hint settings-hint">
                   {t(
-                    'Instead of other programs asking over and over whether anything is new, salt.md calls an address of your choosing when a page is created, changed or thrown away. That is what Zapier, Make and n8n need, and through them, everything else.',
+                    'Instead of other programs asking over and over whether anything is new, nigari calls an address of your choosing when a page is created, changed or thrown away. That is what Zapier, Make and n8n need, and through them, everything else.',
                   )}
                 </p>
                 <p className="dialog-hint settings-hint">
@@ -768,7 +768,7 @@ ingress:
 
                 <Field label={t('Address to call')}>
                   <Input
-                    placeholder="https://hooks.example.com/salt"
+                    placeholder="https://hooks.example.com/nigari"
                     value={hookURL}
                     onValueChange={setHookURL}
                   />
@@ -819,7 +819,7 @@ ingress:
                     <strong>{t('Copy this secret now. It is shown only once.')}</strong>
                     <p className="dialog-hint">
                       {t(
-                        'Your receiver uses it to check that a message really came from us. We send it as a signature in the X-Salt-Signature header.',
+                        'Your receiver uses it to check that a message really came from us. We send it as a signature in the X-Nigari-Signature header.',
                       )}
                     </p>
                     <code className="hook-secret-value">{freshSecret}</code>
@@ -883,7 +883,7 @@ ingress:
                   ))}
                 </div>
                 <p className="dialog-hint settings-hint">
-                  {t('salt.md lays the pages out itself and the browser only puts them on paper, so nothing of the browser gets printed along: no address, no date in the corner.')}
+                  {t('nigari lays the pages out itself and the browser only puts them on paper, so nothing of the browser gets printed along: no address, no date in the corner.')}
                 </p>
                 <p className="dialog-hint settings-hint">
                   {t('These are the defaults. The panel beside a print view can deviate for one document, and that choice travels in the link.')}
@@ -901,8 +901,8 @@ ingress:
                 </div>
                 <p className="dialog-hint settings-hint">
                   {t('Contains the whole database (a consistent snapshot) and every upload. To restore:')}{' '}
-                  <code>./salt restore backup.tar.gz</code>.{' '}
-                  {t('For automatic backups, run')} <code>./salt backup</code> {t('from cron.')}
+                  <code>./nigari restore backup.tar.gz</code>.{' '}
+                  {t('For automatic backups, run')} <code>./nigari backup</code> {t('from cron.')}
                 </p>
                 <label>{t('Keep the activity log for')}</label>
                 <div className="settings-row">
@@ -948,8 +948,18 @@ ingress:
                 </p>
                 <label>{t('Open-source licences')}</label>
                 <p className="dialog-hint settings-hint">
-                  {t('Everything salt.md is built on, with its licence in full.')}{' '}
+                  {t('Everything nigari is built on, with its licence in full.')}{' '}
                   <a href="/licenses" target="_blank" rel="noopener noreferrer">{t('Open')}</a>
+                </p>
+                {/* AGPL-3.0 asks a modified version to say so, and since when, and to
+                    let everyone who uses it over a network get its source (spec 011,
+                    FR-002). The one place in the interface that names salt.md. */}
+                <label>{t('Origin')}</label>
+                <p className="dialog-hint settings-hint">
+                  {t('nigari is a modified version of salt.md, changed since version 2.0.0 and shared under the same licence, the AGPL-3.0.')}{' '}
+                  <a href="https://github.com/neatlittlemacapps/nigari" target="_blank" rel="noopener noreferrer">{t('Source code')}</a>
+                  {' · '}
+                  <a href="https://github.com/saltmd/salt.md" target="_blank" rel="noopener noreferrer">{t('Original')}</a>
                 </p>
                 <label>{t('Instance')}</label>
                 {!info ? (

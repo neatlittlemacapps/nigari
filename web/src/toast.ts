@@ -16,5 +16,5 @@ export interface ToastDetail {
 }
 
 export function toast(message: string, action?: ToastAction) {
-  window.dispatchEvent(new CustomEvent<ToastDetail>('salt:toast', { detail: { message, action } }));
+  window.dispatchEvent(new CustomEvent<ToastDetail>('nigari:toast', { detail: { message, action } }));
 }

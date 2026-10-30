@@ -1,8 +1,8 @@
 # Import and export
 
-Getting content into salt.md and back out again. There are five ways in (a
+Getting content into nigari and back out again. There are five ways in (a
 single Markdown file, a ZIP archive of them, a Notion export, a JSON source an
-agent points salt.md at, and a native workspace archive) and six ways out: a
+agent points nigari at, and a native workspace archive) and six ways out: a
 page as Markdown, a page as a self-contained HTML file, a page as print or PDF,
 a workspace as a ZIP of Markdown files, a workspace as a native archive, and an
 iCalendar feed your calendar app subscribes to. This page covers each one: what
@@ -20,12 +20,12 @@ and nothing more.
 | Archive of Markdown | in | `.zip` | the same menu item |
 | Notion export | in | `.zip` with CSVs | the same menu item |
 | JSON source | in | any HTTP JSON API | `import_url` over MCP |
-| Workspace archive | in | `.salt.zip` | workspace settings → **Import workspace…** |
+| Workspace archive | in | `.nigari.zip` | workspace settings → **Import workspace…** |
 | One page | out | `.md` | **⋯ → Markdown (.md)** |
 | One page | out | `.html` | **⋯ → Web page (.html)** |
 | One page | out | print / PDF | **⋯ → Print / as PDF** |
 | One workspace | out | ZIP of `.md` files | workspace settings → **Export as Markdown** |
-| One workspace | out | `.salt.zip` | workspace settings → **Export workspace** |
+| One workspace | out | `.nigari.zip` | workspace settings → **Export workspace** |
 | Every date property | out | iCalendar feed | user menu → **Subscribe to calendar** |
 
 **There is no folder import.** The file picker takes one file: `.md`,
@@ -162,7 +162,7 @@ same way works too, which is the form a share link takes.
 | You write | You get |
 | --- | --- |
 | `[Handbook](/p/8f3c…d1)` | a page link: it appears in backlinks and in the graph |
-| `[Handbook](https://salt.example.com/p/8f3c…d1)` | the same |
+| `[Handbook](https://nigari.example.com/p/8f3c…d1)` | the same |
 | `[Handbook](https://example.com/handbook)` | an ordinary link: navigates, and nothing else |
 
 The difference matters because the backlink index and the [library
@@ -179,7 +179,7 @@ links.
 
 Notion's **Export → Markdown & CSV** writes each database twice: a
 `<Name> <id>.csv` holding every row and column, and a `<Name> <id>/` folder
-holding one `.md` per row with that row's body. salt.md reads both and builds a
+holding one `.md` per row with that row's body. nigari reads both and builds a
 real [collection](collections.md) out of them, rather than a pile of loose
 pages.
 
@@ -248,7 +248,7 @@ Instances that imported from Notion before the preamble was stripped have that
 duplicated header sitting in every row body. With the server stopped:
 
 ```
-./salt fix-notion-rows
+./nigari fix-notion-rows
 ```
 
 It removes the repeated title and property lines from existing rows and reports
@@ -261,7 +261,7 @@ are, so real content is never rewritten.
 convenience: writing 654 records through `create_page` means the agent typing
 every character of them, which exhausts its context long before the import
 finishes. Here the agent sends only the address and the mapping (a few hundred
-characters) and salt.md fetches the data and writes the pages itself. None of
+characters) and nigari fetches the data and writes the pages itself. None of
 the content passes through the agent.
 
 | Field | Meaning |
@@ -314,7 +314,7 @@ Four behaviours to rely on:
   and then connected to directly, so an import cannot be used to reach the
   server's own network: a router, a hypervisor, a cloud metadata service. The
   refusal names the address. Whoever runs the server can open this up for
-  self-hosted sources with `SALT_IMPORT_ALLOW_PRIVATE=1`; it is deliberately not
+  self-hosted sources with `NIGARI_IMPORT_ALLOW_PRIVATE=1`; it is deliberately not
   a setting an agent can change.
 
 The call returns a `job_id` at once. Poll `get_import_status` with it every few
@@ -342,7 +342,7 @@ workspace: databases lose their schema, views and row properties on the way
 back. For that there is a native archive.
 
 **Export workspace** in the workspace settings downloads
-`<name>.salt.zip`. **Import workspace…** in the same dialog takes one and
+`<name>.nigari.zip`. **Import workspace…** in the same dialog takes one and
 creates a new workspace from it; you become its administrator, and the sidebar
 switches to it when it is done.
 
@@ -361,8 +361,13 @@ exist. See [Permissions](permissions.md).
 | the workspace's rules, icon and image | files nobody references any more |
 | every upload referenced by a page | |
 
-Inside the ZIP: `salt-workspace.json` (a manifest with the format version and
+Inside the ZIP: `nigari-workspace.json` (a manifest with the format version and
 the counts), `pages.json`, `tags.json`, and a `files/` folder.
+
+**Archives from salt.md import too.** Before the rename to nigari (v2.0.0) the
+manifest was called `salt-workspace.json` and the file `<name>.salt.zip`. An
+archive like that is read the same way: it is your data, whatever it was called
+when it was written.
 
 On import every page and every file is given a new id, and references inside the
 content are rewritten to match: page links, mentions and relations keep
@@ -378,9 +383,9 @@ all: it could not open the result.
 | What can go wrong | The message |
 | --- | --- |
 | the file is not a ZIP | *not a valid zip archive* |
-| it is a ZIP but not ours | *not a salt.md workspace archive (salt-workspace.json missing)* |
+| it is a ZIP but not ours | *not a nigari workspace archive (nigari-workspace.json missing)* |
 | it has a manifest but no readable page list | *pages.json missing or invalid* |
-| written by a newer salt.md | *archive format 2 is newer than this instance supports (1). Update salt.md* |
+| written by a newer nigari | *archive format 2 is newer than this instance supports (1). Update nigari* |
 | the instance does not let you create workspaces | *creating workspaces is disabled on this instance. Ask an admin* |
 
 ### The shelf is an import too
@@ -465,7 +470,7 @@ get is the table, board or calendar as it stands on screen.
 
 ### A whole workspace as Markdown
 
-Workspace settings → **Export as Markdown** downloads `salt-export.zip`: one
+Workspace settings → **Export as Markdown** downloads `nigari-export.zip`: one
 `.md` file per page, in folders that mirror the page tree. Two pages with the
 same name in the same folder get a `(2)` suffix.
 
@@ -479,7 +484,7 @@ The archive holds only pages you can read, and nothing from the trash.
 
 **Without a workspace it takes everything.** The button always names one. The
 endpoint behind it, `/api/export`, exports every workspace you can read into the
-same `salt-export.zip` when no workspace is given, worth knowing if you script
+same `nigari-export.zip` when no workspace is given, worth knowing if you script
 a backup-shaped export. See [the API](api.md).
 
 ### What each block becomes
@@ -558,7 +563,7 @@ What lands in the calendar:
   timed event written without a time zone, so it shows at that clock time
   wherever it is read.
 - **Events have a start and no end.** There is no duration to derive.
-- The calendar's name in your app is *salt.md*, or *salt.md · <name>* for a
+- The calendar's name in your app is *nigari*, or *nigari · <name>* for a
   scoped feed, so several subscriptions stay distinguishable.
 
 **The link is the credential.** It needs no sign-in: anyone holding it sees

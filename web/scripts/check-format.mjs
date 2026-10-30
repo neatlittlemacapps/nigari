@@ -28,8 +28,8 @@ const ZONES = [
 ];
 
 // ---- child mode: run the assertions inside one timezone ----
-if (process.env.SALT_FMT_BUNDLE) {
-  const fmt = await import(process.env.SALT_FMT_BUNDLE);
+if (process.env.NIGARI_FMT_BUNDLE) {
+  const fmt = await import(process.env.NIGARI_FMT_BUNDLE);
   const out = [];
   const check = (name, got, want) => out.push({ name, got, want, ok: got === want });
 
@@ -202,7 +202,7 @@ if (process.env.SALT_FMT_BUNDLE) {
 }
 
 // ---- parent mode ----
-const tmp = mkdtempSync(join(tmpdir(), 'salt-fmt-'));
+const tmp = mkdtempSync(join(tmpdir(), 'nigari-fmt-'));
 const bundle = join(tmp, 'format.mjs');
 try {
   try {
@@ -225,7 +225,7 @@ try {
 
   for (const tz of ZONES) {
     const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], {
-      env: { ...process.env, TZ: tz, SALT_FMT_BUNDLE: bundle },
+      env: { ...process.env, TZ: tz, NIGARI_FMT_BUNDLE: bundle },
       encoding: 'utf8',
     });
     if (r.status !== 0) {

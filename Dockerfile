@@ -20,7 +20,7 @@ RUN npm ci || npm install
 COPY . /src
 # Same VERSION the backend is stamped with, so the two never disagree and the
 # "reload" banner only fires after an actual deploy.
-RUN SALT_VERSION=${VERSION} npm run build
+RUN NIGARI_VERSION=${VERSION} npm run build
 
 # --- Backend build (cross-compiled to the requested target arch) ---
 FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS build
@@ -35,14 +35,18 @@ COPY --from=web /src/web/dist ./web/dist
 # CGO off + pure-Go SQLite ⇒ a fully static binary, and building on the native
 # builder while targeting $TARGETARCH avoids slow QEMU emulation of the compiler.
 RUN go mod tidy && CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -trimpath -ldflags="-s -w -X salt/server.Version=${VERSION}" -o /salt .
+    go build -trimpath -ldflags="-s -w -X nigari/server.Version=${VERSION}" -o /nigari .
 
 # --- Runtime ---
 FROM alpine:3.20
-RUN adduser -D -H salt && mkdir -p /data && chown salt /data
-USER salt
-ENV SALT_ADDR=:8420 SALT_DATA=/data
+# The same single adduser on the same base as salt.md's image: busybox gives
+# the first free uid whatever the name, so nigari owns a /data volume salt
+# wrote (spec 011, research R14). No pinned number: a wrong one would lock the
+# volume out.
+RUN adduser -D -H nigari && mkdir -p /data && chown nigari /data
+USER nigari
+ENV NIGARI_ADDR=:8420 NIGARI_DATA=/data
 VOLUME /data
 EXPOSE 8420
-COPY --from=build /salt /usr/local/bin/salt
-ENTRYPOINT ["salt"]
+COPY --from=build /nigari /usr/local/bin/nigari
+ENTRYPOINT ["nigari"]

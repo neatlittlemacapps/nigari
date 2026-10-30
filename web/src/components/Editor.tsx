@@ -11,10 +11,10 @@ import { BlockNoteView } from '@blocknote/mantine';
 import { api, ApiError, materializeQuery } from '../api';
 import { toast } from '../toast';
 import type { Backlink, CollectionConfig, Page, PageMeta, PropOption, User } from '../types';
-import { SaltProvider } from '../collab';
+import { NigariProvider } from '../collab';
 import { plural, t } from '../i18n';
 import PropertyValue from './PropertyValue';
-import { saltSchema } from '../pageLink';
+import { nigariSchema } from '../pageLink';
 import IconPicker from './IconPicker';
 import { PageIcon } from '../pageIcon';
 import { BlockContext } from '../blockContext';
@@ -1655,7 +1655,7 @@ interface CollabProps {
 
 function CollabEditor({ page, user, theme, canEdit, onReset, ...rest }: CollabProps) {
   const [ready, setReady] = useState(false);
-  const [provider, setProvider] = useState<SaltProvider | null>(null);
+  const [provider, setProvider] = useState<NigariProvider | null>(null);
   const seedRef = useRef<unknown[] | null>(null);
 
   // The provider lives in the effect, not in the render. The earlier useMemo
@@ -1665,7 +1665,7 @@ function CollabEditor({ page, user, theme, canEdit, onReset, ...rest }: CollabPr
   // destroyed the committed provider for good — dev hung on a dead Y.Doc.
   // Here, setup→cleanup→setup simply produces a second provider.
   useEffect(() => {
-    const p = new SaltProvider(
+    const p = new NigariProvider(
       page.id,
       page.docGen ?? null,
       (isNew) => {
@@ -1762,7 +1762,7 @@ function BlockContent({
   onPagesChanged,
   structureOpen,
 }: {
-  provider: SaltProvider;
+  provider: NigariProvider;
   pageId: string;
   seed: unknown[] | null;
   hadContent: boolean;
@@ -1779,7 +1779,7 @@ function BlockContent({
   onPagesChanged: () => void;
 }) {
   const editor = useCreateBlockNote({
-    schema: saltSchema,
+    schema: nigariSchema,
     collaboration: {
       provider,
       fragment: provider.doc.getXmlFragment('blocknote'),
@@ -2002,7 +2002,7 @@ function BlockContent({
               ' ',
             ]);
           } catch (e) {
-            console.error('salt.md: failed to create page from mention', e);
+            console.error('nigari: failed to create page from mention', e);
           }
         },
       });
@@ -2058,7 +2058,7 @@ function BlockContent({
         editor.replaceBlocks(editor.document, seed as never);
       } catch (e) {
         seedFailed.current = true;
-        console.error('salt.md: failed to seed page content', e);
+        console.error('nigari: failed to seed page content', e);
       }
     }
   }, [editor, provider, seed]);
@@ -2123,7 +2123,7 @@ function BlockContent({
   }, [editor, provider, hadContent]);
 
   // A file block otherwise goes straight to the download folder — you cannot
-  // glance at an attachment without leaving Salt and coming back. Catching the
+  // glance at an attachment without leaving nigari and coming back. Catching the
   // click in the CAPTURE phase is what makes this work without touching
   // BlockNote's own file block: React registers capture listeners on its root
   // container, so this runs before the event ever reaches the block's own

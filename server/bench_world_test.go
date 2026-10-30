@@ -278,7 +278,7 @@ func sharedBenchWorld(b *testing.B, pages, rows int) *benchWorld {
 	if w, ok := benchWorlds[key]; ok {
 		return w
 	}
-	dir, err := os.MkdirTemp("", "salt-bench-")
+	dir, err := os.MkdirTemp("", "nigari-bench-")
 	if err != nil {
 		b.Fatalf("temp dir: %v", err)
 	}

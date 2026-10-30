@@ -117,7 +117,7 @@ function Catalog() {
   return (
     <main className="cat">
       <header className="cat-head">
-        <h1>salt.md components</h1>
+        <h1>nigari components</h1>
         <div className="cat-theme" role="group" aria-label="Theme">
           <Button size="sm" variant={theme === 'light' ? 'primary' : 'secondary'} onClick={() => switchTheme('light')}>
             Light

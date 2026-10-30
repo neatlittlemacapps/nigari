@@ -1,6 +1,6 @@
 # Sharing
 
-salt.md is private by default: every page needs a signed-in account with access
+nigari is private by default: every page needs a signed-in account with access
 to the workspace it lives in. Publishing a page is the one deliberate exception.
 It turns a single page into a read-only web page at an unguessable address that
 anyone can open without an account. This page covers how to publish, what the
@@ -18,7 +18,7 @@ covered in [Permissions](permissions.md).
 One page, read-only, no account. The address looks like this:
 
 ```
-https://salt.example.com/public/4f9c2ab1e07d3856c2f1a904bb73e5d81c6a
+https://nigari.example.com/public/4f9c2ab1e07d3856c2f1a904bb73e5d81c6a
 ```
 
 The token is 18 random bytes written as 36 hexadecimal characters. Nothing about
@@ -69,7 +69,7 @@ globe button itself, which is highlighted while the link is live. An expired
 link drops the marker on its own. So to check whether a page is shared, look
 at the marker.
 
-**A shared page keeps its link when you open the menu.** salt.md stores only a
+**A shared page keeps its link when you open the menu.** nigari stores only a
 scrambled form of the token, so the menu cannot show you the address made last
 week. On a page that is already shared it says so ("This page is shared
 publicly. Its address was only shown when the link was made.") and offers two
@@ -112,7 +112,7 @@ address that is already circulating; their **Stop sharing** kills it.
 
 ## The address in the link
 
-The host in the link is not necessarily the address you are looking at. salt.md
+The host in the link is not necessarily the address you are looking at. nigari
 picks the best external base it knows, in this order:
 
 | Source | Used when |
@@ -123,7 +123,7 @@ picks the best external base it knows, in this order:
 | The address of your own request | Nothing else is configured |
 
 That is why a link copied from `http://localhost:8420` can come back as
-`https://salt.example.com/public/…`: the point is that the link works from
+`https://nigari.example.com/public/…`: the point is that the link works from
 outside, which the address in your browser bar may not. See
 [Your own domain](domain.md).
 

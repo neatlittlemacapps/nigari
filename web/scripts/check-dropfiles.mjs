@@ -28,7 +28,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const web = join(here, '..');
-const tmp = mkdtempSync(join(tmpdir(), 'salt-drop-'));
+const tmp = mkdtempSync(join(tmpdir(), 'nigari-drop-'));
 const bundle = join(tmp, 'dropFiles.mjs');
 
 try {

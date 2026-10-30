@@ -1,6 +1,4 @@
-<p align="center">
-  <img src=".github/banner.png" alt="salt.md: One workspace. People and agents." width="100%">
-</p>
+<h1 align="center">nigari</h1>
 
 <p align="center">
   Docs, databases and realtime editing for your team. The same workspace is open
@@ -9,22 +7,21 @@
 </p>
 
 <p align="center">
-  <a href="https://salt.md"><b>Website</b></a> ·
-  <a href="https://salt.md/demo/"><b>Live demo</b></a> ·
-  <a href="https://salt.md/wiki/"><b>Documentation</b></a> ·
-  <a href="#quickstart"><b>Quickstart</b></a>
+  <a href="wiki/README.md"><b>Documentation</b></a> ·
+  <a href="#quickstart"><b>Quickstart</b></a> ·
+  <a href="#where-it-comes-from"><b>Where it comes from</b></a>
 </p>
 
 <br>
 
 <p align="center">
-  <img src=".github/hero.png" alt="A Tasks board in salt.md, cut in two: light mode on the left, dark mode on the right." width="100%">
+  <img src=".github/hero.png" alt="A Tasks board in nigari, cut in two: light mode on the left, dark mode on the right." width="100%">
 </p>
 
 ## Quickstart
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/nigari/main/install.sh | sh
 ```
 
 One command downloads the binary for your platform, installs it, starts it and
@@ -35,12 +32,15 @@ service, and running it again upgrades it. No `curl` on the machine?
 Or with Docker:
 
 ```sh
-docker run -d -p 8420:8420 -v salt-data:/data ghcr.io/neatlittlemacapps/salt.md:latest
+docker run -d -p 8420:8420 -v salt-data:/data ghcr.io/neatlittlemacapps/nigari:latest
 ```
+
+The volume keeps salt.md's name, `salt-data`, so an install from before the
+rename finds its data; a new name would be a new, empty volume.
 
 There is nothing else to install: no database server, no cache, no object
 store. Reverse proxies, TLS and backups are in the
-[self-hosting guide](https://salt.md/wiki/self-hosting/).
+[self-hosting guide](wiki/self-hosting.md).
 
 ## People and agents in the same place
 
@@ -63,11 +63,11 @@ tokens, take or restore a backup or change instance settings, and over MCP none
 can decide who is in a workspace; the server tells every agent that connects.
 A credential carries its person's access and never more: a workspace admin's
 own API token can manage that workspace's members over the REST API, as
-[agent access](https://salt.md/wiki/agent-access/) explains. Every workspace
+[agent access](wiki/agent-access.md) explains. Every workspace
 decides what agents may do there, and the activity log keeps their changes
 apart from yours.
 
-[MCP tools](https://salt.md/wiki/mcp-tools/) · [Agent access](https://salt.md/wiki/agent-access/) · [Permissions](https://salt.md/wiki/permissions/)
+[MCP tools](wiki/mcp-tools.md) · [Agent access](wiki/agent-access.md) · [Permissions](wiki/permissions.md)
 
 ## A whole workspace
 
@@ -134,10 +134,10 @@ Moving in? Markdown files, CSVs and a Notion export import from the same menu.
 
 ```mermaid
 flowchart LR
-    people(["People<br>browser · desktop · phone"]) --> salt
-    agents(["Agents<br>Claude · ChatGPT · Cursor"]) -- MCP --> salt
-    tools(["Your tools"]) -- "REST · webhooks · iCal" --> salt
-    salt["salt.md<br>one Go binary"] --> data[("SQLite file<br>+ uploads")]
+    people(["People<br>browser · desktop · phone"]) --> nigari
+    agents(["Agents<br>Claude · ChatGPT · Cursor"]) -- MCP --> nigari
+    tools(["Your tools"]) -- "REST · webhooks · iCal" --> nigari
+    nigari["nigari<br>one Go binary"] --> data[("SQLite file<br>+ uploads")]
 ```
 
 One Go process, built with `CGO_ENABLED=0`: a static binary with a pure-Go
@@ -150,31 +150,38 @@ store, no separate collaboration server.
 - **Backup**: stop, copy two paths, start
 - **Platforms**: Linux and macOS on amd64 and arm64, Windows on amd64
 
-The [desktop app](https://salt.md/wiki/desktop-app/) for macOS and Linux is a
+The [desktop app](wiki/desktop-app.md) for macOS and Linux is a
 window onto a server you run, not a second copy of the product.
 
 ## Documentation
 
-[salt.md/wiki](https://salt.md/wiki/) covers every screen, every property type,
-every tool an agent can call and every setting on the server. It is written next
-to this code and checked against it on every build: a tool name that no longer
-exists, an API path that is not a route or a screenshot whose screen has changed
-fails the build. Every page is also plain Markdown at the same address with
-`.md` on the end, indexed for agents at
-[/wiki/llms.txt](https://salt.md/wiki/llms.txt).
+[The wiki](wiki/README.md) covers every screen, every property type, every tool
+an agent can call and every setting on the server. It is written next to this
+code and checked against it on every build: a tool name that no longer exists,
+an API path that is not a route or a screenshot whose screen has changed fails
+the build.
 
 ## Contributing
 
 Issues and pull requests are welcome. Pull requests need a signed [CLA](CLA.md);
 [CONTRIBUTING.md](CONTRIBUTING.md) says what that means and why it exists.
-Security reports go to **dev@salt.md**, not to a public issue: see
-[SECURITY.md](SECURITY.md).
+Security reports go through GitHub's private vulnerability reporting
+(the repository's **Security** tab → **Report a vulnerability**), not a public
+issue: see [SECURITY.md](SECURITY.md).
 
 ## License
 
 [AGPL-3.0](LICENSE). Use it, run it at work, change it. If you offer it to
 others over a network, publish your changes.
 
-The components salt.md is built on, with their licences in full, are in
+The components nigari is built on, with their licences in full, are in
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). A running instance serves the
 same list at `/licenses`.
+
+## Where it comes from
+
+nigari is a modified version of [salt.md](https://github.com/saltmd/salt.md),
+changed since version 2.0.0 (2026-10-29) and shared under the same licence,
+the AGPL-3.0. The original copyright notices stay in [LICENSE](LICENSE) and
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Updating an install that
+still runs salt.md: [self-hosting guide](wiki/self-hosting.md#updating-from-saltmd).

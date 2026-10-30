@@ -136,11 +136,11 @@ func publicPageCopy(p *page, token string) *page {
 // Password-protected shares use an hour-long, token/path-bound cookie. The
 // existing password hash signs it; no password enters an asset URL, no new
 // secret or database is needed. Each request still checks the live share.
-const publicGrantCookie = "salt-share"
+const publicGrantCookie = "nigari-share"
 
 func publicGrantMAC(token, expiry, key string) string {
 	h := hmac.New(sha256.New, []byte(key))
-	h.Write([]byte("salt-share-v1:" + token + ":" + expiry))
+	h.Write([]byte("nigari-share-v1:" + token + ":" + expiry))
 	return hex.EncodeToString(h.Sum(nil))
 }
 func (s *Server) publicGrantKey(token string) string {

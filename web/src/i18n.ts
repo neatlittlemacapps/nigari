@@ -8,7 +8,7 @@ import { setFormatLocale, setFormatPrefs } from './format';
 //
 // Symbolic keys ('users.manage') were the other option and were rejected: when
 // a translation is missing, a symbolic key shows the user gibberish, while an
-// English key shows them English. salt.md is written in English first, so the
+// English key shows them English. nigari is written in English first, so the
 // fallback is always a correct sentence — a missing translation degrades to
 // "not translated yet", never to "broken".
 //
@@ -118,7 +118,7 @@ export function getPrefs(): Prefs {
  *  after a reload is not briefly in the wrong language while /api/me is still
  *  in flight — and so the login screen, where there is no account yet, comes up
  *  the way this person last had it. */
-const CACHE = 'salt-prefs';
+const CACHE = 'nigari-prefs';
 
 function cached(): Prefs {
   try {
@@ -127,10 +127,8 @@ function cached(): Prefs {
   } catch {
     /* a hand-edited or truncated cache is not worth a broken app */
   }
-  // Migration from the single key this replaces. Somebody who chose German
-  // before W112 keeps German instead of being silently reset to the browser.
-  const old = localStorage.getItem('salt-locale');
-  return old && old in LOCALES ? { language: old } : {};
+  // The single key this replaced is carried into the cache by storageMove.ts.
+  return {};
 }
 
 /** Which language to translate into: the account's choice, else the browser's
@@ -182,7 +180,6 @@ export async function applyPrefs(next: Prefs): Promise<void> {
   prefs = next ?? {};
   try {
     localStorage.setItem(CACHE, JSON.stringify(prefs));
-    localStorage.removeItem('salt-locale');
   } catch {
     /* private mode, quota — the account still has the settings */
   }
@@ -192,7 +189,7 @@ export async function applyPrefs(next: Prefs): Promise<void> {
 /** The tag to FORMAT with, which is not the same as the language to translate
  *  into.
  *
- *  salt.md ships one catalog per language ('en', 'de'), because writing one per
+ *  nigari ships one catalog per language ('en', 'de'), because writing one per
  *  region would mean maintaining British and American copies of the same
  *  sentences. But dates and numbers really are regional: bare 'en' means
  *  American to Intl, so an English-reading user in Dublin or Sydney would get

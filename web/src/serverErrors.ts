@@ -53,13 +53,17 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
     // and on the refusal page carry the step numbers and the paths; here the
     // browser says what happened and where to look.
     case 'upgrade_refused':
-      return t('This salt.md is older than its database, so it did not start and changed nothing. The server log names the release to run instead.');
+      return t('This nigari is older than its database, so it did not start and changed nothing. The server log names the release to run instead.');
     case 'upgrade_failed':
-      return t('An upgrade step failed, so salt.md did not start. The database is as it was before that step; the server log says why.');
+      return t('An upgrade step failed, so nigari did not start. The database is as it was before that step; the server log says why.');
     case 'upgrade_copy_failed':
-      return t('salt.md could not write the copy it takes before an upgrade, so no step ran. Free space in the data directory and start it again.');
+      return t('nigari could not write the copy it takes before an upgrade, so no step ran. Free space in the data directory and start it again.');
     case 'upgrade_busy':
-      return t('Another salt.md is upgrading this database. Wait for it to finish, then reload.');
+      return t('Another nigari is upgrading this database. Wait for it to finish, then reload.');
+    // The rename to nigari (spec 011): both database names in one data
+    // directory, and the server will not pick one.
+    case 'rename_conflict':
+      return t('This data directory holds both salt.db and nigari.db, so nigari did not start and changed nothing. Keep the one with your data, move the other out, and start again.');
 
     // ---- read-only workspaces ----
     case 'workspace_read_only':

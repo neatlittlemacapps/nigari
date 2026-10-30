@@ -11,7 +11,7 @@ input="$(cat)"
 session="$(jq -r '.session_id // "none"' <<<"$input")"
 root="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel)}"
 
-counter="${TMPDIR:-/tmp}/salt-gate-${session}"
+counter="${TMPDIR:-/tmp}/nigari-gate-${session}"
 tries="$(cat "$counter" 2>/dev/null || echo 0)"
 
 if out="$("$root/scripts/agent-gate.sh" 2>&1)"; then

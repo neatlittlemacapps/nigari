@@ -48,8 +48,13 @@ jobs:
       - name: Go tests
         run: go test ./...
 
+      # The installer's move of a salt.md service (spec 011): the one part of
+      # install.sh that can leave a workspace behind if it goes wrong.
+      - name: Installer move
+        run: scripts/test-install-move.sh
+
       - name: Go build
-        run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o salt .
+        run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o nigari .
 
   # The component catalogue (spec 001, FR-013): axe on every component and
   # the keyboard contract, which fail the job; and each section compared with

@@ -28,7 +28,7 @@ function run(args) {
 
 // Copy the tokens, apply `edit` to one tier's JSON, build into a scratch file.
 function broken(name, tier, edit, expect) {
-  const dir = mkdtempSync(join(tmpdir(), 'salt-tokens-'));
+  const dir = mkdtempSync(join(tmpdir(), 'nigari-tokens-'));
   try {
     cpSync(join(web, 'tokens'), dir, { recursive: true });
     const file = join(dir, `${tier}.tokens.json`);
@@ -53,7 +53,7 @@ broken('an alias cycle', 'semantic', (j) => {
 
 // Quickstart step 1: muted text this dark is about 2.6:1 on the dark document.
 broken('a colour below AA', 'semantic', (j) => {
-  j.color.text.muted.$extensions['md.salt.dark'] = { colorSpace: 'srgb', components: [0.3333, 0.3333, 0.3333], hex: '#555555' };
+  j.color.text.muted.$extensions['io.github.neatlittlemacapps.nigari.dark'] = { colorSpace: 'srgb', components: [0.3333, 0.3333, 0.3333], hex: '#555555' };
 }, /contrast: color\.text\.muted on color\.surface\.default \(dark\) is [\d.]+:1, below 4\.5:1/);
 
 broken('a token without a $type', 'component', (j) => {
@@ -76,7 +76,7 @@ broken('two tokens writing one property', 'primitives', (j) => {
 
 // A hand edit to the generated file.
 {
-  const dir = mkdtempSync(join(tmpdir(), 'salt-tokens-'));
+  const dir = mkdtempSync(join(tmpdir(), 'nigari-tokens-'));
   try {
     const out = join(dir, 'tokens.css');
     writeFileSync(out, readFileSync(join(web, 'src/tokens.css'), 'utf8').replace('--bg:', '--bg: #000; --x:'));

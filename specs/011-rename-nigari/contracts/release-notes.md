@@ -32,7 +32,10 @@ same features, new name, and the old names stop with this release.
 - **Agents**: download the skill again (it is now `nigari/`); rename your MCP
   server label from `salt` if you like (the URL is unchanged).
 - **Docker**: the image is `ghcr.io/neatlittlemacapps/nigari`. Keep your
-  `salt-data` volume: the compose file still uses it.
+  `salt-data` volume: the compose file still uses it. The compose service is
+  called `nigari` now: run `docker compose up -d --remove-orphans`, or the old
+  `salt` container keeps running beside it (nigari then refuses to start until
+  it is gone).
 - **deploy/salt.service users**: move `/opt/salt` to `/opt/nigari` and use
   `deploy/nigari.service`.
 

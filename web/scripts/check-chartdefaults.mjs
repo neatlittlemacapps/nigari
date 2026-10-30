@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const web = join(here, '..');
-const tmp = mkdtempSync(join(tmpdir(), 'salt-chartdefaults-'));
+const tmp = mkdtempSync(join(tmpdir(), 'nigari-chartdefaults-'));
 const bundle = join(tmp, 'chartdefaults.mjs');
 
 try {

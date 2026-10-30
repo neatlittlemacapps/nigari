@@ -86,7 +86,7 @@ func upgradeWith(path string, steps []*goose.Migration) ([]int64, error) {
 	}
 
 	// The global registry is filled by goose.AddMigration in init functions;
-	// salt.md never uses it, and a stray registration must not become a step.
+	// nigari never uses it, and a stray registration must not become a step.
 	p, err := goose.NewProvider(goose.DialectSQLite3, db, nil,
 		goose.WithDisableGlobalRegistry(true), goose.WithGoMigrations(steps...))
 	if err != nil {
@@ -114,7 +114,7 @@ func upgradeWith(path string, steps []*goose.Migration) ([]int64, error) {
 		if copied := fmt.Sprintf("%s.before-step-%d", path, stored+1); tables > 0 {
 			sentence += fmt.Sprintf(" A copy from before the upgrade is at %s.", copied)
 		}
-		sentence += " Fix the cause and start salt.md again."
+		sentence += " Fix the cause and start nigari again."
 		return ran, &UpgradeRefusal{Code: "upgrade_failed", Sentence: sentence}
 	}
 	if err != nil {
@@ -179,12 +179,12 @@ func copyBeforeUpgrade(db *sql.DB, path string, n int64) error {
 			size = fi.Size()
 		}
 		return &UpgradeRefusal{Code: "upgrade_copy_failed", Sentence: fmt.Sprintf(
-			"No upgrade step ran: the copy of the database (%.1f MB) could not be written to %s: %v. Free space there and start salt.md again.",
+			"No upgrade step ran: the copy of the database (%.1f MB) could not be written to %s: %v. Free space there and start nigari again.",
 			float64(size)/1e6, filepath.Dir(path), err)}
 	}
 	// The -wal and -shm files belong to the database as it is now; left beside
 	// a restored copy, SQLite would replay the newer log onto the older file.
-	log.Printf("upgrade: copy of the database before step %d written to %s. To go back to it, stop salt.md and run: cp %q %q && rm -f %q %q",
+	log.Printf("upgrade: copy of the database before step %d written to %s. To go back to it, stop nigari and run: cp %q %q && rm -f %q %q",
 		n, dest, dest, path, path+"-wal", path+"-shm")
 	pruneCopies(path)
 	return nil
@@ -246,7 +246,7 @@ func inspectDB(path string) (tables int, step int64, err error) {
 // TestGooseNewerDatabaseIsNotAnError) and then work on tables it does not
 // know. It says both numbers and the two ways out (FR-007).
 func refuseNewer(path string, stored, newest int64) *UpgradeRefusal {
-	back := "restore a backup made before that upgrade with salt restore <file>"
+	back := "restore a backup made before that upgrade with nigari restore <file>"
 	if copies, _ := filepath.Glob(path + ".before-step-*"); len(copies) > 0 {
 		best, bestStep := "", -1
 		for _, c := range copies {
@@ -255,11 +255,11 @@ func refuseNewer(path string, stored, newest int64) *UpgradeRefusal {
 			}
 		}
 		if best != "" {
-			back = fmt.Sprintf("stop salt.md and run cp %q %q && rm -f %q %q", best, path, path+"-wal", path+"-shm")
+			back = fmt.Sprintf("stop nigari and run cp %q %q && rm -f %q %q", best, path, path+"-wal", path+"-shm")
 		}
 	}
 	return &UpgradeRefusal{Code: "upgrade_refused", Sentence: fmt.Sprintf(
-		"This database is at upgrade step %d, but this salt.md (%s) only knows steps up to %d. It has not been changed. Run the salt.md release that upgraded it, or put back the copy taken before that upgrade: %s.",
+		"This database is at upgrade step %d, but this nigari (%s) only knows steps up to %d. It has not been changed. Run the nigari release that upgraded it, or put back the copy taken before that upgrade: %s.",
 		stored, Version, newest, back)}
 }
 
@@ -301,7 +301,7 @@ func takeUpgradeLock(dir string) (unlock func(), err error) {
 			}
 		}
 		return nil, &UpgradeRefusal{Code: "upgrade_busy", Sentence: fmt.Sprintf(
-			"Another salt.md is upgrading this data directory (process %s, since %s). Wait for it to finish, or stop it.", pid, since)}
+			"Another nigari is upgrading this data directory (process %s, since %s). Wait for it to finish, or stop it.", pid, since)}
 	}
 	return nil, fmt.Errorf("upgrade: could not take %s", path)
 }

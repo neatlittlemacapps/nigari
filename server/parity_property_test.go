@@ -13,7 +13,7 @@ import (
 
 // Agent parity, as a property rather than a list of examples.
 //
-// The same credential, used through the two doors salt.md has — REST and MCP —
+// The same credential, used through the two doors nigari has — REST and MCP —
 // must be let in or turned away identically for the same act on the same page.
 // The history of this codebase is the counter-examples, found one at a time: a
 // workspace gate on one side and not the other, a cover check missing over MCP,

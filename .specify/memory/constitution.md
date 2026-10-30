@@ -11,13 +11,13 @@ Sync Impact Report
 - Runtime guidance: AGENTS.md, .claude/rules/
 -->
 
-# salt.md Constitution
+# nigari Constitution
 
 ## Core Principles
 
 ### I. One binary, no external services
 
-salt.md ships as one static Go binary (`CGO_ENABLED=0`) with the frontend embedded and
+nigari ships as one static Go binary (`CGO_ENABLED=0`) with the frontend embedded and
 one SQLite file beside it. A feature MUST NOT require a database server, cache, queue,
 object store or any other process. An existing instance MUST start on the new binary
 without a manual migration step. New dependencies need a stated reason.
@@ -88,7 +88,7 @@ speed come with a benchmark or a measurement, not an adjective.
 - Licence AGPL-3.0. Contributions upstream (`saltmd/salt.md`) need a signed CLA and,
   for large changes, an issue first.
 - Supported platforms: Linux and macOS on amd64 and arm64, Windows on amd64.
-- Security reports go to dev@salt.md, never to a public issue.
+- Security reports go to dev@nigari, never to a public issue.
 
 ## Development Workflow
 

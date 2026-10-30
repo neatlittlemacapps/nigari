@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -122,5 +123,120 @@ func TestBackupDuringWritesIsConsistentAndSelfContained(t *testing.T) {
 	}
 	if n < before {
 		t.Fatalf("snapshot holds %d pages, want at least the %d committed before the backup", n, before)
+	}
+}
+
+// A backup made by salt.md holds salt.db. Restoring it into nigari must give
+// nigari.db with the same content (spec 011, FR-009), not a nigari.db the
+// server would then have to rename, or ignore.
+func TestRestoreReadsOldArchive(t *testing.T) {
+	src, err := os.ReadFile(copyFixture(t, "step-0.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	archive := filepath.Join(t.TempDir(), "nigari-backup.tar.gz")
+	f, err := os.Create(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gz := gzip.NewWriter(f)
+	tw := tar.NewWriter(gz)
+	if err := tw.WriteHeader(&tar.Header{Name: oldDBFile, Mode: 0o644, Size: int64(len(src))}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tw.Write(src); err != nil {
+		t.Fatal(err)
+	}
+	tw.Close()
+	gz.Close()
+	f.Close()
+
+	dir := t.TempDir()
+	if err := Restore(dir, archive); err != nil {
+		t.Fatalf("restore: %v", err)
+	}
+	if fileExists(filepath.Join(dir, oldDBFile)) {
+		t.Fatal("the restore wrote nigari.db")
+	}
+	got, err := os.ReadFile(filepath.Join(dir, DBFile))
+	if err != nil || string(got) != string(src) {
+		t.Fatalf("nigari.db is not the archive's database (%d of %d bytes, %v)", len(got), len(src), err)
+	}
+}
+
+// Spec 011: "nigari backup" before nigari's first start, on a directory
+// that still holds salt.db, backs that up (as nigari.db) and moves nothing.
+func TestBackupReadsANotYetMovedDirectory(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	dir := filepath.Dir(path)
+	if err := os.Rename(path, filepath.Join(dir, oldDBFile)); err != nil {
+		t.Fatal(err)
+	}
+	archive := filepath.Join(t.TempDir(), "b.tar.gz")
+	if err := Backup(dir, archive); err != nil {
+		t.Fatalf("backup of a salt.md directory: %v", err)
+	}
+	if !fileExists(filepath.Join(dir, oldDBFile)) || fileExists(filepath.Join(dir, DBFile)) {
+		t.Fatal("the backup moved the database")
+	}
+	restored := t.TempDir()
+	if err := Restore(restored, archive); err != nil {
+		t.Fatal(err)
+	}
+	if !fileExists(filepath.Join(restored, DBFile)) {
+		t.Fatal("the archive does not hold nigari.db")
+	}
+}
+
+// Restoring beside a salt.db would leave two databases, which the next start
+// refuses; so salt.db counts as an existing database for the overwrite guard.
+func TestRestoreRefusesBesideSaltDB(t *testing.T) {
+	src := copyFixture(t, "step-0.db")
+	archive := filepath.Join(t.TempDir(), "b.tar.gz")
+	if err := Backup(filepath.Dir(src), archive); err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, oldDBFile), []byte("old"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := Restore(dir, archive); err == nil || !strings.Contains(err.Error(), oldDBFile) {
+		t.Fatalf("want a refusal naming salt.db, got %v", err)
+	}
+	if fileExists(filepath.Join(dir, DBFile)) {
+		t.Fatal("the refused restore wrote nigari.db")
+	}
+}
+
+// A forced restore over a salt.md directory removes salt.db only once the
+// archive's database is written: a broken archive must not cost the old one.
+func TestForcedRestoreKeepsSaltDBWhenTheArchiveIsBroken(t *testing.T) {
+	t.Setenv("NIGARI_RESTORE_FORCE", "1")
+	dir := t.TempDir()
+	old := filepath.Join(dir, oldDBFile)
+	if err := os.WriteFile(old, []byte("old"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	broken := filepath.Join(t.TempDir(), "broken.tar.gz")
+	if err := os.WriteFile(broken, []byte("not a gzip file"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := Restore(dir, broken); err == nil {
+		t.Fatal("a broken archive restored")
+	}
+	if b, _ := os.ReadFile(old); string(b) != "old" {
+		t.Fatal("the failed restore removed salt.db")
+	}
+
+	src := copyFixture(t, "step-0.db")
+	good := filepath.Join(t.TempDir(), "good.tar.gz")
+	if err := Backup(filepath.Dir(src), good); err != nil {
+		t.Fatal(err)
+	}
+	if err := Restore(dir, good); err != nil {
+		t.Fatal(err)
+	}
+	if fileExists(old) || !fileExists(filepath.Join(dir, DBFile)) {
+		t.Fatal("after a good forced restore, want nigari.db alone")
 	}
 }

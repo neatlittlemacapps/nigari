@@ -17,7 +17,7 @@ Each new step N ships with `step-<N-1>.db`, written by the code **just before**
 step N goes in (the commit that adds step N-1, or `main` before it):
 
 ```sh
-SALT_WRITE_UPGRADE_FIXTURE=$PWD/server/testdata/upgrade/step-<N-1>.db \
+NIGARI_WRITE_UPGRADE_FIXTURE=$PWD/server/testdata/upgrade/step-<N-1>.db \
   go test ./server -run TestWriteUpgradeFixture -count=1
 ```
 

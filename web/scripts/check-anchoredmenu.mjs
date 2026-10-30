@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const web = join(here, '..');
-const tmp = mkdtempSync(join(tmpdir(), 'salt-menu-'));
+const tmp = mkdtempSync(join(tmpdir(), 'nigari-menu-'));
 const bundle = join(tmp, 'anchoredMenu.mjs');
 try {
   try {

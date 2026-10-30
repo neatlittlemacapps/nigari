@@ -1,6 +1,6 @@
 # Getting started
 
-salt.md is one program: a single executable file that contains the server, the
+nigari is one program: a single executable file that contains the server, the
 web interface, full-text search and the agent endpoint. There is no database to
 install beside it, no Node, no runtime. This page takes you from nothing to a
 running instance with your account in it and your first page open: what you
@@ -13,7 +13,7 @@ The installer picks the right build for your machine and puts it somewhere on
 your path:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/nigari/main/install.sh | sh
 ```
 
 If the machine has no `curl`, fetch the script with `wget` instead. Minimal
@@ -21,18 +21,18 @@ server images often ship one and not the other. The script itself uses whichever
 of the two it finds, so only this first line changes:
 
 ```sh
-wget -qO- https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
+wget -qO- https://raw.githubusercontent.com/neatlittlemacapps/nigari/main/install.sh | sh
 ```
 
 It detects your operating system and processor, downloads the matching file from
-the GitHub release, makes it executable and moves it to `/usr/local/bin/salt`,
-or to `$HOME/.local/bin/salt` when that directory is not writable and `sudo` is
+the GitHub release, makes it executable and moves it to `/usr/local/bin/nigari`,
+or to `$HOME/.local/bin/nigari` when that directory is not writable and `sudo` is
 not available. It then starts the server and prints the address to open. On a
 machine you reached over SSH that is the machine's own address, not
 `localhost`. Sending somebody to `localhost` from an SSH session is the most
 common way a fresh install goes nowhere.
 
-Set `SALT_NO_START=1` to install without starting, which is what you want from
+Set `NIGARI_NO_START=1` to install without starting, which is what you want from
 a provisioning script. A non-interactive install does not start it either, and
 prints the command instead.
 
@@ -41,17 +41,17 @@ Two variables change what it does:
 | Variable | Effect |
 | --- | --- |
 | `BIN_DIR=/path` | install there instead of the default |
-| `SALT_VERSION=v1.6.0` | fetch that release rather than the latest |
+| `NIGARI_VERSION=v1.6.0` | fetch that release rather than the latest |
 
 Each release carries five binaries and a checksum file:
 
 | File | For |
 | --- | --- |
-| `salt-linux-amd64` | Linux on Intel/AMD |
-| `salt-linux-arm64` | Linux on ARM |
-| `salt-darwin-amd64` | macOS on Intel |
-| `salt-darwin-arm64` | macOS on Apple silicon |
-| `salt-windows-amd64.exe` | Windows |
+| `nigari-linux-amd64` | Linux on Intel/AMD |
+| `nigari-linux-arm64` | Linux on ARM |
+| `nigari-darwin-amd64` | macOS on Intel |
+| `nigari-darwin-arm64` | macOS on Apple silicon |
+| `nigari-windows-amd64.exe` | Windows |
 | `SHA256SUMS.txt` | checksums for all of them |
 
 The installer handles Linux and macOS only; on Windows, download the `.exe` from
@@ -62,21 +62,21 @@ like from the outside.
 ### Or Docker
 
 ```sh
-docker run -d --name salt --restart unless-stopped \
+docker run -d --name nigari --restart unless-stopped \
   -p 8420:8420 -v salt-data:/data --memory=4g \
-  ghcr.io/neatlittlemacapps/salt.md:latest
+  ghcr.io/neatlittlemacapps/nigari:latest
 ```
 
 The image already sets the listen address to `:8420` and the data directory to
 `/data`, declares `/data` as a volume, and runs the process as a non-root user.
 
 **Set `--memory`.** A container cannot see how much the host means to give it,
-so without a limit salt.md deliberately assumes a small machine (2 GiB, however
+so without a limit nigari deliberately assumes a small machine (2 GiB, however
 large the host is) and indexes the text of fewer and smaller PDFs than it
 could. It says so in its startup log. This never affects whether an upload
 succeeds, only how much of a document's text reaches the search index. In a
 nested setup where even the cgroup cap is a lie (Docker inside LXC), say it
-outright with `SALT_MEMORY_MB`. [Self-hosting](self-hosting.md) covers memory,
+outright with `NIGARI_MEMORY_MB`. [Self-hosting](self-hosting.md) covers memory,
 HTTPS and reverse proxies.
 
 ### Or from source
@@ -89,7 +89,7 @@ documentation honest.
 ## Running it the first time
 
 ```sh
-salt
+nigari
 ```
 
 That is the whole command. The server writes a few lines as it starts, in this
@@ -101,28 +101,28 @@ order:
 - `memory: … MB available, soft limit … MB, PDF indexing up to … MB, …
   extraction(s) at a time` (on machines where it cannot tell, this line is
   absent)
-- `salt.md <version> listening on :8420 (data: ./data)`
+- `nigari <version> listening on :8420 (data: ./data)`
 
 **The last line is the one to read.** `./data` is relative to the directory you
-were in when you started it. Start salt.md from somewhere else tomorrow and it
+were in when you started it. Start nigari from somewhere else tomorrow and it
 will create a second, empty data directory and look as if everything is gone.
-Set `SALT_DATA` to an absolute path on any instance you intend to keep.
+Set `NIGARI_DATA` to an absolute path on any instance you intend to keep.
 
-Inside that directory: `salt.db` (the SQLite database, plus its `-wal` and
+Inside that directory: `nigari.db` (the SQLite database, plus its `-wal` and
 `-shm` companions while the server runs) and a `files` directory holding every
 upload. Those two things are the entire instance. See
 [Self-hosting](self-hosting.md) for backups.
 
 Five environment variables decide the rest. Every one of them starts with
-`SALT_`; a bare `DATA=…` is ignored in silence.
+`NIGARI_`; a bare `DATA=…` is ignored in silence.
 
 | Variable | Effect |
 | --- | --- |
-| `SALT_DATA` | where the database and the uploads live (default `./data`) |
-| `SALT_ADDR` | the address to listen on (default `:8420`; `127.0.0.1:9000` binds to this machine only) |
-| `SALT_TLS_CERT` and `SALT_TLS_KEY` | serve HTTPS directly from your own certificate and key, with no proxy in front. Both or neither |
-| `SALT_MEMORY_MB` | how much memory to assume, when neither the container nor the machine reports the truth |
-| `SALT_RESTORE_FORCE=1` | permit `salt restore` to overwrite a data directory that already holds a database |
+| `NIGARI_DATA` | where the database and the uploads live (default `./data`) |
+| `NIGARI_ADDR` | the address to listen on (default `:8420`; `127.0.0.1:9000` binds to this machine only) |
+| `NIGARI_TLS_CERT` and `NIGARI_TLS_KEY` | serve HTTPS directly from your own certificate and key, with no proxy in front. Both or neither |
+| `NIGARI_MEMORY_MB` | how much memory to assume, when neither the container nor the machine reports the truth |
+| `NIGARI_RESTORE_FORCE=1` | permit `nigari restore` to overwrite a data directory that already holds a database |
 
 An admin can also switch on automatic HTTPS from the settings dialog, which
 takes over ports 80 and 443 and fetches its own certificate
@@ -132,17 +132,17 @@ The binary answers four subcommands without starting a server at all:
 
 | Command | Does |
 | --- | --- |
-| `salt version` | prints the version and exits |
-| `salt backup <file.tar.gz>` | writes a consistent snapshot of database and uploads |
-| `salt restore <file.tar.gz>` | unpacks one into the data directory; it refuses when a `salt.db` is already there, unless `SALT_RESTORE_FORCE=1` is set |
-| `salt fix-notion-rows` | strips the repeated title-and-properties preamble Notion writes into every exported row, from rows already imported, and reports how many it cleaned |
+| `nigari version` | prints the version and exits |
+| `nigari backup <file.tar.gz>` | writes a consistent snapshot of database and uploads |
+| `nigari restore <file.tar.gz>` | unpacks one into the data directory; it refuses when a `nigari.db` is already there, unless `NIGARI_RESTORE_FORCE=1` is set |
+| `nigari fix-notion-rows` | strips the repeated title-and-properties preamble Notion writes into every exported row, from rows already imported, and reports how many it cleaned |
 
-`salt backup` is safe against a running instance: it takes a transactionally
+`nigari backup` is safe against a running instance: it takes a transactionally
 consistent snapshot rather than copying files, so nothing is caught mid-write.
-`salt restore` and `salt fix-notion-rows` take the database for themselves; stop
+`nigari restore` and `nigari fix-notion-rows` take the database for themselves; stop
 the server before either.
 
-**It is `salt version`, not `salt --version`.** An unrecognised command or flag
+**It is `nigari version`, not `nigari --version`.** An unrecognised command or flag
 prints an error and usage to stderr and exits with status 2. It does not start
 a server or open the database.
 
@@ -155,7 +155,7 @@ from a healthy one.
 Open `http://localhost:8420`. Because the instance has no accounts yet, the
 first thing you get is not a sign-in form but a welcome card that creates one:
 
-> **salt.md**
+> **nigari**
 > Create the first (admin) account for this workspace.
 
 ![The first screen of a brand new instance: it creates the first account, which is also the owner.](img/setup-welcome.png)
@@ -205,7 +205,7 @@ step is refused by the server.
 
 The sign-in card carries the same shape as the one that created the instance:
 
-> **salt.md**
+> **nigari**
 > Sign in to your workspace.
 
 ![Signing in. Buttons for Microsoft or Google appear here when single sign-on is configured.](img/sign-in.png)
@@ -282,7 +282,7 @@ Almost nothing, on purpose:
   means accounts created later join it automatically. Later accounts also get a
   private space of their own named after them; the first account does not: it
   has this one.
-- **One page: Welcome to salt.md**, with a salt-shaker icon. It is a short tour
+- **One page: Welcome to nigari**, with a nigari-shaker icon. It is a short tour
   of the editor: a `/` for the block menu, a three-item checklist, and a few
   lines about the data being a single file you can back up.
 - **No collections, no templates, no files, no other members.**
@@ -303,7 +303,7 @@ once there is more than one workspace, a picker appears at the top of it with
 ([Library](library.md)).
 
 Until you open something, the middle of the window offers two buttons, **New
-page** and **Import (.md / .zip)**. The `.zip` is not only a salt.md export: a
+page** and **Import (.md / .zip)**. The `.zip` is not only a nigari export: a
 Notion export drops in here too, database CSVs, nested `Part-N.zip` wrappers and
 all ([Import and export](import-export.md)). The welcome page is already there in
 the sidebar under Documents; click it to read it.
@@ -316,7 +316,7 @@ the sidebar under Documents; click it to read it.
 2. The page opens immediately with an empty title, showing *Untitled* as a
    placeholder. Type a title, then press Enter or click into the body.
 3. Type `/` anywhere in the body for the block menu: headings, lists, quotes,
-   code, tables, images, columns, plus four blocks that are salt.md's own,
+   code, tables, images, columns, plus four blocks that are nigari's own,
    **Callout**, **Bookmark / Embed**, **Embed a collection** and **Table of
    contents**. [Editor blocks](editor-blocks.md) covers them.
 4. Type `@`, or `[[`, and pick a page to make a real link to it. Both open the
@@ -325,7 +325,7 @@ the sidebar under Documents; click it to read it.
    anything.
 5. Drag a file from your desktop onto the page and it lands there as a block,
    anywhere on the page, not only onto the text. The text inside a PDF becomes
-   searchable, and clicking a PDF block opens it in a viewer inside salt.md
+   searchable, and clicking a PDF block opens it in a viewer inside nigari
    rather than downloading it. Everything else downloads as usual
    ([Files](files.md)).
 
@@ -335,7 +335,7 @@ stop typing, the body a little later; both survive a closed tab.
 
 The `+` beside **Collections** creates the other kind of page: a table with
 typed columns, which can also be looked at as a board, a calendar or a gallery
-without the data being copied. That is the part of salt.md a plain notes app
+without the data being copied. That is the part of nigari a plain notes app
 does not have ([Collections](collections.md) and [Views](views.md)).
 
 Anything below the top level is made from the tree itself: hover a row in the
@@ -393,7 +393,7 @@ Worth knowing on day one, at the bottom of the sidebar behind your own name:
 | **Activity log** | who did what in the workspaces you can see ([History and audit](history-and-audit.md)) |
 | **Subscribe to calendar** | every date property in your collections as a private feed for Apple Calendar, Google Calendar or Outlook |
 | **Language and time** | language, region, time zone, clock, first day of the week |
-| **Notes mode** and **Salt fonts** | a middle column for documents, and the bundled typefaces. Both per browser |
+| **Notes mode** and **nigari fonts** | a middle column for documents, and the bundled typefaces. Both per browser |
 | **Manage users** | admins only: create accounts, grant or revoke admin rights, deactivate |
 | **Instance settings** | admins only, in six tabs: *General*, *Access*, *Email*, *Domain & proxy*, *Webhooks*, *Maintenance* ([Administration](administration.md)) |
 

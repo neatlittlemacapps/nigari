@@ -43,7 +43,7 @@ await withFixture(async ({ page }) => {
   await open('API tokens');
   await top().waitFor();
   await page.evaluate(() => {
-    window.dispatchEvent(new CustomEvent('salt:dialog', { detail: { kind: 'confirm', message: 'Sure?', resolve: () => {} } }));
+    window.dispatchEvent(new CustomEvent('nigari:dialog', { detail: { kind: 'confirm', message: 'Sure?', resolve: () => {} } }));
   });
   await page.locator('.confirm-dialog').waitFor();
   await page.keyboard.press('Escape');

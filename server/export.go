@@ -587,7 +587,7 @@ func (s *Server) handleExportAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", `attachment; filename="salt-export.zip"`)
+	w.Header().Set("Content-Disposition", `attachment; filename="nigari-export.zip"`)
 	zw := zip.NewWriter(w)
 	defer zw.Close()
 

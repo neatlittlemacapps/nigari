@@ -156,7 +156,7 @@ const UNSET = '__unset__';
 
 // The value to store for a group option, respecting the property's type.
 // A relation holds an array of ids, same shape as a multiselect — dragging a
-// card into the "salt.md" column therefore means "this task belongs to salt.md".
+// card into the "nigari" column therefore means "this task belongs to nigari".
 function groupValueFor(schema: PropDef[], propId: string, optId: string): unknown {
   const prop = schema.find((p) => p.id === propId);
   return prop?.type === 'multiselect' || prop?.type === 'relation' ? [optId] : optId;
@@ -518,7 +518,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         loadConfig();
       }, 400);
     };
-    window.addEventListener('salt:rows', onRows);
+    window.addEventListener('nigari:rows', onRows);
     // Somebody pulled down, or pressed sync. Not debounced and not conditional:
     // they asked for THIS table, now.
     const stopRefresh = onRefresh(() => {
@@ -527,7 +527,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     });
     return () => {
       window.clearTimeout(timer);
-      window.removeEventListener('salt:rows', onRows);
+      window.removeEventListener('nigari:rows', onRows);
       stopRefresh();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1689,7 +1689,7 @@ function FilterSortControls({
       ];
     }
     // A relation stores page ids. Offering a free-text box here meant filtering
-    // "System is salt.md" required typing a 32-character id nobody can see —
+    // "System is nigari" required typing a 32-character id nobody can see —
     // the property was filterable in theory and unusable in practice.
     if (prop.type === 'relation' || prop.type === 'backrelation') {
       return (relOptions[propId] ?? []).map((o) => ({

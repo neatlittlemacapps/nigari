@@ -9,7 +9,7 @@ description: "Task list template for feature implementation"
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: REQUIRED in salt.md (this overrides Spec Kit's default). Every gated
+**Tests**: REQUIRED in nigari (this overrides Spec Kit's default). Every gated
 change gets a Go test for the refusal path; every interaction fix gets a
 Playwright spec in `web/tests/`.
 

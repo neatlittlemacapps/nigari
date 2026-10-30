@@ -559,11 +559,11 @@ func (srv *Server) pageHTML(p *page, printMode bool, o printOptions) string {
 		nonce = ` nonce="` + o.Nonce + `"`
 	}
 	b.WriteString(`<script` + nonce + `>` + paginateJS + "\n" +
-		`SALT_TITLE=` + jsString(title) + `;` +
-		`SALT_DAY=` + jsString(o.Date) + `;` +
-		`SALT_REGION=` + jsString(o.Region) + `;` +
-		`SALT_LANG=` + jsString(o.Language) + `;` +
-		`saltStart();` +
+		`NIGARI_TITLE=` + jsString(title) + `;` +
+		`NIGARI_DAY=` + jsString(o.Date) + `;` +
+		`NIGARI_REGION=` + jsString(o.Region) + `;` +
+		`NIGARI_LANG=` + jsString(o.Language) + `;` +
+		`nigariStart();` +
 		`document.querySelectorAll('[data-print]').forEach(function(b){b.addEventListener('click',function(){window.print()})});` +
 		`</script>`)
 	b.WriteString("</body></html>")
@@ -651,51 +651,51 @@ func applyPrintQuery(o printOptions, q url.Values) printOptions {
 // most documents that get printed are made of and the alternative is a page and
 // a half of white space.
 const paginateJS = `
-var SALT_TITLE='',SALT_DAY='',SALT_REGION='',SALT_LANG='';
+var NIGARI_TITLE='',NIGARI_DAY='',NIGARI_REGION='',NIGARI_LANG='';
 
-// saltLocale is the same rule i18n.ts follows: the account's region wins, and
+// nigariLocale is the same rule i18n.ts follows: the account's region wins, and
 // with none, the browser tag whose base matches the interface language — so a
 // German interface in an English browser still writes 10.08.2026 rather than
 // 08/10/2026. Falling back to the browser's own default instead was wrong in
 // exactly that case, which is the common one for anybody who keeps their
 // browser in English.
-function saltLocale(){
-  if(SALT_REGION)return SALT_REGION;
+function nigariLocale(){
+  if(NIGARI_REGION)return NIGARI_REGION;
   var tags=navigator.languages||[navigator.language||''];
-  if(SALT_LANG){
-    for(var i=0;i<tags.length;i++)if(tags[i].split('-')[0]===SALT_LANG)return tags[i];
-    return SALT_LANG;
+  if(NIGARI_LANG){
+    for(var i=0;i<tags.length;i++)if(tags[i].split('-')[0]===NIGARI_LANG)return tags[i];
+    return NIGARI_LANG;
   }
   return tags[0]||undefined;
 }
 
-// saltDay writes a calendar day out the way the reader writes one. Same rule as
+// nigariDay writes a calendar day out the way the reader writes one. Same rule as
 // format.ts, and the same trap avoided: new Date('2026-08-10') is UTC midnight,
 // which renders as the 9th west of Greenwich. Built from the parts instead, so
 // the day asked for is the day shown, everywhere on earth.
-function saltDay(iso){
+function nigariDay(iso){
   if(!iso)return '';
   var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if(!m)return iso;
   var d=new Date(+m[1],+m[2]-1,+m[3]);
   try{
-    return new Intl.DateTimeFormat(saltLocale()||undefined,
+    return new Intl.DateTimeFormat(nigariLocale()||undefined,
       {year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
   }catch(e){return iso;}
 }
 
 // The page box has to agree with the sheet, or the browser scales or splits it.
 // @page cannot be scoped to a class, so it is rewritten instead of switched.
-function saltPageRule(){
-  var st=document.getElementById('salt-page');
-  if(!st){st=document.createElement('style');st.id='salt-page';document.head.appendChild(st);}
+function nigariPageRule(){
+  var st=document.getElementById('nigari-page');
+  if(!st){st=document.createElement('style');st.id='nigari-page';document.head.appendChild(st);}
   st.textContent='@page{size:A4 '+(document.body.classList.contains('opt-landscape')?'landscape':'portrait')+';margin:0}';
 }
 
 // The last resort for a table that is still too wide once words may break: shrink
 // it to fit. Ugly, and far better than a column disappearing off the paper where
 // nobody sees that it is missing.
-function saltFitWide(body){
+function nigariFitWide(body){
   var t=body.querySelectorAll('table');
   for(var i=0;i<t.length;i++){
     var el=t[i],box=el.getBoundingClientRect(),w=box.width,h=box.height;
@@ -726,7 +726,7 @@ function saltFitWide(body){
 //
 // Two passes rather than waiting first: the images only start loading once they
 // are in the document, and inside a <template> they never load at all.
-function saltAfterImages(cb){
+function nigariAfterImages(cb){
   var imgs=document.querySelectorAll('#sheets img');
   var left=0,done=false;
   function fin(){if(done)return;done=true;cb();}
@@ -743,25 +743,25 @@ function saltAfterImages(cb){
   setTimeout(fin,4000);
 }
 
-function saltStart(){
-  var day=saltDay(SALT_DAY);
-  SALT_FOOT=day?SALT_TITLE+' \u00b7 '+day:SALT_TITLE;
+function nigariStart(){
+  var day=nigariDay(NIGARI_DAY);
+  NIGARI_FOOT=day?NIGARI_TITLE+' \u00b7 '+day:NIGARI_TITLE;
   var c=document.querySelector('#doc-cover');
   if(c){
     var slot=c.content.querySelector('.cover-day');
     if(slot)slot.textContent=day;
   }
-  saltRepaginate();
+  nigariRepaginate();
 }
 
 // Cut, then cut again once the pictures have loaded and therefore have a size.
-function saltRepaginate(){
-  saltPaginate();
-  saltAfterImages(saltPaginate);
+function nigariRepaginate(){
+  nigariPaginate();
+  nigariAfterImages(nigariPaginate);
 }
-var SALT_FOOT='';
-function saltPaginate(){
-  saltPageRule();
+var NIGARI_FOOT='';
+function nigariPaginate(){
+  nigariPageRule();
   var src=document.getElementById('doc-src'),cov=document.getElementById('doc-cover');
   var host=document.getElementById('sheets');
   if(!src||!host)return;
@@ -774,7 +774,7 @@ function saltPaginate(){
     var b=document.createElement('div');b.className='sheet-body';s.appendChild(b);
     var f=document.createElement('div');f.className='sheet-foot';
     f.innerHTML='<span class="foot-title"></span><span class="foot-num"></span>';
-    f.firstChild.textContent=SALT_FOOT;
+    f.firstChild.textContent=NIGARI_FOOT;
     s.appendChild(f);host.appendChild(s);return b;
   }
   function over(b){return b.scrollHeight>b.clientHeight+1;}
@@ -809,7 +809,7 @@ function saltPaginate(){
     if(el.tagName==='TABLE'){
       var rest=el;
       while(over(cur)){
-        var moved=saltCutTable(rest,cur);
+        var moved=nigariCutTable(rest,cur);
         if(!moved)break;
         cur=sheet('');
         cur.appendChild(moved);
@@ -820,14 +820,14 @@ function saltPaginate(){
     // Forcing it would only hide the end of it.
   }
   var bodies=document.querySelectorAll('.sheet:not(.sheet-cover) .sheet-body');
-  for(var b=0;b<bodies.length;b++)saltFitWide(bodies[b]);
-  saltNumber();
+  for(var b=0;b<bodies.length;b++)nigariFitWide(bodies[b]);
+  nigariNumber();
 }
 
-// saltCutTable moves rows off the end of a table until it fits, and returns the
+// nigariCutTable moves rows off the end of a table until it fits, and returns the
 // clone that carries them. The head row goes along, so a table continued on the
 // next sheet still says what its columns are.
-function saltCutTable(tbl,body){
+function nigariCutTable(tbl,body){
   var rows=tbl.querySelectorAll('tr');
   if(rows.length<2)return null;
   var moved=[];
@@ -848,7 +848,7 @@ function saltCutTable(tbl,body){
 
 // The cover is not page one. Nobody numbers a title page, and starting the
 // count after it is what makes "2 / 5" mean the second page of the document.
-function saltNumber(){
+function nigariNumber(){
   var sheets=[].slice.call(document.querySelectorAll('.sheet:not(.sheet-cover)'));
   for(var i=0;i<sheets.length;i++){
     var n=sheets[i].querySelector('.foot-num');
@@ -860,7 +860,7 @@ document.addEventListener('change',function(e){
   var t=e.target;
   if(!t||!t.dataset||!t.dataset.cls)return;
   document.body.classList.toggle(t.dataset.cls,t.checked);
-  saltRepaginate();
+  nigariRepaginate();
 });
 document.addEventListener('DOMContentLoaded',function(){
   document.querySelectorAll('.doc-side input[data-cls]').forEach(function(c){

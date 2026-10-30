@@ -31,7 +31,8 @@ import (
 // CRDT is seeded from it again — the same path as for new pages).
 //
 // ZIP layout:
-//   salt-workspace.json   manifest (format version, workspace meta, counters)
+//   nigari-workspace.json manifest (format version, workspace meta, counters);
+//                         salt.md wrote salt-workspace.json, still read
 //   pages.json            every page including collection schema and views
 //   tags.json             tag → colour
 //   files/<name>          referenced uploads
@@ -39,10 +40,12 @@ import (
 const transferFormat = 1
 
 type transferManifest struct {
-	Format      int    `json:"format"`
-	SaltVersion string `json:"saltVersion"`
-	ExportedAt  string `json:"exportedAt"`
-	Workspace   struct {
+	Format int `json:"format"`
+	// The release that wrote the archive; salt.md called it saltVersion.
+	NigariVersion string `json:"nigariVersion,omitempty"`
+	SaltVersion   string `json:"saltVersion,omitempty"`
+	ExportedAt    string `json:"exportedAt"`
+	Workspace     struct {
 		Name  string `json:"name"`
 		Icon  string `json:"icon"`
 		Image string `json:"image"`
@@ -174,7 +177,7 @@ func (s *Server) handleExportWorkspace(w http.ResponseWriter, r *http.Request) {
 		tr.Close()
 	}
 
-	manifest := transferManifest{Format: transferFormat, SaltVersion: Version, ExportedAt: now()}
+	manifest := transferManifest{Format: transferFormat, NigariVersion: Version, ExportedAt: now()}
 	manifest.Workspace.Name = wsName
 	manifest.Workspace.Icon = wsIcon
 	manifest.Workspace.Image = wsImage
@@ -184,7 +187,7 @@ func (s *Server) handleExportWorkspace(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition",
-		mime.FormatMediaType("attachment", map[string]string{"filename": safeFilename(wsName) + ".salt.zip"}))
+		mime.FormatMediaType("attachment", map[string]string{"filename": safeFilename(wsName) + ".nigari.zip"}))
 	zw := zip.NewWriter(w)
 	defer zw.Close()
 
@@ -197,7 +200,7 @@ func (s *Server) handleExportWorkspace(w http.ResponseWriter, r *http.Request) {
 		enc.SetEscapeHTML(false)
 		return enc.Encode(v) == nil
 	}
-	if !writeJSONEntry("salt-workspace.json", manifest) ||
+	if !writeJSONEntry(manifestFile, manifest) ||
 		!writeJSONEntry("pages.json", pages) ||
 		!writeJSONEntry("tags.json", tagColors) {
 		return
@@ -312,12 +315,12 @@ func (s *Server) importWorkspaceFS(u *user, fsys fs.FS, opt importOptions) (*imp
 	}
 
 	var manifest transferManifest
-	if b := readEntry("salt-workspace.json"); b == nil || json.Unmarshal(b, &manifest) != nil {
-		return nil, coded("bad_archive", "not a salt.md workspace archive (salt-workspace.json missing)")
+	if b := readManifest(fsys); b == nil || json.Unmarshal(b, &manifest) != nil {
+		return nil, coded("bad_archive", "not a nigari workspace archive ("+manifestFile+" missing)")
 	}
 	if manifest.Format > transferFormat {
 		return nil, coded("archive_too_new",
-			fmt.Sprintf("archive format %d is newer than this instance supports (%d). Update salt.md", manifest.Format, transferFormat))
+			fmt.Sprintf("archive format %d is newer than this instance supports (%d). Update nigari", manifest.Format, transferFormat))
 	}
 	var pages []transferPage
 	if b := readEntry("pages.json"); b == nil || json.Unmarshal(b, &pages) != nil {

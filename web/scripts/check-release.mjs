@@ -14,7 +14,7 @@
 //   2. install.sh defaults to it; the image is this repository's; the install
 //      lines in README, wiki, docs and deployment files name it.
 //   3. release.yml, the Makefile and the Dockerfile feed one version into the
-//      frontend (SALT_VERSION) and the server (-X salt/server.Version). Two
+//      frontend (NIGARI_VERSION) and the server (-X nigari/server.Version). Two
 //      versions show "a new version is available" on every page load.
 //   4. Server releases are latest and not prereleases; desktop releases are
 //      never latest (install.sh and the update check read /releases/latest).
@@ -36,8 +36,8 @@ else if (fork === UPSTREAM) fail('server/update.go', `updateRepo is upstream's (
 
 // 2. Where people install from.
 const install = read('install.sh');
-const def = install.match(/^REPO="\$\{SALT_REPO:-([^}]+)\}"/m)?.[1];
-if (def !== fork) fail('install.sh', `REPO must default to ${fork} through SALT_REPO, found ${def ?? 'none'}`);
+const def = install.match(/^REPO="\$\{NIGARI_REPO:-([^}]+)\}"/m)?.[1];
+if (def !== fork) fail('install.sh', `REPO must default to ${fork} through NIGARI_REPO, found ${def ?? 'none'}`);
 
 const docker = read('.github/workflows/docker.yml');
 if (!docker.includes('ghcr.io/${{ github.repository }}:')) fail('.github/workflows/docker.yml', 'image tags must be ghcr.io/${{ github.repository }}');
@@ -45,7 +45,7 @@ if (docker.includes(`ghcr.io/${UPSTREAM}`)) fail('.github/workflows/docker.yml',
 
 // Install lines: the script URL, the image, release downloads.
 const upstreamLinks = [`raw.githubusercontent.com/${UPSTREAM}/`, `ghcr.io/${UPSTREAM}`, `github.com/${UPSTREAM}/releases`];
-const docFiles = ['README.md', 'docker-compose.yml', 'deploy/salt.container', 'install.sh'];
+const docFiles = ['README.md', 'docker-compose.yml', 'deploy/nigari.container', 'install.sh'];
 for (const dir of ['wiki', 'docs']) {
   for (const f of readdirSync(join(repo, dir))) if (f.endsWith('.md')) docFiles.push(`${dir}/${f}`);
 }
@@ -53,21 +53,21 @@ for (const dir of ['wiki', 'docs']) {
 for (const f of docFiles.filter((f) => f !== 'docs/decisions.md' && existsSync(join(repo, f)))) {
   read(f).split('\n').forEach((line, i) => {
     for (const link of upstreamLinks) {
-      if (line.includes(link) && !line.includes('SALT_REPO')) fail(`${f}:${i + 1}`, `installs from upstream (${link}); use ${fork}`);
+      if (line.includes(link) && !line.includes('NIGARI_REPO')) fail(`${f}:${i + 1}`, `installs from upstream (${link}); use ${fork}`);
     }
   });
 }
 
 // 3. One version for both halves.
 const release = read('.github/workflows/release.yml');
-const fe = release.match(/SALT_VERSION:\s*(\$\{\{[^}]+\}\})/)?.[1];
+const fe = release.match(/NIGARI_VERSION:\s*(\$\{\{[^}]+\}\})/)?.[1];
 const be = release.match(/VERSION="(\$\{\{[^}]+\}\})"/)?.[1];
 if (!fe || !be || fe !== be) fail('.github/workflows/release.yml', `the frontend (${fe ?? 'none'}) and the server (${be ?? 'none'}) must be built with the same version`);
-if (!/-X salt\/server\.Version=\$\{VERSION\}/.test(release)) fail('.github/workflows/release.yml', 'the binaries must be stamped with -X salt/server.Version=${VERSION}');
+if (!/-X nigari\/server\.Version=\$\{VERSION\}/.test(release)) fail('.github/workflows/release.yml', 'the binaries must be stamped with -X nigari/server.Version=${VERSION}');
 
 const make = read('Makefile');
-if (!/SALT_VERSION=\$\(VERSION\)/.test(make) || !/-X salt\/server\.Version=\$\(VERSION\)/.test(make)) {
-  fail('Makefile', 'frontend and backend must both take $(VERSION) (SALT_VERSION=$(VERSION), -X salt/server.Version=$(VERSION))');
+if (!/NIGARI_VERSION=\$\(VERSION\)/.test(make) || !/-X nigari\/server\.Version=\$\(VERSION\)/.test(make)) {
+  fail('Makefile', 'frontend and backend must both take $(VERSION) (NIGARI_VERSION=$(VERSION), -X nigari/server.Version=$(VERSION))');
 }
 const dockerfile = read('Dockerfile');
 // The image's frontend stage runs this whole gate (npm run build), so it must
@@ -75,7 +75,7 @@ const dockerfile = read('Dockerfile');
 // image each time a check read a new one (v1.6.9: .specify/).
 const webStage = dockerfile.slice(dockerfile.indexOf(' AS web'), dockerfile.search(/^RUN .*npm run build/m));
 if (!/^COPY \. \/src$/m.test(webStage)) fail('Dockerfile', 'the frontend stage must COPY . /src before npm run build: the gate inside it reads files all over the repository');
-if (!/SALT_VERSION=\$\{VERSION\}/.test(dockerfile) || !/-X salt\/server\.Version=\$\{VERSION\}/.test(dockerfile)) {
+if (!/NIGARI_VERSION=\$\{VERSION\}/.test(dockerfile) || !/-X nigari\/server\.Version=\$\{VERSION\}/.test(dockerfile)) {
   fail('Dockerfile', 'frontend and backend must both take ${VERSION}');
 }
 

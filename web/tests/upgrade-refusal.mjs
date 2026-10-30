@@ -20,9 +20,9 @@ import { eventually } from './fixture.mjs';
 // between, which is what a downgrade looks like from the inside.
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const temp = await mkdtemp(join(tmpdir(), 'salt-upgrade-refusal-'));
+const temp = await mkdtemp(join(tmpdir(), 'nigari-upgrade-refusal-'));
 const data = join(temp, 'data');
-const dbFile = join(data, 'salt.db');
+const dbFile = join(data, 'nigari.db');
 let server;
 let browser;
 
@@ -36,8 +36,8 @@ async function freePort() {
 }
 
 function start(binary, port) {
-  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('SALT_')));
-  return spawn(binary, [], { env: { ...env, SALT_DATA: data, SALT_ADDR: `127.0.0.1:${port}` }, stdio: 'ignore' });
+  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('NIGARI_')));
+  return spawn(binary, [], { env: { ...env, NIGARI_DATA: data, NIGARI_ADDR: `127.0.0.1:${port}` }, stdio: 'ignore' });
 }
 
 async function stop(proc) {
@@ -52,7 +52,7 @@ async function stop(proc) {
 const sha = async file => createHash('sha256').update(await readFile(file)).digest('hex');
 
 try {
-  const binary = join(temp, process.platform === 'win32' ? 'salt.exe' : 'salt');
+  const binary = join(temp, process.platform === 'win32' ? 'nigari.exe' : 'nigari');
   const build = spawnSync(process.env.GO_BINARY || 'go', ['build', '-o', binary, '.'], { cwd: root, encoding: 'utf8' });
   assert.equal(build.status, 0, build.stderr || String(build.error || 'Build failed'));
 
@@ -87,7 +87,7 @@ try {
   assert.equal(answer.status, 503);
   const body = await answer.json();
   assert.equal(body.code, 'upgrade_refused');
-  assert.match(body.error, new RegExp(`at upgrade step ${newest + 1}, but this salt\\.md .* only knows steps up to ${newest}\\.`));
+  assert.match(body.error, new RegExp(`at upgrade step ${newest + 1}, but this nigari .* only knows steps up to ${newest}\\.`));
 
   const mcp = await fetch(`${base}/mcp`, { method: 'POST', body: '{}' });
   assert.equal(mcp.status, 503);
@@ -100,7 +100,7 @@ try {
   const page = await (await browser.newContext({ locale: 'en-US' })).newPage();
   const response = await page.goto(`${base}/p/anything`);
   assert.equal(response.status(), 503);
-  await page.getByRole('heading', { name: 'salt.md did not start' }).waitFor();
+  await page.getByRole('heading', { name: 'nigari did not start' }).waitFor();
   assert.match(await page.textContent('body'), /It has not been changed\./);
   assert.match(await page.textContent('body'), /upgrade_refused/);
   assert.equal(await page.locator('script').count(), 0, 'the refusal page carries a script');

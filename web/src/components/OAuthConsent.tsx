@@ -13,7 +13,7 @@ import { KeyRound, ShieldCheck, TriangleAlert } from 'lucide-react';
 // one is.
 //
 // THE CLIENT NAME IS A CLAIM, not an identity. It comes from an open
-// registration endpoint, so anybody can register as "salt.md Official". The
+// registration endpoint, so anybody can register as "nigari Official". The
 // screen says so rather than dressing it up — a consent screen that lends
 // credibility it cannot check is worse than none.
 
@@ -112,11 +112,11 @@ export default function OAuthConsent() {
     <div className="consent-page">
       <div className="consent-card">
         {/* Which instance is asking. A consent screen with no identity could be
-            any salt.md anywhere, and "what am I handing this to" is the first
+            any nigari anywhere, and "what am I handing this to" is the first
             question somebody should be able to answer at a glance. */}
         <div className="consent-brand">
           <img src="/favicon.svg" alt="" width={26} height={26} />
-          <span className="consent-brand-name">{info.instanceName || 'salt.md'}</span>
+          <span className="consent-brand-name">{info.instanceName || 'nigari'}</span>
           <span className="consent-brand-host">{info.host}</span>
         </div>
         <h1>

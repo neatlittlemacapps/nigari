@@ -247,6 +247,9 @@ func (s *Server) cleanupNotionRowBodies() (int, error) {
 // Notion-import row bodies. Run with the server stopped (it takes the sole
 // SQLite connection). Exposed for the "fix-notion-rows" CLI subcommand.
 func FixNotionRows(dataDir string) (int, error) {
+	if _, err := moveOldDatabase(dataDir); err != nil {
+		return 0, err
+	}
 	if _, err := upgradeDB(filepath.Join(dataDir, DBFile)); err != nil {
 		return 0, err
 	}

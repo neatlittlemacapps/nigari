@@ -6,8 +6,10 @@ name: Release
 # Before, the fork had no releases, so installing it gave upstream's v1.1.4.
 #
 # The version: the fork's own patch line. The next number after the highest
-# fork tag on the line named by server.Version's major.minor (1.6 today), so
-# every release sorts above upstream's v1.1.x tags that the fork carries.
+# fork tag on the line named by server.Version's major.minor, so every release
+# sorts above upstream's v1.1.x tags that the fork carries. A line with no tag
+# yet releases server.Version itself: the first nigari release is v2.0.0, not
+# v2.0.1 (spec 011, research R11).
 # server/update.go only treats plain x.y.z as a release, which is why this is
 # not "1.6.8+42". A pushed v* tag still releases as itself.
 on:
@@ -45,8 +47,9 @@ jobs:
             base=$(sed -n 's/^var Version = "\(.*\)"$/\1/p' server/backup.go)
             line="${base%.*}"
             last=$(git tag -l "v${line}.*" --sort=-v:refname | head -n1)
-            if [ -n "$last" ]; then n="${last##*.}"; else n="${base##*.}"; fi
-            version="v${line}.$((n + 1))"
+            # A line with releases continues from its last; a line nobody has
+            # released yet starts at server.Version itself (v2.0.0, spec 011).
+            if [ -n "$last" ]; then version="v${line}.$(( ${last##*.} + 1 ))"; else version="v${base}"; fi
           fi
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "Releasing ${version}" >> "$GITHUB_STEP_SUMMARY"
@@ -62,7 +65,7 @@ jobs:
       # Build the frontend once — it's the same embedded static bundle for
       # every OS/arch, so we reuse web/dist across all cross-compiles.
       #
-      # SALT_VERSION is not optional here. The frontend stamps it in and
+      # NIGARI_VERSION is not optional here. The frontend stamps it in and
       # compares it against the version the server reports; built without it
       # the bundle says "dev", the binary says "v1.0.0", and every page load
       # raises "a new version is available" that reloading never clears. That
@@ -70,7 +73,7 @@ jobs:
       - name: Build frontend
         run: make frontend
         env:
-          SALT_VERSION: ${{ steps.v.outputs.version }}
+          NIGARI_VERSION: ${{ steps.v.outputs.version }}
 
       - name: Cross-compile binaries
         run: |
@@ -79,11 +82,11 @@ jobs:
           mkdir -p dist
           build() {
             os="$1"; arch="$2"; ext="${3:-}"
-            out="dist/salt-${os}-${arch}${ext}"
+            out="dist/nigari-${os}-${arch}${ext}"
             echo "→ $out"
             CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" \
               go build -trimpath \
-              -ldflags "-s -w -X salt/server.Version=${VERSION}" \
+              -ldflags "-s -w -X nigari/server.Version=${VERSION}" \
               -o "$out" .
           }
           build linux  amd64
@@ -91,7 +94,7 @@ jobs:
           build darwin amd64
           build darwin arm64
           build windows amd64 .exe
-          ( cd dist && sha256sum salt-* > SHA256SUMS.txt )
+          ( cd dist && sha256sum nigari-* > SHA256SUMS.txt )
           ls -lh dist
 
       # The action creates the tag on this commit. A tag pushed with

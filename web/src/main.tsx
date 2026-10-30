@@ -1,3 +1,7 @@
+// First, before any module below reads localStorage: preferences kept under
+// salt.md's names move to nigari's (spec 011). i18n.ts reads its cache when
+// it loads, so this import must stay above everything that imports it.
+import './storageMove';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import '@blocknote/core/fonts/inter.css';

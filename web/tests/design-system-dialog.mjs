@@ -37,12 +37,12 @@ await withFixture(async ({ page }) => {
   assert.equal(await trashed.getAttribute('aria-checked'), 'true', 'Space did not tick the event');
 
   const address = dialog.getByRole('textbox', { name: 'Address to call' });
-  await address.fill('https://hooks.example.test/salt');
+  await address.fill('https://hooks.example.test/nigari');
   await dialog.getByRole('button', { name: 'Add', exact: true }).click();
   await dialog.getByText('Copy this secret now. It is shown only once.').waitFor();
   await dialog.getByRole('button', { name: 'I have it' }).click();
   await dialog.getByText('Copy this secret now. It is shown only once.').waitFor({ state: 'hidden' });
-  await dialog.getByText('https://hooks.example.test/salt').waitFor();
+  await dialog.getByText('https://hooks.example.test/nigari').waitFor();
 
   await page.keyboard.press('Escape');
   await dialog.waitFor({ state: 'hidden' });

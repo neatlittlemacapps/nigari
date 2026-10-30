@@ -10,7 +10,7 @@ import (
 
 // Telling an admin that a newer release exists.
 //
-// This is the first thing a salt.md instance does on its own initiative that
+// This is the first thing a nigari instance does on its own initiative that
 // leaves the machine. Everything else outbound — webhooks, the calendar feed,
 // the URL importer, the tunnel — happens because somebody configured it. So it
 // is switchable, it is documented in wiki/automation.md beside the others, and
@@ -25,7 +25,7 @@ import (
 const (
 	// This fork's releases (#265): every push to main is one. Asking upstream
 	// told a fork instance about releases that are not its own.
-	updateRepo    = "neatlittlemacapps/salt.md"
+	updateRepo    = "neatlittlemacapps/nigari"
 	updateLatest  = "https://github.com/" + updateRepo + "/releases/latest"
 	updateEvery   = 24 * time.Hour
 	updateTimeout = 10 * time.Second
