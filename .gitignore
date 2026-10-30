@@ -4,7 +4,7 @@ node_modules
 web/dist/*
 !web/dist/.gitkeep
 data/
-/salt
+/nigari
 *.log
 .DS_Store
 
