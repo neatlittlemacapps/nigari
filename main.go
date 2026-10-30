@@ -67,7 +67,9 @@ func main() {
 			fmt.Printf("Restored %s into %s\n%s\n", os.Args[2], dataDir, report)
 			return
 		case "version":
-			fmt.Println(server.Version)
+			// The release, and the newest upgrade step it knows: what an
+			// operator compares with "upgrade step N" in a refusal (spec 008).
+			fmt.Printf("%s (upgrade step %d)\n", server.Version, server.NewestStep())
 			return
 		case "fix-notion-rows":
 			// One-time: strip Notion's repeated "# title + Property: value"

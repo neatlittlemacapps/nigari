@@ -134,6 +134,66 @@ func upgradeWith(path string, steps []*goose.Migration) ([]int64, error) {
 	return ran, nil
 }
 
+// NewestStep is the newest upgrade step this release knows: what "nigari
+// version" prints beside the release, and what the admin's maintenance view
+// compares the database's step with.
+func NewestStep() int64 {
+	steps := upgradeSteps()
+	return steps[len(steps)-1].Version
+}
+
+// upgradeCopy is one pre-upgrade copy as the maintenance view lists it.
+type upgradeCopy struct {
+	Name    string `json:"name"`
+	Size    int64  `json:"size"`
+	TakenAt string `json:"takenAt"`
+}
+
+// upgradeState is the admin's view of upgrades (contracts/rest.md): the
+// database's step, the newest this release knows, when the newest applied
+// step ran (empty if none ever did), and the copies kept beside the database,
+// newest first. One query and one directory listing, read when the admin
+// opens maintenance, never per request.
+func upgradeState(db *sql.DB, path string) map[string]any {
+	step, lastAt := int64(0), ""
+	if s, err := storedStep(db); err == nil && s > 0 {
+		step = s
+		// goose writes tstamp as SQLite's datetime('now'): UTC, no zone. The
+		// driver hands back a time for the TIMESTAMP column, or the text.
+		var ts any
+		if db.QueryRow(`SELECT tstamp FROM goose_db_version WHERE is_applied AND version_id = ? ORDER BY id DESC LIMIT 1`, s).Scan(&ts) == nil {
+			switch v := ts.(type) {
+			case time.Time:
+				lastAt = v.UTC().Format(time.RFC3339)
+			case string:
+				if t, err := time.Parse("2006-01-02 15:04:05", v); err == nil {
+					lastAt = t.Format(time.RFC3339)
+				}
+			}
+		}
+	}
+	copies := []upgradeCopy{}
+	matches, _ := filepath.Glob(path + ".before-step-*")
+	type found struct {
+		c    upgradeCopy
+		step int
+	}
+	var list []found
+	for _, m := range matches {
+		n, err := strconv.Atoi(strings.TrimPrefix(m, path+".before-step-"))
+		fi, statErr := os.Stat(m)
+		if err != nil || statErr != nil {
+			continue // not ours, or gone since the listing
+		}
+		list = append(list, found{upgradeCopy{filepath.Base(m), fi.Size(), fi.ModTime().UTC().Format(time.RFC3339)}, n})
+	}
+	sort.Slice(list, func(i, j int) bool { return list[i].step > list[j].step })
+	for i := 0; i < len(list) && i < keepCopies; i++ {
+		copies = append(copies, list[i].c)
+	}
+	return map[string]any{"step": step, "newest": NewestStep(), "lastAt": lastAt, "copies": copies}
+}
+
 // stepsDetail is the activity log's detail for a start that ran steps.
 func stepsDetail(ran []int64) string {
 	if len(ran) == 1 {

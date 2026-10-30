@@ -83,7 +83,7 @@ description: "Tasks for safe upgrades"
 
 ## Phase 9: User Story 7: the admin's view (P3)
 
-- [ ] T023 [US7] [backend] `server/instance.go` `GET /api/admin/info` gains `upgrade {step, newest, lastAt, copies[]}` (contracts/rest.md); `salt version` prints the release and the newest step
+- [x] T023 [US7] [backend] `server/instance.go` `GET /api/admin/info` gains `upgrade {step, newest, lastAt, copies[]}` (contracts/rest.md); `salt version` prints the release and the newest step
 - [ ] T024 [US7] [ui] `web/src/components/AdminSettings.tsx` maintenance tab: "Database upgrades" (step, newest, last upgrade, copies with size and date), light and dark; `web/src/api.ts`; German and Spanish
 
 ---

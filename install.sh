@@ -161,7 +161,10 @@ trap - EXIT
 # `nigari version` already prints a leading v, and $ver is "latest" when nobody
 # pinned one — so normalise instead of gluing a v in front of whatever comes
 # back, which produced "vv1.0.0" and could have produced "vlatest".
-installed=$("$bindir/nigari" version 2>/dev/null || echo "$ver")
+# Only the first word is the release: since spec 008 the line goes on with the
+# newest upgrade step, "2.0.3 (upgrade step 1)", which is not part of a version.
+installed=$("$bindir/nigari" version 2>/dev/null | awk 'NR == 1 { print $1 }' || true)
+[ -n "$installed" ] || installed=$ver
 installed=${installed#v}
 case "$installed" in latest|'') installed='' ;; *) installed="v$installed   " ;; esac
 
