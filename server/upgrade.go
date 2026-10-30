@@ -173,23 +173,13 @@ func upgradeState(db *sql.DB, path string) map[string]any {
 		}
 	}
 	copies := []upgradeCopy{}
-	matches, _ := filepath.Glob(path + ".before-step-*")
-	type found struct {
-		c    upgradeCopy
-		step int
-	}
-	var list []found
-	for _, m := range matches {
-		n, err := strconv.Atoi(strings.TrimPrefix(m, path+".before-step-"))
-		fi, statErr := os.Stat(m)
-		if err != nil || statErr != nil {
-			continue // not ours, or gone since the listing
+	for _, c := range listCopies(path) {
+		if len(copies) == keepCopies {
+			break
 		}
-		list = append(list, found{upgradeCopy{filepath.Base(m), fi.Size(), fi.ModTime().UTC().Format(time.RFC3339)}, n})
-	}
-	sort.Slice(list, func(i, j int) bool { return list[i].step > list[j].step })
-	for i := 0; i < len(list) && i < keepCopies; i++ {
-		copies = append(copies, list[i].c)
+		if fi, err := os.Stat(c.path); err == nil { // gone since the listing: skip
+			copies = append(copies, upgradeCopy{filepath.Base(c.path), fi.Size(), fi.ModTime().UTC().Format(time.RFC3339)})
+		}
 	}
 	return map[string]any{"step": step, "newest": NewestStep(), "lastAt": lastAt, "copies": copies}
 }
@@ -250,23 +240,35 @@ func copyBeforeUpgrade(db *sql.DB, path string, n int64) error {
 	return nil
 }
 
-// pruneCopies removes all but the newest keepCopies pre-upgrade copies of the
-// database at path, newest by step number.
-func pruneCopies(path string) {
+// copyOnDisk is one pre-upgrade copy of a database: its path and the step it
+// was taken before.
+type copyOnDisk struct {
+	path string
+	step int64
+}
+
+// listCopies finds the pre-upgrade copies of the database at path, newest
+// (highest step) first. The one place that knows how copies are named, so
+// pruning, the refusal and the maintenance view cannot disagree about which
+// files are copies or which is newest.
+func listCopies(path string) []copyOnDisk {
 	matches, _ := filepath.Glob(path + ".before-step-*")
-	type copyFile struct {
-		path string
-		step int
-	}
-	var copies []copyFile
+	var copies []copyOnDisk
 	for _, m := range matches {
-		n, err := strconv.Atoi(strings.TrimPrefix(m, path+".before-step-"))
+		n, err := strconv.ParseInt(strings.TrimPrefix(m, path+".before-step-"), 10, 64)
 		if err != nil {
 			continue // not ours
 		}
-		copies = append(copies, copyFile{m, n})
+		copies = append(copies, copyOnDisk{m, n})
 	}
 	sort.Slice(copies, func(i, j int) bool { return copies[i].step > copies[j].step })
+	return copies
+}
+
+// pruneCopies removes all but the newest keepCopies pre-upgrade copies of the
+// database at path, newest by step number.
+func pruneCopies(path string) {
+	copies := listCopies(path)
 	for i := keepCopies; i < len(copies); i++ {
 		if err := os.Remove(copies[i].path); err == nil {
 			log.Printf("upgrade: removed the oldest copy %s (%d are kept)", copies[i].path, keepCopies)
@@ -307,15 +309,11 @@ func inspectDB(path string) (tables int, step int64, err error) {
 // know. It says both numbers and the two ways out (FR-007).
 func refuseNewer(path string, stored, newest int64) *UpgradeRefusal {
 	back := "restore a backup made before that upgrade with nigari restore <file>"
-	if copies, _ := filepath.Glob(path + ".before-step-*"); len(copies) > 0 {
-		best, bestStep := "", -1
-		for _, c := range copies {
-			if n, err := strconv.Atoi(strings.TrimPrefix(c, path+".before-step-")); err == nil && int64(n) <= newest+1 && n > bestStep {
-				best, bestStep = c, n
-			}
-		}
-		if best != "" {
-			back = fmt.Sprintf("stop nigari and run cp %q %q && rm -f %q %q", best, path, path+"-wal", path+"-shm")
+	// The newest copy this release can open: taken before a step it knows.
+	for _, c := range listCopies(path) {
+		if c.step <= newest+1 {
+			back = fmt.Sprintf("stop nigari and run cp %q %q && rm -f %q %q", c.path, path, path+"-wal", path+"-shm")
+			break
 		}
 	}
 	return &UpgradeRefusal{Code: "upgrade_refused", Sentence: fmt.Sprintf(

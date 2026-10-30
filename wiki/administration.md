@@ -312,8 +312,9 @@ overwrite"*. Restore into an empty directory, or set that variable deliberately.
 The full procedure is in [Self-hosting](self-hosting.md).
 
 **Database upgrades** shows what the database has been through: the **upgrade
-step** it is at (and whether that is the newest this release knows), when the
-**last upgrade** ran, and the **copies before upgrades** kept in the data
+step** it is at (and whether that is the newest this release knows), when that
+**step was applied** (on a new instance, when it was set up), and the **copies
+before upgrades** kept in the data
 directory, with their size and time. A release that changes how data is stored
 copies the database first and keeps the newest three copies. Going back to one
 is a command on the server: [Self-hosting → Updating](self-hosting.md#updating).

@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -112,8 +113,7 @@ func tarFile(tw *tar.Writer, path, name string) error {
 // dataDir is replaced: restoring it would only produce a data directory the
 // next start refuses (upgrade_refused), with the database that was there gone.
 func Restore(dataDir, src string) (string, error) {
-	steps := upgradeSteps()
-	return restoreWith(dataDir, src, steps[len(steps)-1].Version)
+	return restoreWith(dataDir, src, NewestStep())
 }
 
 // restoreWith is Restore with the newest step as an argument, so tests can
@@ -147,6 +147,10 @@ func restoreWith(dataDir, src string, newest int64) (string, error) {
 	if snap != "" {
 		tables, step, err := inspectDB(snap)
 		if err != nil {
+			os.Remove(snap)
+			if created {
+				os.Remove(dataDir)
+			}
 			return "", fmt.Errorf("read the backup's database: %w", err)
 		}
 		if step > newest {
@@ -175,6 +179,22 @@ func restoreWith(dataDir, src string, newest int64) (string, error) {
 		// Not before: a missing or broken archive must not cost the old one.
 		for _, side := range []string{"", "-wal", "-shm"} {
 			os.Remove(filepath.Join(dataDir, oldDBFile+side))
+		}
+		// Copies taken before upgrades of the database just replaced are not
+		// copies of this one. Left behind, the next start would prune the copy
+		// it takes for this database as "older" than theirs (they are by step
+		// number), and the maintenance view would list them as this
+		// database's. The restore was forced over that database; its copies go
+		// with it, and the report says so.
+		if old := listCopies(filepath.Join(dataDir, DBFile)); len(old) > 0 {
+			for _, c := range old {
+				os.Remove(c.path)
+			}
+			if len(old) == 1 {
+				report += " Removed the copy taken before an upgrade of the database it replaced."
+			} else {
+				report += fmt.Sprintf(" Removed %d copies taken before upgrades of the database it replaced.", len(old))
+			}
 		}
 	}
 	return report, nil
@@ -244,30 +264,42 @@ func eachEntry(src string, fn func(name string, r io.Reader) error) error {
 	}
 }
 
+// errFoundDB stops the first pass once the database is out: Backup writes it
+// as the first entry, and reading the uploads behind it twice would double a
+// restore's time for nothing.
+var errFoundDB = errors.New("database found")
+
 // extractDB writes the archive's database to a temporary file in dataDir and
-// returns its path, or "" when the archive holds none. The whole archive is
-// read, so a broken one fails here, before anything is replaced.
+// returns its path, or "" when the archive holds none.
 func extractDB(dataDir, src string) (string, error) {
 	snap := ""
 	err := eachEntry(src, func(name string, r io.Reader) error {
 		if name != DBFile {
-			_, err := io.Copy(io.Discard, r)
-			return err
+			return nil // tar skips the rest of the entry itself
 		}
 		f, err := os.CreateTemp(dataDir, ".restore-*.db")
 		if err != nil {
 			return err
 		}
-		if snap != "" {
-			os.Remove(snap)
-		}
 		snap = f.Name()
 		_, err = io.Copy(f, r)
+		// CreateTemp makes the file 0600; the database the restore replaces was
+		// 0644, as os.Create makes it, and a reader in the same group (a backup
+		// job, a second user) must keep reading it.
+		if err == nil {
+			err = f.Chmod(0o644)
+		}
 		if cerr := f.Close(); err == nil {
 			err = cerr
 		}
+		if err == nil {
+			err = errFoundDB
+		}
 		return err
 	})
+	if errors.Is(err, errFoundDB) {
+		err = nil
+	}
 	return snap, err
 }
 

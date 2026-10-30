@@ -20,8 +20,15 @@ export function DatabaseUpgrades({ upgrade }: { upgrade: UpgradeState }) {
             ? t('{step}, the newest this release knows', { step })
             : t('{step} of {newest}', { step, newest })}
         </strong>
-        <span>{t('Last upgrade')}</span>
-        <strong>{lastAt ? formatMoment(lastAt) : t('None yet')}</strong>
+        {/* When the step the database is at was applied. On a new instance that
+            is when it was set up, not an upgrade, so the label says "applied"
+            and not "last upgrade": that read as an upgrade that never ran. */}
+        {lastAt && (
+          <>
+            <span>{t('Step applied')}</span>
+            <strong>{formatMoment(lastAt)}</strong>
+          </>
+        )}
         <span>{t('Copies before upgrades')}</span>
         {copies.length === 0 ? (
           <strong>{t('None yet')}</strong>

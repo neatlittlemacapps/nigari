@@ -818,8 +818,8 @@
         }
       ],
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "04faaf724fb9",
-        "server/instance.go": "988e98bc5a42",
+        "web/src/components/AdminSettings.tsx": "bd43933cd921",
+        "server/instance.go": "2fe546ec9cc0",
         "web/src/tokens.css": "ab00821c87d1",
         "web/src/theme.css": "5257c80b14b5",
         "web/src/ui/Dialog.tsx": "cf65d6c96beb",
@@ -869,7 +869,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "04faaf724fb9",
+        "web/src/components/AdminSettings.tsx": "bd43933cd921",
         "server/oauth.go": "23d966a3d480",
         "web/src/tokens.css": "ab00821c87d1",
         "web/src/theme.css": "5257c80b14b5",
@@ -921,7 +921,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "04faaf724fb9",
+        "web/src/components/AdminSettings.tsx": "bd43933cd921",
         "server/mail_oauth.go": "76b951ae59bc",
         "server/admin.go": "dd5a3f099454",
         "web/src/tokens.css": "ab00821c87d1",
@@ -972,7 +972,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "04faaf724fb9",
+        "web/src/components/AdminSettings.tsx": "bd43933cd921",
         "web/src/tokens.css": "ab00821c87d1",
         "web/src/theme.css": "5257c80b14b5",
         "web/src/ui/Dialog.tsx": "cf65d6c96beb",
@@ -1022,7 +1022,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "04faaf724fb9",
+        "web/src/components/AdminSettings.tsx": "bd43933cd921",
         "server/webhooks.go": "db7b5d463d57",
         "web/src/tokens.css": "ab00821c87d1",
         "web/src/theme.css": "5257c80b14b5",
@@ -1074,7 +1074,7 @@
       ],
       "element": ".ui-dialog",
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "04faaf724fb9",
+        "web/src/components/AdminSettings.tsx": "bd43933cd921",
         "server/export_html.go": "3d8acbdbd4fa",
         "web/src/tokens.css": "ab00821c87d1",
         "web/src/theme.css": "5257c80b14b5",
@@ -1098,7 +1098,8 @@
         "web/src/ui/Dialog.css",
         "web/src/ui/Button.css",
         "web/src/ui/Field.css",
-        "web/src/ui/Checkbox.css"
+        "web/src/ui/Checkbox.css",
+        "web/src/components/DatabaseUpgrades.tsx"
       ],
       "steps": [
         {
@@ -1124,15 +1125,16 @@
         }
       ],
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "04faaf724fb9",
-        "server/backup.go": "a78247172093",
+        "web/src/components/AdminSettings.tsx": "bd43933cd921",
+        "server/backup.go": "4d1d6e939603",
         "web/src/tokens.css": "ab00821c87d1",
         "web/src/theme.css": "5257c80b14b5",
         "web/src/ui/Dialog.tsx": "cf65d6c96beb",
         "web/src/ui/Dialog.css": "e7b7600573e9",
         "web/src/ui/Button.css": "f18fd51b21c3",
         "web/src/ui/Field.css": "27405010c413",
-        "web/src/ui/Checkbox.css": "6334484548ec"
+        "web/src/ui/Checkbox.css": "6334484548ec",
+        "web/src/components/DatabaseUpgrades.tsx": "c6a3ae98fa09"
       },
       "element": ".ui-dialog"
     },
@@ -1165,7 +1167,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/AdminSettings.tsx": "04faaf724fb9",
+        "web/src/components/AdminSettings.tsx": "bd43933cd921",
         "server/admin.go": "dd5a3f099454",
         "server/lifecycle_account.go": "3bbd986cbe7e",
         "web/src/tokens.css": "ab00821c87d1",

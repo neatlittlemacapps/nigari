@@ -1279,9 +1279,9 @@
   "Upgrade step": "Upgradestap",
   "{step}, the newest this release knows": "{step}, de nieuwste die deze versie kent",
   "{step} of {newest}": "{step} van {newest}",
-  "Last upgrade": "Laatste upgrade",
   "None yet": "Nog geen",
   "Copies before upgrades": "Kopieën vóór upgrades",
   "Database upgrades": "Database-upgrades",
-  "Before an update changes the database, nigari copies it into the data directory and keeps the newest three. The self-hosting guide says how to go back to one.": "Voordat een update de database wijzigt, kopieert nigari die naar de gegevensmap en bewaart de nieuwste drie. De handleiding voor zelf hosten legt uit hoe je naar een ervan teruggaat."
+  "Before an update changes the database, nigari copies it into the data directory and keeps the newest three. The self-hosting guide says how to go back to one.": "Voordat een update de database wijzigt, kopieert nigari die naar de gegevensmap en bewaart de nieuwste drie. De handleiding voor zelf hosten legt uit hoe je naar een ervan teruggaat.",
+  "Step applied": "Stap toegepast"
 }

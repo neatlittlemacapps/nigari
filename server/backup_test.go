@@ -354,3 +354,80 @@ func TestRestoreAtTheNewestStepSaysAsItIs(t *testing.T) {
 		t.Fatalf("report %q", report)
 	}
 }
+
+// A forced restore replaces the database, and with it the copies taken before
+// its upgrades: left behind, they would be listed as the restored database's
+// copies, and the next start would prune the copy it takes for it as older
+// than theirs. The report says they went.
+func TestForcedRestoreRemovesTheReplacedDatabasesCopies(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	if _, err := upgradeDB(path); err != nil {
+		t.Fatal(err)
+	}
+	archive := restoreArchiveOf(t, path)
+
+	dir := filepath.Dir(copyFixture(t, "step-0.db"))
+	for _, n := range []string{"3", "4"} {
+		if err := os.WriteFile(filepath.Join(dir, DBFile+".before-step-"+n), []byte("old copy"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Setenv("NIGARI_RESTORE_FORCE", "1")
+	report, err := Restore(dir, archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if left := listCopies(filepath.Join(dir, DBFile)); len(left) != 0 {
+		t.Fatalf("copies of the replaced database left behind: %v", left)
+	}
+	if !strings.Contains(report, "Removed 2 copies") {
+		t.Fatalf("report %q does not say the copies went", report)
+	}
+}
+
+// The restored database is readable as the one it replaces was (0644), not
+// 0600 as the temporary file it is written through starts out.
+func TestRestoredDatabaseKeepsTheUsualMode(t *testing.T) {
+	archive := restoreArchiveOf(t, copyFixture(t, "step-0.db"))
+	dir := t.TempDir()
+	if _, err := Restore(dir, archive); err != nil {
+		t.Fatal(err)
+	}
+	fi, err := os.Stat(filepath.Join(dir, DBFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fi.Mode().Perm() != 0o644 {
+		t.Fatalf("restored database mode %v, want 0644", fi.Mode().Perm())
+	}
+}
+
+// An archive whose database is not SQLite fails the restore, and a directory
+// the restore created for it does not stay behind.
+func TestRestoreOfAnUnreadableDatabaseLeavesNoDirectory(t *testing.T) {
+	src := filepath.Join(t.TempDir(), DBFile)
+	if err := os.WriteFile(src, []byte("not a database, but long enough to be read as a file header"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	archive := filepath.Join(t.TempDir(), "b.tar.gz")
+	f, err := os.Create(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gz := gzip.NewWriter(f)
+	tw := tar.NewWriter(gz)
+	if err := tarFile(tw, src, DBFile); err != nil {
+		t.Fatal(err)
+	}
+	tw.Close()
+	gz.Close()
+	f.Close()
+
+	fresh := filepath.Join(t.TempDir(), "new")
+	if _, err := Restore(fresh, archive); err == nil {
+		t.Fatal("an unreadable database restored")
+	}
+	if fileExists(fresh) {
+		t.Fatal("the failed restore left a directory behind")
+	}
+}
