@@ -1,1 +1,178 @@
-{}
+{
+  ".github/workflows/ci.yml": {
+    "count": 1,
+    "reason": "names the salt.md service the installer moves"
+  },
+  ".github/workflows/cla.yml": {
+    "count": 9,
+    "reason": "upstream's CLA workflow, kept as upstream wrote it; the fork skips it"
+  },
+  ".github/workflows/docker.yml": {
+    "count": 1,
+    "reason": "names upstream, saltmd/salt.md, which the fork came from"
+  },
+  ".gitignore": {
+    "count": 1,
+    "reason": "protected file; its /salt line (the old binary) is for the owner to change"
+  },
+  ".specify/memory/constitution.md": {
+    "count": 2,
+    "reason": "names upstream, saltmd/salt.md, which the fork came from"
+  },
+  "AGENTS.md": {
+    "count": 4,
+    "reason": "names upstream, saltmd/salt.md, which the fork came from"
+  },
+  "Dockerfile": {
+    "count": 2,
+    "reason": "explains why the nigari user gets the uid salt.md's image gave salt"
+  },
+  "README.md": {
+    "count": 8,
+    "reason": "the origin notice (FR-002) and the salt-data volume"
+  },
+  "SECURITY.md": {
+    "count": 5,
+    "reason": "points security problems that are also in salt.md upstream"
+  },
+  "deploy/install.sh": {
+    "count": 10,
+    "reason": "refuses to start next to a /opt/salt install and prints how to move it"
+  },
+  "deploy/nigari.container": {
+    "count": 2,
+    "reason": "the Docker/Podman volume keeps salt.md's name: renamed, it would be a new, empty volume (spec 011, R14)"
+  },
+  "desktop/src/main.js": {
+    "count": 1,
+    "reason": "says the app is new to the OS since the rename"
+  },
+  "docker-compose.yml": {
+    "count": 3,
+    "reason": "the Docker/Podman volume keeps salt.md's name: renamed, it would be a new, empty volume (spec 011, R14)"
+  },
+  "install.sh": {
+    "count": 36,
+    "reason": "refuses SALT_* variables and moves a salt.md service (plan P5)"
+  },
+  "main.go": {
+    "count": 1,
+    "reason": "the call that refuses SALT_* variables"
+  },
+  "main_test.go": {
+    "count": 4,
+    "reason": "tests the SALT_* refusal"
+  },
+  "scripts/test-install-move.sh": {
+    "count": 35,
+    "reason": "tests the installer's move of a salt.md service"
+  },
+  "server/oldnames.go": {
+    "count": 22,
+    "reason": "the server's old-name handling: refusal, database move, old cookies, old manifest"
+  },
+  "server/oldnames_test.go": {
+    "count": 35,
+    "reason": "tests the server's old-name handling"
+  },
+  "server/prefs_test.go": {
+    "count": 3,
+    "reason": "the time zone America/Argentina/Salta"
+  },
+  "server/transfer.go": {
+    "count": 6,
+    "reason": "reads the saltVersion field of archives salt.md wrote (FR-009)"
+  },
+  "server/users.go": {
+    "count": 6,
+    "reason": "the password salt (argon2), not the product"
+  },
+  "server/webhooks_test.go": {
+    "count": 2,
+    "reason": "checks that X-Salt-Signature is no longer sent"
+  },
+  "server/workspaces.go": {
+    "count": 1,
+    "reason": "\"salted\": hashing, not the product"
+  },
+  "web/scripts/check-names.mjs": {
+    "count": 24,
+    "reason": "this check and its own failing cases"
+  },
+  "web/scripts/check-release.mjs": {
+    "count": 4,
+    "reason": "guards against installing from upstream, saltmd/salt.md"
+  },
+  "web/scripts/check-storagemove.mjs": {
+    "count": 17,
+    "reason": "tests the browser storage move"
+  },
+  "web/scripts/check-wiki.mjs": {
+    "count": 2,
+    "reason": "allows links to upstream's hosts"
+  },
+  "web/src/components/AdminSettings.tsx": {
+    "count": 4,
+    "reason": "the origin notice (FR-002)"
+  },
+  "web/src/emojiData.ts": {
+    "count": 1,
+    "reason": "the 🧂 emoji is called salt"
+  },
+  "web/src/locales/de.json": {
+    "count": 4,
+    "reason": "the origin notice and rename_conflict, which name salt.md and salt.db"
+  },
+  "web/src/locales/es.json": {
+    "count": 4,
+    "reason": "the origin notice and rename_conflict, which name salt.md and salt.db"
+  },
+  "web/src/main.tsx": {
+    "count": 1,
+    "reason": "says why storageMove is imported first"
+  },
+  "web/src/serverErrors.ts": {
+    "count": 1,
+    "reason": "rename_conflict names salt.db"
+  },
+  "web/src/storageMove.ts": {
+    "count": 23,
+    "reason": "moves the browser's salt.md keys (FR-007)"
+  },
+  "web/src/theme.css": {
+    "count": 1,
+    "reason": "says the look comes from salt.md's website"
+  },
+  "web/tests/storage-move.mjs": {
+    "count": 12,
+    "reason": "tests the browser storage move"
+  },
+  "wiki/agent-access.md": {
+    "count": 1,
+    "reason": "old salt_ tokens keep working"
+  },
+  "wiki/api.md": {
+    "count": 1,
+    "reason": "old salt_ tokens keep working"
+  },
+  "wiki/desktop-app.md": {
+    "count": 3,
+    "reason": "describes moving from salt.md to nigari: the old names a person still meets"
+  },
+  "wiki/getting-started.md": {
+    "count": 1,
+    "reason": "the Docker/Podman volume keeps salt.md's name: renamed, it would be a new, empty volume (spec 011, R14)"
+  },
+  "wiki/import-export.md": {
+    "count": 3,
+    "reason": "describes moving from salt.md to nigari: the old names a person still meets"
+  },
+  "wiki/self-hosting.md": {
+    "count": 28,
+    "reason": "describes moving from salt.md to nigari: the old names a person still meets"
+  },
+  "wiki/troubleshooting.md": {
+    "count": 7,
+    "reason": "describes moving from salt.md to nigari: the old names a person still meets"
+  }
+}

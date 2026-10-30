@@ -17,7 +17,7 @@ what the credential is and how long it lives.
 
 | | API token | Signing in |
 | --- | --- | --- |
-| What it is | A secret string starting `salt_`, created once and valid until revoked | A short-lived access token the client renews by itself |
+| What it is | A secret string starting `nigari_` (made before v2.0.0: `salt_`, still valid), created once and valid until revoked | A short-lived access token the client renews by itself |
 | Where it travels | An `Authorization: Bearer` header, or inside the address as `/mcp/<token>` | A header only: nothing secret is ever in the address |
 | Lifetime | Until somebody revokes it | The access token lasts one hour; the connection behind it stays until it is ended |
 | Who chooses the reach | Whoever creates the token, in a settings dialog | The person, on a consent screen, while looking at what they are granting |

@@ -46,7 +46,8 @@ down.
 6. Press **Create token**.
 
 The token appears once, under the line "Copy this token now. It will not be
-shown again:". It looks like `salt_` followed by 48 hexadecimal characters. Only
+shown again:". It looks like `nigari_` followed by 48 hexadecimal characters (a token made
+before the rename starts with `salt_` and keeps working). Only
 its hash is stored, so a lost token cannot be recovered; create a new one and
 press **Revoke** on the old.
 

@@ -21,7 +21,7 @@
 set -euo pipefail
 
 repo="${1:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
-title="${2:-salt.md roadmap}"
+title="${2:-nigari roadmap}"
 owner="${repo%%/*}"
 
 echo "Repository: $repo"

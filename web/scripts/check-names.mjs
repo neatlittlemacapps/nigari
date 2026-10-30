@@ -16,13 +16,13 @@
 // count; "basalt" does not. History and licence texts are skipped whole: they
 // describe the past or must stay word for word.
 //
-// Until the rename is complete (spec 011 T031) the check only reports.
+// Enforced since the rename was complete (spec 011 T031).
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ENFORCE = false;
+const ENFORCE = true;
 
 const repo = process.env.CHECK_NAMES_ROOT ?? join(dirname(fileURLToPath(import.meta.url)), '../..');
 const allowPath = join(repo, 'web/scripts/names-allowlist.json');
@@ -38,6 +38,7 @@ const SKIP_PATHS = [
   /^specs\/0(0\d|10|11)-/, // specs up to and including the rename are history
   /^docs\/handoffs\//,
   /^docs\/decisions\.md$/,
+  /^web\/scripts\/names-allowlist\.json$/, // the check's own data: paths and reasons
 ];
 
 export function countNames(text) {
