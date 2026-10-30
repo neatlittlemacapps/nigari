@@ -56,7 +56,7 @@ status lives on the GitHub Projects board (see "How work flows").
 | `server/mcp_*.go` | MCP tools by domain (pages, db, schema, history, workspace…) |
 | `server/workspaces.go` | `canRead`, `canWrite`, `credentialMayEnter` — the permission gates |
 | `web/src/` | React 18, Mantine, BlockNote, Yjs. `i18n.ts` (`t()`), `format.ts` (all dates and numbers) |
-| `web/src/locales/` | `de.json` (required), `es.json` (reported) |
+| `web/src/locales/` | `de.json` and `nl.json` (required), `es.json` (reported) |
 | `web/scripts/` | The check gate, icon build, wiki screenshots |
 | `web/tests/` | Playwright regressions against a throwaway instance |
 | `wiki/` | User documentation, checked against the code |
@@ -90,7 +90,8 @@ nine, which the registry starts from:
 3. **MCP tool** — same checks as REST, in the tool's own path. Returned page
    content goes through `wrapUntrusted`. Read scope may not mutate.
 4. **UI** — the component, light and dark, keyboard path.
-5. **Translations** — every new string through `t('…')`, German in `de.json`.
+5. **Translations** — every new string through `t('…')`, German, Spanish and Dutch in
+   `de.json`, `es.json`, `nl.json`.
 6. **Wiki** — the page that describes the screen or tool; `mcp-tools.md` for
    tools; retake screenshots the change makes stale.
 7. **Tests** — Go tests for logic and gates (MCP via `callTool`), a Playwright

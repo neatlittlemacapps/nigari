@@ -10,8 +10,8 @@
 // build is the only version of "we'll remember" that works.
 //
 // Both sections are enforced. Section 2 became enforceable the moment the last
-// string was wrapped: from here on, a bare string or a stale German catalog
-// fails the build, so rot is mechanically impossible rather than merely
+// string was wrapped: from here on, a bare string or a stale German or Dutch
+// catalog fails the build, so rot is mechanically impossible rather than merely
 // discouraged. Other languages are reported, not enforced (see REQUIRED).
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -390,7 +390,12 @@ if (process.argv.includes('--german')) {
 // whoever renames a button deliver Spanish, and French, and whatever arrives
 // next, which is the surest way to stop people contributing. They are topped up
 // before a release instead: node scripts/translate.mjs <locale>.
-const REQUIRED = new Set(['de.json']);
+//
+// Dutch joined German here (#324): the owner works in Belgium and reads it,
+// so a Dutch gap is a bug too (owner, 2026-10-29: "include Dutch in your
+// translation related actions from now on"). It arrived complete, which is
+// the moment .claude/rules/i18n.md set for making it required.
+const REQUIRED = new Set(['de.json', 'nl.json']);
 const localeDir = join(src, 'locales');
 const report = [];
 for (const name of readdirSync(localeDir).filter((f) => f.endsWith('.json'))) {

@@ -22,7 +22,7 @@ concept only matters to one feature, it stays in that feature's plan.
 | MCP tools | Same checks as REST in the tool's own path, `wrapUntrusted` on returned content, read scope may not mutate, description says when to use it and what it refuses | mcp | 2026-10-25 | constitution II |
 | Closed-to-agents list | `not_available_via_mcp` in `server/mcp_workspace.go` and `wiki/agent-access.md` move together | mcp | 2026-10-25 | constitution II |
 | UI components | The screen, light and dark, keyboard path | ui | 2026-10-25 | AGENTS.md |
-| Translations | Every new string through `t()`, German in `de.json` | i18n | 2026-10-25 | constitution V |
+| Translations | Every new string through `t()`, German, Spanish and Dutch in `de.json`/`es.json`/`nl.json` | i18n | 2026-10-25 | constitution V |
 | Server error codes | A new user-facing error code has an entry in `web/src/serverErrors.ts` | i18n | 2026-10-25 | `.claude/rules/go-server.md` |
 | Wiki | The page describing the screen or tool, `mcp-tools.md` for tools, screenshots the change makes stale, `docs/what-it-does.md` when a capability changes | wiki | 2026-10-25 | constitution IV |
 | Tests | Go tests for logic and the refusal path of every gate (MCP through `callTool`), a Playwright spec for interaction | test | 2026-10-25 | constitution III |

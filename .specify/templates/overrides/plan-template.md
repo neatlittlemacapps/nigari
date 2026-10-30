@@ -67,7 +67,7 @@ Check the plan against each principle in `.specify/memory/constitution.md` and m
 | MCP tools (`server/mcp*.go`, descriptions, `wrapUntrusted`, read-scope refusal) | | mcp |
 | Closed-to-agents list (`not_available_via_mcp`) | | mcp |
 | UI components (`web/src/…`, light + dark, keyboard) | | ui |
-| Translations (`t()`, `de.json` required, `es.json`) | | i18n |
+| Translations (`t()`, `de.json` and `nl.json` required, `es.json`) | | i18n |
 | Server error codes (`web/src/serverErrors.ts`) | | i18n |
 | Wiki (`wiki/*.md`, `mcp-tools.md`, stale screenshots) | | wiki |
 | Tests (Go incl. refusal paths, Playwright spec, check scripts) | | test |
@@ -107,7 +107,7 @@ specs/[###-feature]/
 ```text
 server/            # Go: routes (server.go), domain files, mcp*.go, *_test.go
 web/src/           # React: components/, i18n.ts, format.ts, keys.ts, nav.ts
-web/src/locales/   # de.json, es.json
+web/src/locales/   # de.json, es.json, nl.json
 web/scripts/       # check-*.mjs (the build gate)
 web/tests/         # Playwright regressions
 wiki/              # user docs, screenshots.json

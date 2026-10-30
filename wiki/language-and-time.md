@@ -58,11 +58,11 @@ manual merely to find out what it was.
 
 ### Language
 
-Three languages ship today: **English**, **Deutsch** and **Español**. English
-is the source language of the product, so English is never a translation and
-never has gaps. German is kept complete by the build; Spanish was contributed
-and can trail a release behind, in which case the newest texts show in English
-until it catches up.
+Four languages ship today: **English**, **Deutsch**, **Español** and
+**Nederlands**. English is the source language of the product, so English is
+never a translation and never has gaps. German and Dutch are kept complete by
+the build; Spanish was contributed and can trail a release behind, in which case
+the newest texts show in English until it catches up.
 
 Automatic walks your browser's list of preferred languages and takes the first
 one nigari has a catalogue for; if there is none, English. That is why a German

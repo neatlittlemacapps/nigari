@@ -1,5 +1,9 @@
 <!--
 Sync Impact Report
+- Version: 1.1.0 → 1.1.1 (2026-10-30): V names Dutch (`nl.json`) beside German
+  as a required catalogue; the owner's call (#324, "include Dutch in your
+  translation related actions from now on"). Updated: AGENTS.md,
+  .claude/rules/i18n.md, surfaces.md (Translations row), check-i18n.mjs.
 - Version: 1.0.0 → 1.1.0 (2026-10-26): VI now points at the surfaces registry
   (.specify/memory/surfaces.md) and makes it grow with new concepts; asked for
   by the owner. Updated: plan-template override, tasks-template override,
@@ -57,7 +61,7 @@ worse than none.
 ### V. English source
 
 Code, comments and user-facing text are English. UI text goes through `t()` and is
-the translation key; German (`de.json`) is required, other catalogues are reported.
+the translation key; German (`de.json`) and Dutch (`nl.json`) are required, other catalogues are reported.
 Dates, numbers and sorting go through `format.ts`.
 
 *Why:* translatability rots unless a failing build protects it.
@@ -105,4 +109,4 @@ a person, in a pull request that updates the version, says why, and updates the 
 and tasks overrides and `AGENTS.md` where they depend on the change. Versioning:
 MAJOR for a removed or redefined principle, MINOR for a new one, PATCH for wording.
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-25 | **Last Amended**: 2026-10-26
+**Version**: 1.1.1 | **Ratified**: 2026-10-25 | **Last Amended**: 2026-10-30
