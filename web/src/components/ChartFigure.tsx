@@ -256,7 +256,8 @@ export default function ChartFigure(props: ChartFigureProps) {
     const chart = chartRef.current;
     const fig = figureRef.current;
     if (!chart || !fig) return;
-    const d = plotData(readInk(fig, tokens));
+    const ink = readInk(fig, tokens);
+    const d = plotData(ink);
     const json = JSON.stringify(d);
     if (json === shownRef.current) return;
     shownRef.current = json;
@@ -266,7 +267,18 @@ export default function ChartFigure(props: ChartFigureProps) {
     ds.backgroundColor = d.background;
     ds.borderColor = d.border;
     (ds as { pointBackgroundColor?: string[] }).pointBackgroundColor = d.points;
-    chart.update();
+    // The groups may have moved: a lit bar and an open tooltip would now point
+    // at whatever sits at their old place. The focused group's button moved
+    // with its group, so it lights its bar again where that is now.
+    chart.setActiveElements([]);
+    chart.tooltip?.setActiveElements([], { x: 0, y: 0 });
+    setTip(null);
+    // The chart lives across answers now, so reduced motion is read on each
+    // update too, not only when it was built.
+    chart.update(ink.reducedMotion ? 'none' : undefined);
+    const buttons = [...(groupsRef.current?.querySelectorAll('.chart-group') ?? [])];
+    const focused = buttons.indexOf(document.activeElement as Element);
+    if (focused >= 0) highlight(focused);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layout, tokens]);
 
