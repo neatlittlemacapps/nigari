@@ -166,7 +166,7 @@ description: "Tasks for the rename to nigari"
 - [x] T031 [test] `check-names.mjs` enforced: `names-allowlist.json` holds only the "Kept on purpose" rows of data-model.md, each with a count and a reason, and the check fails on anything else (SC-004). Mutation-check: add `salt.md` to a `web/src` string and it fails
 - [ ] T032 [perf] `BenchmarkStorageStart` runs on `nigari.db` and its p95 stays within the 2 ms budget (`specs/002-storage-engine/research.md` P3) in the PR's CI run; record the binary size from T001 in the PR
 - [x] T033 [backend] `.specify/memory/surfaces.md` has the Outside names row (done with the plan); `docs/decisions.md` has the rename entry (done). Add the amendment pointer to the 2026-10-29 release entry: "amended by the rename entry above"
-- [ ] T034 [test] Run quickstart §1–§6, `scripts/agent-gate.sh`, `npm test --prefix web/tests`, `/code-review`, `ux-ui-audit` (light and dark, desktop and phone) and `/security-review` (cookies and the desktop scheme change). Findings are fixed or get an issue
+- [x] T034 [test] Run quickstart §1–§6, `scripts/agent-gate.sh`, `npm test --prefix web/tests`, `/code-review`, `ux-ui-audit` (light and dark, desktop and phone) and `/security-review` (cookies and the desktop scheme change). Findings are fixed or get an issue
 - [ ] T035 [wiki] The PR body carries:
   - the v2.0.0 release notes from contracts/release-notes.md, for the owner to paste;
   - the owner's steps in order (R12): PR green → rename the repository to `nigari` → merge → make the `nigari` package public;

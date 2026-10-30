@@ -1283,5 +1283,6 @@
   "This data directory holds both salt.db and nigari.db, so nigari did not start and changed nothing. Keep the one with your data, move the other out, and start again.": "Este directorio de datos contiene tanto salt.db como nigari.db, así que nigari no se inició y no cambió nada. Conserva el archivo con tus datos, saca el otro del directorio y vuelve a iniciar.",
   "Origin": "Origen",
   "nigari is a modified version of salt.md, changed since version 2.0.0 and shared under the same licence, the AGPL-3.0.": "nigari es una versión modificada de salt.md, cambiada desde la versión 2.0.0 y publicada bajo la misma licencia, la AGPL-3.0.",
-  "Original": "Original"
+  "Original": "Original",
+  "Source code": "Código fuente"
 }

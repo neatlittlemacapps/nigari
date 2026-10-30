@@ -957,7 +957,7 @@ ingress:
                 <label>{t('Origin')}</label>
                 <p className="dialog-hint settings-hint">
                   {t('nigari is a modified version of salt.md, changed since version 2.0.0 and shared under the same licence, the AGPL-3.0.')}{' '}
-                  <a href="https://github.com/neatlittlemacapps/nigari" target="_blank" rel="noopener noreferrer">{t('Source')}</a>
+                  <a href="https://github.com/neatlittlemacapps/nigari" target="_blank" rel="noopener noreferrer">{t('Source code')}</a>
                   {' · '}
                   <a href="https://github.com/saltmd/salt.md" target="_blank" rel="noopener noreferrer">{t('Original')}</a>
                 </p>
