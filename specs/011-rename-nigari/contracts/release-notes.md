@@ -1,4 +1,4 @@
-# Contract: the v2.0.0 release notes (FR-010)
+# Contract: the v2.0.0 release notes
 
 The release workflow writes notes from the merged pull requests. For v2.0.0 the
 owner pastes this text at the top of the release, so each old name is listed with
