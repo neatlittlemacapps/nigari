@@ -26,7 +26,7 @@ shared instructions.
   in plan mode or with `/speckit-plan`, not with edits.
 - **Hand mechanical work to Sonnet.** The owner allows (2026-10-28) handing a
   task to a subagent on Sonnet (`model: "sonnet"`) wherever that saves time or
-  cost without risking quality: translations into `de.json`/`es.json`, wiki text
+  cost without risking quality: translations into `de.json`/`es.json`/`nl.json`, wiki text
   that follows an existing page, screenshot retakes, running browser tests,
   tasks that copy an existing pattern. Keep on the session's own model (Opus)
   what needs judgement: specs and plans, the surfaces a feature touches, new

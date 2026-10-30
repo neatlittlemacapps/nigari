@@ -10,8 +10,8 @@
 // build is the only version of "we'll remember" that works.
 //
 // Both sections are enforced. Section 2 became enforceable the moment the last
-// string was wrapped: from here on, a bare string or a stale German catalog
-// fails the build, so rot is mechanically impossible rather than merely
+// string was wrapped: from here on, a bare string or a stale German or Dutch
+// catalog fails the build, so rot is mechanically impossible rather than merely
 // discouraged. Other languages are reported, not enforced (see REQUIRED).
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -185,6 +185,12 @@ const CALL = /\bt\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/g;
 const PLURAL = /\bplural\(\s*[^,]+,\s*(['"`])(?:\\.|(?!\1)[^\\])*\1\s*,\s*(['"`])((?:\\.|(?!\2)[^\\])*)\2/g;
 
 const used = new Set();
+// Keys asked for through plural(). Only these may hold an object of plural
+// forms: t() reads a string entry and falls back to the English for anything
+// else, so a {one, other} object under a t() key shows English with no error.
+// translate.mjs makes an object of every key holding {n}, which is how
+// "{n} skipped" went silently English in Spanish and, briefly, in Dutch (#324).
+const pluralKeys = new Set();
 let unwrapped = 0;
 const unwrappedSample = [];
 const allBare = [];
@@ -197,7 +203,10 @@ for (const file of files) {
   if (!FORMAT_OWNERS.has(file.split('/').pop())) {
     const bare = blankComments(text);
     for (const m of bare.matchAll(CALL)) used.add(m[2]);
-    for (const m of bare.matchAll(PLURAL)) used.add(m[3]);
+    for (const m of bare.matchAll(PLURAL)) {
+      used.add(m[3]);
+      pluralKeys.add(m[3]);
+    }
   }
 
   if (!file.endsWith('.tsx')) continue;
@@ -390,7 +399,12 @@ if (process.argv.includes('--german')) {
 // whoever renames a button deliver Spanish, and French, and whatever arrives
 // next, which is the surest way to stop people contributing. They are topped up
 // before a release instead: node scripts/translate.mjs <locale>.
-const REQUIRED = new Set(['de.json']);
+//
+// Dutch joined German here (#324): the owner works in Belgium and reads it,
+// so a Dutch gap is a bug too (owner, 2026-10-29: "include Dutch in your
+// translation related actions from now on"). It arrived complete, which is
+// the moment .claude/rules/i18n.md set for making it required.
+const REQUIRED = new Set(['de.json', 'nl.json']);
 const localeDir = join(src, 'locales');
 const report = [];
 for (const name of readdirSync(localeDir).filter((f) => f.endsWith('.json'))) {
@@ -398,7 +412,8 @@ for (const name of readdirSync(localeDir).filter((f) => f.endsWith('.json'))) {
   const keys = Object.keys(cat);
   const orphans = keys.filter((k) => !used.has(k));
   const missing = [...used].filter((k) => !(k in cat));
-  report.push({ name, have: keys.length, orphans, missing: missing.length });
+  const shape = keys.filter((k) => used.has(k) && typeof cat[k] === 'object' && !pluralKeys.has(k));
+  report.push({ name, have: keys.length, orphans, missing: missing.length, shape });
 }
 
 // `--bare` lists every unwrapped string with its location, grouped by file, so
@@ -474,14 +489,21 @@ else {
 console.log();
 const behind = (r) => r.missing > 0 || r.orphans.length > 0;
 const stale = report.filter((r) => REQUIRED.has(r.name) && behind(r));
+// A wrong shape fails in every catalogue, required or not: unlike a gap, it is
+// a translation that exists and is never shown.
+const misshapen = report.filter((r) => r.shape.length);
 for (const r of report.filter((r) => !REQUIRED.has(r.name) && behind(r)))
   console.log(`  note — ${r.name} is behind (${r.missing} untranslated, ${r.orphans.length} orphaned); missing entries show in English`);
-if (errors.length || unwrapped > 0 || stale.length || germanLines.length || germanStrings.length) {
+if (errors.length || unwrapped > 0 || stale.length || misshapen.length || germanLines.length || germanStrings.length) {
   if (errors.length) console.log(`  FAILED — ${errors.length} formatting violation(s)`);
   if (unwrapped > 0)
     console.log(`  FAILED — ${unwrapped} user-visible string(s) not wrapped in t()`);
   for (const r of stale)
     console.log(`  FAILED — ${r.name}: ${r.missing} untranslated, ${r.orphans.length} orphaned`);
+  for (const r of misshapen) {
+    console.log(`  FAILED — ${r.name}: ${r.shape.length} plural form(s) under a key t() reads as one string`);
+    for (const k of r.shape.slice(0, 5)) console.log(`      ${k}`);
+  }
   if (germanLines.length)
     console.log(`  FAILED — ${germanLines.length} German line(s) in the source`);
   if (germanStrings.length)
@@ -491,4 +513,4 @@ if (errors.length || unwrapped > 0 || stale.length || germanLines.length || germ
   console.log('  For the German list: node scripts/check-i18n.mjs --german');
   process.exit(1);
 }
-console.log('  ok — every string wrapped, the German catalog current, source is English');
+console.log('  ok — every string wrapped, the German and Dutch catalogs current, source is English');

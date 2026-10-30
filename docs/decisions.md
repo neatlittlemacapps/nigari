@@ -7,6 +7,45 @@ entries are not edited away.
 
 ---
 
+## 2026-10-30 — The interface speaks Dutch, and Dutch is required like German
+
+**Decision** (owner, #324): nigari ships a Dutch catalogue, `web/src/locales/nl.json`,
+for every string the interface uses. The owner works in Belgium and reads it ("include
+Dutch in your translation related actions from now on").
+
+- **Required, not reported.** `check-i18n.mjs` now fails on a Dutch gap as it does on a
+  German one. `.claude/rules/i18n.md` had said Dutch becomes required once complete; it
+  arrived complete, so it is required from its first commit. Spanish stays reported:
+  nobody here reads it, and a gap shows the English.
+- **Informal address** (*je/jij*), matching the German *du*; buttons are infinitives
+  ("Opslaan"), as Dutch software writes them. Neutral Dutch that reads in Belgium and the
+  Netherlands rather than Flemish or Hollands specifically; dates and numbers already
+  follow the browser's region (`nl-BE` or `nl-NL`) through `format.ts`.
+- **Written by a helper, reviewed by Claude, not yet by a native speaker.** The owner
+  is the first native reader; corrections go straight into `nl.json`. No
+  `nl.machine.json` (the list `translate.mjs` keeps of unread lines): every line would be
+  on it, so it would say nothing a sentence here does not, and `check-i18n.mjs` reads
+  every `*.json` in the folder as a catalogue and would print a "behind" note for it on
+  every run. `translate.mjs --list` therefore shows Dutch as fully read; this entry is
+  the record that it is not.
+- **Plural forms only where `plural()` asks.** The helpers' first pass, like
+  `translate.mjs`, made `{one, other}` objects of every key holding `{n}`. Three of those
+  keys are read by `t()`, which shows the English for an object, so "{n} skipped" stayed
+  English in Spanish since it was contributed. `check-i18n.mjs` now fails on that shape in
+  any catalogue.
+- **Glossary**, so later strings use the same words: workspace *werkruimte*, page
+  *pagina*, database *database*, collection *verzameling*, property *eigenschap*, view
+  *weergave*, board *bord*, chart *grafiek*, template *sjabloon*, comment *opmerking*,
+  trash *prullenbak*, member/guest/owner/admin *lid/gast/eigenaar/beheerder*, sign in/out
+  *aanmelden/afmelden*, peek *snelweergave*, sidebar *zijbalk*, rename *naam wijzigen*.
+
+**Turned down:** reporting Dutch like Spanish until later (the rule already set "complete"
+as the moment, and a reported language drifts); a formal *u* (the German is informal, and
+the two would read as two products); a Flemish variant `nl-BE` catalogue (one catalogue per
+language, region only for formatting, see `i18n.ts`).
+
+---
+
 ## 2026-10-29 — The fork becomes nigari, internals included, with no transition
 
 **Decision** (owner, spec 011): the fork takes its own name, **nigari**, everywhere,

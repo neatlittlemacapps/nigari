@@ -143,6 +143,10 @@
     "count": 4,
     "reason": "the origin notice and rename_conflict, which name salt.md and salt.db"
   },
+  "web/src/locales/nl.json": {
+    "count": 4,
+    "reason": "the origin notice and rename_conflict, which name salt.md and salt.db"
+  },
   "web/src/main.tsx": {
     "count": 1,
     "reason": "says why storageMove is imported first"

@@ -35,7 +35,7 @@ least one task. A row that says "No change" gets none.
 - Go: `server/<domain>.go`, tests beside it as `server/<domain>_test.go`
 - MCP: `server/mcp*.go`, documented in `wiki/mcp-tools.md`
 - Frontend: `web/src/components/*.tsx`, logic modules in `web/src/*.ts`
-- Translations: `web/src/locales/de.json`, `es.json`
+- Translations: `web/src/locales/de.json`, `es.json`, `nl.json`
 - Browser tests: `web/tests/*.mjs`, registered in `web/tests/package.json`
 - The sample tasks below use generic paths; replace them with these
 

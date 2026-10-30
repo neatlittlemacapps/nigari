@@ -20,6 +20,7 @@ export const LOCALES: Record<string, string> = {
   en: 'English',
   de: 'Deutsch',
   es: 'Español',
+  nl: 'Nederlands',
 };
 
 /** Plural categories as Intl names them. Which ones a language actually uses
