@@ -32,7 +32,7 @@ import {
   type ChartKind,
   type DrawnGroup,
 } from '../chartLayout';
-import { groupColourTokens, onThemeChange, readInk, valueLabels } from '../chartTheme';
+import { groupColourTokens, onThemeChange, readInk, valueLabels, type ChartInk } from '../chartTheme';
 import { groupable, numberProps, ROW_GROUP } from '../chartDefaults';
 import './ChartView.css';
 
@@ -151,12 +151,39 @@ export default function ChartFigure(props: ChartFigureProps) {
   selectRef.current = select;
   const oneColour = eachRow && kind !== 'donut';
   const tokens = useMemo(() => groupColourTokens(drawn, style.palette ?? 'auto', groupProp, oneColour), [drawn, style.palette, groupProp, oneColour]);
+  const tokensRef = useRef(tokens);
+  tokensRef.current = tokens;
 
+  // What the chart shows, as Chart.js takes it. Kept apart from the chart
+  // itself so new numbers update the chart that is there (#368, #319): this
+  // effect used to destroy the chart and build a new one for every new answer,
+  // and every new chart plays its grow-in animation from zero. Creating a view
+  // saves its settings and reloads a few times, so the animation replayed again
+  // and again, and a changed setting drew the chart twice (once as changed,
+  // once more when the save came back).
+  const plotData = (ink: ChartInk) => ({
+    labels: drawn.map(label),
+    values: drawn.map((g) => g.value),
+    background: kind === 'line' ? ink.colours[0] : ink.colours,
+    border: kind === 'donut' ? ink.surface : kind === 'line' ? ink.colours[0] : ink.colours,
+    points: ink.colours,
+  });
+  const plotDataRef = useRef(plotData);
+  plotDataRef.current = plotData;
+  // The last data handed to the chart, as JSON: an answer that draws the same
+  // as the one before (a reload after a save) changes nothing.
+  const shownRef = useRef('');
+  const plotShown = !nothingToGroup && !missingGrouping && layout?.state === 'ok' && kind !== 'number' && drawn.length > 0;
+
+  // Built once per kind, theme and label setting: the things Chart.js cannot
+  // change on a chart that exists.
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     const fig = figureRef.current;
-    if (!canvas || !fig || kind === 'number' || drawn.length === 0) return;
-    const ink = readInk(fig, tokens);
+    if (!canvas || !fig || !plotShown) return;
+    const ink = readInk(fig, tokensRef.current);
+    const d = plotDataRef.current(ink);
+    shownRef.current = JSON.stringify(d);
     Chart.defaults.font.family = ink.font;
     Chart.defaults.font.size = ink.fontSize;
     Chart.defaults.color = ink.muted;
@@ -164,13 +191,13 @@ export default function ChartFigure(props: ChartFigureProps) {
     const chart = new Chart(canvas, {
       type: kind === 'donut' ? 'doughnut' : kind === 'line' ? 'line' : 'bar',
       data: {
-        labels: drawn.map(label),
+        labels: d.labels,
         datasets: [
           {
-            data: drawn.map((g) => g.value),
-            backgroundColor: kind === 'line' ? ink.colours[0] : ink.colours,
-            borderColor: kind === 'donut' ? ink.surface : kind === 'line' ? ink.colours[0] : ink.colours,
-            pointBackgroundColor: ink.colours,
+            data: d.values,
+            backgroundColor: d.background,
+            borderColor: d.border,
+            pointBackgroundColor: d.points,
             pointRadius: 4,
             borderWidth: kind === 'donut' ? 2 : kind === 'line' ? 2 : 0,
             borderRadius: kind === 'donut' ? 0 : 3,
@@ -221,7 +248,27 @@ export default function ChartFigure(props: ChartFigureProps) {
       chartRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kind, layout, tokens, themeTick, style.labels]);
+  }, [kind, plotShown, themeTick, style.labels]);
+
+  // New numbers, order or colours: the chart there moves to them, animating
+  // from the old values rather than from zero.
+  useLayoutEffect(() => {
+    const chart = chartRef.current;
+    const fig = figureRef.current;
+    if (!chart || !fig) return;
+    const d = plotData(readInk(fig, tokens));
+    const json = JSON.stringify(d);
+    if (json === shownRef.current) return;
+    shownRef.current = json;
+    chart.data.labels = d.labels;
+    const ds = chart.data.datasets[0];
+    ds.data = d.values;
+    ds.backgroundColor = d.background;
+    ds.borderColor = d.border;
+    (ds as { pointBackgroundColor?: string[] }).pointBackgroundColor = d.points;
+    chart.update();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layout, tokens]);
 
   // "Save chart as" (research R17): the plot redrawn at twice its pixels
   // (Chart.js' devicePixelRatio, put back after), and the words around it.
