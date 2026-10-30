@@ -60,10 +60,11 @@ func main() {
 			if len(os.Args) < 3 {
 				log.Fatal("usage: nigari restore <backup.tar.gz>")
 			}
-			if err := server.Restore(dataDir, os.Args[2]); err != nil {
+			report, err := server.Restore(dataDir, os.Args[2])
+			if err != nil {
 				log.Fatalf("restore: %v", err)
 			}
-			fmt.Printf("Restored %s into %s\n", os.Args[2], dataDir)
+			fmt.Printf("Restored %s into %s\n%s\n", os.Args[2], dataDir, report)
 			return
 		case "version":
 			fmt.Println(server.Version)

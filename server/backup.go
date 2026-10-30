@@ -105,14 +105,116 @@ func tarFile(tw *tar.Writer, path, name string) error {
 
 // Restore extracts a Backup archive into dataDir. Refuses to overwrite an
 // existing DB unless NIGARI_RESTORE_FORCE is set, to prevent accidents.
-func Restore(dataDir, src string) error {
+//
+// It returns the report "nigari restore" prints: which upgrade step the
+// archive's database is at and what the next start does with it (spec 008,
+// FR-009). An archive newer than this release is refused before anything in
+// dataDir is replaced: restoring it would only produce a data directory the
+// next start refuses (upgrade_refused), with the database that was there gone.
+func Restore(dataDir, src string) (string, error) {
+	steps := upgradeSteps()
+	return restoreWith(dataDir, src, steps[len(steps)-1].Version)
+}
+
+// restoreWith is Restore with the newest step as an argument, so tests can
+// restore an archive as a later or an earlier release would.
+func restoreWith(dataDir, src string, newest int64) (string, error) {
 	// salt.db counts as an existing database too: restoring nigari.db beside
 	// it would leave two, and the next start refuses that (rename_conflict).
 	for _, name := range []string{DBFile, oldDBFile} {
 		if fileExists(filepath.Join(dataDir, name)) && Env("RESTORE_FORCE") == "" {
-			return fmt.Errorf("%s/%s already exists; set NIGARI_RESTORE_FORCE=1 to overwrite", dataDir, name)
+			return "", fmt.Errorf("%s/%s already exists; set NIGARI_RESTORE_FORCE=1 to overwrite", dataDir, name)
 		}
 	}
+	created := !fileExists(dataDir)
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		return "", err
+	}
+	// First pass: the database alone, into a temporary file beside its final
+	// place (so the rename below stays on one file system), to read its step
+	// before anything is replaced.
+	snap, err := extractDB(dataDir, src)
+	if snap != "" {
+		defer os.Remove(snap)
+	}
+	if err != nil {
+		if created {
+			os.Remove(dataDir) // only if still empty
+		}
+		return "", err
+	}
+	report := "The backup holds no database; only its files were restored."
+	if snap != "" {
+		tables, step, err := inspectDB(snap)
+		if err != nil {
+			return "", fmt.Errorf("read the backup's database: %w", err)
+		}
+		if step > newest {
+			os.Remove(snap)
+			if created {
+				os.Remove(dataDir)
+			}
+			return "", fmt.Errorf("this backup is at upgrade step %d, but this nigari (%s) only knows steps up to %d. Nothing was restored. Restore it with the nigari release that made it, or a newer one", step, Version, newest)
+		}
+		report = restoreReport(tables, step, newest)
+	}
+
+	// Second pass: everything else. Only now is anything in dataDir replaced.
+	if err := extractFiles(dataDir, src); err != nil {
+		return "", err
+	}
+	if snap != "" {
+		// Drop stale WAL/SHM so the restored DB isn't mixed with old journal state.
+		os.Remove(filepath.Join(dataDir, DBFile+"-wal"))
+		os.Remove(filepath.Join(dataDir, DBFile+"-shm"))
+		if err := os.Rename(snap, filepath.Join(dataDir, DBFile)); err != nil {
+			return "", err
+		}
+		// Forced over a salt.md data directory: the old database goes now that
+		// the archive's is safely written, or the two would sit side by side.
+		// Not before: a missing or broken archive must not cost the old one.
+		for _, side := range []string{"", "-wal", "-shm"} {
+			os.Remove(filepath.Join(dataDir, oldDBFile+side))
+		}
+	}
+	return report, nil
+}
+
+// restoreReport says what the next start does with a restored database at
+// step, for a release whose newest step is newest. The copy is named because
+// the next start takes one before the first pending step (copyBeforeUpgrade).
+func restoreReport(tables int, step, newest int64) string {
+	switch {
+	case tables == 0:
+		return "The backup's database is empty; the next start sets it up."
+	case step == newest:
+		return fmt.Sprintf("The backup is at upgrade step %d, the newest this release knows. The next start uses it as it is.", step)
+	case step == 0:
+		return fmt.Sprintf("The backup was made before upgrade steps existed (no step yet). The next start brings it to step %d, after taking a copy of it.", newest)
+	default:
+		return fmt.Sprintf("The backup is at upgrade step %d. The next start brings it to step %d, after taking a copy of it.", step, newest)
+	}
+}
+
+// archiveName is an archive entry's path inside dataDir, refused when it
+// would land outside it, with salt.db read as nigari.db: a backup made by
+// salt.md holds salt.db, and it restores as nigari.db, since an archive is
+// data a person keeps, not a name the running app answers to (spec 011,
+// FR-009).
+func archiveName(name string) (string, error) {
+	// Guard against path traversal in a malicious archive.
+	clean := filepath.Clean(name)
+	if strings.HasPrefix(clean, "..") || filepath.IsAbs(clean) {
+		return "", fmt.Errorf("unsafe path in archive: %s", name)
+	}
+	if clean == oldDBFile {
+		clean = DBFile
+	}
+	return clean, nil
+}
+
+// eachEntry calls fn for every entry of the gzip'd tar at src.
+func eachEntry(src string, fn func(name string, r io.Reader) error) error {
 	in, err := os.Open(src)
 	if err != nil {
 		return err
@@ -124,36 +226,61 @@ func Restore(dataDir, src string) error {
 	}
 	defer gz.Close()
 	tr := tar.NewReader(gz)
-	if err := os.MkdirAll(filepath.Join(dataDir, "files"), 0o755); err != nil {
-		return err
-	}
-	// Drop stale WAL/SHM so the restored DB isn't mixed with old journal state.
-	os.Remove(filepath.Join(dataDir, DBFile+"-wal"))
-	os.Remove(filepath.Join(dataDir, DBFile+"-shm"))
-	restoredDB := false
 	for {
 		hdr, err := tr.Next()
 		if err == io.EOF {
-			break
+			return nil
 		}
 		if err != nil {
 			return err
 		}
-		// Guard against path traversal in a malicious archive.
-		clean := filepath.Clean(hdr.Name)
-		if strings.HasPrefix(clean, "..") || filepath.IsAbs(clean) {
-			return fmt.Errorf("unsafe path in archive: %s", hdr.Name)
+		name, err := archiveName(hdr.Name)
+		if err != nil {
+			return err
 		}
-		// A backup made by salt.md holds salt.db: it restores as nigari.db,
-		// since an archive is data a person keeps, not a name the running
-		// app answers to (spec 011, FR-009).
-		if clean == oldDBFile {
-			clean = DBFile
+		if err := fn(name, tr); err != nil {
+			return err
 		}
-		if clean == DBFile {
-			restoredDB = true
+	}
+}
+
+// extractDB writes the archive's database to a temporary file in dataDir and
+// returns its path, or "" when the archive holds none. The whole archive is
+// read, so a broken one fails here, before anything is replaced.
+func extractDB(dataDir, src string) (string, error) {
+	snap := ""
+	err := eachEntry(src, func(name string, r io.Reader) error {
+		if name != DBFile {
+			_, err := io.Copy(io.Discard, r)
+			return err
 		}
-		target := filepath.Join(dataDir, clean)
+		f, err := os.CreateTemp(dataDir, ".restore-*.db")
+		if err != nil {
+			return err
+		}
+		if snap != "" {
+			os.Remove(snap)
+		}
+		snap = f.Name()
+		_, err = io.Copy(f, r)
+		if cerr := f.Close(); err == nil {
+			err = cerr
+		}
+		return err
+	})
+	return snap, err
+}
+
+// extractFiles writes every entry but the database into dataDir.
+func extractFiles(dataDir, src string) error {
+	if err := os.MkdirAll(filepath.Join(dataDir, "files"), 0o755); err != nil {
+		return err
+	}
+	return eachEntry(src, func(name string, r io.Reader) error {
+		if name == DBFile {
+			return nil
+		}
+		target := filepath.Join(dataDir, name)
 		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 			return err
 		}
@@ -161,19 +288,10 @@ func Restore(dataDir, src string) error {
 		if err != nil {
 			return err
 		}
-		if _, err := io.Copy(f, tr); err != nil {
-			f.Close()
-			return err
+		_, err = io.Copy(f, r)
+		if cerr := f.Close(); err == nil {
+			err = cerr
 		}
-		f.Close()
-	}
-	// Forced over a salt.md data directory: the old database goes now that
-	// the archive's is safely written, or the two would sit side by side.
-	// Not before: a missing or broken archive must not cost the old one.
-	if restoredDB {
-		for _, side := range []string{"", "-wal", "-shm"} {
-			os.Remove(filepath.Join(dataDir, oldDBFile+side))
-		}
-	}
-	return nil
+		return err
+	})
 }
