@@ -48,3 +48,7 @@ People covers a person property with several people and a list of who can be
 picked (#11): only those are offered, nobody else can be typed in, the list
 stays open for several picks, the setting is in the Properties dialog, and a
 row holding several keeps them until somebody picks one after a switch back.
+
+Chart redraw covers #368 and #319: a new chart view on 20 rows builds its
+chart once, and a changed sort or a row added elsewhere updates the chart
+there (the canvas redraws) without building a new one.

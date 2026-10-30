@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../api';
 import { plural, t } from '../i18n';
 import { Button } from '../ui/Button';
@@ -58,6 +58,7 @@ export default function ChartView(props: ChartViewProps) {
   const period = groupProp?.type === 'date' ? view.groupPeriod ?? 'month' : undefined;
 
   const [result, setResult] = useState<AggResult | null>(null);
+  const resultRef = useRef<AggResult | null>(null);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<DrawnGroup | null>(null);
 
@@ -86,8 +87,12 @@ export default function ChartView(props: ChartViewProps) {
       .aggregate(collectionId, request)
       .then((r) => {
         if (!live) return;
-        setResult(r);
-        props.onResult?.(r);
+        // A reload that brings the same numbers keeps the answer it had, so
+        // nothing below it lays the chart out again (#368).
+        const kept = resultRef.current && JSON.stringify(resultRef.current) === JSON.stringify(r) ? resultRef.current : r;
+        resultRef.current = kept;
+        setResult(kept);
+        props.onResult?.(kept);
         setError('');
       })
       .catch((e: Error) => {
