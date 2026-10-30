@@ -1,7 +1,7 @@
-[salt]
+[nigari]
 enabled  = true
 backend  = systemd
-filter   = salt
+filter   = nigari
 # The server already allows 30 password attempts a minute. Anything that keeps
 # it up for ten minutes is not somebody who forgot their password.
 maxretry = 20

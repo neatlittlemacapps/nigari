@@ -1,6 +1,6 @@
 # Automation
 
-salt.md connects to things outside itself in several ways: it **checks** once a
+nigari connects to things outside itself in several ways: it **checks** once a
 day whether a newer release exists, it **calls** an
 address of yours when a page changes, your calendar app **subscribes** to a feed
 of your dates, content **comes in** from Markdown files, Notion exports, JSON
@@ -8,12 +8,12 @@ sources and public forms, content **goes out** as Markdown, HTML, a native
 archive or a public link, and agents work over **MCP**. This page is the map:
 each part is summarised here and most have a page of their own.
 
-What salt.md does not have is a rule engine or a scheduler. Nothing inside it
+What nigari does not have is a rule engine or a scheduler. Nothing inside it
 says "when Status becomes Done, send an email". The pieces below are the wires;
 the logic lives at the other end: in a script, in Zapier, Make or n8n, or in an
 agent working over MCP (see [Agents](agents.md)).
 
-## The update check: the one call salt.md makes on its own
+## The update check: the one call nigari makes on its own
 
 Everything else on this page happens because somebody set it up. This one does
 not: once a day, an instance asks github.com which release is the newest, so an
@@ -33,9 +33,9 @@ who is not an administrator.
 internet needs nothing: the call fails, the failure is remembered instead of
 logged, and no banner appears.
 
-## Webhooks: salt.md calls you
+## Webhooks: nigari calls you
 
-A webhook is an address salt.md posts to when a page is created, changed or
+A webhook is an address nigari posts to when a page is created, changed or
 thrown away. It is the only thing that calls **you** when content changes;
 without it, every integration has to ask over and over whether anything is new.
 
@@ -83,7 +83,7 @@ you can reconcile against.
 2. Tick at least one box under **When should we call?**
 3. Press **Add**.
 
-salt.md then shows the signing secret once, under the line *"Copy this secret
+nigari then shows the signing secret once, under the line *"Copy this secret
 now. It is shown only once."* There is no way to see it again; if you lose it,
 **Remove** the hook and add it back.
 
@@ -101,10 +101,10 @@ administrator finds out who pointed the instance at an address (see
   read the page fetches it with its own credential, through the normal
   permission checks. After a **permanent** deletion the title and the workspace
   come through empty: the page is already gone when the message is built.
-- **Every delivery is signed**, as `X-Salt-Signature: sha256=…` over the raw
+- **Every delivery is signed**, as `X-Nigari-Signature: sha256=…` over the raw
   body. Verify it: without that check, anybody who learns the URL can forge a
   message. The request also carries `Content-Type: application/json` and a
-  `User-Agent` of `salt.md/<version>`.
+  `User-Agent` of `nigari/<version>`.
 - **A failed delivery never fails your save.** A page that saved correctly is
   not reported as an error because somebody's endpoint is down. The result of
   the last attempt is shown beside the hook instead: `HTTP 200`, `failed: …`
@@ -156,9 +156,9 @@ link**, which confirms with *"New calendar link created (the old one no longer
 works)"*.
 
 ```
-https://salt.example.com/ics/<token>.ics
-https://salt.example.com/ics/<token>.ics?workspace=<id>
-https://salt.example.com/ics/<token>.ics?collection=<id>
+https://nigari.example.com/ics/<token>.ics
+https://nigari.example.com/ics/<token>.ics?workspace=<id>
+https://nigari.example.com/ics/<token>.ics?collection=<id>
 ```
 
 Five things worth knowing before you paste that link anywhere:
@@ -176,8 +176,8 @@ Five things worth knowing before you paste that link anywhere:
   an error**, so a stale subscription does not sit there flashing red in
   somebody's calendar app.
 - **The feed is read-only, and how often it is refreshed is your calendar app's
-  decision**: salt.md sets no refresh interval and no expiry on it. Editing an
-  event in your calendar changes nothing in salt.md.
+  decision**: nigari sets no refresh interval and no expiry on it. Editing an
+  event in your calendar changes nothing in nigari.
 
 ## Content coming in
 
@@ -212,7 +212,7 @@ switched off for non-admins on this instance.
 
 `import_url` exists because writing several hundred records through
 `create_rows` exhausts an agent's context long before the import finishes. The
-agent names the source and the mapping, salt.md fetches and writes the records
+agent names the source and the mapping, nigari fetches and writes the records
 itself, and none of the content passes through the agent. It answers with a job
 id at once; the agent polls `get_import_status` until it says done.
 
@@ -271,8 +271,8 @@ left out of the archive rather than included and hoped over. That holds for the
 Markdown `.zip` and the native archive alike.
 
 For the instance backup, the Maintenance panel also names the unattended
-version: run `./salt backup` from cron, and restore with
-`./salt restore backup.tar.gz`.
+version: run `./nigari backup` from cron, and restore with
+`./nigari restore backup.tar.gz`.
 
 ## The API, if none of the above fits
 

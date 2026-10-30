@@ -1,4 +1,4 @@
-// Guards the two rules that keep salt.md translatable, and reports how far the
+// Guards the two rules that keep nigari translatable, and reports how far the
 // text conversion has got.
 //
 //   node scripts/check-i18n.mjs

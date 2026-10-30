@@ -21,11 +21,11 @@ export async function eventually(check) {
 // intentionally no URL or data-directory override pointing at an existing site.
 export async function withFixture(test) {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-  const temp = await mkdtemp(join(tmpdir(), 'salt-browser-test-'));
+  const temp = await mkdtemp(join(tmpdir(), 'nigari-browser-test-'));
   let server;
   let browser;
   try {
-    const binary = join(temp, process.platform === 'win32' ? 'salt.exe' : 'salt');
+    const binary = join(temp, process.platform === 'win32' ? 'nigari.exe' : 'nigari');
     const build = spawnSync(process.env.GO_BINARY || 'go', ['build', '-o', binary, '.'], {
       cwd: root, encoding: 'utf8',
     });

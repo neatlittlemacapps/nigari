@@ -1,12 +1,12 @@
 # Self-hosting
 
 This page is for whoever runs the server. It covers every way to install
-salt.md, every environment variable and what it defaults to, how the process
+nigari, every environment variable and what it defaults to, how the process
 decides how much work it can afford, what the startup log is telling you, how it
 defends itself against somebody guessing passwords, and how to back up, restore
 and update without losing anything.
 
-salt.md is **one process**. The frontend is compiled into the binary, SQLite is
+nigari is **one process**. The frontend is compiled into the binary, SQLite is
 a pure-Go library (the builds have CGO switched off), and nothing else has to be
 running: no database server, no Node, no Redis, no reverse proxy unless you want
 one. Everything the instance owns lives in one directory.
@@ -16,7 +16,7 @@ one. Everything the instance owns lives in one directory.
 ### The installer script
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/nigari/main/install.sh | sh
 ```
 
 That installs it and starts it, and prints the address to open. `NIGARI_NO_START=1`
@@ -25,8 +25,8 @@ safe in a provisioning script.
 
 **On a Linux server it installs a service.** Run as root on a machine with
 systemd, the one-liner does not leave a process in your terminal: it creates the
-system account `salt`, writes `/etc/systemd/system/salt.service`, keeps the data
-in `/var/lib/salt` and enables the unit. The instance then starts on boot, comes
+system account `nigari`, writes `/etc/systemd/system/nigari.service`, keeps the data
+in `/var/lib/nigari` and enables the unit. The instance then starts on boot, comes
 back by itself after a crash, and your shell is free. Running it again later
 replaces the binary and restarts the service, so the same command is also the
 upgrade. `NIGARI_NO_SERVICE=1` opts out.
@@ -40,11 +40,11 @@ downloads with whichever of the two it finds, and stops with a clear message if
 neither is installed:
 
 ```sh
-wget -qO- https://raw.githubusercontent.com/neatlittlemacapps/salt.md/main/install.sh | sh
+wget -qO- https://raw.githubusercontent.com/neatlittlemacapps/nigari/main/install.sh | sh
 ```
 
 The script reads `uname` and picks the matching prebuilt binary: Linux and
-macOS, x86-64 and arm64. It installs to `/usr/local/bin/salt` when that
+macOS, x86-64 and arm64. It installs to `/usr/local/bin/nigari` when that
 directory is writable, uses `sudo` when it is not, and falls back to
 `~/.local/bin` when there is no `sudo` either. It then prints how to run the
 binary, and warns you when the directory it chose is not on your `PATH`.
@@ -55,7 +55,7 @@ Two variables change what it does:
 | --- | --- |
 | `BIN_DIR=/path` | install there instead of the automatic choice |
 | `NIGARI_VERSION=v1.6.13` | download that release tag instead of `latest` |
-| `NIGARI_REPO=owner/name` | install from another repository's releases (default `neatlittlemacapps/salt.md`) |
+| `NIGARI_REPO=owner/name` | install from another repository's releases (default `neatlittlemacapps/nigari`) |
 
 The tag needs its leading `v`: it goes into the download URL unchanged.
 
@@ -63,14 +63,14 @@ The installer does **not** verify a checksum. If that matters to you, take the
 manual route under [Updating](#updating), which does.
 
 Windows is not covered by the script (it stops with "Unsupported OS"), but a
-`salt-windows-amd64.exe` is published with every release. Download it by hand.
+`nigari-windows-amd64.exe` is published with every release. Download it by hand.
 
 ### Docker
 
 ```sh
-docker run -d --name salt --restart unless-stopped \
+docker run -d --name nigari --restart unless-stopped \
   -p 8420:8420 -v salt-data:/data --memory=4g \
-  ghcr.io/neatlittlemacapps/salt.md:latest
+  ghcr.io/neatlittlemacapps/nigari:latest
 ```
 
 The image is published for `linux/amd64` and `linux/arm64`. It runs as an
@@ -78,7 +78,7 @@ unprivileged user, sets `NIGARI_ADDR=:8420` and `NIGARI_DATA=/data`, declares
 `/data` as a volume and exposes 8420.
 
 **Set `--memory`.** A container with no limit cannot tell how much of the host
-it is meant to get, so salt.md assumes a small machine. See
+it is meant to get, so nigari assumes a small machine. See
 [Memory](#memory-and-what-it-changes) for what that costs you.
 
 ### Podman (rootless)
@@ -87,9 +87,9 @@ Use the same image with rootless Podman, as your ordinary user without `sudo`.
 The memory limit requires cgroup v2.
 
 ```sh
-podman run -d --name salt \
+podman run -d --name nigari \
   -p 127.0.0.1:8420:8420 -v salt-data:/data --memory=4g \
-  ghcr.io/neatlittlemacapps/salt.md:latest
+  ghcr.io/neatlittlemacapps/nigari:latest
 ```
 
 Open `http://127.0.0.1:8420` on the host. For a remote server, use an SSH tunnel
@@ -99,26 +99,26 @@ why the limit matters.
 
 #### With systemd (Quadlet)
 
-For startup and crash recovery, use the supplied `deploy/salt.container`.
+For startup and crash recovery, use the supplied `deploy/nigari.container`.
 This requires a Podman installation with Quadlet. If the quick-start container
-is running, stop and remove it first (`podman stop --time 20 salt`, then
-`podman rm salt`); the service reuses its `salt-data` volume.
+is running, stop and remove it first (`podman stop --time 20 nigari`, then
+`podman rm nigari`); the service reuses its `salt-data` volume.
 
-From a checkout, without overwriting an existing `salt.container`:
+From a checkout, without overwriting an existing `nigari.container`:
 
 ```sh
 mkdir -p ~/.config/containers/systemd
-cp -i deploy/salt.container ~/.config/containers/systemd/salt.container
+cp -i deploy/nigari.container ~/.config/containers/systemd/nigari.container
 systemctl --user daemon-reload
-systemctl --user start salt.service
+systemctl --user start nigari.service
 ```
 
 Quadlet generates the service and its startup link; do not enable the generated
 unit manually. It starts with your user manager. To run at boot and after logout,
 an administrator can run `loginctl enable-linger USERNAME`.
-Read logs with `journalctl --user -u salt.service`. To update, pull
-`ghcr.io/neatlittlemacapps/salt.md:latest` with Podman, then run
-`systemctl --user restart salt.service`.
+Read logs with `journalctl --user -u nigari.service`. To update, pull
+`ghcr.io/neatlittlemacapps/nigari:latest` with Podman, then run
+`systemctl --user restart nigari.service`.
 
 ### Docker Compose
 
@@ -140,7 +140,7 @@ HTTPS directly; you supply the mount for the certificate files yourself.
 
 ```sh
 make build     # frontend, then backend
-./salt
+./nigari
 ```
 
 Needs Go 1.25, which is what `go.mod` requires. The frontend is built with
@@ -156,28 +156,28 @@ skips it can ship a broken string catalogue.
 
 ### As a systemd service
 
-The repository ships a unit at `deploy/salt.service` **and an installer for
-it**. With a `salt` binary in hand, run as root:
+The repository ships a unit at `deploy/nigari.service` **and an installer for
+it**. With a `nigari` binary in hand, run as root:
 
 ```sh
-./deploy/install.sh ./salt
+./deploy/install.sh ./nigari
 ```
 
-That creates the system account `salt`, installs the binary to `/opt/salt/salt`,
-creates `/opt/salt/data` owned by that account, installs the unit into
-`/etc/systemd/system/salt.service`, and runs `systemctl enable --now salt`. It
-finishes by printing "salt.md is running on port 80."
+That creates the system account `nigari`, installs the binary to `/opt/nigari/nigari`,
+creates `/opt/nigari/data` owned by that account, installs the unit into
+`/etc/systemd/system/nigari.service`, and runs `systemctl enable --now nigari`. It
+finishes by printing "nigari is running on port 80."
 
 The unit itself:
 
 ```ini
 [Service]
-User=salt
-Group=salt
-WorkingDirectory=/opt/salt
-ExecStart=/opt/salt/salt
+User=nigari
+Group=nigari
+WorkingDirectory=/opt/nigari
+ExecStart=/opt/nigari/nigari
 Environment=NIGARI_ADDR=:80
-Environment=NIGARI_DATA=/opt/salt/data
+Environment=NIGARI_DATA=/opt/nigari/data
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 Restart=on-failure
 RestartSec=2
@@ -200,7 +200,7 @@ Open the address the server printed and you get the setup screen:
 Whoever completes that becomes the **instance owner**, gets a workspace, and is
 its admin. The screen is available exactly once: with an account already in the
 database, setup answers "setup already completed". A fresh data directory also
-gets one seeded page, *Welcome to salt.md*. Deleted, it does not come back on
+gets one seeded page, *Welcome to nigari*. Deleted, it does not come back on
 the next start.
 
 From there, [Administration](administration.md) covers who may sign up,
@@ -213,34 +213,34 @@ The binary takes a handful of subcommands before it decides to be a server:
 
 | Command | What it does |
 | --- | --- |
-| `salt` | start the server |
-| `salt backup [file]` | write a consistent archive (default `salt-backup.tar.gz`) |
-| `salt restore <file>` | unpack an archive into the data directory |
-| `salt version` | print the version and exit |
-| `salt fix-notion-rows` | one-time cleanup of Notion-imported row bodies |
+| `nigari` | start the server |
+| `nigari backup [file]` | write a consistent archive (default `nigari-backup.tar.gz`) |
+| `nigari restore <file>` | unpack an archive into the data directory |
+| `nigari version` | print the version and exit |
+| `nigari fix-notion-rows` | one-time cleanup of Notion-imported row bodies |
 
 Three things about this list are easy to get wrong.
 
 **Only those four words are subcommands.** Anything else, including
-`salt --version`, prints an error and usage to stderr and exits with status 2,
-without starting the server or opening the database. Use `salt version`, the
+`nigari --version`, prints an error and usage to stderr and exits with status 2,
+without starting the server or opening the database. Use `nigari version`, the
 startup log, or `/api/health` to read the version.
 
-**The subcommands read `NIGARI_DATA` too.** `salt backup` run from cron without
+**The subcommands read `NIGARI_DATA` too.** `nigari backup` run from cron without
 the same `NIGARI_DATA` as the service looks in `./data`, finds nothing, and stops
 with "no database at …". A systemd unit's `Environment=` lines are not inherited
 by your shell, so set the variable on every command line.
 
 **Only two of them need the server stopped.** `fix-notion-rows` opens the
 database directly and takes its single connection. `restore` needs it stopped
-for a different reason: a running server holds `salt.db` open and keeps writing
+for a different reason: a running server holds `nigari.db` open and keeps writing
 to the very file the archive is replacing. `backup` is designed to run beside a
 live instance, and `version` touches nothing.
 
 ## Configuration
 
 Every variable carries the `NIGARI_` prefix. The prefix is not optional: a bare
-`DATA=/srv/salt` is silently ignored and the server writes into `./data`.
+`DATA=/srv/nigari` is silently ignored and the server writes into `./data`.
 
 | Variable | Default | What it does |
 | --- | --- | --- |
@@ -250,7 +250,7 @@ Every variable carries the `NIGARI_` prefix. The prefix is not optional: a bare
 | `NIGARI_TRASH_DAYS` | `30` | days before trashed pages are purged; `0` disables |
 | `NIGARI_TLS_CERT` | empty | certificate file; serves HTTPS directly |
 | `NIGARI_TLS_KEY` | empty | matching key file |
-| `NIGARI_RESTORE_FORCE` | empty | any value lets `salt restore` overwrite an existing database |
+| `NIGARI_RESTORE_FORCE` | empty | any value lets `nigari restore` overwrite an existing database |
 | `NIGARI_IMPORT_ALLOW_PRIVATE` | empty | must be exactly `1`; lets the URL importer reach private addresses |
 | `NIGARI_UPDATE_CHECK` | empty | set to `0` to stop the daily check for a newer release |
 
@@ -288,8 +288,8 @@ than an absolute path.
 
 | Path | What it is |
 | --- | --- |
-| `salt.db` | the database: pages, workspaces, accounts, the search index |
-| `salt.db-wal`, `salt.db-shm` | SQLite's write-ahead log and its shared index |
+| `nigari.db` | the database: pages, workspaces, accounts, the search index |
+| `nigari.db-wal`, `nigari.db-shm` | SQLite's write-ahead log and its shared index |
 | `files/` | every upload, one file each under a generated id, served under `/files/` |
 | `bin/` | `cloudflared`, downloaded on demand when you start a tunnel |
 | `certs/` | Let's Encrypt cache, only when the built-in HTTPS is active |
@@ -303,11 +303,11 @@ read-only connections for long reads (a large database's rows, rollups,
 search), so
 that a long read does not make every save wait. That is why `fix-notion-rows`
 and `restore` want the server stopped while `backup` can run beside it, and why
-a recent change may be sitting in `salt.db-wal` rather than in `salt.db`. See [Backing up](#backing-up).
+a recent change may be sitting in `nigari.db-wal` rather than in `nigari.db`. See [Backing up](#backing-up).
 
 ## Memory, and what it changes
 
-salt.md sizes its most expensive work (extracting text out of PDFs so it is
+nigari sizes its most expensive work (extracting text out of PDFs so it is
 searchable) to the memory it believes it has. It looks in this order:
 
 1. `NIGARI_MEMORY_MB`, if it is a positive number.
@@ -341,7 +341,7 @@ book is not worth the database weight, so a long document is searchable by its
 opening rather than throughout. And the upload limit is a setting
 (*Max. file size per upload (MB)*), not a function of memory.
 
-salt.md also tells Go's garbage collector where the ceiling is (80 % of the
+nigari also tells Go's garbage collector where the ceiling is (80 % of the
 figure), so the heap does not grow past a container limit and get the process
 killed.
 
@@ -396,7 +396,7 @@ written whenever the figure is worked out, which happens before anything else at
 startup, so it appears above every other line here, and again later whenever a
 PDF is sized up.
 
-**`salt.md 1.6.16 listening on :8420 (data: /opt/salt/data)`**
+**`nigari 1.6.16 listening on :8420 (data: /opt/nigari/data)`**
 The server is up. Two variants: `(TLS, data: …)` when you supplied a certificate
 pair, and `(auto-HTTPS for notes.example.com, data: …)` when the built-in
 Let's Encrypt path is active. That one listens on `:443` and answers the ACME
@@ -483,10 +483,10 @@ backups, and "who did what" belongs in the audit log behind a login. See
 [History and audit](history-and-audit.md).
 
 That format is a parsing contract, and `docs/fail2ban/` in the repository is
-what reads it: a filter (`salt.conf`) and a jail (`jail.local`, 20 hits in
+what reads it: a filter (`nigari.conf`) and a jail (`jail.local`, 20 hits in
 10 minutes, banned for an hour). Copy them to `/etc/fail2ban/filter.d/` and
 `/etc/fail2ban/jail.d/`, reload, and check the jail with
-`fail2ban-client status salt`. The in-process limit always works and stops when
+`fail2ban-client status nigari`. The in-process limit always works and stops when
 the process does; the jail puts the ban in the firewall, where it costs the
 attacker a TCP connection instead of a request.
 
@@ -511,12 +511,12 @@ the database (`VACUUM INTO`, so anything still in the write-ahead log is
 included) and adds every upload, into one gzip'd tar:
 
 ```sh
-NIGARI_DATA=/opt/salt/data salt backup /var/backups/salt-$(date +%F).tar.gz
+NIGARI_DATA=/opt/nigari/data nigari backup /var/backups/nigari-$(date +%F).tar.gz
 ```
 
 This is **safe against a running instance**: it opens its own read connection,
 which WAL mode allows. That makes it a cron job rather than an outage. The admin
-dialog says the same: *"For automatic backups, run `./salt backup` from cron."*
+dialog says the same: *"For automatic backups, run `./nigari backup` from cron."*
 
 Watch the free space on the **destination** filesystem. The snapshot is written
 uncompressed next to the destination as `<destination>.db.tmp` first and only
@@ -525,7 +525,7 @@ archive. The temporary file is removed either way.
 
 **Or download one from the browser.** Instance settings → Maintenance →
 **Download backup (.tar.gz)**. The file is named
-`salt-backup-<date>-<time>.tar.gz`. This is **owner-only**, not admin-only:
+`nigari-backup-<date>-<time>.tar.gz`. This is **owner-only**, not admin-only:
 "Only the owner can download an instance backup. It contains every workspace."
 An admin who manages accounts does not get everybody's content by pressing a
 button.
@@ -539,10 +539,10 @@ it back. See [Administration](administration.md).
 command on the machine, so an operator who only ever uses the interface has no
 recovery path. Make sure somebody has shell access before you need it.
 
-**If you insist on copying by hand, stop the server first.** Copying `salt.db`
+**If you insist on copying by hand, stop the server first.** Copying `nigari.db`
 on its own while the server is writing gives you a stale database, because the
-recent changes are still in `salt.db-wal`. Copy `salt.db`, `salt.db-wal` and
-`salt.db-shm` together, or conclude nothing from what you got. This is the
+recent changes are still in `nigari.db-wal`. Copy `nigari.db`, `nigari.db-wal` and
+`nigari.db-shm` together, or conclude nothing from what you got. This is the
 single most common way a "backup" turns out to be worthless.
 
 A backup is a clone of the instance. To move *content* somewhere else (a page,
@@ -554,21 +554,21 @@ export](import-export.md) covers them.
 ## Restoring
 
 ```sh
-systemctl stop salt
-NIGARI_DATA=/opt/salt/data salt restore /var/backups/salt-2026-08-07.tar.gz
-systemctl start salt
+systemctl stop nigari
+NIGARI_DATA=/opt/nigari/data nigari restore /var/backups/nigari-2026-08-07.tar.gz
+systemctl start nigari
 ```
 
-The server must be stopped: it holds `salt.db` open and would keep writing to
+The server must be stopped: it holds `nigari.db` open and would keep writing to
 the very file the archive replaces. (The restore itself never opens the
 database; it only unpacks the archive.)
 
-It **refuses to overwrite**: with a `salt.db` already in the directory you get
-"…/salt.db already exists; set NIGARI_RESTORE_FORCE=1 to overwrite". That guard is
+It **refuses to overwrite**: with a `nigari.db` already in the directory you get
+"…/nigari.db already exists; set NIGARI_RESTORE_FORCE=1 to overwrite". That guard is
 there because the mistake it prevents is unrecoverable. Any non-empty value of
 the variable lifts it.
 
-Restoring drops any stale `salt.db-wal` and `salt.db-shm` first, so the restored
+Restoring drops any stale `nigari.db-wal` and `nigari.db-shm` first, so the restored
 database is never mixed with journal state from the instance it replaced, and it
 rejects an archive containing a path that points outside the directory.
 
@@ -580,11 +580,10 @@ in the count of unreferenced files and nowhere else.
 ## Updating
 
 Every change merged into `main` is released: it gets the next version on the
-1.6 line (v1.6.9, v1.6.10, …) and publishes two artefacts from the same tag:
+2.0 line (v2.0.0, v2.0.1, …) and publishes two artefacts from the same tag:
 five binaries plus a `SHA256SUMS.txt` on the GitHub Release (which is where the
 installer fetches from), and a container image on GHCR tagged both with the
-version and as `latest`. These are this fork's releases; to install upstream
-salt.md instead, run the script with `NIGARI_REPO=saltmd/salt.md`.
+version and as `latest`.
 
 Two settings on GitHub, set once by whoever owns the repository, make this
 work:
@@ -593,7 +592,7 @@ work:
   permissions → **Read and write permissions**. Without it the run cannot
   create the release.
 - **The image is public.** GitHub makes a new container image private. After
-  the first release: your profile → Packages → **salt.md** → Package settings
+  the first release: your profile → Packages → **nigari** → Package settings
   → Change visibility → **Public**. Until then `docker pull` asks for a login.
 
 **Installed with the script:** re-run it. Pin with
@@ -602,27 +601,27 @@ work:
 **By hand, with the checksum verified:**
 
 ```sh
-mkdir -p /tmp/salt-1.6.16 && cd /tmp/salt-1.6.16
-wget -O salt-linux-amd64 \
-  https://github.com/neatlittlemacapps/salt.md/releases/download/v1.6.16/salt-linux-amd64
+mkdir -p /tmp/nigari-1.6.16 && cd /tmp/nigari-1.6.16
+wget -O nigari-linux-amd64 \
+  https://github.com/neatlittlemacapps/nigari/releases/download/v1.6.16/nigari-linux-amd64
 wget -O SHA256SUMS.txt \
-  https://github.com/neatlittlemacapps/salt.md/releases/download/v1.6.16/SHA256SUMS.txt
-grep salt-linux-amd64 SHA256SUMS.txt | sha256sum -c -
+  https://github.com/neatlittlemacapps/nigari/releases/download/v1.6.16/SHA256SUMS.txt
+grep nigari-linux-amd64 SHA256SUMS.txt | sha256sum -c -
 
-systemctl stop salt
-NIGARI_DATA=/opt/salt/data /opt/salt/salt backup /var/backups/salt-before-1.6.16.tar.gz
-cp -a /opt/salt/salt /opt/salt/salt.bak
-install -m 755 salt-linux-amd64 /opt/salt/salt
-systemctl start salt
+systemctl stop nigari
+NIGARI_DATA=/opt/nigari/data /opt/nigari/nigari backup /var/backups/nigari-before-1.6.16.tar.gz
+cp -a /opt/nigari/nigari /opt/nigari/nigari.bak
+install -m 755 nigari-linux-amd64 /opt/nigari/nigari
+systemctl start nigari
 ```
 
 The `NIGARI_DATA=` on the backup line is not decoration. That shell is sitting in
 the download directory and knows nothing about the unit's `Environment=` lines,
-so without it the command looks in `/tmp/salt-1.6.16/data` and stops with
+so without it the command looks in `/tmp/nigari-1.6.16/data` and stops with
 "no database at …".
 
 Download into a **fresh, empty directory**. `wget` without `-O` does not
-overwrite an existing file (it writes `salt-linux-amd64.1` beside it), and a
+overwrite an existing file (it writes `nigari-linux-amd64.1` beside it), and a
 checksum check then happily verifies the old file against the old sums file and
 reports success. Keeping the previous binary next to the new one is the whole
 rollback plan, and it takes one line to use.
@@ -642,9 +641,50 @@ work before it listens. Skipping versions is fine; an instance can migrate
 across several releases in one start.
 
 **Verify by behaviour, not by the version string.** A mislabelled build reads
-exactly like a correct one. Compare `sha256sum /opt/salt/salt` against the
+exactly like a correct one. Compare `sha256sum /opt/nigari/nigari` against the
 published `SHA256SUMS.txt`, or pick something the new version has and the old
 does not and check for that. The version string is the last thing to trust.
+
+## Updating from salt.md
+
+nigari was called salt.md until v2.0.0. The data comes along; the old names do
+not. Nothing answers to them from v2.0.0 on, and the ones that could be missed
+without a word stop the start with a sentence instead.
+
+**What moves by itself**
+
+| Before | From v2.0.0 | How |
+| --- | --- | --- |
+| `salt.db` in the data directory | `nigari.db` | renamed on the first start, before anything else runs; the log says `rename: salt.db is now nigari.db` |
+| copies `salt.db.before-step-<n>` | `nigari.db.before-step-<n>` | renamed with it |
+| theme, tabs, recent pages, sidebar, language in the browser | the same, under new keys | moved on the first load |
+| a service set up by `install.sh` (`salt.service`, `/var/lib/salt`, `/usr/local/bin/salt`) | `nigari.service`, `/var/lib/nigari`, `/usr/local/bin/nigari` | run the installer again: it stops the old service, moves the data directory and removes the old unit and binary. A data directory you chose yourself stays where it is |
+| workspace archives (`.salt.zip`) and backups (`salt-backup.tar.gz`) | read as before | import and `nigari restore` accept them |
+
+**What you rename once**
+
+| Before | From v2.0.0 | If you do not |
+| --- | --- | --- |
+| `SALT_DATA`, `SALT_ADDR` and every other `SALT_*` variable | `NIGARI_DATA`, `NIGARI_ADDR`, … | nigari does not start and names each one (see [When something is wrong](#when-something-is-wrong)) |
+| the command `salt` (`salt backup`, `salt restore`) | `nigari` | a cron job calling `salt` finds no command |
+| webhook header `X-Salt-Signature` | `X-Nigari-Signature` | the receiver finds no signature and should reject the call |
+| image `ghcr.io/neatlittlemacapps/salt.md` | `ghcr.io/neatlittlemacapps/nigari` | the old image gets no new versions |
+| `deploy/salt.service` in `/opt/salt` | `deploy/nigari.service` in `/opt/nigari` | `deploy/install.sh` stops and prints the commands to move it |
+
+**What you do once**
+
+- **Sign in again.** Sessions are not carried over; the old cookie is cleared.
+- **Agents**: their tokens keep working (a `salt_…` token is still valid), and
+  the URL is the same. Download the skill again: it is called `nigari` now.
+- **The desktop app** is a new app to your computer; it asks for the server
+  address once.
+
+**What keeps its old name on purpose**: the Docker and Podman volume
+`salt-data`. A volume with a new name would be a new, empty one.
+
+If a data directory holds both `salt.db` and `nigari.db`, nigari does not pick
+one: it does not start, and says so. Keep the file with your data and move the
+other out of the directory.
 
 ## Reaching it from outside
 
@@ -654,7 +694,7 @@ below is in Instance settings → **Domain & proxy**;
 full, including why the public base URL has to be set whichever you choose.
 
 **1 · Try it right away (quick tunnel).** One button, **Start quick tunnel**, no
-account and no domain: salt.md downloads the official `cloudflared` on first use
+account and no domain: nigari downloads the official `cloudflared` on first use
 and gives you a temporary `trycloudflare.com` address pointing at this instance.
 The dialog shows the URL with a **Copy** button beside it. The address changes
 every time you start it, which makes it right for showing somebody the instance
@@ -662,10 +702,10 @@ and wrong for anything permanent.
 
 **2 · Permanently, with your own domain (Cloudflare Tunnel).** Paste a tunnel
 token from a free Cloudflare account and press **Connect**. Nothing has to accept
-incoming connections, and salt.md restarts the tunnel by itself after a reboot.
+incoming connections, and nigari restarts the tunnel by itself after a reboot.
 
 **3 · Straight to HTTPS (no Cloudflare, e.g. a VPS).** Enter a hostname, tick
-**Active**, restart. salt.md fetches its own Let's Encrypt certificate and
+**Active**, restart. nigari fetches its own Let's Encrypt certificate and
 listens on 80 and 443. Needs the DNS A record pointing at the machine and both
 ports reachable.
 
@@ -686,7 +726,7 @@ reverse proxy)*:
   out by hand.
 
 `NIGARI_TLS_CERT` and `NIGARI_TLS_KEY` are the fifth way: your own certificate pair,
-served directly by salt.md, no proxy and no Let's Encrypt.
+served directly by nigari, no proxy and no Let's Encrypt.
 
 ## When something is wrong
 

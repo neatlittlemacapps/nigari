@@ -3,7 +3,7 @@
 Running the instance: naming it, deciding who may get an account, inviting
 people, managing accounts through their whole life, cleaning up workspaces
 nobody is left in charge of, and taking a backup. This page is for the person
-who installed salt.md and for anyone they made an instance admin. It describes
+who installed nigari and for anyone they made an instance admin. It describes
 what the dialogs actually do; the role model behind them is in
 [Permissions](permissions.md).
 
@@ -71,11 +71,11 @@ removing a webhook. **Cancel** therefore does not undo those.
 browser tab title *of that page*, and names the instance on the approval screen
 an agent sees when it signs in ([Agent access](agent-access.md)). It is not the
 title of the application in general: once you are inside, the tab reads
-*salt.md* again, because the name is fetched by the sign-in screen and nothing
-else sets it. Left empty, the sign-in page says *salt.md*. The placeholder in
+*nigari* again, because the name is fetched by the sign-in screen and nothing
+else sets it. Left empty, the sign-in page says *nigari*. The placeholder in
 the field is *e.g. Acme Notes*. Pick your own name, not that one.
 
-There is **no instance logo**. The salt.md mark above the sign-in heading is
+There is **no instance logo**. The nigari mark above the sign-in heading is
 fixed; the picture you can change is per workspace, in
 [Workspace settings](workspaces.md).
 
@@ -206,8 +206,8 @@ Four routes to a public address, in the order the tab lists them:
    on every start. cloudflared is downloaded the first time and then kept up to
    date ([Keeping cloudflared current](domain.md#keeping-cloudflared-current)).
 2. A permanent Cloudflare tunnel: paste the token from the dashboard, press
-   **Connect**. salt.md keeps it running across restarts.
-3. Built-in HTTPS: a domain field plus an **Active** switch; salt.md fetches
+   **Connect**. nigari keeps it running across restarts.
+3. Built-in HTTPS: a domain field plus an **Active** switch; nigari fetches
    its own Let's Encrypt certificate and listens on 80 and 443.
 4. Your own reverse proxy: set **Internal address of the instance (upstream)**
    and copy one of the three generated blocks (Caddy, Cloudflare Tunnel, nginx).
@@ -229,7 +229,7 @@ The message names the page and never carries its content.
 Enter the **Address to call**, tick which of the three events you want under
 **When should we call?** (`page.created`, `page.updated`, `page.trashed`) and
 press **Add**. The signing secret appears once, under *Copy this secret now. It
-is shown only once.* Your receiver uses it to check the `X-Salt-Signature`
+is shown only once.* Your receiver uses it to check the `X-Nigari-Signature`
 header. Dismiss it with **I have it** and it is gone.
 
 Under **Configured**, each hook shows its address, its events and either
@@ -256,7 +256,7 @@ deviate for a single document, and that choice travels in the link.
 | **Links as links, not as plain text** | on | Off prints them in black without an underline, which is what a link is worth on paper |
 | **Landscape** | off | The sheet turned, for documents made of wide tables |
 
-**salt.md lays the pages out itself.** The document is cut into A4 sheets before
+**nigari lays the pages out itself.** The document is cut into A4 sheets before
 printing and the browser only puts them on paper. Three things follow, and they
 are the whole reason it works this way:
 
@@ -300,14 +300,14 @@ the admin flag.
 Restoring, and taking backups on a schedule, happen on the server:
 
 ```
-./salt backup                    # writes salt-backup.tar.gz — put this in cron
-./salt restore backup.tar.gz     # unpacks the archive into the data directory
+./nigari backup                    # writes nigari-backup.tar.gz — put this in cron
+./nigari restore backup.tar.gz     # unpacks the archive into the data directory
 ```
 
-`salt backup` is safe against a running instance. `salt restore` is not a wipe:
+`nigari backup` is safe against a running instance. `nigari restore` is not a wipe:
 it unpacks the archive over whatever is in the data directory, so anything the
 archive does not contain stays behind. And it refuses outright if a database is
-already there: *"…/salt.db already exists; set NIGARI_RESTORE_FORCE=1 to
+already there: *"…/nigari.db already exists; set NIGARI_RESTORE_FORCE=1 to
 overwrite"*. Restore into an empty directory, or set that variable deliberately.
 The full procedure is in [Self-hosting](self-hosting.md).
 
@@ -419,7 +419,7 @@ anywhere, an admin only where they are a workspace admin themselves. A row you
 are not entitled to grant is silently skipped rather than refused, so check the
 result if you were assigning outside your own workspaces.
 
-There is **no password-reset email** in salt.md, and no field in this dialog for
+There is **no password-reset email** in nigari, and no field in this dialog for
 setting somebody else's password. What an admin can change about another account
 is its **name, colour and picture**; the **password and the email address** are
 the owner's alone: *"Only the owner can change another account's password or
@@ -496,7 +496,7 @@ appointing a successor possible.
 
 ## Deleting an account
 
-Owner only, and irreversible. Before the confirmation appears, salt.md works out
+Owner only, and irreversible. Before the confirmation appears, nigari works out
 what hangs off the account (`/api/users/{id}/deletion-impact`) and puts it in the
 question. The lines you may see:
 

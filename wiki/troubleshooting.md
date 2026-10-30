@@ -8,7 +8,7 @@ deeper: [Agent access](agent-access.md), [Sharing](sharing.md),
 [Trash and recovery](trash-and-recovery.md),
 [Self-hosting](self-hosting.md).
 
-## How salt.md tells you something failed
+## How nigari tells you something failed
 
 Three places, and it is worth knowing which one you are looking at.
 
@@ -37,6 +37,26 @@ codes you are most likely to meet.
 that does not exist answer identically, on purpose; otherwise guessing ids
 would reveal what exists. So *page not found* from an agent is as often a
 permission problem as a typo. `whoami` separates the two.
+
+## It does not start after updating from salt.md
+
+### "nigari did not start: these variables still have their salt.md names"
+
+The sentence lists each old variable and its new name, for example
+`SALT_DATA → NIGARI_DATA`. Rename them where they are set: the service file,
+the compose file or your shell. Then start again. Nothing was changed: nigari
+stops before it reads a variable or opens a file, because an ignored
+`SALT_DATA` would have started an empty workspace somewhere else.
+
+With both names set, nigari uses the new one and writes one line that the old
+one is ignored. Remove the old one when you can.
+
+### "this data directory holds both salt.db and nigari.db"
+
+nigari will not choose between two databases. Look at both (the bigger and newer
+one is usually yours), move the other out of the data directory, and start
+again. Both files are as they were. The full list of what changed with the
+rename is in [Updating from salt.md](self-hosting.md#updating-from-saltmd).
 
 ## Signing in
 
@@ -236,7 +256,7 @@ records a second time. See [Import and export](import-export.md).
 ### The agent insists a tool does not exist
 
 Or calls one that was renamed and gets *unknown tool*. **A connected client keeps
-the catalogue it fetched when it connected.** salt.md does not announce
+the catalogue it fetched when it connected.** nigari does not announce
 catalogue changes, so a session that has been open across an update is working
 from the old list. Reconnect the client. Calling the old name again only proves
 the client is stale.
@@ -359,15 +379,15 @@ setting, or send a smaller file.
 
 ### "The file is too large for this instance."
 
-This one appears when the refusal did **not** come from salt.md: the browser
+This one appears when the refusal did **not** come from nigari: the browser
 falls back to this sentence when the 413 it received is not the server's JSON.
 In practice that means a reverse proxy in front, refusing with its own HTML
 error page.
 
-The usual cause is a stale body limit. The nginx configuration salt.md generates
+The usual cause is a stale body limit. The nginx configuration nigari generates
 writes `client_max_body_size` from the upload limit as it stood when you copied
-it. Raise the limit in salt.md later and the proxy still refuses at the old
-size, and salt.md never sees the request at all.
+it. Raise the limit in nigari later and the proxy still refuses at the old
+size, and nigari never sees the request at all.
 
 ### "Upload failed" or "…" was not uploaded
 
@@ -516,7 +536,7 @@ server decided about its memory, whether it rebuilt the search index, whether it
 rebuilt the file index, and what address it is listening on. Most answers are
 there.
 
-**A restore refuses to run.** `salt restore` will not overwrite an existing
+**A restore refuses to run.** `nigari restore` will not overwrite an existing
 database. Empty the data directory, or set `NIGARI_RESTORE_FORCE=1`. The guard is
 deliberate: restoring over a live instance is the mistake it exists to prevent.
 
@@ -527,7 +547,7 @@ an upgrade and suspicious after a plain restore.
 
 **You copied the database out and the schema looks old.** SQLite runs in WAL
 mode. The `.db` file alone is stale; recent changes are in the `-wal` file next
-to it. Copy all three, or stop the server first. `salt backup` does this
+to it. Copy all three, or stop the server first. `nigari backup` does this
 properly: it takes a transactionally consistent snapshot, so it is safe against
 a running instance.
 
@@ -542,12 +562,12 @@ arrives first. Reading too low costs indexing and nothing else: the file is
 still stored, listed and downloadable.
 
 **Pages imported from Notion carry a repeated preamble.** With the server
-stopped, `salt fix-notion-rows` strips the "# title + Property: value" block
+stopped, `nigari fix-notion-rows` strips the "# title + Property: value" block
 that Notion writes into every database row and reports how many bodies it
 cleaned. It takes the sole database connection, so it will not run alongside a
 live instance.
 
-**Use `salt version` to print the version.** An unrecognised command or flag
+**Use `nigari version` to print the version.** An unrecognised command or flag
 prints an error and usage to stderr and exits with status 2, without starting
 a server or opening the database.
 

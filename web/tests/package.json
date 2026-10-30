@@ -1,5 +1,5 @@
 {
-  "name": "salt-browser-regressions",
+  "name": "nigari-browser-regressions",
   "private": true,
   "type": "module",
   "scripts": {

@@ -30,7 +30,7 @@ const out = [];
 const check = (name, got, want) =>
   out.push({ name, got: String(got), want: String(want), ok: String(got) === String(want) });
 
-const tmp = mkdtempSync(join(tmpdir(), 'salt-nav-'));
+const tmp = mkdtempSync(join(tmpdir(), 'nigari-nav-'));
 const bundle = join(tmp, 'nav.mjs');
 try {
   // nav.ts imports React and i18n; bundling reaches them the same way vite does.

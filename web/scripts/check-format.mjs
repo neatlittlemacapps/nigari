@@ -202,7 +202,7 @@ if (process.env.NIGARI_FMT_BUNDLE) {
 }
 
 // ---- parent mode ----
-const tmp = mkdtempSync(join(tmpdir(), 'salt-fmt-'));
+const tmp = mkdtempSync(join(tmpdir(), 'nigari-fmt-'));
 const bundle = join(tmp, 'format.mjs');
 try {
   try {

@@ -1,6 +1,6 @@
 # Agent access
 
-An agent reaches salt.md with a credential that belongs to a person. This page
+An agent reaches nigari with a credential that belongs to a person. This page
 covers the two kinds of credential (a permanent API token and a connection
 somebody signed in for), what each can be narrowed to, what a workspace may say
 about agents regardless of who issued the credential, what an agent inherits
@@ -385,7 +385,7 @@ current access token. It always answers success, whether or not the token
 existed: telling a caller which is which would turn it into a way of testing
 guesses.
 
-On the salt.md side the connections on your account are readable at
+On the nigari side the connections on your account are readable at
 `/api/oauth/grants` and can be ended with a DELETE on
 `/api/oauth/grants/{id}`, both from a signed-in browser session only. **The
 consent screen promises this lives in your account settings; today it is the

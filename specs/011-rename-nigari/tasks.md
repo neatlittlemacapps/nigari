@@ -149,7 +149,7 @@ description: "Tasks for the rename to nigari"
   - `desktop/src/*`: scheme, window titles, the Help menu link (R16);
   - `desktop/README.md`; the link text in `.github/workflows/desktop.yml`;
   - regenerate `desktop/package-lock.json` with `npm install` in `desktop/`, never by hand
-- [ ] T029 [US1] [wiki] Words:
+- [x] T029 [US1] [wiki] Words:
   - all 36 `wiki/*.md`, `README.md` (relative wiki links; Website, demo and `llms.txt` links removed: R16), `CONTRIBUTING.md`, `AGENTS.md`, `.claude/rules/*.md`, `.claude/skills/steward/SKILL.md`, `docs/what-it-does.md`, `server/testdata/upgrade/README.md` (it says the fixture was written by salt.md);
   - new § "Updating from salt.md" in `wiki/self-hosting.md` (the data-model table, shortened);
   - the variable refusal and `rename_conflict` in `wiki/troubleshooting.md`; the header in `wiki/webhooks.md`.

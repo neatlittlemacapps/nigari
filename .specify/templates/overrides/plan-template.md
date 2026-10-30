@@ -4,7 +4,7 @@
 
 **Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
 
-**Note**: This is salt.md's own plan template (`.specify/templates/overrides/`). It is
+**Note**: This is nigari's own plan template (`.specify/templates/overrides/`). It is
 filled in by `/speckit-plan`. The Surfaces section is required: a plan without it is
 not ready for `/speckit-tasks`.
 
@@ -15,7 +15,7 @@ not ready for `/speckit-tasks`.
 ## Technical Context
 
 <!--
-  salt.md's stack is fixed (see AGENTS.md). Change these lines only where this
+  nigari's stack is fixed (see AGENTS.md). Change these lines only where this
   feature adds something, and say why in Complexity Tracking.
 -->
 
@@ -101,7 +101,7 @@ specs/[###-feature]/
 ### Source Code (repository root)
 
 <!--
-  List only the files this feature touches. salt.md's layout is fixed:
+  List only the files this feature touches. nigari's layout is fixed:
 -->
 
 ```text

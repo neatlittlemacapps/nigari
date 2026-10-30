@@ -36,7 +36,7 @@ function pretendPlatform(platform) {
   });
 }
 
-const tmp = mkdtempSync(join(tmpdir(), 'salt-keys-'));
+const tmp = mkdtempSync(join(tmpdir(), 'nigari-keys-'));
 const bundle = join(tmp, 'keys.mjs');
 try {
   try {

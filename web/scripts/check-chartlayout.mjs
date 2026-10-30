@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const web = join(here, '..');
-const tmp = mkdtempSync(join(tmpdir(), 'salt-chart-'));
+const tmp = mkdtempSync(join(tmpdir(), 'nigari-chart-'));
 const entry = join(tmp, 'entry.ts');
 const bundle = join(tmp, 'chart.mjs');
 writeFileSync(entry, `export * from ${JSON.stringify(join(web, 'src/chartLayout.ts'))};\nexport * from ${JSON.stringify(join(web, 'src/chartGroups.ts'))};\n`);

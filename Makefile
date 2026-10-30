@@ -18,9 +18,9 @@ backend:
 	# -trimpath: without it the builder's absolute paths (including their
 	# username) end up inside the binary — needlessly disclosed, and it breaks
 	# reproducible builds.
-	CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X nigari/server.Version=$(VERSION)" -o salt .
+	CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X nigari/server.Version=$(VERSION)" -o nigari .
 
 build: frontend backend
 
 clean:
-	rm -rf web/dist web/node_modules salt
+	rm -rf web/dist web/node_modules nigari

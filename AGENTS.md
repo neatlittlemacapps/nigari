@@ -1,10 +1,10 @@
-# Working on salt.md
+# Working on nigari
 
-salt.md is a self-hosted workspace for documents and databases, open to people
+nigari is a self-hosted workspace for documents and databases, open to people
 and agents alike: one Go binary, one SQLite file, the React frontend embedded.
 These instructions are for every coding agent that opens this repository.
 
-## This project is documented in salt.md — use it at every step
+## This project is documented in nigari — use it at every step
 
 When the instance below is reachable (a local session), use it as described.
 A cloud session cannot reach `localhost:8420`: skip the `working_on`/`note`
@@ -66,7 +66,7 @@ status lives on the GitHub Projects board (see "How work flows").
 
 ```sh
 make build                                   # frontend + backend, frontend embedded
-NIGARI_DATA=/tmp/salt-dev NIGARI_ADDR=:8420 go run .   # backend for development
+NIGARI_DATA=/tmp/nigari-dev NIGARI_ADDR=:8420 go run .   # backend for development
 cd web && npx vite                           # frontend dev server
 go test ./...                                # Go tests
 cd web && npm run check                      # tsc + every check-*.mjs (also runs inside npm run build)

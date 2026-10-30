@@ -44,7 +44,7 @@ import { eventually } from './fixture.mjs';
 // CATALOG_SHOTS_ONLY=1 takes the shots and skips axe and the keyboard.
 
 const web = process.env.CATALOG_WEB ? resolve(process.env.CATALOG_WEB) : resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const baselines = process.env.CATALOG_BASELINES ?? join(tmpdir(), 'salt-catalog-baselines');
+const baselines = process.env.CATALOG_BASELINES ?? join(tmpdir(), 'nigari-catalog-baselines');
 const update = process.env.UPDATE_BASELINES === '1';
 const shotsOnly = process.env.CATALOG_SHOTS_ONLY === '1';
 const changes = [];
@@ -149,7 +149,7 @@ try {
     if (changed > MAX_CHANGED) {
       // Outside the repository, so a failed run leaves nothing to commit by
       // mistake; CI uploads this directory.
-      const actual = process.env.CATALOG_ACTUAL ?? join(tmpdir(), 'salt-catalog-actual');
+      const actual = process.env.CATALOG_ACTUAL ?? join(tmpdir(), 'nigari-catalog-actual');
       mkdirSync(actual, { recursive: true });
       writeFileSync(join(actual, `${name}.png`), shot);
       const what = changed === Infinity ? 'a different size than' : `${changed} pixels changed from`;

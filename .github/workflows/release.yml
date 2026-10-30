@@ -82,7 +82,7 @@ jobs:
           mkdir -p dist
           build() {
             os="$1"; arch="$2"; ext="${3:-}"
-            out="dist/salt-${os}-${arch}${ext}"
+            out="dist/nigari-${os}-${arch}${ext}"
             echo "→ $out"
             CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" \
               go build -trimpath \
@@ -94,7 +94,7 @@ jobs:
           build darwin amd64
           build darwin arm64
           build windows amd64 .exe
-          ( cd dist && sha256sum salt-* > SHA256SUMS.txt )
+          ( cd dist && sha256sum nigari-* > SHA256SUMS.txt )
           ls -lh dist
 
       # The action creates the tag on this commit. A tag pushed with

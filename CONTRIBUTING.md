@@ -5,7 +5,7 @@ words, including the part people are right to ask about.
 
 ## Before a big change
 
-Open an issue first. salt.md has opinions: one binary, no external services,
+Open an issue first. nigari has opinions: one binary, no external services,
 English source, everything derived from the code rather than remembered. A pull
 request that runs against one of them is a waste of your evening. A short
 issue costs nothing and saves that.
@@ -16,13 +16,13 @@ Small fixes need no ceremony. Send them.
 
 ```sh
 make build      # frontend and backend, with the frontend embedded
-./salt          # http://localhost:8420
+./nigari          # http://localhost:8420
 ```
 
 While developing, run the two halves separately:
 
 ```sh
-NIGARI_DATA=/tmp/salt-dev NIGARI_ADDR=:8420 go run .
+NIGARI_DATA=/tmp/nigari-dev NIGARI_ADDR=:8420 go run .
 cd web && npx vite
 ```
 
@@ -52,14 +52,14 @@ so a design tool such as Figma or Penpot can read the same files.
   - `primitives.tokens.json`: raw scales (palette, type sizes, radii, spacing, layers).
   - `semantic.tokens.json`: roles such as `color.surface.default` or `color.text.muted`,
     each with its light value in `$value` and its dark value in
-    `$extensions["md.salt.dark"]`.
+    `$extensions["io.github.neatlittlemacapps.nigari.dark"]`.
   - `component.tokens.json`: values only one component needs.
 - **Build.** `cd web && node scripts/build-tokens.mjs` writes `web/src/tokens.css`.
   Never edit that file; `npm run check` fails when it and the tokens disagree.
 - **Changing a colour.** Change its token, once for both themes, and rebuild. Every
   screen and the editor's menus follow. Old CSS reads the same values under the names it
   always used (`--bg`, `--fg`, `--accent` …).
-- **Contrast.** A text colour that declares `md.salt.contrast` must reach WCAG AA on
+- **Contrast.** A text colour that declares `io.github.neatlittlemacapps.nigari.contrast` must reach WCAG AA on
   each surface it names, in both themes, or the build fails and names the pair.
 - **No new literals.** `check-tokens.mjs` counts hard-coded colours, font sizes, radii,
   shadows and z-indexes, raw `<button>`s and hand-built dialogs against
@@ -75,7 +75,7 @@ A pull request needs a signed [Contributor License Agreement](CLA.md). A bot
 asks for it on your first one; signing is a comment, once, and it covers
 everything you send afterwards.
 
-We would rather say why than let you guess. salt.md is AGPL-3.0 and stays that
+We would rather say why than let you guess. nigari is AGPL-3.0 and stays that
 way. The plan is to sell a hosted version later, and possibly a commercial
 licence for companies that cannot use AGPL internally. Offering that licence
 requires holding the rights to all of the code, and that is impossible once
