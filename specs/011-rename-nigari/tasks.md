@@ -142,7 +142,7 @@ description: "Tasks for the rename to nigari"
   - DOM event names `salt:*` → `nigari:*` in every dispatch and listen;
   - the design-token extension namespace `md.salt.*` → `io.github.neatlittlemacapps.nigari.*` in `web/tokens/*.tokens.json` and `web/scripts/build-tokens.mjs` (found by T002); `tokens.css` rebuilt, `check-build-tokens.mjs` green;
   - checked in light and dark
-- [ ] T026 [US1] [ui] Origin notice (FR-002): in the About/licences section of `web/src/components/AdminSettings.tsx` and in `README.md`, one statement that nigari is a modified version of salt.md (`saltmd/salt.md`) since 2026-10-29, under AGPL-3.0, with a link to the source. `LICENSE` and the copyright lines stay unchanged
+- [x] T026 [US1] [ui] Origin notice (FR-002): in the About/licences section of `web/src/components/AdminSettings.tsx` and in `README.md`, one statement that nigari is a modified version of salt.md (`saltmd/salt.md`) since 2026-10-29, under AGPL-3.0, with a link to the source. `LICENSE` and the copyright lines stay unchanged
 - [ ] T027 [US1] [i18n] `web/src/locales/de.json` and `es.json`: the changed keys from T009, T025 and T026 move to their new English keys with German (required) and Spanish. Sonnet helper; Claude reviews every line before commit. `check-i18n.mjs` reports 0 untranslated
 - [ ] T028 [US1] [ui] Desktop (R9):
   - `desktop/package.json`: `name` `nigari-desktop`, `productName` `nigari`, `appId` `io.github.neatlittlemacapps.nigari`, protocol `nigari`, `homepage` and author pointing at the repository;

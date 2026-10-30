@@ -1280,5 +1280,8 @@
   "An upgrade step failed, so nigari did not start. The database is as it was before that step; the server log says why.": "Un paso de actualización falló, así que nigari no se inició. La base de datos está como antes de ese paso; el registro del servidor explica por qué.",
   "nigari could not write the copy it takes before an upgrade, so no step ran. Free space in the data directory and start it again.": "nigari no pudo escribir la copia que hace antes de una actualización, así que no se ejecutó ningún paso. Libera espacio en el directorio de datos y vuelve a iniciarlo.",
   "Another nigari is upgrading this database. Wait for it to finish, then reload.": "Otro nigari está actualizando esta base de datos. Espera a que termine y vuelve a cargar.",
-  "This data directory holds both salt.db and nigari.db, so nigari did not start and changed nothing. Keep the one with your data, move the other out, and start again.": "Este directorio de datos contiene tanto salt.db como nigari.db, así que nigari no se inició y no cambió nada. Conserva el archivo con tus datos, saca el otro del directorio y vuelve a iniciar."
+  "This data directory holds both salt.db and nigari.db, so nigari did not start and changed nothing. Keep the one with your data, move the other out, and start again.": "Este directorio de datos contiene tanto salt.db como nigari.db, así que nigari no se inició y no cambió nada. Conserva el archivo con tus datos, saca el otro del directorio y vuelve a iniciar.",
+  "Origin": "Origen",
+  "nigari is a modified version of salt.md, changed since version 2.0.0 and shared under the same licence, the AGPL-3.0.": "nigari es una versión modificada de salt.md, cambiada desde la versión 2.0.0 y publicada bajo la misma licencia, la AGPL-3.0.",
+  "Original": "Original"
 }
