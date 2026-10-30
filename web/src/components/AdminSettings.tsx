@@ -4,6 +4,7 @@ import Portal from './Portal';
 import { useExclusiveModal } from '../modal';
 import { toast } from '../toast';
 import { formatBytes, formatMoment } from '../format';
+import { DatabaseUpgrades } from './DatabaseUpgrades';
 import { plural, t } from '../i18n';
 import type { Webhook } from '../types';
 import { Dialog, DialogClose } from '../ui/Dialog';
@@ -961,6 +962,12 @@ ingress:
                   {' · '}
                   <a href="https://github.com/saltmd/salt.md" target="_blank" rel="noopener noreferrer">{t('Original')}</a>
                 </p>
+                {info?.upgrade && (
+                  <>
+                    <label>{t('Database upgrades')}</label>
+                    <DatabaseUpgrades upgrade={info.upgrade} />
+                  </>
+                )}
                 <label>{t('Instance')}</label>
                 {!info ? (
                   <p className="dialog-hint">{t('Loading…')}</p>

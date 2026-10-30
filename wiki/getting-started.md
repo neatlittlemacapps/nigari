@@ -132,7 +132,7 @@ The binary answers four subcommands without starting a server at all:
 
 | Command | Does |
 | --- | --- |
-| `nigari version` | prints the version and exits |
+| `nigari version` | prints the version and the newest upgrade step it knows, `2.0.3 (upgrade step 1)`, and exits |
 | `nigari backup <file.tar.gz>` | writes a consistent snapshot of database and uploads |
 | `nigari restore <file.tar.gz>` | unpacks one into the data directory; it refuses when a `nigari.db` is already there, unless `NIGARI_RESTORE_FORCE=1` is set |
 | `nigari fix-notion-rows` | strips the repeated title-and-properties preamble Notion writes into every exported row, from rows already imported, and reports how many it cleaned |

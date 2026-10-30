@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -71,7 +72,10 @@ func TestUnknownCommandDoesNotStartServer(t *testing.T) {
 
 func TestVersionCommandStillWorks(t *testing.T) {
 	stdout, stderr, err := runCLI(t, "version")
-	if err != nil || stderr != "" || strings.TrimSpace(stdout) != server.Version {
+	// The line is "<release> (upgrade step N)" since spec 008: the release
+	// first, so install.sh can take the first word, then the newest step.
+	want := fmt.Sprintf("%s (upgrade step %d)", server.Version, server.NewestStep())
+	if err != nil || stderr != "" || strings.TrimSpace(stdout) != want {
 		t.Fatalf("version: stdout=%q stderr=%q error=%v", stdout, stderr, err)
 	}
 }

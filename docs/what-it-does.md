@@ -351,8 +351,13 @@ not an everyday-admin action.
 
 ### 6. Upgrading
 
-Replace the binary and start it. The database migrates itself, forwards only.
-Take a backup first anyway — you always should.
+Replace the binary and start it. A release that changes how data is stored
+brings a numbered upgrade step; the first start copies the database, then runs
+the missing steps, each all or nothing. A failed step leaves the database as it
+was, and an older release refuses a database a newer one upgraded instead of
+working on tables it does not know. Going back is putting the copy back. A
+restored old backup upgrades itself the same way, and `nigari restore` says
+which step it is at. Take a backup first anyway — you always should.
 
 ---
 

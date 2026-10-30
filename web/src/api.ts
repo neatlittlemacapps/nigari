@@ -99,6 +99,16 @@ async function req<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/** The database's upgrade state, from GET /api/admin/info (spec 008,
+ *  contracts/rest.md). lastAt is empty when no step ever ran; copies are the
+ *  pre-upgrade copies in the data directory, newest first, at most three. */
+export type UpgradeState = {
+  step: number;
+  newest: number;
+  lastAt: string;
+  copies: { name: string; size: number; takenAt: string }[];
+};
+
 export const api = {
   me: () => req<Me>('/api/me'),
   // Webhooks: instance configuration, admin only. Creating one answers with the
@@ -188,6 +198,7 @@ export const api = {
       dataDir: string;
       yourIp: string;
       trustProxy: boolean;
+      upgrade: UpgradeState;
     }>('/api/admin/info'),
   publicAccess: () =>
     req<{

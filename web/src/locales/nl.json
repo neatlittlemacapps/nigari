@@ -1275,5 +1275,13 @@
   "Origin": "Herkomst",
   "nigari is a modified version of salt.md, changed since version 2.0.0 and shared under the same licence, the AGPL-3.0.": "nigari is een aangepaste versie van salt.md, gewijzigd sinds versie 2.0.0 en gedeeld onder dezelfde licentie, de AGPL-3.0.",
   "Original": "Origineel",
-  "Source code": "Broncode"
+  "Source code": "Broncode",
+  "Upgrade step": "Upgradestap",
+  "{step}, the newest this release knows": "{step}, de nieuwste die deze versie kent",
+  "{step} of {newest}": "{step} van {newest}",
+  "None yet": "Nog geen",
+  "Copies before upgrades": "Kopieën vóór upgrades",
+  "Database upgrades": "Database-upgrades",
+  "Before an update changes the database, nigari copies it into the data directory and keeps the newest three. The self-hosting guide says how to go back to one.": "Voordat een update de database wijzigt, kopieert nigari die naar de gegevensmap en bewaart de nieuwste drie. De handleiding voor zelf hosten legt uit hoe je naar een ervan teruggaat.",
+  "Step applied": "Stap toegepast"
 }

@@ -3774,7 +3774,10 @@ body.is-col-resizing {
 
 .info-grid strong {
   font-weight: 500;
-  word-break: break-all;
+  /* Break inside a word only when it does not fit otherwise: a long path
+     still wraps, but a sentence (the upgrade step) wraps between words.
+     break-all split "release" into "releas e" at phone width. */
+  overflow-wrap: anywhere;
 }
 
 .settings-grid h3 {

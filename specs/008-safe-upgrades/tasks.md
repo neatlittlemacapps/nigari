@@ -70,28 +70,28 @@ description: "Tasks for safe upgrades"
 
 ## Phase 7: User Story 5: a restored backup upgrades itself (P2)
 
-- [ ] T020 [US5] [backend] `server/backup.go` `Restore` reads the archive's step before replacing anything (salt.db extracted to a temp file first): "at step N; the next start brings it to M", or refuses "this release is too old for it"; `salt restore` prints it
-- [ ] T021 [US5] [test] Backup, a later step, restore: the report names the older step and the next start upgrades; a newer archive is refused before anything is replaced; a pre-feature archive is "no step yet"
+- [x] T020 [US5] [backend] `server/backup.go` `Restore` reads the archive's step before replacing anything (salt.db extracted to a temp file first): "at step N; the next start brings it to M", or refuses "this release is too old for it"; `salt restore` prints it
+- [x] T021 [US5] [test] Backup, a later step, restore: the report names the older step and the next start upgrades; a newer archive is refused before anything is replaced; a pre-feature archive is "no step yet"
 
 ---
 
 ## Phase 8: User Story 6: the gate (P2)
 
-- [ ] T022 [US6] [test] New `web/scripts/check-upgrades.mjs` in `npm run check`: every step N > 1 in `server/upgrade_steps.go` has `server/testdata/upgrade/step-<N-1>.db`; steps numbered 1…N without gaps; added to `web/package.json`
+- [x] T022 [US6] [test] New `web/scripts/check-upgrades.mjs` in `npm run check`: every step N > 1 in `server/upgrade_steps.go` has `server/testdata/upgrade/step-<N-1>.db`; steps numbered 1…N without gaps; added to `web/package.json`
 
 ---
 
 ## Phase 9: User Story 7: the admin's view (P3)
 
-- [ ] T023 [US7] [backend] `server/instance.go` `GET /api/admin/info` gains `upgrade {step, newest, lastAt, copies[]}` (contracts/rest.md); `salt version` prints the release and the newest step
-- [ ] T024 [US7] [ui] `web/src/components/AdminSettings.tsx` maintenance tab: "Database upgrades" (step, newest, last upgrade, copies with size and date), light and dark; `web/src/api.ts`; German and Spanish
+- [x] T023 [US7] [backend] `server/instance.go` `GET /api/admin/info` gains `upgrade {step, newest, lastAt, copies[]}` (contracts/rest.md); `salt version` prints the release and the newest step
+- [x] T024 [US7] [ui] `web/src/components/AdminSettings.tsx` maintenance tab: "Database upgrades" (step, newest, last upgrade, copies with size and date), light and dark; `web/src/api.ts`; German and Spanish
 
 ---
 
 ## Phase 10: Polish and cross-cutting
 
-- [ ] T025 [P] [wiki] `wiki/self-hosting.md` (§ Updating, § Backing up, § Restoring, § Reading the startup log, new § "If salt.md refuses to start"), `wiki/administration.md` (maintenance), `docs/what-it-does.md`; screenshot `admin-maintenance` retaken
-- [ ] T026 [P] [backend] `capabilities.json`: `admin.instance` summary names the upgrade view (closed, no new route)
+- [x] T025 [P] [wiki] `wiki/self-hosting.md` (§ Updating, § Backing up, § Restoring, § Reading the startup log, new § "If salt.md refuses to start"), `wiki/administration.md` (maintenance), `docs/what-it-does.md`; screenshot `admin-maintenance` retaken
+- [x] T026 [P] [backend] `capabilities.json`: `admin.instance` summary names the upgrade view (closed, no new route)
 
 ---
 

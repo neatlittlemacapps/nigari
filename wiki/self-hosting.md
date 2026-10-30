@@ -215,8 +215,8 @@ The binary takes a handful of subcommands before it decides to be a server:
 | --- | --- |
 | `nigari` | start the server |
 | `nigari backup [file]` | write a consistent archive (default `nigari-backup.tar.gz`) |
-| `nigari restore <file>` | unpack an archive into the data directory |
-| `nigari version` | print the version and exit |
+| `nigari restore <file>` | unpack an archive into the data directory, and say which upgrade step its database is at |
+| `nigari version` | print the version and the newest upgrade step it knows, `2.0.3 (upgrade step 1)`, and exit |
 | `nigari fix-notion-rows` | one-time cleanup of Notion-imported row bodies |
 
 Three things about this list are easy to get wrong.
@@ -366,6 +366,18 @@ memory line too, leaving one.
 
 They are printed in this order.
 
+**`upgrade: copy of the database before step 2 written to /opt/nigari/data/nigari.db.before-step-2. To go back to it, stop nigari and run: cp … && rm -f …`**
+Only on the first start of a release that brings an **upgrade step** (see
+[Updating](#updating)): before the step changes anything, the database is
+copied beside itself. The line ends with the exact command that puts the copy
+back. A brand-new data directory gets no copy, because there is nothing to lose.
+
+**`upgrade: step 2 done in 41ms`**
+One line per step that ran. If the copy line is there and this one is not, the
+start was refused instead; see [If nigari refuses to start](#if-nigari-refuses-to-start).
+`upgrade: removed the oldest copy … (3 are kept)` may follow: only the newest
+three copies stay.
+
 **`search index: rebuilt (version 3, 736 pages)`**
 The full-text index was rebuilt because its version changed, normally after an
 upgrade that touched the tokenizer. **The absence of this line is meaningful**:
@@ -504,7 +516,10 @@ matches nothing looks exactly like a jail with nothing to do.
 ## Backing up
 
 Two things need saving, and they are both under `NIGARI_DATA`: the database and
-the `files/` directory. Nothing else in that directory is irreplaceable.
+the `files/` directory. Nothing else in that directory is irreplaceable. The
+copies taken before upgrades (`nigari.db.before-step-<n>`, each the size of the
+database) are left out of the archive on purpose: they would multiply its size,
+and the archive already holds the database itself.
 
 **Use the built-in command.** It takes a transactionally consistent snapshot of
 the database (`VACUUM INTO`, so anything still in the write-ahead log is
@@ -560,15 +575,36 @@ systemctl start nigari
 ```
 
 The server must be stopped: it holds `nigari.db` open and would keep writing to
-the very file the archive replaces. (The restore itself never opens the
-database; it only unpacks the archive.)
+the very file the archive replaces.
+
+**It says which upgrade step the backup is at**, and what the next start will do
+with it:
+
+```
+Restored /var/backups/nigari-2026-08-07.tar.gz into /opt/nigari/data
+The backup is at upgrade step 1. The next start brings it to step 2, after taking a copy of it.
+```
+
+The other answers are *"…the newest this release knows. The next start uses it
+as it is."* and, for a backup made before upgrade steps existed (v1.6.10 and
+earlier), *"…(no step yet). The next start brings it to step N…"*. An old backup
+needs nothing else: the next start runs the same steps an instance that had kept
+running would have run.
+
+**A backup newer than the binary is refused before anything is replaced**:
+*"this backup is at upgrade step 3, but this nigari (2.0.3) only knows steps up
+to 2. Nothing was restored."* Restoring it anyway would only leave a database
+the next start refuses, with the one that was there gone. Use the release that
+made the backup, or a newer one. To read the step, the restore unpacks the
+archive's database into a temporary file in the data directory first; nothing
+is touched until that check has passed.
 
 It **refuses to overwrite**: with a `nigari.db` already in the directory you get
 "…/nigari.db already exists; set NIGARI_RESTORE_FORCE=1 to overwrite". That guard is
 there because the mistake it prevents is unrecoverable. Any non-empty value of
 the variable lifts it.
 
-Restoring drops any stale `nigari.db-wal` and `nigari.db-shm` first, so the restored
+Restoring drops any stale `nigari.db-wal` and `nigari.db-shm`, so the restored
 database is never mixed with journal state from the instance it replaced, and it
 rejects an archive containing a path that points outside the directory.
 
@@ -631,14 +667,40 @@ container), then stop, back up the volume, and recreate. The stop is the only
 downtime and also the only moment a clean copy of the volume is possible, so do
 both in one go.
 
-**Migrations run on start and only ever add to your content.** Columns and
-tables are created if missing; nothing of yours is dropped or rewritten in
-place. The derived indexes are the exception, and deliberately so: when the
-search-index or file-index version moves, that index is dropped and rebuilt from
-your pages and your files directory. Nothing is lost (both are derived from
-content that stays put), but the first start after such an upgrade does real
-work before it listens. Skipping versions is fine; an instance can migrate
-across several releases in one start.
+**Upgrade steps run on start, one at a time, each all or nothing.** A release
+that changes how data is stored brings a numbered **upgrade step**. On its first
+start it:
+
+1. **checks the step the database is at.** `nigari version` prints the newest
+   step a binary knows; the Maintenance tab shows the database's.
+2. **copies the database** to `nigari.db.before-step-<n>` in the data directory
+   before the first pending step, and logs the command that puts it back. The
+   newest three copies are kept; older ones are removed.
+3. **runs the missing steps in order.** Each runs in one transaction: a step
+   that fails is rolled back, the database stays at the step before it, and the
+   start is refused with the reason (see below). Fix the cause and start again;
+   it resumes at the failed step.
+
+Nothing of yours is dropped or rewritten without a step, and every step is
+tested against a database written by the release before it. Skipping releases
+is fine: an instance runs every missing step in one start. The derived indexes
+are separate and work as before: when the search-index or file-index version
+moves, that index is rebuilt from your pages and files, so the first start
+after such an update does real work before it listens.
+
+**Going back to an older release** is not a downgrade of the database. An older
+binary refuses a database a newer one has upgraded, and changes nothing. Put
+back the copy from before the upgrade, then start the older binary:
+
+```sh
+systemctl stop nigari
+cp /opt/nigari/data/nigari.db.before-step-2 /opt/nigari/data/nigari.db
+rm -f /opt/nigari/data/nigari.db-wal /opt/nigari/data/nigari.db-shm
+systemctl start nigari
+```
+
+The copy holds the database as it was before the upgrade: changes made since
+are not in it. That is the trade, and the reason to take a backup as well.
 
 **Verify by behaviour, not by the version string.** A mislabelled build reads
 exactly like a correct one. Compare `sha256sum /opt/nigari/nigari` against the
@@ -734,6 +796,21 @@ reverse proxy)*:
 
 `NIGARI_TLS_CERT` and `NIGARI_TLS_KEY` are the fifth way: your own certificate pair,
 served directly by nigari, no proxy and no Let's Encrypt.
+
+## If nigari refuses to start
+
+Some starts are refused on purpose, to protect the database. The reason goes to
+the log, and the usual address answers every request with `503` and the same
+sentence: a page in the browser, `{"error": "…", "code": "…"}` for `/api/…` and
+`/mcp`, so an agent or the desktop app sees the code. Nothing in the data
+directory is written while a start is refused.
+
+| Code | What happened | What to do |
+| --- | --- | --- |
+| `upgrade_refused` | The database is at a newer upgrade step than this binary knows: a newer release ran on it. | Run that release again, or put back the copy from before its upgrade (the sentence names the file and the command). |
+| `upgrade_failed` | An upgrade step failed and was rolled back. The database is at the step before it. | Read the reason in the sentence, fix it (often disk space or permissions), start again. A copy from before the upgrade is beside the database. |
+| `upgrade_copy_failed` | The copy before the first step could not be written, so no step ran. | Free space in the data directory (the copy is the size of the database) and start again. |
+| `upgrade_busy` | Another nigari process is running steps on the same data directory. | Wait for it, or stop it. A lock left by a process that was killed is taken over after 15 minutes. |
 
 ## When something is wrong
 

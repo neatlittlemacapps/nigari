@@ -134,6 +134,56 @@ func upgradeWith(path string, steps []*goose.Migration) ([]int64, error) {
 	return ran, nil
 }
 
+// NewestStep is the newest upgrade step this release knows: what "nigari
+// version" prints beside the release, and what the admin's maintenance view
+// compares the database's step with.
+func NewestStep() int64 {
+	steps := upgradeSteps()
+	return steps[len(steps)-1].Version
+}
+
+// upgradeCopy is one pre-upgrade copy as the maintenance view lists it.
+type upgradeCopy struct {
+	Name    string `json:"name"`
+	Size    int64  `json:"size"`
+	TakenAt string `json:"takenAt"`
+}
+
+// upgradeState is the admin's view of upgrades (contracts/rest.md): the
+// database's step, the newest this release knows, when the newest applied
+// step ran (empty if none ever did), and the copies kept beside the database,
+// newest first. One query and one directory listing, read when the admin
+// opens maintenance, never per request.
+func upgradeState(db *sql.DB, path string) map[string]any {
+	step, lastAt := int64(0), ""
+	if s, err := storedStep(db); err == nil && s > 0 {
+		step = s
+		// goose writes tstamp as SQLite's datetime('now'): UTC, no zone. The
+		// driver hands back a time for the TIMESTAMP column, or the text.
+		var ts any
+		if db.QueryRow(`SELECT tstamp FROM goose_db_version WHERE is_applied AND version_id = ? ORDER BY id DESC LIMIT 1`, s).Scan(&ts) == nil {
+			switch v := ts.(type) {
+			case time.Time:
+				lastAt = v.UTC().Format(time.RFC3339)
+			case string:
+				if t, err := time.Parse("2006-01-02 15:04:05", v); err == nil {
+					lastAt = t.Format(time.RFC3339)
+				}
+			}
+		}
+	}
+	copies := []upgradeCopy{}
+	for _, c := range listCopies(path) {
+		if len(copies) == keepCopies {
+			break
+		}
+		if fi, err := os.Stat(c.path); err == nil { // gone since the listing: skip
+			copies = append(copies, upgradeCopy{filepath.Base(c.path), fi.Size(), fi.ModTime().UTC().Format(time.RFC3339)})
+		}
+	}
+	return map[string]any{"step": step, "newest": NewestStep(), "lastAt": lastAt, "copies": copies}
+}
+
 // stepsDetail is the activity log's detail for a start that ran steps.
 func stepsDetail(ran []int64) string {
 	if len(ran) == 1 {
@@ -190,23 +240,35 @@ func copyBeforeUpgrade(db *sql.DB, path string, n int64) error {
 	return nil
 }
 
-// pruneCopies removes all but the newest keepCopies pre-upgrade copies of the
-// database at path, newest by step number.
-func pruneCopies(path string) {
+// copyOnDisk is one pre-upgrade copy of a database: its path and the step it
+// was taken before.
+type copyOnDisk struct {
+	path string
+	step int64
+}
+
+// listCopies finds the pre-upgrade copies of the database at path, newest
+// (highest step) first. The one place that knows how copies are named, so
+// pruning, the refusal and the maintenance view cannot disagree about which
+// files are copies or which is newest.
+func listCopies(path string) []copyOnDisk {
 	matches, _ := filepath.Glob(path + ".before-step-*")
-	type copyFile struct {
-		path string
-		step int
-	}
-	var copies []copyFile
+	var copies []copyOnDisk
 	for _, m := range matches {
-		n, err := strconv.Atoi(strings.TrimPrefix(m, path+".before-step-"))
+		n, err := strconv.ParseInt(strings.TrimPrefix(m, path+".before-step-"), 10, 64)
 		if err != nil {
 			continue // not ours
 		}
-		copies = append(copies, copyFile{m, n})
+		copies = append(copies, copyOnDisk{m, n})
 	}
 	sort.Slice(copies, func(i, j int) bool { return copies[i].step > copies[j].step })
+	return copies
+}
+
+// pruneCopies removes all but the newest keepCopies pre-upgrade copies of the
+// database at path, newest by step number.
+func pruneCopies(path string) {
+	copies := listCopies(path)
 	for i := keepCopies; i < len(copies); i++ {
 		if err := os.Remove(copies[i].path); err == nil {
 			log.Printf("upgrade: removed the oldest copy %s (%d are kept)", copies[i].path, keepCopies)
@@ -247,15 +309,11 @@ func inspectDB(path string) (tables int, step int64, err error) {
 // know. It says both numbers and the two ways out (FR-007).
 func refuseNewer(path string, stored, newest int64) *UpgradeRefusal {
 	back := "restore a backup made before that upgrade with nigari restore <file>"
-	if copies, _ := filepath.Glob(path + ".before-step-*"); len(copies) > 0 {
-		best, bestStep := "", -1
-		for _, c := range copies {
-			if n, err := strconv.Atoi(strings.TrimPrefix(c, path+".before-step-")); err == nil && int64(n) <= newest+1 && n > bestStep {
-				best, bestStep = c, n
-			}
-		}
-		if best != "" {
-			back = fmt.Sprintf("stop nigari and run cp %q %q && rm -f %q %q", best, path, path+"-wal", path+"-shm")
+	// The newest copy this release can open: taken before a step it knows.
+	for _, c := range listCopies(path) {
+		if c.step <= newest+1 {
+			back = fmt.Sprintf("stop nigari and run cp %q %q && rm -f %q %q", c.path, path, path+"-wal", path+"-shm")
+			break
 		}
 	}
 	return &UpgradeRefusal{Code: "upgrade_refused", Sentence: fmt.Sprintf(
