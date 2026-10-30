@@ -43,6 +43,7 @@ Treatments:
 | `salt.db.before-step-<n>` | `nigari.db.before-step-<n>` | moved with it |
 | both `salt.db` and `nigari.db` present | n/a | refused: `rename_conflict` |
 | header `X-Salt-Signature` | `X-Nigari-Signature` | gone; release notes name it |
+| API token prefix `salt_…` (`server/users.go`) | `nigari_…` for new tokens | **kept working**: a token is a secret a person holds, looked up by the hash of the whole value, never by its prefix; existing `salt_…` tokens keep signing agents in. Found while building T019 |
 | command `salt` (`salt backup`, `salt restore`, `salt version`, `salt fix-notion-rows`) | `nigari …` | gone; the installer removes `/usr/local/bin/salt` when it moves a service |
 | default backup file `salt-backup.tar.gz` | `nigari-backup.tar.gz` | renamed; `nigari restore` reads an archive holding `salt.db` |
 | export manifest `salt-workspace.json`, field `saltVersion`, file `<name>.salt.zip` | `nigari-workspace.json`, `nigariVersion`, `<name>.nigari.zip` | written new; both read (FR-009) |

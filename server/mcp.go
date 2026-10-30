@@ -30,7 +30,7 @@ func bytesTrimSpace(b []byte) []byte { return bytes.TrimSpace(b) }
 
 // A minimal, dependency-free MCP server (Streamable HTTP transport,
 // stateless JSON responses). Agents authenticate with a salt.md API token:
-//   Authorization: Bearer salt_…
+//   Authorization: Bearer nigari_…
 // Example client config:
 //   claude mcp add --transport http salt http://<host>/mcp \
 //     --header "Authorization: Bearer <token>"

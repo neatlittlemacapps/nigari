@@ -18,7 +18,7 @@ import (
 // secret; sendMail prefers the connected provider and falls back to SMTP.
 // No more fiddling with SMTP.
 
-const mailOauthCookie = "salt_mail_oauth"
+const mailOauthCookie = "nigari_mail_oauth"
 
 func mailScopes(provider string) string {
 	if provider == "google" {

@@ -423,6 +423,7 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	expireOldCookies(w, r)
 	s.mux.ServeHTTP(w, r)
 }
 

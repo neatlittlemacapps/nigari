@@ -15,7 +15,7 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-const sessionCookie = "salt_session"
+const sessionCookie = "nigari_session"
 
 // sessionCookieValue returns the session value from the cookie.
 func sessionCookieValue(r *http.Request) (string, bool) {
@@ -881,7 +881,7 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 500, err.Error())
 		return
 	}
-	token := "salt_" + hex.EncodeToString(b)
+	token := "nigari_" + hex.EncodeToString(b)
 	id := newID()
 	_, err := s.db.Exec(`INSERT INTO api_tokens (id, user_id, name, token_hash, scope, workspace_scope, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		id, userID, strings.TrimSpace(body.Name), tokenHash(token), scope, strings.Join(scoped, ","), now())

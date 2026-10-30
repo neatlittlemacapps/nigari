@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -160,6 +161,26 @@ func readManifest(fsys fs.FS) []byte {
 		}
 	}
 	return nil
+}
+
+// oldCookies are salt.md's cookie names with the path each was set on; a
+// cookie is only cleared on the path it was set with.
+var oldCookies = []struct{ name, path string }{
+	{"salt_session", "/"},
+	{"salt_oauth", "/api/oauth/"},
+	{"salt_mail_oauth", "/api/admin/mail-oauth/"},
+}
+
+// expireOldCookies clears the salt.md cookies a request still carries
+// (spec 011, FR-008, research R5). They sign nobody in: sessions are not
+// carried over, people sign in once more. Cleared, they do not ride along on
+// every request until they expire on their own, months later.
+func expireOldCookies(w http.ResponseWriter, r *http.Request) {
+	for _, c := range oldCookies {
+		if _, err := r.Cookie(c.name); err == nil {
+			http.SetCookie(w, &http.Cookie{Name: c.name, Value: "", Path: c.path, MaxAge: -1, HttpOnly: true})
+		}
+	}
 }
 
 func renameConflict() error {

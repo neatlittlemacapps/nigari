@@ -223,3 +223,45 @@ func TestImportReadsOldArchive(t *testing.T) {
 		t.Error("the export still writes salt-workspace.json")
 	}
 }
+
+// Spec 011 FR-008: salt.md's session cookie signs nobody in, and the cookies
+// it left are cleared on the path each was set with, only when sent.
+func TestOldCookiesAreExpired(t *testing.T) {
+	s := testServer(t)
+	_, cookie := signedIn(t, s, "owner@example.test")
+	tok := strings.TrimPrefix(cookie, sessionCookie+"=")
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/api/me", nil)
+	req.Header.Set("Cookie", "salt_session="+tok+"; salt_oauth=x")
+	s.ServeHTTP(rec, req)
+	if !strings.Contains(rec.Body.String(), `"authenticated":false`) {
+		t.Fatalf("salt_session signed somebody in: %d %s", rec.Code, rec.Body.String())
+	}
+	cleared := map[string]string{}
+	for _, c := range rec.Result().Cookies() {
+		if c.MaxAge < 0 {
+			cleared[c.Name] = c.Path
+		}
+	}
+	if cleared["salt_session"] != "/" || cleared["salt_oauth"] != "/api/oauth/" {
+		t.Errorf("want salt_session on / and salt_oauth on /api/oauth/ cleared, got %v", cleared)
+	}
+	if _, ok := cleared["salt_mail_oauth"]; ok {
+		t.Error("a cookie the request did not carry was cleared")
+	}
+
+	// The new cookie still works, and clears nothing.
+	rec = httptest.NewRecorder()
+	req = httptest.NewRequest("GET", "/api/me", nil)
+	req.Header.Set("Cookie", cookie)
+	s.ServeHTTP(rec, req)
+	if !strings.Contains(rec.Body.String(), `"authenticated":true`) {
+		t.Fatalf("nigari_session does not sign in: %s", rec.Body.String())
+	}
+	for _, c := range rec.Result().Cookies() {
+		if c.MaxAge < 0 {
+			t.Errorf("a request without old cookies cleared %s", c.Name)
+		}
+	}
+}
