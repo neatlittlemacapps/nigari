@@ -63,6 +63,9 @@ listed; it is once the binary links it, the next time the script runs.
 
 ## 2026-10-29 — The fork releases every push to main, on its own 1.6 line
 
+*Amended by "The fork becomes nigari" above: a version line with no tag yet
+releases `server.Version` itself, so the first nigari release is v2.0.0.*
+
 **Decision** (owner's issue #265, with the version rule left to us): every push to `main`
 publishes a GitHub Release of this fork and its container image. Each gets the next patch
 number on the line named by `server.Version`'s major.minor (1.6 today: v1.6.9, v1.6.10, …).
