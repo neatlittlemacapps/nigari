@@ -9,7 +9,7 @@
 <p align="center">
   <a href="wiki/README.md"><b>Documentation</b></a> ·
   <a href="#quickstart"><b>Quickstart</b></a> ·
-  <a href="#where-it-comes-from"><b>Where it comes from</b></a>
+  <a href="#built-on-saltmd"><b>Built on salt.md</b></a>
 </p>
 
 <br>
@@ -41,6 +41,17 @@ rename finds its data; a new name would be a new, empty volume.
 There is nothing else to install: no database server, no cache, no object
 store. Reverse proxies, TLS and backups are in the
 [self-hosting guide](wiki/self-hosting.md).
+
+## Built on salt.md
+
+nigari began as a fork of [salt.md](https://github.com/saltmd/salt.md) and owes it the foundations: one binary on your own server, documents and databases in one place, and a workspace that people and AI agents share on equal terms.
+
+nigari is first of all a personal exploration: how far can one designer take a product like this? Its compass is user experience. Every change starts from how it feels to use, and that leads past salt.md's original concept in two directions:
+
+- **A design system**, so every screen speaks one visual language and stays readable in light and dark, and the whole interface can evolve by adjusting it in one central place.
+- **Databases that do more**, building on salt.md's views and relations, with ways to see and shape the data that hold up as it grows.
+
+nigari is its own project and does not send changes back, with thanks to salt.md for the ground it stands on. Same licence (AGPL-3.0); the original notices are in [LICENSE](LICENSE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Moving an install from salt.md: [self-hosting guide](wiki/self-hosting.md#updating-from-saltmd).
 
 ## People and agents in the same place
 
@@ -177,11 +188,3 @@ others over a network, publish your changes.
 The components nigari is built on, with their licences in full, are in
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). A running instance serves the
 same list at `/licenses`.
-
-## Where it comes from
-
-nigari is a modified version of [salt.md](https://github.com/saltmd/salt.md),
-changed since version 2.0.0 (2026-10-29) and shared under the same licence,
-the AGPL-3.0. The original copyright notices stay in [LICENSE](LICENSE) and
-[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Updating an install that
-still runs salt.md: [self-hosting guide](wiki/self-hosting.md#updating-from-saltmd).

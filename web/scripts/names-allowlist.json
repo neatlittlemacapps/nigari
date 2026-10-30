@@ -28,8 +28,8 @@
     "reason": "explains why the nigari user gets the uid salt.md's image gave salt"
   },
   "README.md": {
-    "count": 8,
-    "reason": "the origin notice (FR-002) and the salt-data volume"
+    "count": 14,
+    "reason": "\"Built on salt.md\": where nigari comes from and the origin notice (FR-002), and the salt-data volume"
   },
   "SECURITY.md": {
     "count": 5,
