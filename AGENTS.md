@@ -144,6 +144,9 @@ added on the REST side and missing on the MCP side, found later one by one.
   every task issue it finishes as `Closes #N` (closing the feature issue does
   not close its sub-issues).
 - Small fixes can skip the spec: an issue, a branch, a pull request.
+- **Bugs before features** (owner, 2026-10-30). An open `bug` issue goes
+  before starting the next feature or spec. A bug found while working gets an
+  issue at once and is fixed in its own small pull request, not saved up.
 
 ## Commits
 

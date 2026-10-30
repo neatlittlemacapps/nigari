@@ -7,6 +7,22 @@ entries are not edited away.
 
 ---
 
+## 2026-10-30 — Bugs go before features
+
+**Decision** (owner, option A of two): an open `bug` issue goes before starting the next
+feature or spec, and a bug found while working is filed at once and fixed in its own small
+pull request. Written into `AGENTS.md` § How work flows.
+
+**Why:** the owner reported a chart that replays its animation once per row (#368) while
+#317, #318, #319 and #320 had been waiting since 2026-10-29 behind specs 008 and 011. A
+bug the owner sees every day costs more trust than a feature that starts a week later,
+and a bug fixed while its cause is fresh is cheaper than one fixed after the code moved on.
+
+**Turned down:** B, bugs first only when visible in daily use: it puts the judgement of
+"visible" on the agent, and every bug filed so far was found by using the app.
+
+---
+
 ## 2026-10-30 — The interface speaks Dutch, and Dutch is required like German
 
 **Decision** (owner, #324): nigari ships a Dutch catalogue, `web/src/locales/nl.json`,
