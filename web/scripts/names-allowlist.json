@@ -72,7 +72,7 @@
     "reason": "backs up and restores salt.md data directories and archives (salt.db), and refuses to restore beside one"
   },
   "server/backup_test.go": {
-    "count": 7,
+    "count": 10,
     "reason": "tests backup and restore of salt.md data"
   },
   "server/ics.go": {

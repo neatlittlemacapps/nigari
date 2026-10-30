@@ -207,3 +207,36 @@ func TestRestoreRefusesBesideSaltDB(t *testing.T) {
 		t.Fatal("the refused restore wrote nigari.db")
 	}
 }
+
+// A forced restore over a salt.md directory removes salt.db only once the
+// archive's database is written: a broken archive must not cost the old one.
+func TestForcedRestoreKeepsSaltDBWhenTheArchiveIsBroken(t *testing.T) {
+	t.Setenv("NIGARI_RESTORE_FORCE", "1")
+	dir := t.TempDir()
+	old := filepath.Join(dir, oldDBFile)
+	if err := os.WriteFile(old, []byte("old"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	broken := filepath.Join(t.TempDir(), "broken.tar.gz")
+	if err := os.WriteFile(broken, []byte("not a gzip file"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := Restore(dir, broken); err == nil {
+		t.Fatal("a broken archive restored")
+	}
+	if b, _ := os.ReadFile(old); string(b) != "old" {
+		t.Fatal("the failed restore removed salt.db")
+	}
+
+	src := copyFixture(t, "step-0.db")
+	good := filepath.Join(t.TempDir(), "good.tar.gz")
+	if err := Backup(filepath.Dir(src), good); err != nil {
+		t.Fatal(err)
+	}
+	if err := Restore(dir, good); err != nil {
+		t.Fatal(err)
+	}
+	if fileExists(old) || !fileExists(filepath.Join(dir, DBFile)) {
+		t.Fatal("after a good forced restore, want nigari.db alone")
+	}
+}

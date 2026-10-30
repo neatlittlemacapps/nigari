@@ -113,11 +113,6 @@ func Restore(dataDir, src string) error {
 			return fmt.Errorf("%s/%s already exists; set NIGARI_RESTORE_FORCE=1 to overwrite", dataDir, name)
 		}
 	}
-	// Forced over a salt.md data directory: the old database goes, or the
-	// restored one would sit next to it.
-	for _, side := range []string{"", "-wal", "-shm"} {
-		os.Remove(filepath.Join(dataDir, oldDBFile+side))
-	}
 	in, err := os.Open(src)
 	if err != nil {
 		return err
@@ -135,6 +130,7 @@ func Restore(dataDir, src string) error {
 	// Drop stale WAL/SHM so the restored DB isn't mixed with old journal state.
 	os.Remove(filepath.Join(dataDir, DBFile+"-wal"))
 	os.Remove(filepath.Join(dataDir, DBFile+"-shm"))
+	restoredDB := false
 	for {
 		hdr, err := tr.Next()
 		if err == io.EOF {
@@ -154,6 +150,9 @@ func Restore(dataDir, src string) error {
 		if clean == oldDBFile {
 			clean = DBFile
 		}
+		if clean == DBFile {
+			restoredDB = true
+		}
 		target := filepath.Join(dataDir, clean)
 		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 			return err
@@ -167,6 +166,14 @@ func Restore(dataDir, src string) error {
 			return err
 		}
 		f.Close()
+	}
+	// Forced over a salt.md data directory: the old database goes now that
+	// the archive's is safely written, or the two would sit side by side.
+	// Not before: a missing or broken archive must not cost the old one.
+	if restoredDB {
+		for _, side := range []string{"", "-wal", "-shm"} {
+			os.Remove(filepath.Join(dataDir, oldDBFile+side))
+		}
 	}
 	return nil
 }
