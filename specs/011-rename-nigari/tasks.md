@@ -155,7 +155,7 @@ description: "Tasks for the rename to nigari"
   - the variable refusal and `rename_conflict` in `wiki/troubleshooting.md`; the header in `wiki/webhooks.md`.
 
   Sonnet helper for the pages that only change words; Claude writes the two new sections and reviews the rest. `check-wiki.mjs` green
-- [ ] T030 [US1] [wiki] Screenshots: retake all 31 (`wiki/screenshots.json`) with the screenshot recipe (handoff, `node scripts/shoot-wiki.mjs`), then `.github/hero.png`. Sonnet helper; Claude looks at every image before commit (no `salt.md` left except the origin notice; no scratch path visible, #320)
+- [x] T030 [US1] [wiki] Screenshots: retake all 31 (`wiki/screenshots.json`) with the screenshot recipe (handoff, `node scripts/shoot-wiki.mjs`), then `.github/hero.png`. Sonnet helper; Claude looks at every image before commit (no `salt.md` left except the origin notice; no scratch path visible, #320)
 
 **Checkpoint**: nothing visible says salt.md except the origin notice.
 
