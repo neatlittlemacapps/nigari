@@ -47,7 +47,8 @@ Treatments:
 | command `salt` (`salt backup`, `salt restore`, `salt version`, `salt fix-notion-rows`) | `nigari …` | gone; the installer removes `/usr/local/bin/salt` when it moves a service |
 | default backup file `salt-backup.tar.gz` | `nigari-backup.tar.gz` | renamed; `nigari restore` reads an archive holding `salt.db` |
 | export manifest `salt-workspace.json`, field `saltVersion`, file `<name>.salt.zip` | `nigari-workspace.json`, `nigariVersion`, `<name>.nigari.zip` | written new; both read (FR-009) |
-| calendar `PRODID:-//salt.md//Calendar//EN`, `UID:…@salt.md`, name `salt.md · …`, file `salt.ics` | `-//nigari//Calendar//EN`, `…@nigari`, `nigari · …`, `nigari.ics` | renamed (research R8) |
+| calendar `PRODID:-//salt.md//Calendar//EN`, name `salt.md · …`, file `salt.ics` | `-//nigari//Calendar//EN`, `nigari · …`, `nigari.ics` | renamed (research R8) |
+| calendar event `UID:…@salt.md` | unchanged | **kept**: an event's identity to subscribed calendars; changed, they re-create every event and lose people's alerts (research R8) |
 | MCP `serverInfo.name` `salt.md`; skill folder `saltmd/` | `nigari`; `nigari/` | renamed; release notes tell agent users to re-download the skill |
 | `User-Agent: salt.md/<v>` (update check, cloudflared, import) | `nigari/<v>` | renamed |
 | default mail sender `salt@<host>` | `nigari@<host>` | renamed |

@@ -56,11 +56,10 @@ branch. Each decision below says what was chosen, why, and what was turned down.
 - **Decision**: plan P4.
 - **Why**: FR-009. An archive is a file a person keeps, so reading the old manifest name is not answering to an old name, it is reading old data. The same holds for a backup tar holding `salt.db`.
 
-## R8. Calendar feed ids change
+## R8. Calendar feed: the name changes, the event ids do not
 
-- **Decision**: `PRODID`, the `UID` suffix, the calendar name and the file name say nigari.
-- **Why**: the server publishes calendars as subscription feeds (`/ics/…`). A subscribed client replaces the feed's contents on each refresh, so changed UIDs show the same events, not duplicates. A file someone imported by hand once would duplicate only if imported again.
-- **Turned down**: keeping `@salt.md` UIDs forever, an old name for a risk that only applies to re-imported files.
+- **Decision** (revised while building, after `/code-review`): `PRODID`, the calendar name and the file name say nigari. The `UID` suffix **stays `@salt.md`**: a UID is an event's identity to every subscribed client, which drops an event whose UID vanished and creates a new one, losing the alerts and notes a person added to it. Like API tokens and OAuth client ids, an event id is data, not a name the app answers to.
+- **First version, superseded**: rename the UID too, reasoning that a subscribed client replaces the feed's contents on each refresh. It does, but it matches events by UID while doing so, which is exactly what makes a changed UID a deleted-and-new event.
 
 ## R9. The desktop app is a new app
 

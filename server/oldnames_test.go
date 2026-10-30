@@ -265,3 +265,39 @@ func TestOldCookiesAreExpired(t *testing.T) {
 		}
 	}
 }
+
+// An old salt.md left running on the same data directory (an orphaned
+// compose container, an overlapping restart) holds salt.db open while idle.
+// Renaming the file under it would lose what it writes next, and a WAL
+// checkpoint does not notice an idle connection. The move refuses instead,
+// and goes through once the other process is gone.
+func TestRenameRefusesWhileTheFileIsOpen(t *testing.T) {
+	path := copyFixture(t, "step-0.db")
+	dir := filepath.Dir(path)
+	old := filepath.Join(dir, oldDBFile)
+	if err := os.Rename(path, old); err != nil {
+		t.Fatal(err)
+	}
+	other, err := sql.Open("sqlite", writerDSN(old))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	if err := other.QueryRow(`SELECT COUNT(*) FROM pages`).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	// Idle now: no transaction open, the connection simply lives.
+	_, err = moveOldDatabase(dir)
+	var r *UpgradeRefusal
+	if !errors.As(err, &r) || r.Code != "upgrade_busy" {
+		other.Close()
+		t.Fatalf("with salt.db open elsewhere: want upgrade_busy, got %v", err)
+	}
+	if !fileExists(old) || fileExists(filepath.Join(dir, DBFile)) {
+		t.Fatal("the refused move renamed the file")
+	}
+	other.Close()
+	if moved, err := moveOldDatabase(dir); err != nil || moved != 1 {
+		t.Fatalf("after the other process closed: %d, %v", moved, err)
+	}
+}

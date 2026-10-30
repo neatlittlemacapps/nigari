@@ -79,7 +79,7 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	if err := os.MkdirAll(filepath.Join(dataDir, "files"), 0o755); err != nil {
 		return nil, err
 	}
-	// A nigari data directory's nigari.db becomes nigari.db first, once
+	// A salt.md data directory's salt.db becomes nigari.db first, once
 	// (oldnames.go); the steps then run on it like on any start.
 	moved, err := moveOldDatabase(dataDir)
 	if err != nil {

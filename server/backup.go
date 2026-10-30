@@ -37,7 +37,15 @@ var Version = "2.0.0"
 func Backup(dataDir, dest string) error {
 	dbPath := filepath.Join(dataDir, DBFile)
 	if _, err := os.Stat(dbPath); err != nil {
-		return fmt.Errorf("no database at %s", dbPath)
+		// A salt.md data directory nigari has not started on yet: the
+		// careful admin backs it up before the first start. Read it where it
+		// is, and write it into the archive under the new name. A backup
+		// moves nothing (spec 011).
+		if old := filepath.Join(dataDir, oldDBFile); fileExists(old) {
+			dbPath = old
+		} else {
+			return fmt.Errorf("no database at %s", dbPath)
+		}
 	}
 	// VACUUM INTO a temp file for a transactionally-consistent snapshot.
 	snap := dest + ".db.tmp"
@@ -98,8 +106,17 @@ func tarFile(tw *tar.Writer, path, name string) error {
 // Restore extracts a Backup archive into dataDir. Refuses to overwrite an
 // existing DB unless NIGARI_RESTORE_FORCE is set, to prevent accidents.
 func Restore(dataDir, src string) error {
-	if _, err := os.Stat(filepath.Join(dataDir, DBFile)); err == nil && Env("RESTORE_FORCE") == "" {
-		return fmt.Errorf("%s/"+DBFile+" already exists; set NIGARI_RESTORE_FORCE=1 to overwrite", dataDir)
+	// salt.db counts as an existing database too: restoring nigari.db beside
+	// it would leave two, and the next start refuses that (rename_conflict).
+	for _, name := range []string{DBFile, oldDBFile} {
+		if fileExists(filepath.Join(dataDir, name)) && Env("RESTORE_FORCE") == "" {
+			return fmt.Errorf("%s/%s already exists; set NIGARI_RESTORE_FORCE=1 to overwrite", dataDir, name)
+		}
+	}
+	// Forced over a salt.md data directory: the old database goes, or the
+	// restored one would sit next to it.
+	for _, side := range []string{"", "-wal", "-shm"} {
+		os.Remove(filepath.Join(dataDir, oldDBFile+side))
 	}
 	in, err := os.Open(src)
 	if err != nil {
@@ -131,7 +148,7 @@ func Restore(dataDir, src string) error {
 		if strings.HasPrefix(clean, "..") || filepath.IsAbs(clean) {
 			return fmt.Errorf("unsafe path in archive: %s", hdr.Name)
 		}
-		// A backup made by nigari holds nigari.db: it restores as nigari.db,
+		// A backup made by salt.md holds salt.db: it restores as nigari.db,
 		// since an archive is data a person keeps, not a name the running
 		// app answers to (spec 011, FR-009).
 		if clean == oldDBFile {

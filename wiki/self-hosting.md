@@ -680,7 +680,14 @@ without a word stop the start with a sentence instead.
   address once.
 
 **What keeps its old name on purpose**: the Docker and Podman volume
-`salt-data`. A volume with a new name would be a new, empty one.
+`salt-data`. A volume with a new name would be a new, empty one. And calendar
+events keep their ids, so a subscribed calendar keeps the alerts you added.
+
+**Docker Compose**: the service is called `nigari` now, so `docker compose up -d`
+would leave the old `salt` container running beside it on the same volume. Use
+`docker compose up -d --remove-orphans`. If an old salt.md still has the
+database open, nigari does not start, and says so, rather than rename the file
+under it.
 
 If a data directory holds both `salt.db` and `nigari.db`, nigari does not pick
 one: it does not start, and says so. Keep the file with your data and move the

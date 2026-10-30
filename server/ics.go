@@ -292,7 +292,11 @@ func (s *Server) handleICSFeed(w http.ResponseWriter, r *http.Request) {
 							title = "Untitled"
 						}
 						b.WriteString("BEGIN:VEVENT\r\n")
-						b.WriteString("UID:" + rw.id + "-" + pid + "@nigari\r\n")
+						// The UID is an event's identity to every calendar that
+						// subscribed, so it keeps the suffix salt.md gave it:
+						// changed, a client drops each event and makes it anew,
+						// losing the alerts and notes people added (spec 011, R8).
+						b.WriteString("UID:" + rw.id + "-" + pid + "@salt.md\r\n")
 						b.WriteString("DTSTAMP:" + stamp + "\r\n")
 						b.WriteString(dt + "\r\n")
 						b.WriteString("SUMMARY:" + icsEscape(title) + " (" + icsEscape(pname) + ")\r\n")

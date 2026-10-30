@@ -52,7 +52,7 @@
     "reason": "the Docker/Podman volume keeps salt.md's name: renamed, it would be a new, empty volume (spec 011, R14)"
   },
   "install.sh": {
-    "count": 36,
+    "count": 39,
     "reason": "refuses SALT_* variables and moves a salt.md service (plan P5)"
   },
   "main.go": {
@@ -67,17 +67,33 @@
     "count": 35,
     "reason": "tests the installer's move of a salt.md service"
   },
+  "server/backup.go": {
+    "count": 5,
+    "reason": "backs up and restores salt.md data directories and archives (salt.db), and refuses to restore beside one"
+  },
+  "server/backup_test.go": {
+    "count": 7,
+    "reason": "tests backup and restore of salt.md data"
+  },
+  "server/ics.go": {
+    "count": 2,
+    "reason": "calendar event UIDs keep the @salt.md suffix: an event's identity to subscribed calendars (research R8)"
+  },
   "server/oldnames.go": {
-    "count": 22,
+    "count": 26,
     "reason": "the server's old-name handling: refusal, database move, old cookies, old manifest"
   },
   "server/oldnames_test.go": {
-    "count": 35,
+    "count": 38,
     "reason": "tests the server's old-name handling"
   },
   "server/prefs_test.go": {
     "count": 3,
     "reason": "the time zone America/Argentina/Salta"
+  },
+  "server/server.go": {
+    "count": 2,
+    "reason": "says salt.db is renamed first"
   },
   "server/transfer.go": {
     "count": 6,
@@ -168,7 +184,7 @@
     "reason": "describes moving from salt.md to nigari: the old names a person still meets"
   },
   "wiki/self-hosting.md": {
-    "count": 28,
+    "count": 30,
     "reason": "describes moving from salt.md to nigari: the old names a person still meets"
   },
   "wiki/troubleshooting.md": {

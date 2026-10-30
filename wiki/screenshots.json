@@ -740,7 +740,7 @@
       ],
       "takenAt": {
         "web/src/components/AgentConnect.tsx": "6aba645f931d",
-        "server/mcp.go": "e93142f96d67",
+        "server/mcp.go": "792c9a91ae8c",
         "web/src/tokens.css": "ab00821c87d1",
         "web/src/theme.css": "5257c80b14b5"
       },
@@ -1125,7 +1125,7 @@
       ],
       "takenAt": {
         "web/src/components/AdminSettings.tsx": "0260da9f84ca",
-        "server/backup.go": "1b0bd25c6deb",
+        "server/backup.go": "068bb680aba7",
         "web/src/tokens.css": "ab00821c87d1",
         "web/src/theme.css": "5257c80b14b5",
         "web/src/ui/Dialog.tsx": "cf65d6c96beb",

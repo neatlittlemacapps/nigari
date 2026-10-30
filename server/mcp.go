@@ -15,13 +15,13 @@ import (
 	"time"
 )
 
-// filterConditionSchema is one filter condition as agents are shown it, in
-// query_rows' filter and filter_groups and in set_view's filters alike.
 // mcpServerName is what an agent sees in initialize's serverInfo. A constant,
 // not a literal in the map: check-wiki.mjs reads every "name": "…" literal in
 // this file as a tool name, and the product's name is not a tool.
 const mcpServerName = "nigari"
 
+// filterConditionSchema is one filter condition as agents are shown it, in
+// query_rows' filter and filter_groups and in set_view's filters alike.
 func filterConditionSchema() map[string]any {
 	return map[string]any{"type": "object", "properties": map[string]any{
 		"property": map[string]any{"type": "string", "description": "Property id from get_collection"},

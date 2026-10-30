@@ -312,8 +312,11 @@ if [ "$as_service" = yes ]; then
     # A foreground run earlier wrote its database into whatever directory it was
     # started from. The service reads a different one, so an empty workspace here
     # is a file in the other place and not a lost one.
-    if [ -f ./data/nigari.db ] && [ ! -f "$svcdata/nigari.db" ] && [ ! -f "$svcdata/salt.db" ]; then
-      printf '\n  %sNote: ./data/nigari.db is from an earlier foreground run. The service uses%s\n' "$d" "$r"
+    # salt.md's foreground runs wrote ./data/salt.db; nigari's write nigari.db.
+    fg=''
+    for f in nigari.db salt.db; do [ -f "./data/$f" ] && fg=$f && break; done
+    if [ -n "$fg" ] && [ ! -f "$svcdata/nigari.db" ] && [ ! -f "$svcdata/salt.db" ]; then
+      printf '\n  %sNote: ./data/%s is from an earlier foreground run. The service uses%s\n' "$d" "$fg" "$r"
       printf '  %s%s, so it starts empty. Nothing was deleted.%s\n' "$d" "$svcdata" "$r"
     fi
     printf '\n'

@@ -67,11 +67,10 @@ const oldDBFile = "salt.db"
 // name, once, before the upgrade steps run (spec 011, FR-004, plan P2). It
 // returns how many files it moved: 0 when there was nothing to move.
 //
-// A rename changes no byte, so no copy is taken first (owner: "No copy").
-// The WAL is the one way to lose data here: it holds committed pages not yet
-// written into salt.db, and renaming salt.db alone would leave them behind in
-// a salt.db-wal nothing opens again. So the file is checkpointed first, by
-// SQLite itself, and the rename happens only once the WAL is empty.
+// A rename changes no byte of content, so no copy is taken first (owner: "No
+// copy"). Two things could lose data, and both are ruled out before the
+// rename: committed pages still in salt.db-wal, which renaming salt.db alone
+// would leave behind, and another process still holding the file.
 //
 // With both salt.db and nigari.db present nothing is chosen for the admin:
 // the start is refused and both files stay as they are.
@@ -97,27 +96,28 @@ func moveOldDatabase(dataDir string) (int, error) {
 		return 0, renameConflict()
 	}
 
-	db, err := sql.Open("sqlite", writerDSN(oldPath))
+	// Leaving WAL mode folds every committed page into salt.db and removes
+	// salt.db-wal and salt.db-shm, and SQLite allows it only when no other
+	// connection has the file open, idle ones included: each connection holds
+	// a lock on the shared index for as long as it lives. A checkpoint alone
+	// would not tell: an idle salt.md left running (an orphaned compose
+	// container, an overlapping restart) blocks nothing, and renaming the file
+	// under it would lose what it writes next. Its journal mode comes back to
+	// WAL when the writer opens nigari.db (writerDSN).
+	db, err := sql.Open("sqlite", "file:"+oldPath+"?_pragma=busy_timeout(2000)")
 	if err != nil {
 		return 0, fmt.Errorf("rename: open %s: %w", oldDBFile, err)
 	}
-	var busy, logFrames, done int
-	err = db.QueryRow(`PRAGMA wal_checkpoint(TRUNCATE)`).Scan(&busy, &logFrames, &done)
+	var mode string
+	err = db.QueryRow(`PRAGMA journal_mode=DELETE`).Scan(&mode)
 	db.Close()
-	if err != nil {
-		return 0, fmt.Errorf("rename: checkpoint %s: %w", oldDBFile, err)
-	}
-	if busy != 0 {
+	if err != nil || mode != "delete" {
 		return 0, &UpgradeRefusal{Code: "upgrade_busy", Sentence: "nigari did not start: another process still has " +
-			oldDBFile + " open, so it cannot be renamed safely. Stop it and start again. Nothing was changed."}
+			oldDBFile + " open (an old salt.md still running?), so it cannot be renamed safely. Stop it and start again. Nothing was changed."}
 	}
 	for _, side := range []string{"-wal", "-shm"} {
-		p := oldPath + side
-		if fi, err := os.Stat(p); err == nil {
-			if side == "-wal" && fi.Size() > 0 {
-				return 0, fmt.Errorf("rename: %s is not empty after the checkpoint; nothing was renamed", p)
-			}
-			os.Remove(p)
+		if fileExists(oldPath + side) {
+			return 0, fmt.Errorf("rename: %s%s is still there after leaving WAL mode; nothing was renamed", oldPath, side)
 		}
 	}
 	if err := os.Rename(oldPath, newPath); err != nil {

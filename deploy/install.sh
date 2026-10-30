@@ -9,7 +9,9 @@ BIN="${1:-./nigari}"
 # nigari was salt.md until v2.0.0 (spec 011). This script used to install into
 # /opt/salt; installing next to it would start on an empty /opt/nigari/data
 # while the workspace sits in /opt/salt/data. Stop instead and say what to do.
-if [ -d /opt/salt/data ] && [ ! -e /opt/nigari ]; then
+# Whether or not /opt/nigari exists (an aborted earlier attempt leaves one):
+# only a nigari.db already in it means the move was done.
+if [ -d /opt/salt/data ] && [ ! -f /opt/nigari/data/nigari.db ]; then
   echo "Found salt.md in /opt/salt. Move it first, then run this again:"
   echo "  systemctl disable --now salt && mv /opt/salt /opt/nigari && rm /opt/nigari/salt /etc/systemd/system/salt.service"
   exit 1
