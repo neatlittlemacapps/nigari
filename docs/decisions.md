@@ -7,6 +7,47 @@ entries are not edited away.
 
 ---
 
+## 2026-11-01 — Cloud sessions get a code graph (CodeGraph)
+
+**Decision** (owner's request): agents in Claude Code cloud sessions work with
+[CodeGraph](https://github.com/colbymchenry/codegraph) 1.6.2, a local graph of the code's
+symbols and calls in SQLite, served to Claude over MCP. A SessionStart hook,
+`.claude/hooks/codegraph.sh`, installs the pinned npm package when it is missing, wires
+Claude Code with the package's own `codegraph install --target=claude --location=global`,
+and builds the index (`codegraph init`) or catches it up with the checkout (`codegraph
+sync`, `codegraph index --force` if that fails). `.claude/rules/codegraph.md` tells
+agents to use it before and after a change. Anonymous telemetry is switched off.
+
+**Why:** the history of this repository is surfaces missed on one side of a change (a
+check on the REST path and not the MCP one). A grep finds a word; the graph finds the
+callers, the rendered components and the route behind a handler, and the blast radius
+of a change, in one call. Measured here: 382 files, 6,964 nodes, 22,574 edges; built in
+10 s on a machine with nothing installed, 1 s when the index is already current.
+
+**How it stays current:** nothing of it is committed and nothing is assumed to survive.
+Each session start compares the index with the checkout (`codegraph status`) and syncs
+only what changed. While the MCP server runs it watches the files and syncs edits
+within its 2-second debounce (tested: a new file was in the graph and gone again
+without a command). The index lives in `.codegraph/`, ignored through
+`.git/info/exclude` because `.gitignore` is a protected file.
+
+**Turned down:** committing the index (25 MB, machine-specific, stale on the next
+commit); the install line from `raw.githubusercontent.com` (the sessions' network
+policy blocks GitHub; npm is the package's documented alternative); a repository
+`.mcp.json` (the installer's global entry is the documented route, and it keeps the
+repository free of tool configuration a person's own machine would also pick up); the
+instructions in `CLAUDE.md` (gitignored here on purpose; rules in `.claude/rules/` are
+shared); an external store or service for the graph.
+
+**Limits:** on a machine where the hook runs for the first time, Claude Code may start
+its MCP servers before the hook has written the entry; the `codegraph` CLI works at
+once, the MCP tool from the next start. The environment's setup script, which runs
+before Claude Code starts, closes that gap: `npm install -g @colbymchenry/codegraph@1.6.2
+&& codegraph install --target=claude --location=global --yes`. The hook runs only in
+cloud sessions.
+
+---
+
 ## 2026-10-30 — Bugs go before features
 
 **Decision** (owner, option A of two): an open `bug` issue goes before starting the next
