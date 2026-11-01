@@ -34,11 +34,14 @@ const OPTION_TOKEN: Record<string, string> = {
 
 /** The token each drawn group is painted with, in drawing order. "No value"
  *  and "Other" are greys whatever the palette: they are not a category of
- *  their own, and should not look like one. oneColour paints every group the
- *  palette's first colour: Each row's bars are one series of rows, not
+ *  their own, and should not look like one. A series of rows (Each row) is
+ *  painted the palette's first colour: its bars are one series, not
  *  categories, and fifty bars cycling through twelve colours would suggest
- *  groups that are not there (research R18). */
-export function groupColourTokens(drawn: DrawnGroup[], palette: Palette, groupProp?: PropDef, oneColour = false): string[] {
+ *  groups that are not there (research R18). Except when the palette is
+ *  Colourful: that is somebody asking for colours, and it used to change
+ *  nothing at all on these charts (#318). */
+export function groupColourTokens(drawn: DrawnGroup[], palette: Palette, groupProp?: PropDef, series = false): string[] {
+  const oneColour = series && palette !== 'colorful';
   const options = new Map((groupProp?.options ?? []).map((o) => [o.id, o.color]));
   let i = 0;
   return drawn.map((g) => {

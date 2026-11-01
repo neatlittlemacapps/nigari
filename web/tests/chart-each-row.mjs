@@ -62,6 +62,16 @@ await withFixture(async ({ page, api, base, workspace }) => {
   await openPanel();
   assert.equal(await panel.getByRole('combobox', { name: 'What to show' }).innerText(), 'Each row', '"What to show" does not say Each row');
 
+  // One colour by default: the bars are one series of rows, not categories
+  // (research R18). Colourful is a choice for colours, and gets them (#318:
+  // it used to change nothing).
+  const swatches = () => figure.locator('.chart-group .chart-swatch').evaluateAll((els) => els.map((e) => e.style.background));
+  assert.equal(new Set(await swatches()).size, 1, 'Each row is not one colour by default');
+  await choose('Colours', 'Colourful');
+  await eventually(async () => new Set(await swatches()).size === 3);
+  await choose('Colours', 'Blue');
+  await eventually(async () => new Set(await swatches()).size === 1);
+
   // Kinds switch and keep Each row; a number chart adds the rows up.
   await choose('Chart', 'Donut');
   await figure.locator('.chart-centre').getByText('1,730').waitFor();

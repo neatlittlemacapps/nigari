@@ -7,6 +7,24 @@ entries are not edited away.
 
 ---
 
+## 2026-11-01 — CodeGraph's per-message prompt hook is off
+
+**Decision** (owner: "yes"): the `codegraph prompt-hook` entry that `codegraph install`
+adds to `~/.claude/settings.json` (UserPromptSubmit) is taken out again by
+`.claude/hooks/codegraph.sh` on every session start. The MCP server, its permission and
+`.claude/rules/codegraph.md` stay.
+
+**Why:** the hook matches the words of every message against symbol names and pastes
+the source it finds. A question about how the graph had helped, with the word "graph" in
+it, brought in the app's `GraphView` and the server's graph tool: unrelated code read on
+every turn. The graph is worth its cost when a task asks a structural question, and the
+rule already says to query it then.
+
+**Turned down:** keeping it (noise and tokens on every chat line); a flag on the
+installer (there is none in 1.6.2: `codegraph help install`).
+
+---
+
 ## 2026-11-01 — Cloud sessions get a code graph (CodeGraph)
 
 **Decision** (owner's request): agents in Claude Code cloud sessions work with

@@ -318,7 +318,9 @@ so a sum is the row's value, and `agg` must name a number, formula or rollup pro
 "No value" and left out like any other. The drawing caps Each row at **50** groups, sorted by
 value high to low by default, and folds the rest into "Other" (the other groupings keep 12:
 a palette of 12 colours is what made 12 the cap there, and 50 bars in one colour stay
-readable on a bar chart; a donut of Each row keeps the cap of 12). A click on a row's bar
+readable on a bar chart; a donut of Each row keeps the cap of 12). One colour is the default and
+holds for the single-colour palettes; the Colourful palette gives every bar its own colour,
+because choosing it is asking for colours (#318, 2026-11-01: it used to change nothing). A click on a row's bar
 opens the row instead of listing it.
 
 `chartDefaults.ts`: when nothing groups but a number property exists, a new chart is bars of

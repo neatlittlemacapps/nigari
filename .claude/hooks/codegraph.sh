@@ -45,6 +45,36 @@ if ! grep -q '"codegraph"' "$HOME/.claude.json" 2>/dev/null; then
   codegraph install --target=claude --location=global --yes >/dev/null 2>&1 || warn "could not wire the MCP server; the codegraph CLI still works"
 fi
 
+# The installer also registers `codegraph prompt-hook` on every message, which
+# matches the message's words against symbol names and pastes what it finds:
+# a chat line with the word "graph" in it brought in the app's GraphView. The
+# owner turned it off (2026-11-01); the graph is queried when a task needs it
+# (.claude/rules/codegraph.md). The installer has no flag for this, so the
+# one entry is taken out of the global settings it wrote, every start, since
+# `codegraph upgrade` rewrites them.
+python3 - "$HOME/.claude/settings.json" <<'PY' || warn "could not switch the prompt hook off"
+import json, sys
+path = sys.argv[1]
+try:
+    s = json.load(open(path))
+except (OSError, ValueError):
+    sys.exit(0)
+groups = s.get("hooks", {}).get("UserPromptSubmit", [])
+kept = []
+for g in groups:
+    g["hooks"] = [h for h in g.get("hooks", []) if h.get("command", "").strip() != "codegraph prompt-hook"]
+    if g["hooks"]:
+        kept.append(g)
+if kept != groups:
+    if kept:
+        s["hooks"]["UserPromptSubmit"] = kept
+    else:
+        del s["hooks"]["UserPromptSubmit"]
+        if not s["hooks"]:
+            del s["hooks"]
+    json.dump(s, open(path, "w"), indent=2)
+PY
+
 exclude="$(git rev-parse --git-path info/exclude)"
 grep -qxF '.codegraph/' "$exclude" 2>/dev/null || echo '.codegraph/' >>"$exclude"
 

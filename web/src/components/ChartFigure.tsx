@@ -149,8 +149,9 @@ export default function ChartFigure(props: ChartFigureProps) {
   drawnRef.current = drawn;
   const selectRef = useRef(select);
   selectRef.current = select;
-  const oneColour = eachRow && kind !== 'donut';
-  const tokens = useMemo(() => groupColourTokens(drawn, style.palette ?? 'auto', groupProp, oneColour), [drawn, style.palette, groupProp, oneColour]);
+  // A donut of Each row is still slices of one whole, each its own colour.
+  const series = eachRow && kind !== 'donut';
+  const tokens = useMemo(() => groupColourTokens(drawn, style.palette ?? 'auto', groupProp, series), [drawn, style.palette, groupProp, series]);
   const tokensRef = useRef(tokens);
   tokensRef.current = tokens;
 
