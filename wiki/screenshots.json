@@ -1122,6 +1122,12 @@
         },
         {
           "wait": 600
+        },
+        {
+          "text": [
+            "xpath=//*[contains(@class,'info-grid')]/span[normalize-space()='Data directory']/following-sibling::strong[1]",
+            "/data"
+          ]
         }
       ],
       "takenAt": {

@@ -158,6 +158,20 @@ async function run(page, step) {
   // picture whose staleness check means nothing.
   if (step.hide !== undefined)
     return page.addStyleTag({ content: `${step.hide} { visibility: hidden !important; }` });
+  // Put a fixed value where the machine taking the shot shows its own: a data
+  // directory was a scratch path of whichever session retook the picture
+  // (#320), meaningless to a reader and different on every run. Fails when
+  // nothing matches, so a changed screen cannot quietly bring the real value
+  // back.
+  if (step.text !== undefined) {
+    const [selector, value] = step.text;
+    const n = await page.locator(selector).evaluateAll((els, v) => {
+      for (const e of els) e.textContent = v;
+      return els.length;
+    }, value);
+    if (!n) throw new Error(`text: nothing matches ${selector}`);
+    return;
+  }
   throw new Error(`unknown step: ${JSON.stringify(step)}`);
 }
 
@@ -181,7 +195,10 @@ for (const shot of wanted) {
     // happened to fire while the shot was taken — the reload banner walked into
     // a board screenshot exactly this way — and the caret blinks, which would
     // make two runs of the same shot differ for no reason.
-    await run(page, { hide: '.toaster, .toast' });
+    // The update banner too: whether it shows depends on how the binary was
+    // built (a build from source calls itself the version in the source, and
+    // every newer release then announces itself), not on what the page shows.
+    await run(page, { hide: '.toaster, .toast, .update-banner' });
     const target = shot.element ? page.locator(shot.element).first() : page;
     await target.screenshot({ path: join(imgDir, `${shot.id}${suffix}.png`), animations: 'disabled' });
     shot.takenAt = fingerprint(shot.shows);
