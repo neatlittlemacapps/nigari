@@ -241,6 +241,11 @@ try {
   await page.keyboard.press('ArrowDown');
   const listbox = page.getByRole('listbox');
   await listbox.waitFor();
+  // Base UI highlights the chosen option (Banana) a moment after the list
+  // shows. An arrow pressed before that has no highlight to move from, so it
+  // never reached Cherry: the step failed now and then in CI (#375). Wait for
+  // the starting point, not only for the list.
+  await page.locator('[role=option][data-highlighted]', { hasText: 'Banana' }).waitFor();
   await page.keyboard.press('ArrowDown');
   await eventually(async () => (await page.locator('[role=option][data-highlighted]').textContent())?.includes('Cherry'));
   await page.keyboard.type('d');
