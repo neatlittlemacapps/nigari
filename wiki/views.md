@@ -369,7 +369,8 @@ lists the number properties by name, to say which number each bar shows. Rows
 without a number have no bar, and a note under the chart counts them: *3 rows
 have no number in Effort and are left out.* Rows come highest value first. Up to
 50 rows are drawn (12 on a donut); the rest are added up into **Other**. All the
-bars of **Each row** share one colour. Selecting a row's bar opens that row the
+bars of **Each row** share one colour, unless **Colours** is set to
+**Colourful**: then each bar gets its own. Selecting a row's bar opens that row the
 way the view's **Open pages in** says.
 
 **When nothing groups.** A database with no select, multi-select, person,
