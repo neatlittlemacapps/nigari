@@ -8,6 +8,12 @@ import { eventually, withFixture } from './fixture.mjs';
 // "lifted" one level, out of the column into a column of its own.
 await withFixture(async ({ page, api, base, workspace }) => {
   page.setDefaultTimeout(15000);
+  // As on plain http over a home network, where the page is not a secure
+  // context and crypto.randomUUID does not exist (the fix used it at first,
+  // and Enter fell back to the old split there).
+  await page.addInitScript(() => {
+    delete Crypto.prototype.randomUUID;
+  });
   const para = (id, text) => ({ id, type: 'paragraph', props: {}, content: text ? [{ type: 'text', text, styles: {} }] : [], children: [] });
   const doc = await api('POST', '/api/pages', { title: 'Columns', workspaceId: workspace.id });
   await api('PATCH', `/api/pages/${doc.id}`, {

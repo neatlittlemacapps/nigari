@@ -94,6 +94,9 @@ function locate(tr: Tr) {
  *  key to BlockNote. */
 export function columnEnter(editor: ColumnsEditor, menuOpen: boolean): boolean {
   const at = editor.transact((tr: Tr) => {
+    // A selection across several blocks (or columns) is BlockNote's to
+    // delete and join; what is left of it may not be in a column at all.
+    if (!tr.selection.$from.sameParent(tr.selection.$to)) return null;
     const l = locate(tr);
     if (!l) return null;
     const action = columnEnterAction({
@@ -109,8 +112,11 @@ export function columnEnter(editor: ColumnsEditor, menuOpen: boolean): boolean {
   if (!at) return false;
 
   // Our own id on the new block, so the cursor can be put into it by id
-  // afterwards; BlockNote's UniqueID keeps an id it is given.
-  const id = crypto.randomUUID();
+  // afterwards; BlockNote's UniqueID keeps an id it is given. Not
+  // crypto.randomUUID: it exists only in a secure context, and nigari is often
+  // reached over plain http on a home network, where it would throw and leave
+  // Enter to BlockNote's wrong split. getRandomValues exists everywhere.
+  const id = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, '0')).join('');
   editor.transact((tr: Tr) => {
     if (!tr.selection.empty) tr.deleteSelection();
     const l = locate(tr)!;
