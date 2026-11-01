@@ -52,3 +52,7 @@ row holding several keeps them until somebody picks one after a switch back.
 Chart redraw covers #368 and #319: a new chart view on 20 rows builds its
 chart once, and a changed sort or a row added elsewhere updates the chart
 there (the canvas redraws) without building a new one.
+
+Column Enter covers #317: Enter in a column's first block, on an empty line
+lower down, in the middle of a line and in a list item all stay in that column,
+and the slash menu still takes Enter inside a column.

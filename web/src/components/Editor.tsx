@@ -5,7 +5,8 @@ import {
   SuggestionMenuController,
   getDefaultReactSlashMenuItems,
 } from '@blocknote/react';
-import { filterSuggestionItems, insertOrUpdateBlockForSlashMenu } from '@blocknote/core';
+import { filterSuggestionItems, insertOrUpdateBlockForSlashMenu, SuggestionMenu } from '@blocknote/core';
+import { columnEnter } from '../columnEnter';
 import { en as coreEn } from '@blocknote/core/locales';
 import { BlockNoteView } from '@blocknote/mantine';
 import { api, ApiError, materializeQuery } from '../api';
@@ -1825,6 +1826,26 @@ function BlockContent({
         touched = true;
       }
       if (!touched) return false;
+    },
+  });
+
+  // Enter inside a column stays in that column (#317, columnEnter.ts). No
+  // label: it is what Enter already means, not a shortcut to list. Ahead of
+  // BlockNote, which would split a column's first block into the next column;
+  // returns false, and so leaves Enter alone, everywhere outside a column and
+  // while the slash menu has it.
+  useShortcut({
+    id: 'column.enter',
+    keys: ['enter'],
+    scope: 'editor',
+    whileTyping: true,
+    when: () => canEdit && focusedKey('content') === 'body',
+    run: () => {
+      // This runs before ProseMirror hears the key, and ProseMirror learns of
+      // a cursor the arrow keys moved only on the next selectionchange: read
+      // it now, or ← ← Enter splits where the cursor was before the arrows.
+      (editor.prosemirrorView as unknown as { domObserver?: { flush?: () => void } } | undefined)?.domObserver?.flush?.();
+      return columnEnter(editor as never, editor.getExtension(SuggestionMenu)?.shown() ?? false);
     },
   });
 

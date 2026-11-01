@@ -10140,6 +10140,20 @@ body:has(.live-down) .update-banner {
   border-left: none;
 }
 
+/* A column's later lines are its first block's CHILDREN (#317, columnEnter.ts),
+   so BlockNote would indent them and draw its nesting guide beside them. In a
+   column they are just the next lines: flush with the first, no guide. Only
+   that one level; a block indented inside a column still shows it. */
+.bn-block:has(> .bn-block-content[data-content-type='columns']) > .bn-block-group > .bn-block-outer > .bn-block > .bn-block-group,
+.bn-block:has(> * > .bn-block-content[data-content-type='columns']) > .bn-block-group > .bn-block-outer > .bn-block > .bn-block-group {
+  margin-left: 0;
+  border-left: none;
+}
+.bn-block:has(> .bn-block-content[data-content-type='columns']) > .bn-block-group > .bn-block-outer > .bn-block > .bn-block-group > .bn-block-outer::before,
+.bn-block:has(> * > .bn-block-content[data-content-type='columns']) > .bn-block-group > .bn-block-outer > .bn-block > .bn-block-group > .bn-block-outer::before {
+  display: none;
+}
+
 /* After the two-column rule, never before it: same specificity, so the last one
    written wins and the count would otherwise never reach three. */
 .bn-block:has(> .bn-block-content[data-content-type='columns'][data-count='3']) > .bn-block-group,
