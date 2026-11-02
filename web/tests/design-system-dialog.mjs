@@ -15,7 +15,7 @@ await withFixture(async ({ page }) => {
   const menuButton = page.locator('.user-menu-btn');
   await menuButton.focus();
   await page.keyboard.press('Enter');
-  const item = page.getByRole('button', { name: 'Instance settings' });
+  const item = page.getByRole('menuitem', { name: 'Instance settings' });
   await item.focus();
   await page.keyboard.press('Enter');
 

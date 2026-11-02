@@ -119,6 +119,15 @@ export function isTypingTarget(el: Element | null): boolean {
   return false;
 }
 
+/** True when an open menu owns the key: a single unmodified character, which
+ *  the menu reads as typeahead (spec 010). Without this, "m" in the page menu
+ *  toggled Notes mode instead of reaching "Move to…", and "f" favourited the
+ *  page. Chords with a modifier still reach the registry, so a chord a menu
+ *  shows beside an item (Move to trash ⌘⌫) still works while it is open. */
+export function menuOwnsKey(chord: string, inMenu: boolean): boolean {
+  return inMenu && [...chord].length === 1;
+}
+
 type Entry = Shortcut & { seq: number; chords: string[] };
 
 const entries: Entry[] = [];
@@ -146,7 +155,9 @@ function onKeyDown(e: KeyboardEvent) {
   // Mid-composition keys belong to the input method: while a Japanese or
   // Chinese reader is composing, Enter and the arrows pick a candidate.
   if (e.isComposing) return;
-  const hit = resolve(chordOf(e), isTypingTarget(document.activeElement));
+  const chord = chordOf(e);
+  if (menuOwnsKey(chord, !!document.activeElement?.closest('[role="menu"]'))) return;
+  const hit = resolve(chord, isTypingTarget(document.activeElement));
   if (!hit) return;
   if (hit.run(e) === false) return;
   // Both, deliberately: preventDefault stops the browser's meaning of the

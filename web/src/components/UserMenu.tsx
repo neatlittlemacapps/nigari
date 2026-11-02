@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import type { FontPref } from '../App';
 import type { ApiToken, AuditEntry, User, Workspace } from '../types';
@@ -6,12 +6,18 @@ import Portal from './Portal';
 import { confirm, promptText } from '../dialog';
 import { toast } from '../toast';
 import { useExclusiveModal } from '../modal';
+import { Menu, MenuCheckboxItem, MenuItem, MenuSeparator } from '../ui/Menu';
 import { formatDay, formatMoment } from '../format';
 import { plural, t } from '../i18n';
-import { AdminSettingsModal, TwoFAModal, CalendarSubModal } from './AdminSettings';
-import { Key, History, CalendarDays, ShieldCheck, Users, Settings, LogOut, Bot, Server, User as UserIcon, Columns2, Type, Languages, Undo2, Keyboard, SquareArrowOutUpRight } from 'lucide-react';
+import { Key, Bot, Server, User as UserIcon, Undo2, Keyboard } from 'lucide-react';
 import { chordFor } from '../keys';
-import { LanguageTimeModal } from './LanguageTime';
+// Loaded when first opened, not with the app: the instance settings alone are
+// over a thousand lines that most people never open, and the main bundle has
+// a cap (check-bundle.mjs). Spec 010's menu component needed the room.
+const AdminSettingsModal = lazy(() => import('./AdminSettings').then((m) => ({ default: m.AdminSettingsModal })));
+const TwoFAModal = lazy(() => import('./AdminSettings').then((m) => ({ default: m.TwoFAModal })));
+const CalendarSubModal = lazy(() => import('./AdminSettings').then((m) => ({ default: m.CalendarSubModal })));
+const LanguageTimeModal = lazy(() => import('./LanguageTime').then((m) => ({ default: m.LanguageTimeModal })));
 import { RowOpenModal } from './RowOpenSettings';
 
 export function Avatar({ user, size = 22 }: { user: User; size?: number }) {
@@ -236,93 +242,95 @@ export default function UserMenu({ user, onLogout, onUserChanged, onOpenAgents, 
   const [open, setOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const [modal, setModal] = useState<'users' | 'tokens' | 'activity' | 'twofa' | 'settings' | 'calendar' | 'profile' | 'langtime' | 'rowopen' | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [open]);
 
   return (
-    <div className="user-menu" ref={ref}>
-      <button ref={menuButton} className="user-menu-btn" onClick={() => setOpen((o) => !o)}>
-        <Avatar user={user} />
-        <span className="user-name">{user.name}</span>
-      </button>
-      {open && (
-        <div className="menu user-menu-popup">
-          {onOpenAgents && (
-            <button className="agents-menu-item" onClick={() => { setOpen(false); onOpenAgents(); }}>
-              <span className="agents-ic"><Bot size={16} /></span>
-              <span className="agents-label">Agents &amp; MCP</span>
-            </button>
-          )}
-          <button onClick={() => { setOpen(false); setModal('profile'); }}>
-            <UserIcon size={16} /> {t('Profile')}
+    <div className="user-menu">
+      <Menu
+        label={t('Account')}
+        side="top"
+        align="start"
+        open={open}
+        onOpenChange={setOpen}
+        trigger={
+          <button ref={menuButton} className="user-menu-btn">
+            <Avatar user={user} />
+            <span className="user-name">{user.name}</span>
           </button>
-          <button onClick={() => { setOpen(false); setModal('tokens'); }}>
-            <Key size={16} /> {t('API tokens')}
-          </button>
-          <button onClick={() => { setOpen(false); setModal('activity'); }}>
-            <History size={16} /> {t('Activity log')}
-          </button>
-          <button onClick={() => { setOpen(false); setModal('calendar'); }}>
-            <CalendarDays size={16} /> {t('Subscribe to calendar')}
-          </button>
-          <button onClick={() => { setOpen(false); setModal('twofa'); }}>
-            <ShieldCheck size={16} /> {t('Two-factor (2FA)')}
-          </button>
-          <button onClick={() => { setOpen(false); setModal('langtime'); }}>
-            <Languages size={16} /> {t('Language and time')}
-          </button>
-          {onOpenShortcuts && (
-            <button onClick={() => { setOpen(false); onOpenShortcuts(); }}>
-              <Keyboard size={16} /> {t('Keyboard shortcuts')}
-              {/* From the registry, so the menu cannot advertise a key that moved. */}
-              <kbd className="menu-chord">{chordFor('help.shortcuts')}</kbd>
-            </button>
-          )}
-          {onToggleNotesMode && (
-            <button onClick={onToggleNotesMode} title={t('Note list as a middle column (Bear style)')}>
-              <Columns2 size={16} /> {t('Notes mode')}
-              <span className={'mode-dot' + (notesMode ? ' on' : '')} aria-hidden />
-            </button>
-          )}
-          {/* The fonts live inside the program itself and have been the default
-              since W107. The switch stays: anyone used to the system font gets
-              back with one click, and the choice applies to their account
-              alone. */}
-          {onSetFont && (
-            <button
-              onClick={() => onSetFont(fontPref === 'brand' ? 'system' : 'brand')}
-              title={t('Inter for text, JetBrains Mono for code and labels (the fonts from the website)')}
-            >
-              <Type size={16} /> {t('nigari fonts')}
-              <span className={'mode-dot' + (fontPref === 'brand' ? ' on' : '')} aria-hidden />
-            </button>
-          )}
-          {user.isAdmin && (
-            <button onClick={() => { setOpen(false); setModal('users'); }}>
-              <Users size={16} /> {t('Manage users')}
-            </button>
-          )}
-          {user.isAdmin && (
-            <button onClick={() => { setOpen(false); setModal('settings'); }}>
-              <Settings size={16} /> {t('Instance settings')}
-            </button>
-          )}
-          <button onClick={() => { setOpen(false); setModal('rowopen'); }}>
-            <SquareArrowOutUpRight size={16} /> {t('Open rows in new tab')}
-          </button>
-          <button className="danger" onClick={onLogout}>
-            <LogOut size={16} /> {t('Sign out')}
-          </button>
-        </div>
-      )}
+        }
+      >
+        {onOpenAgents && (
+          <MenuItem fn="connectAgent" opensDialog className="agents-menu-item" onClick={onOpenAgents}>
+            <span className="agents-label">Agents &amp; MCP</span>
+          </MenuItem>
+        )}
+        <MenuItem fn="profile" opensDialog onClick={() => setModal('profile')}>
+          {t('Profile')}
+        </MenuItem>
+        <MenuItem fn="apiTokens" opensDialog onClick={() => setModal('tokens')}>
+          {t('API tokens')}
+        </MenuItem>
+        <MenuItem fn="activityLog" opensDialog onClick={() => setModal('activity')}>
+          {t('Activity log')}
+        </MenuItem>
+        <MenuItem fn="subscribeCalendar" opensDialog onClick={() => setModal('calendar')}>
+          {t('Subscribe to calendar')}
+        </MenuItem>
+        <MenuItem fn="twoFactor" opensDialog onClick={() => setModal('twofa')}>
+          {t('Two-factor (2FA)')}
+        </MenuItem>
+        <MenuItem fn="languageAndTime" opensDialog onClick={() => setModal('langtime')}>
+          {t('Language and time')}
+        </MenuItem>
+        {onOpenShortcuts && (
+          // The chord comes from the registry, so the menu cannot advertise a key that moved.
+          <MenuItem fn="shortcuts" opensDialog chord={chordFor('help.shortcuts')} onClick={onOpenShortcuts}>
+            {t('Keyboard shortcuts')}
+          </MenuItem>
+        )}
+        {onToggleNotesMode && (
+          <MenuCheckboxItem
+            fn="notesMode"
+            checked={!!notesMode}
+            closeOnClick={false}
+            onCheckedChange={() => onToggleNotesMode()}
+            title={t('Note list as a middle column (Bear style)')}
+          >
+            {t('Notes mode')}
+          </MenuCheckboxItem>
+        )}
+        {/* The fonts live inside the program itself and have been the default
+            since W107. The switch stays: anyone used to the system font gets
+            back with one click, and the choice applies to their account
+            alone. */}
+        {onSetFont && (
+          <MenuCheckboxItem
+            fn="fonts"
+            checked={fontPref === 'brand'}
+            closeOnClick={false}
+            onCheckedChange={() => onSetFont(fontPref === 'brand' ? 'system' : 'brand')}
+            title={t('Inter for text, JetBrains Mono for code and labels (the fonts from the website)')}
+          >
+            {t('nigari fonts')}
+          </MenuCheckboxItem>
+        )}
+        {user.isAdmin && (
+          <MenuItem fn="manageUsers" opensDialog onClick={() => setModal('users')}>
+            {t('Manage users')}
+          </MenuItem>
+        )}
+        {user.isAdmin && (
+          <MenuItem fn="instanceSettings" opensDialog onClick={() => setModal('settings')}>
+            {t('Instance settings')}
+          </MenuItem>
+        )}
+        <MenuItem fn="openRowsInNewTab" opensDialog onClick={() => setModal('rowopen')}>
+          {t('Open rows in new tab')}
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem fn="signOut" danger onClick={onLogout}>
+          {t('Sign out')}
+        </MenuItem>
+      </Menu>
       {modal === 'profile' && (
         <ProfileModal
           user={user}
@@ -336,13 +344,17 @@ export default function UserMenu({ user, onLogout, onUserChanged, onOpenAgents, 
       {modal === 'users' && <UsersModal me={user} onClose={() => setModal(null)} />}
       {modal === 'tokens' && <TokensModal onClose={() => setModal(null)} />}
       {modal === 'activity' && <ActivityModal onClose={() => setModal(null)} />}
-      {modal === 'twofa' && <TwoFAModal onClose={() => setModal(null)} />}
-      {modal === 'calendar' && <CalendarSubModal onClose={() => setModal(null)} />}
-      {modal === 'langtime' && <LanguageTimeModal onClose={() => setModal(null)} />}
+      <Suspense fallback={null}>
+        {modal === 'twofa' && <TwoFAModal onClose={() => setModal(null)} />}
+        {modal === 'calendar' && <CalendarSubModal onClose={() => setModal(null)} />}
+        {modal === 'langtime' && <LanguageTimeModal onClose={() => setModal(null)} />}
+      </Suspense>
       {modal === 'rowopen' && <RowOpenModal onClose={() => setModal(null)} />}
       {/* The menu item that opened it is gone by then: focus returns to the
           menu's own button. */}
-      {modal === 'settings' && <AdminSettingsModal onClose={() => setModal(null)} returnFocus={menuButton} />}
+      <Suspense fallback={null}>
+        {modal === 'settings' && <AdminSettingsModal onClose={() => setModal(null)} returnFocus={menuButton} />}
+      </Suspense>
     </div>
   );
 }

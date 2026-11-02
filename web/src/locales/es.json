@@ -1283,5 +1283,10 @@
   "Copies before upgrades": "Copias previas a actualizaciones",
   "Database upgrades": "Actualizaciones de la base de datos",
   "Before an update changes the database, nigari copies it into the data directory and keeps the newest three. The self-hosting guide says how to go back to one.": "Antes de que una actualización cambie la base de datos, nigari la copia en el directorio de datos y conserva las tres más recientes. La guía de autoalojamiento explica cómo volver a una de ellas.",
-  "Step applied": "Paso aplicado"
+  "Step applied": "Paso aplicado",
+  "Account": "Cuenta",
+  "Page actions": "Acciones de la página",
+  "Template actions": "Acciones de la plantilla",
+  "Header column": "Columna de encabezado",
+  "Header row": "Fila de encabezado"
 }

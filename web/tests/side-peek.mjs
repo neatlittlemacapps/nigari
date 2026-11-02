@@ -133,7 +133,7 @@ await withFixture(async ({ page, api, base, path }) => {
   // The reason it is not ui/Dialog: a dialog the page opens draws over the
   // peek instead of closing it.
   await centre.getByRole('button', { name: 'More actions' }).click();
-  await page.getByRole('button', { name: 'Version history' }).click();
+  await page.getByRole('menuitem', { name: 'Version history' }).click();
   const history = page.getByRole('dialog', { name: 'Version history' });
   await history.waitFor();
   assert(await centre.isVisible(), 'opening Version history closed the centre peek');

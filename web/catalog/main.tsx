@@ -16,6 +16,7 @@ import { Switch } from '../src/ui/Switch';
 import { SidePanel } from '../src/ui/SidePanel';
 import { CenterPanel } from '../src/ui/CenterPanel';
 import { Popover } from '../src/ui/Popover';
+import { Menu, MenuItem, MenuCheckboxItem, MenuSubmenu, MenuValues, MenuValueItem, MenuRadioGroup, MenuRadioItem, MenuLabel, MenuSeparator } from '../src/ui/Menu';
 import ChartFigure from '../src/components/ChartFigure';
 import type { PropDef, ViewDef } from '../src/types';
 import type { AggResult } from '../src/chartLayout';
@@ -103,6 +104,11 @@ function Catalog() {
   const [pop, setPop] = useState(params.get('open') === 'popover');
   const [popKind, setPopKind] = useState('bar');
   const [popTable, setPopTable] = useState(false);
+  const [menu, setMenu] = useState(params.get('open') === 'menu');
+  const [menuFav, setMenuFav] = useState(false);
+  const [menuWide, setMenuWide] = useState(true);
+  const [menuOpenIn, setMenuOpenIn] = useState('side_peek');
+  const [ctxPoint, setCtxPoint] = useState<{ x: number; y: number } | null>(null);
   const [checks, setChecks] = useState({ a: false, b: true });
   const [sw, setSw] = useState({ a: false, b: true });
   const [fruitValue, setFruitValue] = useState('banana');
@@ -255,6 +261,49 @@ function Catalog() {
               <Switch label="Show as table" checked={popTable} onCheckedChange={setPopTable} />
             </div>
           </Popover>
+        </Row>
+      </Section>
+
+      <Section id="menu" title="Menu">
+        <Row label="from a button">
+          <Menu label="Page actions" open={menu} onOpenChange={setMenu} trigger={<Button>Page actions</Button>}>
+            <MenuItem fn="openInNewTab" onClick={() => setLast('Open in new tab')}>Open in new tab</MenuItem>
+            <MenuItem fn="favorite" filled={menuFav} onClick={() => setMenuFav(!menuFav)}>
+              {menuFav ? 'Remove from favorites' : 'Add to favorites'}
+            </MenuItem>
+            <MenuItem fn="duplicate" onClick={() => setLast('Duplicate')}>Duplicate</MenuItem>
+            <MenuSubmenu fn="moveTo" label="Move to workspace">
+              <MenuValues reason="Workspaces are values of one function, moveTo">
+                <MenuValueItem onClick={() => setLast('Moved to Design')}>Design</MenuValueItem>
+                <MenuValueItem onClick={() => setLast('Moved to Research')}>Research</MenuValueItem>
+              </MenuValues>
+            </MenuSubmenu>
+            <MenuItem fn="exportMarkdown" disabled>Export Markdown</MenuItem>
+            <MenuSeparator />
+            <MenuLabel>Appearance</MenuLabel>
+            <MenuCheckboxItem fn="fullWidth" checked={menuWide} onCheckedChange={setMenuWide}>Full width</MenuCheckboxItem>
+            <MenuRadioGroup label="Open pages in" value={menuOpenIn} onValueChange={setMenuOpenIn}>
+              <MenuRadioItem value="full_page">Full page</MenuRadioItem>
+              <MenuRadioItem value="side_peek">Side peek</MenuRadioItem>
+            </MenuRadioGroup>
+            <MenuSeparator />
+            <MenuItem fn="moveToTrash" danger chord="⌘⌫" onClick={() => setLast('Move to trash')}>Move to trash</MenuItem>
+          </Menu>
+        </Row>
+        <Row label="right-click">
+          <div
+            className="cat-context-area"
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setCtxPoint({ x: e.clientX, y: e.clientY });
+            }}
+          >
+            Right-click here
+          </div>
+          <Menu label="Row actions" open={!!ctxPoint} onOpenChange={(o) => !o && setCtxPoint(null)} anchorPoint={ctxPoint}>
+            <MenuItem fn="open" onClick={() => setLast('Open')}>Open</MenuItem>
+            <MenuItem fn="moveToTrash" danger onClick={() => setLast('Move to trash')}>Move to trash</MenuItem>
+          </Menu>
         </Row>
       </Section>
 

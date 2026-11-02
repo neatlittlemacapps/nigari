@@ -342,10 +342,11 @@ button {
 }
 
 .tree-item:hover .tree-actions,
-/* An OPEN menu keeps its row's buttons on screen. Without this the menu lives
-   inside an element that is display:none the moment the pointer drifts off the
-   row — so it disappears mid-reach, while the state still says it is open. */
-.tree-actions:has(.menu) {
+/* An OPEN menu keeps its row's buttons on screen (Base UI marks its trigger
+   data-popup-open). The menu itself is in a portal now (spec 010), but its
+   button must stay: focus goes back to it when the menu closes, and a hidden
+   button cannot take focus, so Escape would drop the keyboard into nowhere. */
+.tree-actions:has([data-popup-open]) {
   display: inline-flex;
 }
 
@@ -1820,21 +1821,6 @@ body:has(.icon-picker) .bn-side-menu {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.user-menu-popup {
-  position: absolute;
-  /* Open upward: override the base .menu `top: 24px`, else top+bottom both
-     set stretches the menu and it opens downward into the mobile browser bar. */
-  top: auto;
-  bottom: calc(100% + 4px);
-  left: 8px;
-  /* Size to content instead of pinning to the right edge: the anchor (the
-     user button) shares the footer row with the theme switch and is barely
-     180px wide — pinned to it, long entries overflowed and crushed their
-     icons. */
-  right: auto;
-  min-width: 210px;
 }
 
 /* ---------- Dialogs ---------- */
@@ -3869,17 +3855,15 @@ body.is-col-resizing {
 .icon-btn svg,
 .menu-btn svg,
 .btn-sm svg,
-.menu button svg,
-.user-menu-popup button svg {
+.menu button svg {
   vertical-align: -2px;
   /* The buttons are flex rows; an svg is the only child that CAN shrink.
-     When a label got long ("Instanz-Einstellungen"), the icon was silently
-     squeezed to half its width while all its neighbours stayed at 16px. */
+     When a label got long ("Instance settings" in German), the icon was
+     silently squeezed to half its width while all its neighbours stayed at 16px. */
   flex: none;
 }
 
-.menu button,
-.user-menu-popup button {
+.menu button {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -4945,29 +4929,6 @@ body.is-col-resizing {
   background: var(--hover);
 }
 
-.ws-menu {
-  left: 6px;
-  top: 34px;
-  right: auto;
-  min-width: 200px;
-}
-
-.ws-menu button {
-  text-align: left;
-  padding: 7px 10px;
-  border-radius: 6px;
-  font-size: 13.5px;
-  white-space: nowrap;
-}
-
-.ws-menu button:hover {
-  background: var(--hover);
-}
-
-.ws-menu button.active {
-  font-weight: 600;
-}
-
 /* ---------- Share menu ---------- */
 
 .share-wrap {
@@ -5192,14 +5153,15 @@ body.is-col-resizing {
   align-items: center;
   gap: 8px;
 }
+.ws-menu-item.active {
+  font-weight: 600;
+}
 .ws-menu-item .ws-menu-name {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .ws-menu-item svg { flex: none; color: var(--muted); }
-.ws-menu .menu-item { display: flex; align-items: center; gap: 8px; }
-.ws-menu .menu-item svg { flex: none; color: var(--muted); }
 
 /* ---- Select / Multiselect cell editor (Welle 29) ---- */
 .select-cell { display: inline-block; max-width: 100%; }
@@ -6211,7 +6173,8 @@ a.btn {
 }
 
 /* The icon cycles dynamically through every hue. */
-.agents-ic {
+.agents-ic,
+.agents-menu-item .menu-icon {
   display: inline-flex;
   flex: none;
   color: #e05fb0;
@@ -8728,9 +8691,6 @@ body:has(.confirm-dialog) .dialog:not(.confirm-dialog) {
    becomes unreachable — it just stops competing for the same 40 pixels. */
 @media (max-width: 640px) {
   .topbar-wide-only { display: none; }
-}
-@media (min-width: 641px) {
-  .menu-item.narrow-only, .menu-sep.narrow-only { display: none; }
 }
 
 /* An agent that says it is working here. Named .agent-work, not .agent-badge —

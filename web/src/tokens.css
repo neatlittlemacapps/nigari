@@ -194,6 +194,7 @@
   --chart-height-xlarge: 600px;
   --popover-width: 320px;
   --popover-layer: 150;
+  --menu-icon-size: 16px;
 }
 
 [data-theme='dark'] {

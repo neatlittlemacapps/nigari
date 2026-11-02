@@ -49,7 +49,7 @@ from today.
 | `exportMarkdown` | `FileDown` ✱ | Export Markdown (2), Markdown (.md) (5) |
 | `exportHtml` | `FileCode` | Web page (.html) (5) |
 | `print` | `Printer` | Print / as PDF (5) |
-| `import` | `Upload` | Import (.md / .zip) (5) |
+| `importFile` | `Upload` | Import (.md / .zip) (5); `import` is a reserved word in the code |
 | `moveToTrash` | `Trash2` | Move to trash (2, 3, 5, 10, 11) |
 
 ### Page "…" (menu 5)

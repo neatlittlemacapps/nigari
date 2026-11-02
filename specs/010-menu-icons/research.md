@@ -366,3 +366,38 @@ card), 882 (the tab menu's backdrop). They found:
   the guard stays in the handler, and the menu's state stays per tab.
 - The board card has a right-click too (menu 11), which R1 had not listed as
   one. Same treatment.
+
+## R14. What building pull request 1 found
+
+Found while building and testing pull request 1. Each one is now in the code
+and has a test.
+
+- **The app's arrow keys took over menus.** `nav.ts`'s `useNavEntry` moves
+  focus into a region when ↓ is pressed from "nowhere", and an item in a portal
+  counts as nowhere. The popups carry `data-nav-skip`, the attribute that
+  `useNavEntry` already respects for widgets that own their arrows.
+- **Single-letter shortcuts fired inside an open menu.** Typing "m" to reach
+  "Move to…" toggled Notes mode, and "f" favourited the page. `keys.ts`'s
+  `isTypingTarget` now counts focus inside `[role="menu"]` as typing, with
+  two cases in `check-keys.mjs`.
+- **Focus after a dialog.** `requestAnimationFrame` (R13) was not enough: the
+  menu animates out, and during that time its item still has focus, so
+  `modal.ts` remembered the item as the place to return focus to.
+  `MenuItem opensDialog` now waits for Base UI's `onOpenChangeComplete`.
+  `dialog-escape.mjs` caught this.
+- **A hidden trigger.** A row's ⋯ is shown only on hover. Its CSS kept it
+  visible while `.menu` was inside the row, but the menu now lives in a
+  portal, so Escape had nowhere to put focus. The rule is now
+  `:has([data-popup-open])`.
+- **Old placement CSS.** `.user-menu-popup` and `.ws-menu` positioned the
+  hand-built popups (`left`, `bottom`). Applied to the new popup, they pushed
+  the account menu off a phone screen (`menu-keyboard.mjs`). Removed.
+- **Not menus.** The tag colour picker, the share panel and the two pickers
+  in `PropertyValue.tsx` keep the menu's look until spec 001's popover batch.
+  Each says so with `data-menu-exempt="<why>"`, which the check reads and
+  which needs a reason.
+- **Lucide's `Menu`.** The hamburger icon in `Editor.tsx` has the same name
+  as `ui/Menu`. The check identifies ui/Menu by its import, and the icon is
+  imported as `MenuGlyph`.
+- **`rawButtons` 332 → 291** after pull request 1. Two more literal budgets
+  went down with the removed CSS: `fontSize` 377 → 376, `radius` 256 → 255.

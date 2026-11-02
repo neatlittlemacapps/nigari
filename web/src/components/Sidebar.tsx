@@ -9,7 +9,8 @@ import FileList from './FileList';
 import { promptText } from '../dialog';
 import { toast } from '../toast';
 import Portal from './Portal';
-import AnchoredMenu from './AnchoredMenu';
+import { RowActions, openRowMenu } from './SidebarMenus';
+import { Menu, MenuItem, MenuSeparator, MenuValueItem, MenuValues, type MenuPoint } from '../ui/Menu';
 import IconPicker from './IconPicker';
 import { PageIcon } from '../pageIcon';
 import TrashSection from './TrashSection';
@@ -22,10 +23,10 @@ import TemplateGallery from './TemplateGallery';
 import BlueprintLibrary from './BlueprintLibrary';
 import WorkspaceSettings from './WorkspaceSettings';
 import StrandedWorkspaces from './StrandedWorkspaces';
-import { modalOpen, useExclusiveModal, useMenuDismiss } from '../modal';
+import { modalOpen, useExclusiveModal } from '../modal';
 import { chordFor, hint, useShortcut } from '../keys';
 import { focusRegion, focusedKey, navItem, useNavRegion, withFocusSurvival } from '../nav';
-import { Sun, Moon, Search, Library, Plus, Table2, FileText, Trash2, LayoutTemplate, Tag, ChevronRight, ChevronDown, Users, Check, Download, Upload, Image, PanelLeftClose, PanelLeftOpen, Pencil, Star, ShieldAlert, ScrollText, Paperclip, SquareArrowOutUpRight, Copy, CornerUpRight, CornerLeftUp, Undo2, X, MoreHorizontal, Settings2, Globe } from 'lucide-react';
+import { Search, Library, Plus, Table2, FileText, LayoutTemplate, Tag, ChevronRight, ChevronDown, Upload, PanelLeftClose, PanelLeftOpen, Star, MoreHorizontal, Globe } from 'lucide-react';
 import { AgentDot } from './AgentBadge';
 import { tagColorClass } from '../tags';
 import { childrenForSection, topLevelForDocs } from '../treeMode';
@@ -95,7 +96,7 @@ interface DropTarget {
 // Everything TreeItem needs from Sidebar. TreeItem lives at module level so
 // its component identity is stable — defining it inside Sidebar would remount
 // the whole tree (and kill drag state) on every render.
-interface TreeCtx {
+export interface TreeCtx {
   childrenMap: Map<string, PageMeta[]>;
   // One tree, or Documents and Collections apart. Reaches TreeItem because the
   // rule about which children to show depends on it.
@@ -105,6 +106,11 @@ interface TreeCtx {
   favorites: Set<string>;
   dropTarget: DropTarget | null;
   menuFor: string | null;
+  // Where a right-click opened the ⋯ menu; null when it opens under the ⋯.
+  menuPoint: MenuPoint | null;
+  setMenuPoint: (p: MenuPoint | null) => void;
+  // The row a right-click opened the menu on: focus returns there.
+  menuReturn: React.MutableRefObject<HTMLElement | null>;
   onNavigate: (id: string) => void;
   onOpenInNewTab: (id: string) => void;
   toggleExpand: (id: string) => void;
@@ -220,11 +226,7 @@ function DbRows({
               data-expanded={kids.length > 0 ? (isOpen ? 'true' : 'false') : undefined}
               onClick={(e) => openPage(e, r.id, { onNavigate: ctx.onNavigate, onOpenInNewTab: ctx.onOpenInNewTab })}
               onAuxClick={(e) => openPageAux(e, r.id, { onNavigate: ctx.onNavigate, onOpenInNewTab: ctx.onOpenInNewTab })}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                ctx.setAddFor(null);
-                ctx.setMenuFor(r.id);
-              }}
+              onContextMenu={(e) => openRowMenu(ctx, r.id, e)}
             >
               {kids.length > 0 ? (
                 <button
@@ -402,229 +404,6 @@ function FlatRow({
   );
 }
 
-// The row menu, as its own component because a database ROW needs exactly the
-// same one. Two copies would be two answers to "what can you do with a page",
-// and the row's copy would be the one that quietly falls behind.
-function RowActions({
-  id,
-  title,
-  parentId,
-  workspaceId,
-  ctx,
-}: {
-  id: string;
-  title: string;
-  parentId: string;
-  workspaceId?: string;
-  ctx: TreeCtx;
-}) {
-  const ref = useRef<HTMLSpanElement>(null);
-  useMenuDismiss(ctx.menuFor === id, ref, () => ctx.setMenuFor(null));
-  useMenuDismiss(ctx.addFor === id, ref, () => ctx.setAddFor(null));
-  return (
-    <span className="tree-actions" onClick={(e) => e.stopPropagation()} ref={ref}>
-      <button
-        title={t('Add inside')}
-        onClick={() => {
-          ctx.setMenuFor(null);
-          ctx.setAddFor(ctx.addFor === id ? null : id);
-        }}
-      >
-        <Plus size={14} />
-      </button>
-      {ctx.addFor === id && <AddMenu id={id} ctx={ctx} />}
-      <button
-        title={t('More')}
-        onClick={() => {
-          ctx.setAddFor(null);
-          ctx.setMenuFor(ctx.menuFor === id ? null : id);
-        }}
-      >
-        <MoreHorizontal size={14} />
-      </button>
-      {ctx.menuFor === id && (
-        <PageMenu id={id} title={title} parentId={parentId} workspaceId={workspaceId} ctx={ctx} />
-      )}
-    </span>
-  );
-}
-
-// What the ＋ on a tree item or a database row offers.
-//
-// It used to create a document, silently, and the choice existed only in the ⋯
-// beside it — so "how do I put a database under this?" had an answer nobody
-// found. Now the ＋ asks, with the same two options the menu has.
-//
-// The section headers keep their direct ＋: under "Documents" and "Collections"
-// the section IS the answer, and asking there would be a question with one
-// sensible reply. Only where the type is genuinely open does it get asked.
-function AddMenu({ id, ctx }: { id: string; ctx: TreeCtx }) {
-  return (
-    <AnchoredMenu className="menu add-menu">
-      <button
-        onClick={() => {
-          ctx.setAddFor(null);
-          ctx.onCreateChild(id);
-        }}
-      >
-        <FileText size={16} /> {t('Page')}
-      </button>
-      <button
-        onClick={() => {
-          ctx.setAddFor(null);
-          ctx.onCreateChildDb(id);
-        }}
-      >
-        <Table2 size={16} /> {t('Collection')}
-      </button>
-    </AnchoredMenu>
-  );
-}
-
-function PageMenu({
-  id,
-  title,
-  parentId,
-  workspaceId,
-  ctx,
-}: {
-  id: string;
-  title: string;
-  parentId?: string | null;
-  workspaceId?: string;
-  ctx: TreeCtx;
-}) {
-  return (
-    <AnchoredMenu>
-              {/* The visible way to get a second tab — ⌘-click and middle-click
-                  exist too, but nothing in the interface said so. */}
-              <button
-                onClick={() => {
-                  ctx.setMenuFor(null);
-                  ctx.onOpenInNewTab(id);
-                }}
-              >
-                <SquareArrowOutUpRight size={16} /> {t('Open in new tab')}
-              </button>
-              <button
-                onClick={() => {
-                  ctx.setMenuFor(null);
-                  ctx.onToggleFavorite(id);
-                }}
-              >
-                <Star size={16} fill={ctx.favorites.has(id) ? 'currentColor' : 'none'} />{' '}
-                {ctx.favorites.has(id) ? t('Remove from favorites') : t('Add to favorites')}
-              </button>
-              <button
-                onClick={() => {
-                  ctx.setMenuFor(null);
-                  ctx.onDuplicate(id);
-                }}
-              >
-                <Copy size={16} /> {t('Duplicate')}
-              </button>
-              <button
-                onClick={() => {
-                  ctx.setMenuFor(null);
-                  ctx.onCreateChildDb(id);
-                }}
-              >
-                <Table2 size={16} /> {t('New collection inside')}
-              </button>
-              {/* Only when there is a parent to leave. A database dragged into
-                  another one had no way back at all: it lives in that one's
-                  subtree, and nothing in the interface moved it out. */}
-              {parentId && (
-                <button
-                  onClick={() => {
-                    ctx.setMenuFor(null);
-                    ctx.onMoveToTop(id);
-                  }}
-                >
-                  <CornerLeftUp size={16} /> {t('Move to top level')}
-                </button>
-              )}
-              {ctx.workspaces.length > 1 && (
-                <div className="menu-sub">
-                  <div className="menu-label">{t('Move to workspace')}</div>
-                  {ctx.workspaces
-                    .filter((w) => w.id !== workspaceId)
-                    .map((w) => (
-                      <button
-                        key={w.id}
-                        onClick={() => {
-                          ctx.setMenuFor(null);
-                          ctx.onMoveToWorkspace(id, w.id, w.name);
-                        }}
-                      >
-                        <CornerUpRight size={16} /> {w.name}
-                      </button>
-                    ))}
-                </div>
-              )}
-              <button
-                onClick={() => {
-                  ctx.setMenuFor(null);
-                  ctx.onShowFiles(id, title || t('Untitled'));
-                }}
-              >
-                <Paperclip size={16} /> {t('Files in this subtree')}
-              </button>
-              <button
-                onClick={() => {
-                  ctx.setMenuFor(null);
-                  // A template is a SNAPSHOT: the copy becomes the template and
-                  // keeps this moment's state; the page here stays a normal page.
-                  // (Flagging the page itself kept template and original one
-                  // object — editing either changed "the template".)
-                  void api
-                    .duplicatePage(id, false, true)
-                    .then(() => toast(t('Saved as template')))
-                    .catch(() => toast(t('Could not save as template')));
-                }}
-              >
-                <LayoutTemplate size={16} /> {t('Save as template')}
-              </button>
-              {/* A row's own kind of template: it belongs to the database, which
-                  offers it from its New button. The plain entry above would make
-                  the copy one more row of the same database. */}
-              {parentId && ctx.isCollection(parentId) && (
-                <button
-                  onClick={() => {
-                    ctx.setMenuFor(null);
-                    void api
-                      .addDatabaseTemplate(parentId, { fromPageId: id })
-                      .then(() => toast(t('Saved as a template of this database')))
-                      .catch(() => toast(t('Could not save as template')));
-                  }}
-                >
-                  <LayoutTemplate size={16} /> {t('Save as a template of this database')}
-                </button>
-              )}
-              <button
-                onClick={() => {
-                  ctx.setMenuFor(null);
-                  api.download(`/api/export/${id}`);
-                }}
-              >
-                <Download size={16} /> {t('Export Markdown')}
-              </button>
-              <button
-                className="danger"
-                onClick={() => {
-                  ctx.setMenuFor(null);
-                  ctx.onTrash(id);
-                }}
-              >
-                {/* Read from the registry rather than typed in here, so the
-                    menu cannot go on advertising a chord that has moved. */}
-                <Trash2 size={16} /> {t('Move to trash')}
-                <kbd className="menu-chord">{chordFor('page.trash')}</kbd>
-              </button>
-    </AnchoredMenu>
-  );
-}
-
 function TreeItem({
   p,
   depth,
@@ -654,10 +433,6 @@ function TreeItem({
   const hasExpand = kids.length > 0 || isDb;
   const isExpanded = ctx.expanded.has(p.id);
   const dt = ctx.dropTarget?.id === p.id ? ctx.dropTarget.zone : null;
-  // Row context menu (⋯): close on outside click / Escape, not just mouse-leave.
-  const actionsRef = useRef<HTMLSpanElement>(null);
-  useMenuDismiss(ctx.menuFor === p.id, actionsRef, () => ctx.setMenuFor(null));
-  useMenuDismiss(ctx.addFor === p.id, actionsRef, () => ctx.setAddFor(null));
   return (
     <div>
       <div
@@ -687,11 +462,7 @@ function TreeItem({
         // The whole row answers a right-click with the same menu the ⋯ offers.
         // Hunting for a three-dot button that only appears on hover is the
         // slowest way to reach an action everybody knows is there.
-        onContextMenu={(e) => {
-          e.preventDefault();
-          ctx.setAddFor(null);
-          ctx.setMenuFor(p.id);
-        }}
+        onContextMenu={(e) => openRowMenu(ctx, p.id, e)}
         onAuxClick={(e) => {
           if (e.button === 1) {
             e.preventDefault();
@@ -721,30 +492,7 @@ function TreeItem({
             <Globe size={12} />
           </span>
         )}
-        <span className="tree-actions" onClick={(e) => e.stopPropagation()} ref={actionsRef}>
-          <button
-            title={t('Add inside')}
-            onClick={() => {
-              ctx.setMenuFor(null);
-              ctx.setAddFor(ctx.addFor === p.id ? null : p.id);
-            }}
-          >
-            <Plus size={14} />
-          </button>
-          {ctx.addFor === p.id && <AddMenu id={p.id} ctx={ctx} />}
-          <button
-            title={t('More')}
-            onClick={() => {
-              ctx.setAddFor(null);
-              ctx.setMenuFor(ctx.menuFor === p.id ? null : p.id);
-            }}
-          >
-            <MoreHorizontal size={14} />
-          </button>
-          {ctx.menuFor === p.id && (
-            <PageMenu id={p.id} title={p.title} parentId={p.parentId} workspaceId={p.workspaceId} ctx={ctx} />
-          )}
-        </span>
+        <RowActions id={p.id} title={p.title} parentId={p.parentId} workspaceId={p.workspaceId} ctx={ctx} />
       </div>
       {isExpanded && (
         <div className="tree-children" style={guideAt(depth)}>
@@ -802,6 +550,8 @@ export default function Sidebar({
 }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [menuPoint, setMenuPoint] = useState<MenuPoint | null>(null);
+  const menuReturn = useRef<HTMLElement | null>(null);
   const [addFor, setAddFor] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const dragId = useRef<string | null>(null);
@@ -816,8 +566,6 @@ export default function Sidebar({
   );
 
   const [wsMenuOpen, setWsMenuOpen] = useState(false);
-  const wsMenuRef = useRef<HTMLDivElement>(null);
-  useMenuDismiss(wsMenuOpen, wsMenuRef, () => setWsMenuOpen(false));
   const [membersOpen, setMembersOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   // The file view: for the whole workspace, or scoped to one page's subtree
@@ -898,12 +646,12 @@ export default function Sidebar({
       toast(t('The template could not be used'));
     }
   };
-  // ⋯ menu on a template row (remove the flag / trash the snapshot).
+  // ⋯ menu on a template row (remove the flag / trash the snapshot), opened by
+  // its ⋯ or a right-click at the pointer (#20), and closed like every other
+  // menu by a click elsewhere or Escape (ui/Menu).
   const [tplMenuFor, setTplMenuFor] = useState<string | null>(null);
-  // The template menu closed only through its own button: a click anywhere
-  // else left it hanging open, unlike every other menu in the sidebar.
-  const tplActionsRef = useRef<HTMLSpanElement>(null);
-  useMenuDismiss(tplMenuFor !== null, tplActionsRef, () => setTplMenuFor(null));
+  const [tplPoint, setTplPoint] = useState<MenuPoint | null>(null);
+  const tplReturn = useRef<HTMLElement | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   // 't' for a page from a template, under the same single-letter rule as the
   // others in App.tsx: never while something is being typed.
@@ -1079,6 +827,9 @@ export default function Sidebar({
     favorites: favSet,
     dropTarget,
     menuFor,
+    menuPoint,
+    setMenuPoint,
+    menuReturn,
     addFor,
     onNavigate,
     toggleExpand,
@@ -1302,59 +1053,64 @@ export default function Sidebar({
   return (
     <aside className={'sidebar' + (open ? ' open' : '')} ref={asideRef}>
       <div className="sidebar-header">
-        <div className="ws-switcher" ref={wsMenuRef}>
-          <button className="ws-btn" onClick={() => setWsMenuOpen((o) => !o)}>
-            <WorkspaceAvatar ws={activeWs} />
-            <strong>{activeWs?.name ?? 'nigari'}</strong>
-            <ChevronDown size={14} className="ws-caret" />
-          </button>
-          {wsMenuOpen && (
-            <div className="menu ws-menu">
+        <div className="ws-switcher">
+          <Menu
+            label={t('Workspaces')}
+            align="start"
+            open={wsMenuOpen}
+            onOpenChange={setWsMenuOpen}
+            trigger={
+              <button className="ws-btn">
+                <WorkspaceAvatar ws={activeWs} />
+                <strong>{activeWs?.name ?? 'nigari'}</strong>
+                <ChevronDown size={14} className="ws-caret" />
+              </button>
+            }
+          >
+            <MenuValues reason="Workspaces are values: switching to the one picked">
               {workspaces.map((w) => (
-                <button
+                <MenuValueItem
                   key={w.id}
                   className={'ws-menu-item' + (w.id === currentWs ? ' active' : '')}
-                  onClick={() => {
-                    onSwitchWorkspace(w.id);
-                    setWsMenuOpen(false);
-                  }}
+                  icon={<WorkspaceAvatar ws={w} />}
+                  checked={w.id === currentWs}
+                  onClick={() => onSwitchWorkspace(w.id)}
                 >
-                  <WorkspaceAvatar ws={w} />
                   <span className="ws-menu-name">{w.name}</span>
                   {w.personal && <span className="ws-tag">{t('own space')}</span>}
                   {w.autoJoin && !w.personal && <span className="ws-tag">{t('open to all')}</span>}
-                  {w.id === currentWs && <Check size={14} />}
-                </button>
+                </MenuValueItem>
               ))}
-              <div className="menu-sep" />
-              {/* One entry instead of the sixteen that used to stand here. A
-                  menu is a list of actions you take now; most of what was in it
-                  are settings you look at and compare, which is a different
-                  shape and now has its own dialog. */}
-              {activeWs?.role === 'admin' && (
-                <button className="menu-item" onClick={() => { setWsMenuOpen(false); setWsSettingsOpen(true); }}>
-                  <Settings2 size={15} /> {t('Workspace settings')}
-                </button>
-              )}
-              {canCreateWorkspace && (
-                <button className="menu-item" onClick={newWorkspace}>
-                  <Plus size={15} /> {t('New workspace')}
-                </button>
-              )}
-              {user.orgRole === 'owner' && (
-                <button
-                  className="menu-item"
-                  title={t('Workspaces nobody can look after any more')}
-                  onClick={() => { setWsMenuOpen(false); setStrandedOpen(true); }}
-                >
-                  <ShieldAlert size={15} /> {t('With nobody in charge…')}
-                </button>
-              )}
-              {/* Deleting lives in the settings dialog now, next to everything else
-                  about this workspace — offering it in two places invites the
-                  accident. */}
-            </div>
-          )}
+            </MenuValues>
+            <MenuSeparator />
+            {/* One entry instead of the sixteen that used to stand here. A
+                menu is a list of actions you take now; most of what was in it
+                are settings you look at and compare, which is a different
+                shape and now has its own dialog. */}
+            {activeWs?.role === 'admin' && (
+              <MenuItem fn="workspaceSettings" opensDialog onClick={() => setWsSettingsOpen(true)}>
+                {t('Workspace settings')}
+              </MenuItem>
+            )}
+            {canCreateWorkspace && (
+              <MenuItem fn="newWorkspace" opensDialog onClick={newWorkspace}>
+                {t('New workspace')}
+              </MenuItem>
+            )}
+            {user.orgRole === 'owner' && (
+              <MenuItem
+                fn="unattendedWorkspaces"
+                opensDialog
+                title={t('Workspaces nobody can look after any more')}
+                onClick={() => setStrandedOpen(true)}
+              >
+                {t('With nobody in charge…')}
+              </MenuItem>
+            )}
+            {/* Deleting lives in the settings dialog now, next to everything else
+                about this workspace — offering it in two places invites the
+                accident. */}
+          </Menu>
           <input
             ref={wsImportRef}
             type="file"
@@ -1554,6 +1310,8 @@ export default function Sidebar({
                 // The same right-click as a page or a collection row (#20).
                 onContextMenu={(e) => {
                   e.preventDefault();
+                  tplReturn.current = e.currentTarget;
+                  setTplPoint(e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : null);
                   setTplMenuFor(p.id);
                 }}
               >
@@ -1562,51 +1320,41 @@ export default function Sidebar({
                   <PageIcon icon={p.icon} size={15} fallback={<LayoutTemplate size={15} />} />
                 </span>
                 <span className="tree-title">{p.title || t('Untitled')}</span>
-                <span
-                  className="tree-actions"
-                  ref={tplMenuFor === p.id ? tplActionsRef : undefined}
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <span className="tree-actions" onClick={(e) => e.stopPropagation()}>
                   <button title={t('New page from this template')} onClick={() => void instantiateTemplate(p.id)}>
                     <Plus size={14} />
                   </button>
-                  <button
-                    title={t('More')}
-                    onClick={() => setTplMenuFor(tplMenuFor === p.id ? null : p.id)}
+                  <Menu
+                    label={t('Template actions')}
+                    align="start"
+                    open={tplMenuFor === p.id}
+                    anchorPoint={tplMenuFor === p.id ? tplPoint : null}
+                    returnFocus={tplReturn.current ? tplReturn : undefined}
+                    onOpenChange={(o) => {
+                      if (o) {
+                        tplReturn.current = null;
+                        setTplPoint(null);
+                      }
+                      setTplMenuFor(o ? p.id : null);
+                    }}
+                    trigger={
+                      <button title={t('More')} aria-label={t('More')}>
+                        <MoreHorizontal size={14} />
+                      </button>
+                    }
                   >
-                    <MoreHorizontal size={14} />
-                  </button>
-                  {tplMenuFor === p.id && (
-                    <AnchoredMenu>
-                      <button
-                        onClick={() => {
-                          setTplMenuFor(null);
-                          onNavigate(p.id);
-                        }}
-                      >
-                        <Pencil size={16} /> {t('Edit the template itself')}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setTplMenuFor(null);
-                          // Back to a normal page: it leaves this list and
-                          // reappears in the tree.
-                          unflagTemplate(p.id);
-                        }}
-                      >
-                        <LayoutTemplate size={16} /> {t('Remove template flag')}
-                      </button>
-                      <button
-                        className="danger"
-                        onClick={() => {
-                          setTplMenuFor(null);
-                          onTrash(p.id);
-                        }}
-                      >
-                        <Trash2 size={16} /> {t('Move to trash')}
-                      </button>
-                    </AnchoredMenu>
-                  )}
+                    <MenuItem fn="edit" onClick={() => onNavigate(p.id)}>
+                      {t('Edit the template itself')}
+                    </MenuItem>
+                    {/* Back to a normal page: it leaves this list and
+                        reappears in the tree. */}
+                    <MenuItem fn="removeTemplateFlag" onClick={() => unflagTemplate(p.id)}>
+                      {t('Remove template flag')}
+                    </MenuItem>
+                    <MenuItem fn="moveToTrash" danger onClick={() => onTrash(p.id)}>
+                      {t('Move to trash')}
+                    </MenuItem>
+                  </Menu>
                 </span>
               </div>
             ))

@@ -3,6 +3,7 @@ import type { PeekMode } from '../peek';
 import {
   useCreateBlockNote,
   SuggestionMenuController,
+  SideMenuController,
   getDefaultReactSlashMenuItems,
 } from '@blocknote/react';
 import { filterSuggestionItems, insertOrUpdateBlockForSlashMenu, SuggestionMenu } from '@blocknote/core';
@@ -38,7 +39,9 @@ import { usePeers, setPeers, clearPeers } from '../presence';
 import { tagColorClass, TAG_PALETTE } from '../tags';
 import { collectTags, suggestTags } from '../tagSuggest';
 import { modalOpen, useMenuDismiss } from '../modal';
-import { Menu, Copy, Star, Lock, LockOpen, Globe, MessageSquare, History, MoreHorizontal, Printer, FileCode, FileText, Upload, AlignLeft, Check, Image as ImageIcon , Smile, PanelRight, Link2, Trash2, FilePlus2, Columns2, Workflow, MoveHorizontal, LayoutTemplate, ChartBar, ChartColumn, ChartLine, ChartPie, Hash} from 'lucide-react';
+import { Menu, MenuCheckboxItem, MenuItem, MenuLabel, MenuSeparator, useNarrowScreen } from '../ui/Menu';
+import { SideMenuWithIcons, slashIcon, withPairedIcons } from '../slashIcons';
+import { Menu as MenuGlyph, Copy, Star, Lock, LockOpen, Globe, MessageSquare, MoreHorizontal, FileText, Upload, AlignLeft, Check, Image as ImageIcon, Smile, PanelRight, Link2, FilePlus2, LayoutTemplate } from 'lucide-react';
 import { CHART_SLASH_KINDS } from '../chartInsert';
 import type { ChartKind } from '../chartLayout';
 import { blockTypeFor, carriesExternalFiles } from '../dropFiles';
@@ -417,7 +420,7 @@ function TagChip({
         </button>
       )}
       {open && (
-        <div className="menu tag-color-menu">
+        <div className="menu tag-color-menu" data-menu-exempt="a colour picker: values, not actions">
           <div className="menu-label">{t('Colour')}</div>
           <button
             className="tag-color-opt"
@@ -601,11 +604,11 @@ function PageHeader({
   const shareSettingsChanged =
     madeWith != null && (madeWith.days !== shareExpiry || madeWith.password !== sharePassword);
   const [overflowOpen, setOverflowOpen] = useState(false);
+  // The top bar's three wide-only buttons come back into the "…" on a phone.
+  const narrow = useNarrowScreen();
   // Dropdowns must close on an outside click / Escape, not just mouse-leave.
   const shareWrapRef = useRef<HTMLDivElement>(null);
-  const overflowWrapRef = useRef<HTMLDivElement>(null);
   useMenuDismiss(shareOpen, shareWrapRef, () => setShareOpen(false));
-  useMenuDismiss(overflowOpen, overflowWrapRef, () => setOverflowOpen(false));
   const [historyOpen, setHistoryOpen] = useState(false);
   const [openComments, setOpenComments] = useState(0);
   // Same rule as in Editor, and it has to be asked here too: this is where the
@@ -984,7 +987,7 @@ function PageHeader({
           peekStart
         ) : (
           <button className="menu-btn topbar-menu" title={t('Menu')} onClick={onMenu}>
-            <Menu size={18} />
+            <MenuGlyph size={18} />
           </button>
         )}
         <nav className="breadcrumbs">
@@ -1068,7 +1071,7 @@ function PageHeader({
               <Globe size={17} />
             </button>
             {shareOpen && (
-              <div className="menu share-menu">
+              <div className="menu share-menu" data-menu-exempt="the share panel: a link and its settings, not a list of actions">
                 {shareUrl ? (
                   <>
                     <div className="share-hint">{t('Anyone with this link can view this page (read-only).')}</div>
@@ -1145,15 +1148,7 @@ function PageHeader({
               </div>
             )}
           </div>
-          <div className="share-wrap" ref={overflowWrapRef}>
-            <button
-              className="icon-btn"
-              title={t('More')}
-              aria-label={t('More actions')}
-              onClick={() => setOverflowOpen((o) => !o)}
-            >
-              <MoreHorizontal size={17} />
-            </button>
+          <div className="share-wrap">
             <input
               ref={importInput}
               type="file"
@@ -1161,165 +1156,104 @@ function PageHeader({
               style={{ display: 'none' }}
               onChange={(e) => void onImportFile(e)}
             />
-            {overflowOpen && (
-              <div className="menu overflow-menu">
-                {canEdit && !showDesc && !description && (
-                  <button
-                    className="menu-item"
-                    onClick={() => {
-                      setOverflowOpen(false);
-                      setShowDesc(true);
-                    }}
-                  >
-                    <AlignLeft size={15} /> {t('Add a description')}
-                  </button>
-                )}
-                {canEdit && (showDesc || description) && (
-                  <button
-                    className="menu-item"
-                    onClick={() => {
-                      setOverflowOpen(false);
-                      removeDescription();
-                    }}
-                  >
-                    <AlignLeft size={15} /> {t('Remove description')}
-                  </button>
-                )}
+            <Menu
+              label={t('More actions')}
+              open={overflowOpen}
+              onOpenChange={setOverflowOpen}
+              className="overflow-menu"
+              trigger={
+                <button className="icon-btn" title={t('More')} aria-label={t('More actions')}>
+                  <MoreHorizontal size={17} />
+                </button>
+              }
+            >
+              {/* One function, two labels: the description is there or it is not. */}
+              {canEdit && !showDesc && !description && (
+                <MenuItem fn="description" onClick={() => setShowDesc(true)}>
+                  {t('Add a description')}
+                </MenuItem>
+              )}
+              {canEdit && (showDesc || description) && (
+                <MenuItem fn="description" onClick={removeDescription}>
+                  {t('Remove description')}
+                </MenuItem>
+              )}
+              {canComment && (
+                // Always OPENS them — an entry that toggles would be a no-op
+                // half the time somebody reaches for it.
+                <MenuItem fn="toComments" onClick={() => onToggleComments(true)}>
+                  {t('To the comments')}
+                </MenuItem>
+              )}
+              <MenuItem fn="versionHistory" opensDialog onClick={() => setHistoryOpen(true)}>
+                {t('Version history')}
+              </MenuItem>
+              {/* On a phone the topbar keeps only the star, the panel and this
+                  menu — six icons side by side made the head of the page look
+                  busier than its content. The three that step aside come back
+                  here, so nothing becomes unreachable. */}
+              {narrow && (
+                <>
+                <MenuSeparator />
                 {canComment && (
-                <button
-                  className="menu-item"
-                  onClick={() => {
-                    setOverflowOpen(false);
-                    // Always OPENS them — an entry that toggles would be a
-                    // no-op half the time somebody reaches for it.
-                    onToggleComments(true);
-                  }}
-                >
-                  <MessageSquare size={15} /> {t('To the comments')}
-                </button>
+                  <MenuItem fn="commentsPanel" onClick={() => onToggleComments(!commentsOpen)}>
+                    {commentsOpen ? t('Hide comments') : t('Show comments')}
+                  </MenuItem>
                 )}
-                <button
-                  className="menu-item"
-                  onClick={() => {
-                    setOverflowOpen(false);
-                    setHistoryOpen(true);
-                  }}
-                >
-                  <History size={15} /> {t('Version history')}
-                </button>
-                {/* On a phone the topbar keeps only the star, the panel and this
-                    menu — six icons side by side made the head of the page look
-                    busier than its content. The three that step aside come back
-                    here, so nothing becomes unreachable. */}
-                <div className="menu-sep narrow-only" />
-                {canComment && (
-                <button
-                  className="menu-item narrow-only"
-                  onClick={() => {
-                    setOverflowOpen(false);
-                    onToggleComments(!commentsOpen);
-                  }}
-                >
-                  <MessageSquare size={15} />{' '}
-                  {commentsOpen ? t('Hide comments') : t('Show comments')}
-                </button>
-                )}
-                <button
-                  className="menu-item narrow-only"
-                  onClick={() => {
-                    setOverflowOpen(false);
-                    togglePrivate();
-                  }}
-                >
-                  {visibility === 'private' ? <Lock size={15} /> : <LockOpen size={15} />}{' '}
+                {/* One icon both ways (spec 010, FR-004): the label says the state. */}
+                <MenuItem fn="visibility" onClick={togglePrivate}>
                   {visibility === 'private' ? t('Make it visible to the workspace') : t('Make it private')}
-                </button>
-                <button
-                  className="menu-item narrow-only"
-                  onClick={() => {
-                    setOverflowOpen(false);
-                    openShare();
-                  }}
-                >
-                  <Globe size={15} /> {t('Share to web (read-only link)')}
-                </button>
-                {canEdit && (
-                  <button
-                    className="menu-item"
-                    onClick={() => {
-                      importInput.current?.click();
-                      setOverflowOpen(false);
-                    }}
-                  >
-                    <Upload size={15} /> Import (.md / .zip)
-                  </button>
-                )}
-                {canEdit && page.type === 'doc' && (
-                  <>
-                    <div className="menu-sep" />
-                    <div className="menu-label">{t('Appearance')}</div>
-                    <button
-                      className="menu-item"
-                      role="menuitemcheckbox"
-                      aria-checked={fullWidth}
-                      onClick={() => {
-                        setOverflowOpen(false);
-                        toggleFullWidth();
-                      }}
-                    >
-                      <MoveHorizontal size={15} /> {t('Full width')}
-                      {fullWidth && <Check size={14} style={{ marginLeft: 'auto' }} />}
-                    </button>
-                  </>
-                )}
-                <div className="menu-sep" />
-                <div className="menu-label">{t('Export')}</div>
-                <button
-                  className="menu-item"
-                  onClick={() => {
-                    api.download(`/api/export/${pageId}`);
-                    setOverflowOpen(false);
-                  }}
-                >
-                  <FileText size={15} /> Markdown (.md)
-                </button>
-                <button
-                  className="menu-item"
-                  onClick={() => {
-                    api.download(`/api/export/${pageId}?format=html`);
-                    setOverflowOpen(false);
-                  }}
-                >
-                  <FileCode size={15} /> {t('Web page (.html)')}
-                </button>
-                <button
-                  className="menu-item"
-                  onClick={() => {
-                    setOverflowOpen(false);
-                    if (page.type === 'collection') {
-                      setTimeout(() => window.print(), 50);
-                    } else {
-                      // A clean standalone print/PDF view — works on mobile too,
-                      // where window.print() is a no-op (share → save as PDF).
-                      window.open(`/api/export/${pageId}?format=html&print=1`, '_blank');
-                    }
-                  }}
-                >
-                  <Printer size={15} /> {t('Print / as PDF')}
-                </button>
-                {canEdit && (
-                  <button
-                    className="menu-item danger"
-                    onClick={() => {
-                      setOverflowOpen(false);
-                      onTrash(pageId);
-                    }}
-                  >
-                    <Trash2 size={15} /> {t('Move to trash')}
-                  </button>
-                )}
-              </div>
-            )}
+                </MenuItem>
+                <MenuItem fn="shareToWeb" opensDialog onClick={openShare}>
+                  {t('Share to web (read-only link)')}
+                </MenuItem>
+                </>
+              )}
+              {canEdit && (
+                <MenuItem fn="importFile" onClick={() => importInput.current?.click()}>
+                  Import (.md / .zip)
+                </MenuItem>
+              )}
+              {canEdit && page.type === 'doc' && (
+                <>
+                  <MenuSeparator />
+                  <MenuLabel>{t('Appearance')}</MenuLabel>
+                  <MenuCheckboxItem fn="fullWidth" checked={fullWidth} onCheckedChange={() => toggleFullWidth()}>
+                    {t('Full width')}
+                  </MenuCheckboxItem>
+                </>
+              )}
+              <MenuSeparator />
+              <MenuLabel>{t('Export')}</MenuLabel>
+              <MenuItem fn="exportMarkdown" onClick={() => api.download(`/api/export/${pageId}`)}>
+                Markdown (.md)
+              </MenuItem>
+              <MenuItem fn="exportHtml" onClick={() => api.download(`/api/export/${pageId}?format=html`)}>
+                {t('Web page (.html)')}
+              </MenuItem>
+              <MenuItem
+                fn="print"
+                onClick={() => {
+                  if (page.type === 'collection') {
+                    setTimeout(() => window.print(), 50);
+                  } else {
+                    // A clean standalone print/PDF view — works on mobile too,
+                    // where window.print() is a no-op (share → save as PDF).
+                    window.open(`/api/export/${pageId}?format=html&print=1`, '_blank');
+                  }
+                }}
+              >
+                {t('Print / as PDF')}
+              </MenuItem>
+              {canEdit && (
+                <>
+                  <MenuSeparator />
+                  <MenuItem fn="moveToTrash" danger onClick={() => onTrash(pageId)}>
+                    {t('Move to trash')}
+                  </MenuItem>
+                </>
+              )}
+            </Menu>
           </div>
         </div>
       </header>
@@ -1879,11 +1813,11 @@ function BlockContent({
   // The chart entries' words, in the order of CHART_SLASH_KINDS.
   const chartSlashItems = () => {
     const words: Record<ChartKind, { title: string; subtext: string; icon: ReactElement; aliases: string[] }> = {
-      bar: { title: t('Bar chart'), subtext: t('Compare groups of a database as bars'), icon: <ChartColumn size={18} />, aliases: ['chart', 'bar', 'diagramm', 'balken', 'grafico', 'barras'] }, // i18n-ok: search aliases, deliberately multilingual
-      hbar: { title: t('Horizontal bar chart'), subtext: t('Bars side by side, for long names'), icon: <ChartBar size={18} />, aliases: ['chart', 'horizontal', 'diagramm', 'balken', 'grafico', 'barras'] }, // i18n-ok: search aliases, deliberately multilingual
-      line: { title: t('Line chart'), subtext: t('A trend over time'), icon: <ChartLine size={18} />, aliases: ['chart', 'line', 'trend', 'diagramm', 'linie', 'grafico', 'linea'] }, // i18n-ok: search aliases, deliberately multilingual
-      donut: { title: t('Donut chart'), subtext: t('Parts of a whole'), icon: <ChartPie size={18} />, aliases: ['chart', 'donut', 'pie', 'diagramm', 'kreis', 'torte', 'grafico', 'circular'] }, // i18n-ok: search aliases, deliberately multilingual
-      number: { title: t('Number chart'), subtext: t('One total, count or average'), icon: <Hash size={18} />, aliases: ['chart', 'number', 'kpi', 'total', 'zahl', 'summe', 'numero'] }, // i18n-ok: search aliases, deliberately multilingual
+      bar: { title: t('Bar chart'), subtext: t('Compare groups of a database as bars'), icon: slashIcon('barChart'), aliases: ['chart', 'bar', 'diagramm', 'balken', 'grafico', 'barras'] }, // i18n-ok: search aliases, deliberately multilingual
+      hbar: { title: t('Horizontal bar chart'), subtext: t('Bars side by side, for long names'), icon: slashIcon('horizontalBarChart'), aliases: ['chart', 'horizontal', 'diagramm', 'balken', 'grafico', 'barras'] }, // i18n-ok: search aliases, deliberately multilingual
+      line: { title: t('Line chart'), subtext: t('A trend over time'), icon: slashIcon('lineChart'), aliases: ['chart', 'line', 'trend', 'diagramm', 'linie', 'grafico', 'linea'] }, // i18n-ok: search aliases, deliberately multilingual
+      donut: { title: t('Donut chart'), subtext: t('Parts of a whole'), icon: slashIcon('donutChart'), aliases: ['chart', 'donut', 'pie', 'diagramm', 'kreis', 'torte', 'grafico', 'circular'] }, // i18n-ok: search aliases, deliberately multilingual
+      number: { title: t('Number chart'), subtext: t('One total, count or average'), icon: slashIcon('numberChart'), aliases: ['chart', 'number', 'kpi', 'total', 'zahl', 'summe', 'numero'] }, // i18n-ok: search aliases, deliberately multilingual
     };
     return CHART_SLASH_KINDS.map((kind) => ({ kind, ...words[kind] }));
   };
@@ -1896,7 +1830,7 @@ function BlockContent({
         subtext: t('A flow chart written as text'),
         aliases: ['diagram', 'diagramm', 'mermaid', 'flow', 'flussdiagramm', 'graph'], // i18n-ok: search aliases, deliberately multi
         group: 'Advanced',
-        icon: <Workflow size={18} />,
+        icon: slashIcon('diagram'),
         onItemClick: () =>
           insertOrUpdateBlockForSlashMenu(editor, {
             type: 'mermaid',
@@ -1908,7 +1842,7 @@ function BlockContent({
         subtext: t('Two blocks side by side'),
         aliases: ['columns', 'spalten', 'nebeneinander'], // i18n-ok: search aliases, deliberately multi
         group: 'Basic blocks',
-        icon: <Columns2 size={18} />,
+        icon: slashIcon('columns'),
         // Inserted WITH its two children, because an empty columns block is a
         // control strip and nothing else — there would be no column to type in
         // and no obvious way to make one.
@@ -1924,7 +1858,7 @@ function BlockContent({
         subtext: t('A highlighted note with an emoji'),
         aliases: ['callout', 'hinweis', 'info', 'warnung'], // i18n-ok: search aliases, deliberately multilingual so a German user can type it
         group: 'Basic blocks',
-        icon: <span>💡</span>,
+        icon: slashIcon('callout'),
         onItemClick: () =>
           insertOrUpdateBlockForSlashMenu(editor, { type: 'callout' } as never),
       },
@@ -1933,7 +1867,7 @@ function BlockContent({
         subtext: t('A link card, or a YouTube/Vimeo player'),
         aliases: ['bookmark', 'embed', 'link', 'video', 'youtube'], // i18n-ok: search aliases, deliberately multilingual so a German user can type it
         group: 'Media',
-        icon: <span>🔖</span>,
+        icon: slashIcon('bookmark'),
         onItemClick: () =>
           insertOrUpdateBlockForSlashMenu(editor, { type: 'bookmark' } as never),
       },
@@ -1942,7 +1876,7 @@ function BlockContent({
         subtext: t('Show an existing collection inside the document'),
         aliases: ['datenbank', 'database', 'db', 'tabelle', 'board', 'kanban'], // i18n-ok: search aliases, deliberately multilingual so a German user can type it
         group: 'Basic blocks',
-        icon: <span>▦</span>,
+        icon: slashIcon('embedCollection'),
         onItemClick: () =>
           insertOrUpdateBlockForSlashMenu(editor, { type: 'database' } as never),
       },
@@ -1962,7 +1896,7 @@ function BlockContent({
         subtext: t('Auto-generated list of every heading'),
         aliases: ['toc', 'inhalt', 'inhaltsverzeichnis', 'outline'], // i18n-ok: search aliases, deliberately multilingual so a German user can type it
         group: 'Basic blocks',
-        icon: <span>📑</span>,
+        icon: slashIcon('tableOfContents'),
         onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: 'toc' } as never),
       },
       {
@@ -1970,13 +1904,13 @@ function BlockContent({
         subtext: t('List of pages below this one'),
         aliases: ['subpages', 'unterseiten', 'children', 'sub-pages'], // i18n-ok: search aliases, deliberately multilingual so a German user can type it
         group: 'Basic blocks',
-        icon: <span>📄</span>,
+        icon: slashIcon('subPages'),
         onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: 'subpages' } as never),
       },
     ];
     const matches = filterSuggestionItems(
       [
-        ...getDefaultReactSlashMenuItems(editor),
+        ...withPairedIcons(getDefaultReactSlashMenuItems(editor)),
         ...custom,
       ],
       query,
@@ -2278,8 +2212,9 @@ function BlockContent({
         {/* The database block renders inside the editor and would otherwise
             not reach the page list, the tag colours or navigation. */}
         <BlockContext.Provider value={{ pagesById, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged, pageId: provider.pageId }}>
-        <BlockNoteView editor={editor} theme={theme} editable={canEdit} slashMenu={false}>
+        <BlockNoteView editor={editor} theme={theme} editable={canEdit} slashMenu={false} sideMenu={false}>
           <SuggestionMenuController triggerCharacter="/" getItems={getSlashItems} />
+          <SideMenuController sideMenu={SideMenuWithIcons} />
           <SuggestionMenuController
             triggerCharacter="@"
             getItems={getMentionItems}
