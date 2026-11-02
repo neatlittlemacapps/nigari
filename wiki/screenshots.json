@@ -435,12 +435,12 @@
       ],
       "takenAt": {
         "web/src/components/CollectionView.tsx": "98c4de7f3494",
-        "web/src/components/ChartFigure.tsx": "3fcca96f94d5",
+        "web/src/components/ChartFigure.tsx": "a33fd333fa77",
         "web/src/components/ChartView.css": "ad6a7c9c7acf",
         "web/src/components/ChartSettings.tsx": "4f8c7aeacbc8",
         "web/src/components/ChartSettings.css": "16a9584f65dc",
         "web/src/chartLayout.ts": "1035a3e068ac",
-        "web/src/chartTheme.ts": "e6b7ddf90e54",
+        "web/src/chartTheme.ts": "ad8249147ff4",
         "web/src/tokens.css": "febe0adc0e97",
         "web/src/theme.css": "d9786b1296b8"
       }
@@ -504,7 +504,7 @@
         "web/src/ui/Popover.css": "ac0bbc2fa9aa",
         "web/src/ui/Select.css": "23b768507ead",
         "web/src/ui/Switch.css": "b64ad5302264",
-        "web/src/components/ChartFigure.tsx": "3fcca96f94d5",
+        "web/src/components/ChartFigure.tsx": "a33fd333fa77",
         "web/src/components/ChartView.css": "ad6a7c9c7acf",
         "web/src/tokens.css": "febe0adc0e97",
         "web/src/theme.css": "d9786b1296b8"

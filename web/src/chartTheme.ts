@@ -39,18 +39,52 @@ const OPTION_TOKEN: Record<string, string> = {
  *  categories, and fifty bars cycling through twelve colours would suggest
  *  groups that are not there (research R18). Except when the palette is
  *  Colourful: that is somebody asking for colours, and it used to change
- *  nothing at all on these charts (#318). */
-export function groupColourTokens(drawn: DrawnGroup[], palette: Palette, groupProp?: PropDef, series = false): string[] {
+ *  nothing at all on these charts (#318).
+ *
+ *  On Automatic, an option in one of the option palette's colours takes the
+ *  chart colour of that name, and any other group takes the colourful
+ *  palette's colour for its place. Those two sets overlap by design: the
+ *  colourful palette's group 3 is the green that a green option takes. So
+ *  the option Done (green) and the option Third (an imported #123456, third
+ *  in line) were drawn in the same green side by side (#278). A group in
+ *  its place's colour now moves on to the next colour that no option in this
+ *  chart, and no group before it, already shows. `colourOf` says what a
+ *  token draws as, so "the same colour" means the same on the screen, not
+ *  the same token name; without it, names are compared. */
+export function groupColourTokens(
+  drawn: DrawnGroup[],
+  palette: Palette,
+  groupProp?: PropDef,
+  series = false,
+  colourOf: (token: string) => string = (token) => token,
+): string[] {
   const oneColour = series && palette !== 'colorful';
   const options = new Map((groupProp?.options ?? []).map((o) => [o.id, o.color]));
+  const optionToken = (g: DrawnGroup) =>
+    palette === 'auto' ? OPTION_TOKEN[(options.get(g.key) ?? '').toLowerCase()] : undefined;
+  // What the option-coloured groups of this chart show: the place colours
+  // stay off these.
+  const taken = new Set(drawn.map(optionToken).filter((t): t is string => !!t).map(colourOf));
+  const used = new Set<string>();
   let i = 0;
   return drawn.map((g) => {
     if (g.key === NO_VALUE) return '--color-chart-gray-2';
     if (g.key === OTHER) return '--color-chart-gray-3';
     const n = oneColour ? 0 : i++;
     if (palette === 'auto' || palette === 'colorful') {
-      const fromOption = palette === 'auto' ? OPTION_TOKEN[(options.get(g.key) ?? '').toLowerCase()] : undefined;
-      return fromOption ?? `--color-chart-${(n % 12) + 1}`;
+      const fromOption = optionToken(g);
+      if (fromOption) return fromOption;
+      if (oneColour) return '--color-chart-1';
+      // Twelve tries at most: with every colour taken, the place colour stands.
+      for (let k = 0; k < 12; k++) {
+        const token = `--color-chart-${((n + k) % 12) + 1}`;
+        const c = colourOf(token);
+        if (!taken.has(c) && !used.has(c)) {
+          used.add(c);
+          return token;
+        }
+      }
+      return `--color-chart-${(n % 12) + 1}`;
     }
     const hue = palette === 'colorless' ? 'gray' : (HUES as readonly string[]).includes(palette) ? palette : 'blue';
     // Darkest first, so the largest groups of a sorted chart stand out most.
