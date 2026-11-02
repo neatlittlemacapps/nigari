@@ -56,6 +56,7 @@ jobs:
           EVENT: ${{ github.event_name }}
           ISSUE: ${{ github.event.issue.number }}
           PR: ${{ github.event.pull_request.number }}
+          LABEL_ADDED: ${{ github.event.action == 'labeled' && github.event.label.name || '' }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
             echo "::warning::BOARD_TOKEN is not set; skipping board sync"

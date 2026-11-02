@@ -13,7 +13,8 @@ entries are not edited away.
 a bug that breaks nigari gets Priority **P1 - High** on the board. The rule
 runs one way: P1 is not only for bugs. Whoever files a breaking bug labels it
 `bug` and `breaking`; `scripts/board-sync.sh` then sets the board's Priority
-to P1 while the issue is open, and the label mirror turns that into
+to P1 while the issue is open, when the label is added or the issue has no
+Priority yet (so the owner can still lower it by hand afterwards), and the label mirror turns that into
 `priority:1`. "Breaking" means data is lost, nigari does not start, or a
 core task (editing, saving, signing in) cannot be done.
 

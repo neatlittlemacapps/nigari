@@ -17,6 +17,17 @@
 - **#14 (2026-11-02):** README Download line (PR #377 → v2.0.12); CodeGraph during specifying, planning and tasks (PR #378 → v2.0.13); spec 010 planned + tasks + issues #380–#419 (PR #420 → v2.0.14); spec 010 built on Base UI menus (option B) in two PRs (#421 → v2.0.15, #422 → **v2.1.0**); board cleaned; #379 (fewer hand-built buttons) filed; #278 labelled `bug`.
 - **#15 (2026-11-02):** board Priority mirrored onto `priority:N` labels by the board-sync Action (PR #423 → v2.1.1); #269 empty values fixed (PR #424 → v2.1.2); #278 chart colours fixed (PR #425 → v2.1.3); epic #426 "database views" filed with 10 sub-issues; spec 012 spec + plan written; German-comment bug #427 found and fixed (PR #428, with spec 012 docs; release expected v2.1.4, not checked).
 
+> **Update after handoff #15 (2026-11-02, next session):** spec 012 tasks are
+> done (`specs/012-database-view-handling/tasks.md`, 40 tasks, issues #429–#468
+> under #426): do **not** run `/speckit-tasks` or `/speckit-github-taskstoissues`
+> for it again. The tasks corrected the plan: MCP `set_view` does not call
+> `normalizeViews`; `colOrder` is checked by one rule, `checkViewColOrder`,
+> called from `normalizeViews` and `applyViewSpec`. New rule: a breaking bug is
+> labelled `bug` + `breaking`, and board-sync sets Priority P1 (`AGENTS.md`,
+> `docs/decisions.md`). Layout switching filed as #469. Templates stay beside
+> New (Claude's default). Next: the helper stream builds spec 012; Claude
+> writes spec 013.
+
 ## 0. Instructions for Claude (read first)
 
 You are continuing work from a previous chat. That chat is gone; this file is the complete context and the source of truth.

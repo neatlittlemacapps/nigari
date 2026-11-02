@@ -192,17 +192,26 @@ sync_one() {
   # A breaking bug is P1 (owner, 2026-11-02: "If there is a breaking bug it is
   # p1"). P1 is not only for bugs; the rule runs one way. The agent that files
   # the bug labels it `breaking`, because it can set a label but cannot reach
-  # the board, and this run sets the field. Only while the issue is open: a
-  # closed one's Priority no longer orders any work. Removing the label later
-  # leaves Priority as it is; the owner sets it by hand from there.
+  # the board, and this run sets the field. Only while the issue is open (a
+  # closed one's Priority orders no work), and only when the label has just
+  # been added (LABEL_ADDED, from the workflow's `labeled` event) or the issue
+  # has no Priority yet (the nightly run catches a missed event). So the owner
+  # can still lower a breaking bug's Priority by hand and the next run leaves
+  # it; a sync that forced P1 on every run would overwrite that silently.
   if jq -e '.state == "OPEN"' <<<"$issue" >/dev/null \
-     && jq -e 'index("breaking") != null' <<<"$labels" >/dev/null; then
+     && jq -e 'index("breaking") != null' <<<"$labels" >/dev/null \
+     && [[ "${LABEL_ADDED:-}" == "breaking" || "$priority" == "—" ]]; then
     if [[ -z "$priority_one" ]]; then
       echo "::warning::board-sync: #$number is labelled breaking, but the Priority field has no P1 option"
     elif [[ "$priority" != "$priority_one_name" ]]; then
-      set_field "$item_id" "$priority_field" "$priority_one"
-      priority="$priority_one_name"
-      report+=" (breaking → $priority_one_name)"
+      # A failed write is a warning, like the label calls below: one issue
+      # must not stop an --all run for every issue after it.
+      if set_field "$item_id" "$priority_field" "$priority_one"; then
+        priority="$priority_one_name"
+        report+=" (breaking → $priority_one_name)"
+      else
+        echo "::warning::board-sync: #$number: could not set Priority to $priority_one_name"
+      fi
     fi
   fi
   report+=" Priority=$priority"

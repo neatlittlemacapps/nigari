@@ -3,7 +3,7 @@
 ## REST `PUT /api/collections/{id}` (unchanged route)
 
 The `views` half may carry `colOrder` on a table view. `normalizeViews` applies
-the rules in [data-model.md](../data-model.md). New refusal:
+`checkViewColOrder`, the rules in [data-model.md](../data-model.md). New refusal:
 
 ```json
 { "error": "column order is only for a table view, as a list of property ids", "code": "invalid_view_column_order" }
@@ -22,7 +22,8 @@ New argument, merged like the others:
 Description addition: "table: column_order sets this view's column order
 without changing other views or the schema; get_collection returns it on the
 view as colOrder." Refusals: the same rule and message as REST, through the
-same function. Read scope still may not call `set_view` (unchanged gate).
+same function, `checkViewColOrder`, which `applyViewSpec` calls for both a
+new view and an update. Read scope still may not call `set_view` (unchanged gate).
 
 ## MCP `get_collection` (unchanged)
 
