@@ -57,6 +57,9 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ## Outline
 
+Before writing tasks, check the plan's file paths and symbols against the code graph (`codegraph status`, then `codegraph callers`/`impact` on each symbol a task changes; skip only without `.codegraph/`), so every caller that must change has a task. See `.claude/rules/codegraph.md`.
+
+
 1. **Setup**: Run `.specify/scripts/bash/setup-tasks.sh --json` from repo root and parse FEATURE_DIR, TASKS_TEMPLATE_CONTENT, TASKS_TEMPLATE, and AVAILABLE_DOCS list. `FEATURE_DIR` and `TASKS_TEMPLATE` must be absolute paths when provided. `AVAILABLE_DOCS` is a list of document names/relative paths available under `FEATURE_DIR` (for example `research.md` or `contracts/`). For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
 
 2. **Load design documents**: Read from FEATURE_DIR:

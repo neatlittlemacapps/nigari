@@ -112,6 +112,8 @@ Given that feature description, do this:
    - The spec directory name and the git branch name are independent — they may be the same but that is the user's choice
    - The spec directory and file are always created by this command, never by the hook
 
+3a. **Ask CodeGraph about the code first** (`.claude/rules/codegraph.md`; skip only if there is no `.codegraph/` directory): run `codegraph status` (sync if it says so), then `codegraph explore "<the feature's area, symbols or question>"`, and `codegraph impact`/`callers` on what it names. The spec's Context section describes how the product works today from what the graph and the code show, not from memory. Mention in the Context what the graph showed that matters (an existing component, a second place the capability lives, a planned batch that overlaps).
+
 4. Load the resolved active `spec-template` file to understand required sections.
 
 5. **IF EXISTS**: Load `.specify/memory/constitution.md` for project principles and governance constraints.

@@ -10,6 +10,13 @@ ran `codegraph init` themselves; no `.codegraph/` means skip this file.
 
 Use it as a coding tool, not a curiosity:
 
+- **While specifying and planning, too** (owner, 2026-11-02: "You should use
+  codegraph also whilst speccing"). A spec's context, a plan's inventory and
+  its Surfaces table come from the graph first (`codegraph explore`, `impact`,
+  `callers` on the code the feature touches), then text search for strings.
+  The plan says what the graph found. Spec 010's first draft skipped this and
+  missed spec 001's planned menu batch and the raw-button ratchet.
+
 - **Before a change that reaches past one function**, ask the graph how the
   area works: the MCP tool `codegraph_explore` (if it shows only as a name,
   load it with tool search), or the same from the shell, `codegraph explore
