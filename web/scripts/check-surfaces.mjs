@@ -77,7 +77,7 @@ for (const dir of existsSync(specsDir) ? readdirSync(specsDir) : []) {
   }
   plans++;
   if (date >= CODEGRAPH_SINCE) {
-    const section = md.match(/^## CodeGraph\s*\n([\s\S]*?)(?=^## )/m)?.[1] ?? null;
+    const section = md.match(/^## CodeGraph\s*\n([\s\S]*?)(?=^## |(?![\s\S]))/m)?.[1] ?? null;
     const body = section?.replace(/<!--[\s\S]*?-->/g, '').trim() ?? '';
     if (section === null) {
       failures.push(`specs/${dir}/plan.md: no "## CodeGraph" section — list the codegraph queries you ran and what they found (.claude/rules/codegraph.md)`);
