@@ -57,6 +57,29 @@ chart blocks, which are different things).
 
 ---
 
+## 2026-11-02 — Every session uses CodeGraph, from the spec on
+
+**Decision** (owner: "You should use codegraph also whilst speccing"; "Ensure any new
+session always uses codegraph"): the graph is the first step wherever the code has to be
+understood, specifying and planning included. Five places carry it, so no single one has
+to be remembered: `AGENTS.md` (read by every agent), `.claude/rules/codegraph.md`, the
+session-start message of `.claude/hooks/codegraph.sh`, the Spec Kit skills
+(`speckit-specify`, `speckit-plan`, `speckit-tasks`), and the plan template's new
+**CodeGraph** section, which `check-surfaces.mjs` requires in every plan dated
+2026-11-03 or later.
+
+**Why:** spec 010's plan was written from text search while the graph sat unused, and
+one graph query then found what it had missed (spec 001's planned menu batch, the
+raw-button budget the change must lower). An instruction in one rules file had not been
+enough; a check makes the plan show its queries.
+
+**Turned down:** turning the per-message prompt hook back on (see 2026-11-01: it pasted
+unrelated code into every turn); a check on specs as well (a spec describes behaviour,
+and its Context section is prose; the plan is where an inventory lives); a check on
+commits (nothing in a commit shows whether the graph was asked).
+
+---
+
 ## 2026-11-01 — CodeGraph's per-message prompt hook is off
 
 **Decision** (owner: "yes"): the `codegraph prompt-hook` entry that `codegraph install`

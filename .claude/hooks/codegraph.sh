@@ -92,3 +92,4 @@ fi
 
 stats="$(codegraph status 2>/dev/null | awk '/Files:|Nodes:|Edges:/ {sub(":", "", $1); printf "%s%s %s", (n++ ? ", " : ""), $2, tolower($1)}')"
 say "index $how ($stats). The live MCP server keeps it in sync while you edit; check with \`codegraph status\`."
+say "use it at every step, specifying and planning included: \`codegraph explore \"<symbols or question>\"\`, \`codegraph impact <symbol>\`, \`codegraph callers <symbol>\` (or the codegraph_explore MCP tool) before grep or reading files (.claude/rules/codegraph.md). A plan records what it found in its CodeGraph section."

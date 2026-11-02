@@ -31,6 +31,15 @@ status lives on the GitHub Projects board (see "How work flows").
 - **The workspace has its own rules** — `get_workspace()` returns them and they
   outrank this block.
 
+## Read the code through CodeGraph first
+
+A cloud session starts with a code graph of the checkout (`.claude/hooks/codegraph.sh`).
+Use it at every step that needs to know how the code works, from `/speckit-specify` to
+the last fix: `codegraph explore`, `impact`, `callers` (or the `codegraph_explore` MCP
+tool) before grep or reading files, then the source itself. Plans record what it found
+(their **CodeGraph** section, enforced by `check-surfaces.mjs`). How:
+`.claude/rules/codegraph.md`. On a computer without `.codegraph/`, skip it.
+
 ## Principles — a change that breaks one is wrong, however well it works
 
 - **One binary, no external services.** No database server, cache, queue or
