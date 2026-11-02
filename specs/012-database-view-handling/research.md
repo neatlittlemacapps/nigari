@@ -52,8 +52,10 @@ the Properties dialog would no longer reach them).
 
 ## R4 — The server checks `colOrder` in the shared view rules
 
-**Decision**: `normalizeViews` (`server/viewopen.go`), which both doors call
-(REST `PUT /api/collections/{id}` and MCP `set_view`), accepts `colOrder` only
+**Decision**: one rule, `checkViewColOrder` (`server/viewopen.go`), called by
+`normalizeViews` (REST `PUT /api/collections/{id}`) and by `applyViewSpec`
+(MCP `set_view`, which does not go through `normalizeViews`; corrected at
+`/speckit-tasks` from the graph), accepts `colOrder` only
 on a table view, as an array of strings, drops ids that are not properties of
 the schema and duplicates, and caps it at the schema's length. MCP `set_view`
 gets a `column_order` argument (array of property ids; `[]` clears it), and

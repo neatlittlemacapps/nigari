@@ -13,7 +13,7 @@ Five changes to how a database view looks and handles, in two pull requests
 - Table text moves onto the type scale: 14px cells, 13px headers (R1).
 - A table column moves by dragging its header, or from a new header menu.
   The order is stored on the view as `colOrder`, beside `colWidths`, checked
-  by the shared `normalizeViews` and settable by agents through `set_view`'s
+  by one shared rule (`checkViewColOrder`, from `normalizeViews` and `applyViewSpec`) and settable by agents through `set_view`'s
   new `column_order` (R2–R6).
 - A board drag shows a placeholder where the card will land, which is the
   place the view's sort gives it (R7).
@@ -33,7 +33,7 @@ Five changes to how a database view looks and handles, in two pull requests
 
 **Storage**: one optional key, `colOrder`, inside a table view's JSON; no upgrade step (R3)
 
-**Testing**: Go tests in `server/` for `normalizeViews`' `colOrder` rules (accept, drop unknown ids, refuse a non-table view and a non-array) through REST and `callTool`, including the read-scope refusal, and a parity pair. New checks: `check-columndrag.mjs` (which gap), `check-boarddrag.mjs` (`dropIndex`). New Playwright specs: `column-order.mjs`, `board-drop-marker.mjs`, `view-settings.mjs`, `embed-toolbar-fold.mjs`. Existing specs updated where they press Properties, View options or the `<select>`s: `database-toolbar-menus`, `embeds`, `menu-icons`, `menu-keyboard`, `people`, `side-peek`, and the `fixture.mjs` helper. `catalog.mjs` for `MenuSubmenu`'s `value`
+**Testing**: Go tests in `server/` for `checkViewColOrder`'s rules (accept, drop unknown ids, refuse a non-table view and a non-array) through REST and `callTool`, including the read-scope refusal, and a parity pair. New checks: `check-columndrag.mjs` (which gap), `check-boarddrag.mjs` (`dropIndex`). New Playwright specs: `column-order.mjs`, `board-drop-marker.mjs`, `view-settings.mjs`, `embed-toolbar-fold.mjs`. Existing specs updated where they press Properties, View options or the `<select>`s: `database-toolbar-menus`, `embeds`, `menu-icons`, `menu-keyboard`, `people`, `side-peek`, and the `fixture.mjs` helper. `catalog.mjs` for `MenuSubmenu`'s `value`
 
 **Target Platform**: browser at desktop and phone widths; the desktop shell (same frontend)
 
@@ -50,7 +50,7 @@ Index checked with `codegraph status` ("Index is up to date") before each round.
 - `codegraph explore "ViewDef handlePutCollection set_view delete_view colWidths boardDrag audit"`:
   - `ViewDef` (`web/src/types.ts`) has 38 callers across 11 files; `colOrder` is optional, so none has to change.
   - `handlePutCollection` is called from `server.go` and tested via `prefs_http_test.go` and `upgrade_test.go`.
-  - The view rules both doors share are `normalizeViews` in `server/viewopen.go`, where `colOrder` belongs (R4).
+  - The view rules REST applies are `normalizeViews` in `server/viewopen.go`; MCP `set_view` applies the same per-view checks through `applyViewSpec` (`server/mcp_schema.go`), not `normalizeViews` (found at `/speckit-tasks`: `codegraph callers normalizeViews` lists only `handlePutCollection`). `colOrder` gets one per-view check both call (R4).
   - `pageUiState.ts` is per-browser memory; not used here, kept for spec 013 (#279).
 - `codegraph explore "colWidths TableView column header resize ColumnsControl"`:
   - `CollectionView → TableView → ColHead`. `ColHead` (`CollectionView.tsx:2270`) is a label and a `.col-resize` handle with no menu. `startResize` already stops propagation, so a header drag can sit beside it (R5).
@@ -69,7 +69,7 @@ Index checked with `codegraph status` ("Index is up to date") before each round.
 
 - I. One binary, no external services: ✅ no dependency, no service.
 - II. Agent parity: ✅ column order is settable and readable over MCP (`set_view` `column_order`, `get_collection`). The board marker, Settings menu, text size and fold are presentation of what agents already do. No new gap.
-- III. Gates are one function: ✅ `colOrder` is checked in `normalizeViews`, which REST and MCP both call. No permission changes; `canWrite` and the read-scope refusal stand.
+- III. Gates are one function: ✅ `colOrder` is checked in one function, `checkViewColOrder`, called by `normalizeViews` (REST) and `applyViewSpec` (MCP `set_view`), as `checkViewOpenIn` is (corrected at `/speckit-tasks`: `set_view` does not call `normalizeViews`). No permission changes; `canWrite` and the read-scope refusal stand.
 - IV. Derive from code: ✅ `check-columndrag.mjs` and `check-boarddrag.mjs` for the pure parts; budgets lowered to measured counts; `check-menu-icons.mjs` covers the new menus.
 - V. English source: ✅ new strings through `t()` with `de`/`es`/`nl`. The German comment found is filed and fixed separately (R13).
 - VI. Every surface, every time: ✅ table below. No new registry row: nothing here is a concept later features must answer for.
@@ -81,10 +81,10 @@ Re-checked after Phase 1 design: unchanged.
 
 | Surface | Changes | Owner |
 |---------|---------|-------|
-| Domain logic and gates (`canRead`/`canWrite`, `credentialMayEnter`, validation, `audit`, `fireWebhook`) | `normalizeViews` (`server/viewopen.go`) validates `colOrder`: table only, array of strings, unknown ids and repeats dropped (R4). Both doors already call it. No gate changes. `audit` for view changes is spec 013's (#178). No webhook: no page content changes | backend |
+| Domain logic and gates (`canRead`/`canWrite`, `credentialMayEnter`, validation, `audit`, `fireWebhook`) | `checkViewColOrder` (`server/viewopen.go`) validates `colOrder`: table only, array of strings, unknown ids and repeats dropped (R4). REST calls it from `normalizeViews`, MCP from `applyViewSpec`. No gate changes. `audit` for view changes is spec 013's (#178). No webhook: no page content changes | backend |
 | Schema and queries (`server/db.go`, indexes, `ensureColumn`) | No change: `colOrder` lives in the view JSON already stored with the collection; no table, column or index | backend |
 | REST routes (`server/server.go`, middleware) | No change: `PUT /api/collections/{id}` carries `colOrder` in its existing `views` half. New error code `invalid_view_column_order` (400) | backend |
-| MCP tools (`server/mcp*.go`, descriptions, `wrapUntrusted`, read-scope refusal) | `set_view` gains `column_order` (array of property ids, `[]` clears), mapped to `colOrder` in `server/mcp_schema.go` and checked by `normalizeViews`; its description says so. `get_collection` already returns view JSON, so `colOrder` is readable there. Read scope still refused on `set_view` (existing gate, tested again) | mcp |
+| MCP tools (`server/mcp*.go`, descriptions, `wrapUntrusted`, read-scope refusal) | `set_view` gains `column_order` (array of property ids, `[]` clears), mapped to `colOrder` in `server/mcp_schema.go` and checked by `checkViewColOrder`; its description says so. `get_collection` already returns view JSON, so `colOrder` is readable there. Read scope still refused on `set_view` (existing gate, tested again) | mcp |
 | Closed-to-agents list (`not_available_via_mcp`) | No change: nothing closed or opened | mcp |
 | UI components (`web/src/…`, light + dark, keyboard) | **PR 1:**<br>• Table CSS on tokens (R1).<br>• `ColHead` gains a header menu (`ui/Menu`, click and right-click) with Move left, Move right and Hide in view, plus a drag from its label (`columnDrag.ts`, R5–R6).<br>• `TableView` draws columns by `colOrder`.<br>• The board draws a target column style and a placeholder at `dropIndex(...)` (R7).<br>**PR 2:**<br>• One Settings `IconButton` opening a `ui/Menu` with View settings and Database settings (R8). `ColumnsControl`, the **Properties** button, the **⋯** menu and the three `<select>`s leave the toolbar.<br>• `ViewActionItems` and `ViewOpenMenu` move inside the menu.<br>• No Settings in embeds (R10).<br>• Fold-away CSS for `.collection--embed` (R11).<br>• The board's empty-state sentence changes (R13).<br>**Keyboard:** the header menu's Move keeps focus on the header; Settings: Escape returns focus and Tab stays inside (from `ui/Menu`). Checked in light and dark | ui |
 | Translations (`t()`, `de.json`/`es.json`/`nl.json`) | About 15 new strings (list in [contracts/ui.md](contracts/ui.md)), German, Spanish and Dutch; strings that only the removed controls used are removed from the three files ("Properties" where unused elsewhere, "View options", "Start: (none)", "End: (none)", "No sub-items" and the like) | i18n |
@@ -130,7 +130,7 @@ specs/012-database-view-handling/
 ### Source Code (repository root)
 
 ```text
-server/viewopen.go                   # PR 1: colOrder rules in normalizeViews
+server/viewopen.go                   # PR 1: checkViewColOrder, called from normalizeViews
 server/mcp.go, server/mcp_schema.go  # PR 1: set_view column_order
 server/viewopen_test.go (or the existing view test file), server/parity_property_test.go   # PR 1
 web/src/types.ts                     # PR 1: ViewDef.colOrder
