@@ -23,7 +23,7 @@ import TemplateGallery from './TemplateGallery';
 import BlueprintLibrary from './BlueprintLibrary';
 import WorkspaceSettings from './WorkspaceSettings';
 import StrandedWorkspaces from './StrandedWorkspaces';
-import { modalOpen, useExclusiveModal, useMenuDismiss } from '../modal';
+import { modalOpen, useExclusiveModal } from '../modal';
 import { chordFor, hint, useShortcut } from '../keys';
 import { focusRegion, focusedKey, navItem, useNavRegion, withFocusSurvival } from '../nav';
 import { Search, Library, Plus, Table2, FileText, LayoutTemplate, Tag, ChevronRight, ChevronDown, Upload, PanelLeftClose, PanelLeftOpen, Star, MoreHorizontal, Globe } from 'lucide-react';
@@ -109,6 +109,8 @@ export interface TreeCtx {
   // Where a right-click opened the ⋯ menu; null when it opens under the ⋯.
   menuPoint: MenuPoint | null;
   setMenuPoint: (p: MenuPoint | null) => void;
+  // The row a right-click opened the menu on: focus returns there.
+  menuReturn: React.MutableRefObject<HTMLElement | null>;
   onNavigate: (id: string) => void;
   onOpenInNewTab: (id: string) => void;
   toggleExpand: (id: string) => void;
@@ -549,6 +551,7 @@ export default function Sidebar({
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [menuPoint, setMenuPoint] = useState<MenuPoint | null>(null);
+  const menuReturn = useRef<HTMLElement | null>(null);
   const [addFor, setAddFor] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const dragId = useRef<string | null>(null);
@@ -648,6 +651,7 @@ export default function Sidebar({
   // menu by a click elsewhere or Escape (ui/Menu).
   const [tplMenuFor, setTplMenuFor] = useState<string | null>(null);
   const [tplPoint, setTplPoint] = useState<MenuPoint | null>(null);
+  const tplReturn = useRef<HTMLElement | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   // 't' for a page from a template, under the same single-letter rule as the
   // others in App.tsx: never while something is being typed.
@@ -825,6 +829,7 @@ export default function Sidebar({
     menuFor,
     menuPoint,
     setMenuPoint,
+    menuReturn,
     addFor,
     onNavigate,
     toggleExpand,
@@ -1305,6 +1310,7 @@ export default function Sidebar({
                 // The same right-click as a page or a collection row (#20).
                 onContextMenu={(e) => {
                   e.preventDefault();
+                  tplReturn.current = e.currentTarget;
                   setTplPoint(e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : null);
                   setTplMenuFor(p.id);
                 }}
@@ -1323,8 +1329,12 @@ export default function Sidebar({
                     align="start"
                     open={tplMenuFor === p.id}
                     anchorPoint={tplMenuFor === p.id ? tplPoint : null}
+                    returnFocus={tplReturn.current ? tplReturn : undefined}
                     onOpenChange={(o) => {
-                      if (o) setTplPoint(null);
+                      if (o) {
+                        tplReturn.current = null;
+                        setTplPoint(null);
+                      }
                       setTplMenuFor(o ? p.id : null);
                     }}
                     trigger={

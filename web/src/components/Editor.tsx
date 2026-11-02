@@ -39,7 +39,7 @@ import { usePeers, setPeers, clearPeers } from '../presence';
 import { tagColorClass, TAG_PALETTE } from '../tags';
 import { collectTags, suggestTags } from '../tagSuggest';
 import { modalOpen, useMenuDismiss } from '../modal';
-import { Menu, MenuCheckboxItem, MenuItem, MenuLabel, MenuSeparator } from '../ui/Menu';
+import { Menu, MenuCheckboxItem, MenuItem, MenuLabel, MenuSeparator, useNarrowScreen } from '../ui/Menu';
 import { SideMenuWithIcons, slashIcon, withPairedIcons } from '../slashIcons';
 import { Menu as MenuGlyph, Copy, Star, Lock, LockOpen, Globe, MessageSquare, MoreHorizontal, FileText, Upload, AlignLeft, Check, Image as ImageIcon, Smile, PanelRight, Link2, FilePlus2, LayoutTemplate } from 'lucide-react';
 import { CHART_SLASH_KINDS } from '../chartInsert';
@@ -604,6 +604,8 @@ function PageHeader({
   const shareSettingsChanged =
     madeWith != null && (madeWith.days !== shareExpiry || madeWith.password !== sharePassword);
   const [overflowOpen, setOverflowOpen] = useState(false);
+  // The top bar's three wide-only buttons come back into the "…" on a phone.
+  const narrow = useNarrowScreen();
   // Dropdowns must close on an outside click / Escape, not just mouse-leave.
   const shareWrapRef = useRef<HTMLDivElement>(null);
   useMenuDismiss(shareOpen, shareWrapRef, () => setShareOpen(false));
@@ -1190,19 +1192,23 @@ function PageHeader({
                   menu — six icons side by side made the head of the page look
                   busier than its content. The three that step aside come back
                   here, so nothing becomes unreachable. */}
-              <MenuSeparator className="narrow-only" />
-              {canComment && (
-                <MenuItem fn="commentsPanel" className="narrow-only" onClick={() => onToggleComments(!commentsOpen)}>
-                  {commentsOpen ? t('Hide comments') : t('Show comments')}
+              {narrow && (
+                <>
+                <MenuSeparator />
+                {canComment && (
+                  <MenuItem fn="commentsPanel" onClick={() => onToggleComments(!commentsOpen)}>
+                    {commentsOpen ? t('Hide comments') : t('Show comments')}
+                  </MenuItem>
+                )}
+                {/* One icon both ways (spec 010, FR-004): the label says the state. */}
+                <MenuItem fn="visibility" onClick={togglePrivate}>
+                  {visibility === 'private' ? t('Make it visible to the workspace') : t('Make it private')}
                 </MenuItem>
+                <MenuItem fn="shareToWeb" opensDialog onClick={openShare}>
+                  {t('Share to web (read-only link)')}
+                </MenuItem>
+                </>
               )}
-              {/* One icon both ways (spec 010, FR-004): the label says the state. */}
-              <MenuItem fn="visibility" className="narrow-only" onClick={togglePrivate}>
-                {visibility === 'private' ? t('Make it visible to the workspace') : t('Make it private')}
-              </MenuItem>
-              <MenuItem fn="shareToWeb" className="narrow-only" opensDialog onClick={openShare}>
-                {t('Share to web (read-only link)')}
-              </MenuItem>
               {canEdit && (
                 <MenuItem fn="importFile" onClick={() => importInput.current?.click()}>
                   Import (.md / .zip)

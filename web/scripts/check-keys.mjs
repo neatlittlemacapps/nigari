@@ -52,7 +52,7 @@ try {
 
   pretendPlatform('MacIntel');
   const keys = await import(bundle);
-  const { chordOf, normalize, isTypingTarget, register, resolve } = keys;
+  const { chordOf, normalize, isTypingTarget, register, resolve, menuOwnsKey } = keys;
 
   // ---- the key itself comes from the physical position ----
   //
@@ -89,8 +89,10 @@ try {
   check('radio is NOT typing', isTypingTarget({ tagName: 'INPUT', type: 'radio' }), 'false');
   check('button is NOT typing', isTypingTarget({ tagName: 'BUTTON' }), 'false');
   check('nothing focused is NOT typing', isTypingTarget(null), 'false');
-  check('an item of an open menu is typing (its letters are typeahead)', isTypingTarget({ tagName: 'DIV', closest: (s) => (s === '[role="menu"]' ? {} : null) }), 'true');
-  check('a div outside any menu is NOT typing', isTypingTarget({ tagName: 'DIV', closest: () => null }), 'false');
+  check('a letter in an open menu is the menu\'s (typeahead)', menuOwnsKey(chordOf({ key: 'm' }), true), 'true');
+  check('a letter outside a menu is not', menuOwnsKey(chordOf({ key: 'm' }), false), 'false');
+  check('a chord in an open menu still reaches the registry', menuOwnsKey(chordOf({ key: 'Backspace', metaKey: true }), true), 'false');
+  check('shift+n in an open menu is a chord, not typeahead', menuOwnsKey(chordOf({ key: 'N', shiftKey: true }), true), 'false');
 
   // ---- who wins ----
   const fired = [];

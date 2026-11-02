@@ -49,6 +49,17 @@ await withFixture(async ({ page, api, base, workspace }) => {
   await pageMenu.waitFor({ state: 'hidden' });
   await eventually(() => isFocused(more)).catch(() => assert.fail('page menu: Escape did not give focus back to the ⋯'));
 
+  // From the row itself: Shift+F10 opens the same menu, and Escape gives focus
+  // back to the row, not to the ⋯ (which hides again without the pointer on
+  // the row, and a hidden button cannot take focus).
+  await page.mouse.move(0, 0);
+  await row.focus();
+  await page.keyboard.press('Shift+F10');
+  await pageMenu.waitFor();
+  await page.keyboard.press('Escape');
+  await pageMenu.waitFor({ state: 'hidden' });
+  await eventually(() => isFocused(row)).catch(() => assert.fail('page menu: after Shift+F10 and Escape, focus did not return to the row'));
+
   // The ＋ beside it, the same way.
   await row.hover();
   const add = row.getByRole('button', { name: 'Add inside', exact: true });

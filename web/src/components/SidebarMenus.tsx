@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Plus, MoreHorizontal } from 'lucide-react';
 import { api } from '../api';
 import { toast } from '../toast';
@@ -15,8 +16,11 @@ import type { TreeCtx } from './Sidebar';
  *  open at a time across the tree (the shared menuFor), and the ＋ closes.
  *  A context-menu key or Shift+F10 reports (0, 0): then it opens under the ⋯
  *  as if clicked. */
-export function openRowMenu(ctx: TreeCtx, id: string, e: React.MouseEvent) {
+export function openRowMenu(ctx: TreeCtx, id: string, e: React.MouseEvent<HTMLElement>) {
   e.preventDefault();
+  // Focus comes back to the row, not to its ⋯, which hides again when the
+  // menu closes unless the pointer is on the row (Shift+F10, then Escape).
+  ctx.menuReturn.current = e.currentTarget;
   ctx.setAddFor(null);
   ctx.setMenuPoint(e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : null);
   ctx.setMenuFor(id);
@@ -35,8 +39,35 @@ export function RowActions({
   workspaceId?: string;
   ctx: TreeCtx;
 }) {
+  // A row's two menus are mounted once the row is first hovered (or one of
+  // them is opened by a right-click), not for every row of the tree: a
+  // workspace with hundreds of pages would otherwise build hundreds of menu
+  // roots on every re-render of the sidebar. Until then the buttons are plain;
+  // they only show on hover anyway, so the swap happens before a click.
+  const ref = useRef<HTMLSpanElement>(null);
+  const [armed, setArmed] = useState(false);
+  const open = ctx.menuFor === id || ctx.addFor === id;
+  useEffect(() => {
+    const row = ref.current?.parentElement;
+    if (!row || armed) return;
+    const arm = () => setArmed(true);
+    row.addEventListener('pointerenter', arm);
+    return () => row.removeEventListener('pointerenter', arm);
+  }, [armed]);
+  if (!armed && !open) {
+    return (
+      <span className="tree-actions" onClick={(e) => e.stopPropagation()} ref={ref}>
+        <button title={t('Add inside')} aria-label={t('Add inside')} onClick={() => ctx.setAddFor(id)}>
+          <Plus size={14} />
+        </button>
+        <button title={t('More')} aria-label={t('More')} onClick={() => ctx.setMenuFor(id)}>
+          <MoreHorizontal size={14} />
+        </button>
+      </span>
+    );
+  }
   return (
-    <span className="tree-actions" onClick={(e) => e.stopPropagation()}>
+    <span className="tree-actions" onClick={(e) => e.stopPropagation()} ref={ref}>
       <AddMenu id={id} ctx={ctx} />
       <PageMenu id={id} title={title} parentId={parentId} workspaceId={workspaceId} ctx={ctx} />
     </span>
@@ -94,8 +125,11 @@ function PageMenu({
       align="start"
       open={open}
       anchorPoint={point}
+      returnFocus={ctx.menuReturn.current ? ctx.menuReturn : undefined}
       onOpenChange={(o) => {
         if (o) {
+          // Opened by the ⋯ itself: focus goes back to it.
+          ctx.menuReturn.current = null;
           ctx.setAddFor(null);
           ctx.setMenuPoint(null);
         }

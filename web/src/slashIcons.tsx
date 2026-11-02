@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ComponentType, ReactElement, ReactNode } from 'react';
 import {
   BlockColorsItem,
   DragHandleMenu,
@@ -8,7 +8,7 @@ import {
   TableRowHeaderItem,
   type SideMenuProps,
 } from '@blocknote/react';
-import { MenuIcon, SLASH_FUNCTIONS, type MenuFunction } from './menuIcons';
+import { DRAG_HANDLE_FUNCTIONS, MenuIcon, SLASH_FUNCTIONS, type MenuFunction } from './menuIcons';
 import { t } from './i18n';
 
 // The editor's own menus take their icons from the same pairing as every
@@ -34,31 +34,32 @@ export function withPairedIcons<T extends { key?: string; icon?: ReactElement }>
   });
 }
 
-/** The block menu (the drag handle's): BlockNote's four default items, each
- *  with its function's icon before the label. */
+/** The block menu (the drag handle's) is built FROM DRAG_HANDLE_FUNCTIONS, so
+ *  its items and the pairing cannot drift apart. The table below is typed by
+ *  the pairing's keys: a key added there (because check-menu-icons.mjs reported
+ *  a new BlockNote item) fails tsc here until it has its component and label,
+ *  instead of passing the check and never showing up. */
+type DragHandleKey = keyof typeof DRAG_HANDLE_FUNCTIONS;
+const DRAG_HANDLE_ITEMS: Record<DragHandleKey, { Item: ComponentType<{ children: ReactNode }>; label: () => string }> = {
+  delete_menuitem: { Item: RemoveBlockItem, label: () => t('Delete') },
+  colors_menuitem: { Item: BlockColorsItem, label: () => t('Colour') },
+  header_row_menuitem: { Item: TableRowHeaderItem, label: () => t('Header row') },
+  header_column_menuitem: { Item: TableColumnHeaderItem, label: () => t('Header column') },
+};
+
 function BlockMenu() {
   return (
     <DragHandleMenu>
-      <RemoveBlockItem>
-        <span className="bn-menu-label">
-          <MenuIcon fn="delete" /> {t('Delete')}
-        </span>
-      </RemoveBlockItem>
-      <BlockColorsItem>
-        <span className="bn-menu-label">
-          <MenuIcon fn="colors" /> {t('Colour')}
-        </span>
-      </BlockColorsItem>
-      <TableRowHeaderItem>
-        <span className="bn-menu-label">
-          <MenuIcon fn="headerRow" /> {t('Header row')}
-        </span>
-      </TableRowHeaderItem>
-      <TableColumnHeaderItem>
-        <span className="bn-menu-label">
-          <MenuIcon fn="headerColumn" /> {t('Header column')}
-        </span>
-      </TableColumnHeaderItem>
+      {(Object.keys(DRAG_HANDLE_FUNCTIONS) as DragHandleKey[]).map((key) => {
+        const { Item, label } = DRAG_HANDLE_ITEMS[key];
+        return (
+          <Item key={key}>
+            <span className="bn-menu-label">
+              <MenuIcon fn={DRAG_HANDLE_FUNCTIONS[key]} /> {label()}
+            </span>
+          </Item>
+        );
+      })}
     </DragHandleMenu>
   );
 }

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
 import { Check, ChevronRight } from 'lucide-react';
 import { MenuIcon, type MenuFunction } from '../menuIcons';
@@ -48,6 +48,14 @@ function useNarrow(enabled: boolean): boolean {
 // put focus back on the trigger, which is what the dialog then returns to.
 const AfterClose = createContext<((run: () => void) => void) | null>(null);
 
+/** True at or below phone width (SHEET_MAX_WIDTH, the same breakpoint as the
+ *  top bar's narrow-only rule). For items that exist only on a phone: they are
+ *  left out above it rather than hidden with CSS, because a hidden item would
+ *  still be a stop for the menu's arrow keys. */
+export function useNarrowScreen(): boolean {
+  return useNarrow(true);
+}
+
 export type MenuProps = {
   /** The button that opens the menu, rendered as the trigger. Omit it for a
    *  menu that only opens on a right-click (then pass open and anchorPoint). */
@@ -68,11 +76,21 @@ export type MenuProps = {
    *  the thumb reaches it and no scrolling toolbar can clip it (the rule in
    *  anchoredMenu.ts, which stays the one place that says how narrow). */
   narrow?: 'sheet';
+  /** Where focus goes when the menu closes, when not to the trigger. A menu
+   *  opened by a right-click or Shift+F10 on a row gives focus back to the row:
+   *  its ⋯ shows only on hover, and a hidden button cannot take focus. */
+  returnFocus?: RefObject<HTMLElement | null>;
   className?: string;
 };
 
-export function Menu({ trigger, label, children, open, onOpenChange, anchorPoint, side = 'bottom', align = 'end', narrow, className }: MenuProps) {
+export function Menu({ trigger, label, children, open, onOpenChange, anchorPoint, side = 'bottom', align = 'end', narrow, returnFocus, className }: MenuProps) {
   const sheet = useNarrow(narrow === 'sheet');
+  // One virtual anchor per point: a new object on every render would make
+  // Base UI re-register its reference and restart positioning each time the
+  // parent re-renders while the menu is open.
+  const px = anchorPoint?.x;
+  const py = anchorPoint?.y;
+  const anchor = useMemo(() => (px === undefined || py === undefined ? undefined : pointAnchor({ x: px, y: py })), [px, py]);
   const pending = useRef<(() => void) | null>(null);
   const afterClose = (run: () => void) => {
     pending.current = run;
@@ -97,13 +115,13 @@ export function Menu({ trigger, label, children, open, onOpenChange, anchorPoint
           align={anchorPoint ? 'start' : align}
           sideOffset={anchorPoint ? 0 : 4}
           collisionPadding={8}
-          anchor={anchorPoint ? pointAnchor(anchorPoint) : undefined}
+          anchor={anchor}
           data-sheet={sheet ? '' : undefined}
         >
           {/* data-nav-skip: the arrows are the menu's own here. Without it the
               app's "way back in" (nav.ts useNavEntry) took ↓ from an item, as
               focus in a portal belongs to no region, and moved it to the tree. */}
-          <BaseMenu.Popup className={'ui-menu' + (className ? ' ' + className : '')} aria-label={label} data-nav-skip="">
+          <BaseMenu.Popup className={'ui-menu' + (className ? ' ' + className : '')} aria-label={label} data-nav-skip="" finalFocus={returnFocus}>
             {children}
           </BaseMenu.Popup>
         </BaseMenu.Positioner>
