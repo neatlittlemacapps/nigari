@@ -1283,5 +1283,8 @@
   "Copies before upgrades": "Kopieën vóór upgrades",
   "Database upgrades": "Database-upgrades",
   "Before an update changes the database, nigari copies it into the data directory and keeps the newest three. The self-hosting guide says how to go back to one.": "Voordat een update de database wijzigt, kopieert nigari die naar de gegevensmap en bewaart de nieuwste drie. De handleiding voor zelf hosten legt uit hoe je naar een ervan teruggaat.",
-  "Step applied": "Stap toegepast"
+  "Step applied": "Stap toegepast",
+  "Account": "Account",
+  "Page actions": "Pagina-acties",
+  "Template actions": "Sjabloonacties"
 }

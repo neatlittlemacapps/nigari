@@ -94,6 +94,8 @@ export function scanFile(rel, text) {
 
   const visit = (node, ctx) => {
     let next = ctx;
+    // The button that opens a menu is passed as trigger={…}: it is not an item.
+    if (ts.isJsxAttribute(node) && node.name.getText() === 'trigger') next = { ...ctx, inMenu: false };
     if (ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node)) {
       const open = ts.isJsxElement(node) ? node.openingElement : node;
       const tag = open.tagName.getText();
@@ -199,6 +201,8 @@ function objectKeys(text, name) {
   if (!noIcon.problems.some((p) => p.includes('without an icon'))) failures.push('a raw <button> inside a <Menu> passed');
   const shared = sharedIcons(`const MENU_ICONS = { moveToTrash: Trash2, archive: Trash2 } satisfies Record<string, LucideIcon>;`);
   if (!shared.problems.some((p) => p.includes('both use Trash2'))) failures.push('two functions on one icon passed');
+  const trig = scanFile('selftest.tsx', `import { Menu } from '../ui/Menu';\nconst a = <Menu label="x" trigger={<button>More</button>}><MenuItem fn="duplicate">D</MenuItem></Menu>;`);
+  if (trig.problems.length) failures.push('the trigger button of a <Menu> was taken for an item');
   const noReason = scanFile('selftest.tsx', `import { Menu } from '../ui/Menu';\nconst a = <Menu label="x"><MenuValues>{x}</MenuValues></Menu>;`);
   if (!noReason.problems.some((p) => p.includes('needs reason'))) failures.push('a <MenuValues> without a reason passed');
   const hand = scanFile('selftest.tsx', `const a = <div className="menu ws-menu"><button>x</button></div>;`);

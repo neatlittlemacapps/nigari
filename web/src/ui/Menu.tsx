@@ -135,6 +135,7 @@ export function MenuCheckboxItem({
   checked,
   onCheckedChange,
   disabled,
+  closeOnClick = true,
   className,
   title,
 }: {
@@ -143,6 +144,9 @@ export function MenuCheckboxItem({
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   disabled?: boolean;
+  /** false for a setting worth flipping while watching it change (Notes
+   *  mode, the fonts): the menu stays open. */
+  closeOnClick?: boolean;
   className?: string;
   title?: string;
 }) {
@@ -152,7 +156,7 @@ export function MenuCheckboxItem({
       checked={checked}
       onCheckedChange={(c) => onCheckedChange(c)}
       disabled={disabled}
-      closeOnClick
+      closeOnClick={closeOnClick}
       title={title}
     >
       <MenuIcon fn={fn} />
