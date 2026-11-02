@@ -36,16 +36,39 @@ interface Props {
 // number, nothing at all for text, "—" for a URL, and for a date whatever
 // the browser drew, which in Safari is today's date in full colour: a row
 // looked as if it had a date it did not have.
-function EmptyValue({ show }: { show?: boolean }) {
-  return <span className="prop-empty">{show ? t('Empty') : null}</span>;
+// Outside the row page it is blank, or "—" where a type always showed one
+// (URL, select), so table and board cells keep their look.
+function EmptyValue({ show, dash }: { show?: boolean; dash?: boolean }) {
+  return <span className="prop-empty">{show ? t('Empty') : dash ? '—' : null}</span>;
+}
+
+// isUnset is "nothing stored": null, undefined, "" or an empty list. Not
+// cardLayout's isBlank, which also counts filler such as "n/a" or "-" as
+// blank so a board card can hide it; here that would print "Empty" over a
+// value somebody did type.
+function isUnset(v: unknown): boolean {
+  return v === null || v === undefined || v === '' || (Array.isArray(v) && v.length === 0);
 }
 
 // EmptyEdit is an empty field that opens its editor when clicked: a real
 // button, so it is reachable by keyboard and named for a screen reader, and
 // as wide as its cell, so a blank table cell is still something to click.
+// Its name contains what it shows ("Due: Empty"), so a voice-control user
+// who says "click Empty" reaches it; a blank table cell is "Edit: Due". The
+// click stays here, as the URL editor's does, so a clickable card or row
+// around it does not open too.
 function EmptyEdit({ name, show, onClick }: { name: string; show?: boolean; onClick: () => void }) {
   return (
-    <Button variant="ghost" size="sm" className="prop-empty-edit" aria-label={t('Edit') + ': ' + name} onClick={onClick}>
+    <Button
+      variant="ghost"
+      size="sm"
+      className="prop-empty-edit"
+      aria-label={show ? name + ': ' + t('Empty') : t('Edit') + ': ' + name}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+    >
       <EmptyValue show={show} />
     </Button>
   );
@@ -187,10 +210,8 @@ function SelectCell({
       <button ref={triggerRef} className="select-cell-value" onClick={() => setOpen((o) => !o)}>
         {vals.length ? (
           vals.map((id) => <span key={id}>{chip(options.find((o) => o.id === id), id)}</span>)
-        ) : showEmpty ? (
-          <EmptyValue show />
         ) : (
-          <span className="prop-empty">—</span>
+          <EmptyValue show={showEmpty} dash />
         )}
       </button>
       {open && pos && (
@@ -910,7 +931,7 @@ function UrlValue({ def, value, onChange, readOnly, compact, showEmpty }: Props)
   const restoreFocus = () => requestAnimationFrame(() => trigger.current?.focus());
   const chip = <><LinkIcon size={11} /><span>{label}</span></>;
   if (readOnly || !onChange || compact) {
-    if (!raw) return compact ? null : showEmpty ? <EmptyValue show /> : <span className="prop-empty">—</span>;
+    if (!raw) return compact ? null : <EmptyValue show={showEmpty} dash />;
     return href ? <a className="prop-url-chip" href={href} target="_blank" rel="noopener noreferrer" title={raw} onClick={(e) => e.stopPropagation()}>{chip}</a> : <span className="prop-url-chip">{chip}</span>;
   }
   if (editing) return <input className="prop-input" aria-label={def.name} autoFocus value={draft} onFocus={(e) => e.currentTarget.select()} onChange={(e) => setDraft(e.target.value)} onBlur={finish} onKeyDown={(e) => {
@@ -919,7 +940,7 @@ function UrlValue({ def, value, onChange, readOnly, compact, showEmpty }: Props)
     if (e.key === 'Escape') { e.preventDefault(); cancelled.current = true; setEditing(false); restoreFocus(); }
   }} />;
   return <div className="prop-url-value">
-    <button ref={trigger} type="button" className="prop-url-edit prop-url-chip" aria-label={t('Edit') + ': ' + def.name} title={raw || def.name} onClick={(e) => { e.stopPropagation(); begin(); }}>{raw ? chip : showEmpty ? <EmptyValue show /> : <span className="prop-empty">—</span>}</button>
+    <button ref={trigger} type="button" className="prop-url-edit prop-url-chip" aria-label={t('Edit') + ': ' + def.name} title={raw || def.name} onClick={(e) => { e.stopPropagation(); begin(); }}>{raw ? chip : <EmptyValue show={showEmpty} dash />}</button>
     {href && <a className="prop-url-open" href={href} target="_blank" rel="noopener noreferrer" aria-label={t('Open link')} title={t('Open link')} onClick={(e) => e.stopPropagation()}><ExternalLink size={13} /></a>}
   </div>;
 }
@@ -948,7 +969,18 @@ export default function PropertyValue({
   showEmpty,
 }: Props) {
   const [editing, setEditing] = useState(false);
+  // Set by the click on an empty date only, so the picker opens for that
+  // click and not every time a filled date gets focus (see openPicker).
+  const wantPicker = useRef(false);
   const ro = readOnly || !onChange;
+
+  // Read-only on the row page (a reader without write access): an empty
+  // field reads "Empty" whatever its type, as it does for someone who can
+  // edit. Computed types (formula, rollup, backrelation, last activity) keep
+  // their own "—", and a checkbox is never empty.
+  if (ro && showEmpty && isUnset(value) && ['text', 'number', 'select', 'multiselect', 'date', 'url', 'person', 'relation', 'checklist'].includes(def.type)) {
+    return <EmptyValue show />;
+  }
 
   switch (def.type) {
     case 'relation':
@@ -1072,9 +1104,11 @@ export default function PropertyValue({
       // A bar/ring number shows the visual until clicked, then edits the raw
       // value (like the text cell). A plain number stays an always-on input,
       // except an empty one on the row page, which says "Empty" until clicked
-      // instead of being a bare box (#269).
-      const emptyFace = showEmpty && display === 'plain' && (value === null || value === undefined || value === '');
-      if (emptyFace && !editing) {
+      // instead of being a bare box (#269). While the input has focus it is
+      // "editing", so deleting the digits of 12 to type 30 does not swap the
+      // input for the Empty button under the cursor.
+      // An empty bar or ring has nothing to draw, so it says Empty too.
+      if (showEmpty && isUnset(value) && !editing) {
         return (
           <EmptyEdit name={def.name} show onClick={() => setEditing(true)} />
         );
@@ -1093,7 +1127,8 @@ export default function PropertyValue({
           autoFocus={display !== 'plain' || editing}
           value={(value as number) ?? ''}
           onChange={(e) => onChange!(e.target.value === '' ? null : Number(e.target.value))}
-          onBlur={display !== 'plain' || editing ? () => setEditing(false) : undefined}
+          onFocus={() => setEditing(true)}
+          onBlur={() => setEditing(false)}
         />
       );
     }
@@ -1108,10 +1143,20 @@ export default function PropertyValue({
       // <input type="date"> draws whatever the browser likes, and Safari
       // draws today's date (#269). The button opens the input, which opens
       // its picker; leaving it empty turns it back into the button. Clearing
-      // a date saves null, as every other empty field does, not "".
+      // a date saves null, as every other empty field does, not "". Focus
+      // counts as editing, so clearing one part of a filled date to retype it
+      // keeps the input. The native picker is not part of the page, so opening
+      // it does not blur the input.
       if (!value && !editing) {
         return (
-          <EmptyEdit name={def.name} show={showEmpty} onClick={() => setEditing(true)} />
+          <EmptyEdit
+            name={def.name}
+            show={showEmpty}
+            onClick={() => {
+              wantPicker.current = true;
+              setEditing(true);
+            }}
+          />
         );
       }
       return (
@@ -1120,9 +1165,15 @@ export default function PropertyValue({
           type="date"
           aria-label={def.name}
           autoFocus={editing}
-          ref={editing ? openPicker : undefined}
+          ref={(el) => {
+            if (el && wantPicker.current) {
+              wantPicker.current = false;
+              openPicker(el);
+            }
+          }}
           value={(value as string) || ''}
           onChange={(e) => onChange!(e.target.value || null)}
+          onFocus={() => setEditing(true)}
           onBlur={() => setEditing(false)}
         />
       );

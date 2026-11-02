@@ -42,12 +42,25 @@ await withFixture(async ({ page, api, base, path }) => {
   assert.equal((await field('Link').innerText()).trim(), 'Add link');
 
   // One click opens the date input, focused; a date typed in is saved.
-  await field('Due').getByRole('button', { name: 'Edit: Due' }).click();
+  await field('Due').getByRole('button', { name: 'Due: Empty' }).click();
   const input = field('Due').locator('input[type="date"]');
   await input.waitFor();
   assert.equal(await input.evaluate((el) => el === document.activeElement), true, 'the input must take focus');
   await input.fill('2026-07-18');
   await eventually(async () => (await due()) === '2026-07-18');
+
+  // Clearing a filled date to retype it keeps the input under the cursor
+  // (the review of this fix found it swapped for the Empty button mid-edit).
+  // After a reload the date was filled from the start, not opened through
+  // the Empty button, which is the case that broke.
+  await page.reload();
+  await input.waitFor();
+  await input.focus();
+  await input.fill('');
+  await eventually(async () => (await due()) == null);
+  assert.equal(await input.count(), 1, 'the input must stay while it has focus');
+  await input.fill('2026-07-19');
+  await eventually(async () => (await due()) === '2026-07-19');
 
   // Clearing it stores nothing (null), not "", and the field reads Empty again.
   await input.fill('');
@@ -57,16 +70,28 @@ await withFixture(async ({ page, api, base, path }) => {
   assert.equal(await props.locator('input[type="date"]').count(), 0);
 
   // Clicked and left without a date: back to Empty, nothing written.
-  await field('Due').getByRole('button', { name: 'Edit: Due' }).click();
+  await field('Due').getByRole('button', { name: 'Due: Empty' }).click();
   await field('Due').locator('input[type="date"]').waitFor();
   await page.locator('.row-prop-label', { hasText: 'Note' }).click();
   await eventually(async () => (await field('Due').innerText()).trim() === 'Empty');
   assert.equal(await due() ?? null, null, 'leaving an empty date must write nothing');
 
   // An empty number opens its input on a click, and a typed number saves.
-  await field('Count').getByRole('button', { name: 'Edit: Count' }).click();
-  await field('Count').locator('input[type="number"]').fill('7');
-  await eventually(async () => (await api('GET', `/api/pages/${row.id}`)).props?.count === 7);
+  const count = async () => (await api('GET', `/api/pages/${row.id}`)).props?.count;
+  await field('Count').getByRole('button', { name: 'Count: Empty' }).click();
+  const number = field('Count').locator('input[type="number"]');
+  await number.fill('7');
+  await eventually(async () => (await count()) === 7);
+  // Deleting the digits to type others keeps the input too, again for a
+  // number that was filled before the page opened.
+  await page.reload();
+  await number.waitFor();
+  await number.focus();
+  await number.fill('');
+  await eventually(async () => (await count()) == null);
+  assert.equal(await number.count(), 1, 'the number input must stay while it has focus');
+  await number.fill('30');
+  await eventually(async () => (await count()) === 30);
 
   // The table: an empty date cell is blank, not a date input and not the
   // word "Empty", and is still something to click.
