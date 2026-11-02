@@ -440,7 +440,7 @@
         "web/src/components/ChartSettings.tsx": "4f8c7aeacbc8",
         "web/src/components/ChartSettings.css": "16a9584f65dc",
         "web/src/chartLayout.ts": "1035a3e068ac",
-        "web/src/chartTheme.ts": "e6b7ddf90e54",
+        "web/src/chartTheme.ts": "d81cde6a392f",
         "web/src/tokens.css": "febe0adc0e97",
         "web/src/theme.css": "d9786b1296b8"
       }

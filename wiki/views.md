@@ -396,8 +396,10 @@ A donut's total is real text in its middle.
 
 **Colours** come from the design tokens and are readable in light and dark. With
 **Automatic**, a select's own option colours are used where it has them,
-otherwise a set of twelve that all reach a 3:1 contrast with the page. **No
-value** and **Other** are grey.
+otherwise a set of twelve that all reach a 3:1 contrast with the page. A group
+without an option colour (an option with an older or imported colour, or no
+select at all) never takes a colour that another group in the same chart already
+shows, as long as one of the twelve is left. **No value** and **Other** are grey.
 
 **In a document** a chart keeps the document's own filters, like any embedded
 view (see [Collections inside documents](collections.md#collections-inside-documents)).
