@@ -14,7 +14,7 @@ export const DRAG_HANDLE_FUNCTIONS: Record<string /* BlockNote drag_handle key *
 export function MenuIcon(props: { fn: MenuFunction; filled?: boolean }): JSX.Element; // aria-hidden, menu.icon-size
 ```
 
-## `web/src/ui/Menu.tsx` (on `@base-ui/react/menu` and `/context-menu`)
+## `web/src/ui/Menu.tsx` (on `@base-ui/react/menu`)
 
 ```tsx
 // A menu opened from a button.
@@ -30,17 +30,15 @@ export function MenuIcon(props: { fn: MenuFunction; filled?: boolean }): JSX.Ele
   <MenuItem fn="moveToTrash" danger chord={chordFor('page.trash')} onClick={…}>{t('Move to trash')}</MenuItem>
 </Menu>
 
-// The same menu on a right-click.
-<ContextMenu label={t('Page')} menu={<>…the same items…</>}>
-  <div className="tree-item">…</div>
-</ContextMenu>
+// The same menu on a right-click: one item list, one open state (R13).
+<div className="tree-item" onContextMenu={(e) => { e.preventDefault(); setMenuFor(id); setPoint({ x: e.clientX, y: e.clientY }); }}>…</div>
+<Menu open={menuFor === id} onOpenChange={(o) => setMenuFor(o ? id : null)} anchorPoint={point} trigger={…⋯ button…} label={t('Page')}>…</Menu>
 ```
 
 | Part | Props | Renders |
 |------|-------|---------|
-| `Menu` | `trigger` (element), `label` (the popup's name), `side`/`align`, optional `open`/`onOpenChange` | Root, Trigger (`render` = trigger), Portal, Positioner (`collisionPadding` 8), Popup `role="menu"` |
-| `ContextMenu` | `label`, `menu` (items), `children` (the area) | ContextMenu Root/Trigger around `children`, same Popup |
-| `MenuItem` | `fn` (required `MenuFunction` literal, or a ternary of two), `onClick`, `danger?`, `disabled?`, `filled?`, `chord?`, `closeOnClick?` (default true) | `Menu.Item` with `MenuIcon`, label, `<kbd class="menu-chord">` |
+| `Menu` | `trigger` (element), `label` (the popup's name), `side`/`align`, optional `open`/`onOpenChange`, optional `anchorPoint` {x, y} (a right-click), optional `narrow="sheet"` (a bottom sheet at or below `SHEET_MAX_WIDTH`) | Root, Trigger (`render` = trigger), Portal, Positioner (`collisionPadding` 8; anchored to the point when given), Popup `role="menu"` |
+| `MenuItem` | `fn` (required `MenuFunction` literal, or a ternary of two), `onClick`, `opensDialog?` (closes the menu, then runs `onClick` on the next frame, R13), `danger?`, `disabled?`, `filled?`, `chord?`, `closeOnClick?` (default true) | `Menu.Item` with `MenuIcon`, label, `<kbd class="menu-chord">` |
 | `MenuCheckboxItem` | `fn`, `checked`, `onCheckedChange` | `Menu.CheckboxItem`, icon + tick |
 | `MenuSubmenu` | `fn`, `label`, children | `SubmenuRoot` + `SubmenuTrigger` (icon + label + chevron) + its own Popup |
 | `MenuValues` | `reason` (required), children | `Menu.Group`; the check skips its items |

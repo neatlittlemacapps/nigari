@@ -12,8 +12,8 @@ of the plan.
   `newCollection`; `delete`, not `deleteView`).
 - **Icon**: a Lucide React component, or one of the composites in
   `menuIcons.ts` (R6). Unique across `MENU_ICONS` (the check, rule 2).
-- **Menu**: a `ui/Menu` (opened from a button) or `ui/ContextMenu` (opened
-  by a right-click), on Base UI (research R10). No other menus exist once
+- **Menu**: a `ui/Menu`, opened from a button or by a right-click at the
+  pointer, on Base UI (research R10, R13). No other menus exist once
   pull request 2 lands.
 - **Menu item**: a `<MenuItem fn …>`, `<MenuCheckboxItem fn …>` or
   `<MenuSubmenu fn …>` in a component. Many items can

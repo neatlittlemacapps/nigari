@@ -232,7 +232,7 @@ in `Editor.tsx`), `codegraph callers menuStyleFor` (2, `CollectionView`),
 (the Base UI pattern already in `web/src/ui/`).
 
 **Decision**: `web/src/ui/Menu.tsx` wraps `@base-ui/react/menu` (1.9.0,
-already a dependency) and `@base-ui/react/context-menu` the way
+already a dependency; `context-menu` dropped in R13) the way
 `ui/Popover.tsx` wraps its popover: Root, Trigger (`render` = the existing
 button), Portal, Positioner (`collisionPadding` 8, layer `layer.dropdown`),
 Popup. Parts exported:
@@ -240,7 +240,7 @@ Popup. Parts exported:
 | Part | Base UI | Used for |
 |------|---------|----------|
 | `Menu` (`trigger`, `label`, `side`, `align`, optional `open`/`onOpenChange`) | `Menu.Root` … `Popup` | every button-opened menu |
-| `ContextMenu` (`children` = the area, `label`) | `ContextMenu.Root/Trigger` + the same popup | right-click on a sidebar row, a view tab, a template (FR-013) |
+| ~~`ContextMenu`~~ | dropped in R13: a right-click opens the same `Menu` at the pointer (`anchorPoint`) | right-click on a sidebar row, a view tab, a template, a board card (FR-013) |
 | `MenuItem` (`fn`, …) | `Menu.Item` | every action |
 | `MenuCheckboxItem` (`fn`, `checked`) | `Menu.CheckboxItem` | Full width, Notes mode, nigari fonts, Open rows in new tab |
 | `MenuSubmenu` (`fn`, `label`) | `Menu.SubmenuRoot/SubmenuTrigger` | Move to workspace (today an inline `menu-sub` list) |
@@ -248,7 +248,8 @@ Popup. Parts exported:
 | `MenuRadioGroup` + `MenuRadioItem` | `Menu.RadioGroup/RadioItem` | **Open pages in** (replaces `ViewOpenMenu`'s native radios, as its own comment expected) |
 | `MenuLabel`, `MenuSeparator` | `Menu.GroupLabel`, `Menu.Separator` | headings and lines |
 
-What goes away: `AnchoredMenu.tsx` and `anchoredMenu.ts` (`menuStyleFor`).
+What goes away (corrected in R13: `anchoredMenu.ts` and its check stay):
+`AnchoredMenu.tsx` and `menuStyleFor`.
 The Positioner places every menu in a portal, on screen, which is what both
 were written to do (#21 and the phone toolbar). `check-anchoredmenu.mjs`
 asserted `anchoredMenu.ts`'s placement, so it goes with the module. The
@@ -309,3 +310,59 @@ covers User Story 4 on each menu.
 second can start as soon as the first's component is merged. The sidebar goes
 first: it has the most menus, and the most bugs were fixed there before (#20,
 #21), so it teaches the most.
+
+## R13. Three more graph rounds before tasks (2026-11-02)
+
+Run at the owner's request, on the riskiest parts of option B. Each one
+changed the plan.
+
+**1. The database menus.** `codegraph explore` over `CollectionView`'s menu
+state, then `codegraph callers anchoredMenuStyle`: 3 callers, `menuStyleFor`,
+**`ColumnsControl`** and `check-anchoredmenu.mjs`. Reading `anchoredMenu.ts`
+then showed what the graph pointed at: at or below 640 px
+(`SHEET_MAX_WIDTH`) a toolbar menu is **a sheet along the bottom edge**, full
+width, where the thumb reaches it. Base UI's positioner would have dropped
+that on phones, where the owner works. So:
+- `ui/Menu` keeps the rule: at or below `SHEET_MAX_WIDTH`, a menu opened
+  with `narrow="sheet"` (the toolbar menus 8, 9, 10, 12) is drawn as that
+  bottom sheet. The width comes from `anchoredMenu.ts`, so the rule stays in
+  one place.
+- `anchoredMenu.ts` **stays**: `ColumnsControl` (a panel of checkboxes, not
+  a menu; spec 001's popover batch) still uses `anchoredMenuStyle`. Only
+  `menuStyleFor` goes.
+- `check-anchoredmenu.mjs` **stays** and keeps checking the sheet rule. No check
+  is deleted any more, so the Complexity Tracking entry goes.
+
+**2. Dialogs opened from menu items.** `codegraph explore` over
+`promptText`, `useExclusiveModal` and the menu handlers that open dialogs
+(`renameView`, `WorkspaceSettings`, the account menu's modals). Reading
+`modal.ts`: a dialog returns focus to `focusBefore()`, the element focused
+when it opened. If that element is gone, it falls back to the most recent
+connected element outside a modal (`recentFocus`). With Base UI, the element
+focused when the dialog opens is the menu item, inside a portal that unmounts
+as the menu closes. So `focusBefore()` skips it and finds the trigger, which
+is what User Story 4 scenario 4 wants. But Base UI also moves focus to the
+trigger as the menu closes, and the dialog's autofocus runs at the same time.
+Decision: `MenuItem` that opens a dialog closes the menu first and opens the
+dialog on the next frame (`onSelect` → close → `requestAnimationFrame`), so
+the two never race; `dialog-escape.mjs` (account menu dialogs) and the new
+`menu-keyboard.mjs` (Rename view, Workspace settings) check where focus lands.
+`.claude/rules/frontend.md` says "Not in the layer yet: menus" and is
+updated when `ui/Menu` ships.
+
+**3. Right-click.** `codegraph explore` over the `onContextMenu` handlers,
+then reading the six sites: `Sidebar.tsx` 223 (search results), 690 (tree
+row), 1555 (template row); `CollectionView.tsx` 846 (view tab), 2285 (board
+card), 882 (the tab menu's backdrop). They found:
+- The sidebar's right-click and its ⋯ button open **the same menu**, held in
+  one shared state (`TreeCtx.setMenuFor`, which also closes the add menu), so
+  only one menu is open in the tree at a time. A separate Base UI
+  `ContextMenu` would duplicate the item list and the open state. Decision:
+  no `ContextMenu` part. `Menu` takes `open`/`onOpenChange` and an optional
+  `anchorPoint` ({x, y}); a right-click sets both, and the ⋯ button opens the
+  same menu under itself. One list of items per menu, as today.
+- The view tab's right-click is refused inside an embedded collection
+  (`if (embed) return`) and stores the tab it was made on (#24). Both are kept:
+  the guard stays in the handler, and the menu's state stays per tab.
+- The board card has a right-click too (menu 11), which R1 had not listed as
+  one. Same treatment.

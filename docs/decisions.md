@@ -11,9 +11,10 @@ entries are not edited away.
 
 **Decision** (owner: "B"): spec 010 also does the menus part of spec 001's next batch.
 Every menu except the editor library's two becomes `ui/Menu` (Base UI `Menu` and
-`ContextMenu`), so every menu gets arrow keys, type-to-jump, Escape and focus return in
-one place. `AnchoredMenu`, `anchoredMenu.ts` and `check-anchoredmenu.mjs` are removed; the
-bugs they fixed (#21, the phone toolbar) stay covered by two browser specs. Two pull
+a right-click opening the same menu at the pointer), so every menu gets arrow keys,
+type-to-jump, Escape and focus return in one place. `AnchoredMenu` and `menuStyleFor` are
+removed. `anchoredMenu.ts` and its check stay: on a phone the toolbar menus remain bottom
+sheets, and `ColumnsControl` still uses the module (found by CodeGraph, research R13). Two pull
 requests: the sidebar, page and account menus first, then the database menus.
 `specs/010-menu-icons/research.md` R10–R12.
 
