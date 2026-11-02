@@ -170,6 +170,9 @@
 }
 .ui-menu-positioner[data-sheet] .ui-menu {
   width: 100%;
+  /* A menu's own max-width (the templates menu's 320px) must not narrow the
+     sheet: on a phone every toolbar menu is the full width (audit, part 2). */
+  max-width: none;
   max-height: 72vh;
 }
 
