@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import type { FontPref } from '../App';
 import type { ApiToken, AuditEntry, User, Workspace } from '../types';
@@ -9,10 +9,15 @@ import { useExclusiveModal } from '../modal';
 import { Menu, MenuCheckboxItem, MenuItem, MenuSeparator } from '../ui/Menu';
 import { formatDay, formatMoment } from '../format';
 import { plural, t } from '../i18n';
-import { AdminSettingsModal, TwoFAModal, CalendarSubModal } from './AdminSettings';
 import { Key, Bot, Server, User as UserIcon, Undo2, Keyboard } from 'lucide-react';
 import { chordFor } from '../keys';
-import { LanguageTimeModal } from './LanguageTime';
+// Loaded when first opened, not with the app: the instance settings alone are
+// over a thousand lines that most people never open, and the main bundle has
+// a cap (check-bundle.mjs). Spec 010's menu component needed the room.
+const AdminSettingsModal = lazy(() => import('./AdminSettings').then((m) => ({ default: m.AdminSettingsModal })));
+const TwoFAModal = lazy(() => import('./AdminSettings').then((m) => ({ default: m.TwoFAModal })));
+const CalendarSubModal = lazy(() => import('./AdminSettings').then((m) => ({ default: m.CalendarSubModal })));
+const LanguageTimeModal = lazy(() => import('./LanguageTime').then((m) => ({ default: m.LanguageTimeModal })));
 import { RowOpenModal } from './RowOpenSettings';
 
 export function Avatar({ user, size = 22 }: { user: User; size?: number }) {
@@ -339,13 +344,17 @@ export default function UserMenu({ user, onLogout, onUserChanged, onOpenAgents, 
       {modal === 'users' && <UsersModal me={user} onClose={() => setModal(null)} />}
       {modal === 'tokens' && <TokensModal onClose={() => setModal(null)} />}
       {modal === 'activity' && <ActivityModal onClose={() => setModal(null)} />}
-      {modal === 'twofa' && <TwoFAModal onClose={() => setModal(null)} />}
-      {modal === 'calendar' && <CalendarSubModal onClose={() => setModal(null)} />}
-      {modal === 'langtime' && <LanguageTimeModal onClose={() => setModal(null)} />}
+      <Suspense fallback={null}>
+        {modal === 'twofa' && <TwoFAModal onClose={() => setModal(null)} />}
+        {modal === 'calendar' && <CalendarSubModal onClose={() => setModal(null)} />}
+        {modal === 'langtime' && <LanguageTimeModal onClose={() => setModal(null)} />}
+      </Suspense>
       {modal === 'rowopen' && <RowOpenModal onClose={() => setModal(null)} />}
       {/* The menu item that opened it is gone by then: focus returns to the
           menu's own button. */}
-      {modal === 'settings' && <AdminSettingsModal onClose={() => setModal(null)} returnFocus={menuButton} />}
+      <Suspense fallback={null}>
+        {modal === 'settings' && <AdminSettingsModal onClose={() => setModal(null)} returnFocus={menuButton} />}
+      </Suspense>
     </div>
   );
 }
