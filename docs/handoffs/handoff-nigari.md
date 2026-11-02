@@ -169,7 +169,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 96 | (self) Main chunk 1.4 KB over the bundle cap | Lazy-load dialogs; never raise the cap to pass |
 | 97 | (self) Said npm was blocked by the environment's network policy | Environment is "full access" (user); `NO_PROXY`/`npm_config_noproxy` list `registry.npmjs.org` and `proxy.golang.org` for direct access, which has no DNS here. Override: `export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1` |
 | 98 | (self) Ran `board-sync.yml` by `workflow_dispatch` on the branch to read priorities | User: "The GitHub action should tackle this, not you" (rule 25) |
-| 99 | (self) Wrote "not you" fix by me reading the log; user asked "can't you find a job … that mirrors project priority to a field tag?" | Mirror in the Action (`priority:N` labels) |
+| 99 | (self) Proposed reading priorities from the board-sync run log (option A) | User: "can't you find a job or something that mirrors project priority to a field tag?" → the Action mirrors them onto `priority:N` labels |
 | 100 | (self) First chart-colour fix compared tokens by `getComputedStyle` at render time (found by review) | One name per colour: options use the colourful palette's numbered tokens; compare names; `check-chartcolours.mjs` guards it |
 | 101 | (self) Empty date/number input swapped for the Empty button while editing a filled value (found by review) | Focus counts as editing; test reloads so the field starts filled (mutation-checked) |
 | 102 | (self) Started #278 without the `in-progress` label | Label when starting (rule 8) |
