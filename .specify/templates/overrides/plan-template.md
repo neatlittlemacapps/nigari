@@ -35,6 +35,21 @@ not ready for `/speckit-tasks`.
 
 **Scale/Scope**: [workspaces, pages, rows this feature must handle]
 
+## CodeGraph
+
+<!--
+  REQUIRED (check-surfaces.mjs, plans dated 2026-11-03 or later). Before the
+  inventory and the Surfaces table, ask the code graph about the code this
+  feature touches (.claude/rules/codegraph.md): `codegraph explore "<symbols or
+  question>"`, `codegraph impact <symbol>`, `codegraph callers <symbol>`. Run
+  `codegraph status` first (sync if it says so). List the queries you ran and
+  what they found: callers and blast radius, a second door (REST and MCP), a
+  surface you would have missed, the tests that reach the code or the lack of
+  them. Where the graph found nothing new, say so.
+-->
+
+- `[query]`: [what it found]
+
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*

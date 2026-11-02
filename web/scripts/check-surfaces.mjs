@@ -12,6 +12,11 @@
 //      has a row for it in its Surfaces table.
 //   2. No such row is empty, TBD or a placeholder: it says what changes, or
 //      "No change: <why>".
+//   3. A plan dated on or after CODEGRAPH_SINCE has a "## CodeGraph" section
+//      listing the graph queries it ran and what they found. Spec 010's plan
+//      was first written from text search and missed spec 001's planned menu
+//      batch and the raw-button budget, which one graph query showed; the
+//      owner asked for the graph in every spec and plan (2026-11-02).
 //
 // Plans written before a surface existed are not asked about it: a plan is a
 // record of what was considered at the time, not a document to keep current.
@@ -19,6 +24,9 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+// Plans dated before this were written before the rule (see 3 above).
+const CODEGRAPH_SINCE = '2026-11-03';
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -68,6 +76,15 @@ for (const dir of existsSync(specsDir) ? readdirSync(specsDir) : []) {
     continue;
   }
   plans++;
+  if (date >= CODEGRAPH_SINCE) {
+    const section = md.match(/^## CodeGraph\s*\n([\s\S]*?)(?=^## )/m)?.[1] ?? null;
+    const body = section?.replace(/<!--[\s\S]*?-->/g, '').trim() ?? '';
+    if (section === null) {
+      failures.push(`specs/${dir}/plan.md: no "## CodeGraph" section — list the codegraph queries you ran and what they found (.claude/rules/codegraph.md)`);
+    } else if (!body || /\[query\]|\[what it found\]/.test(body)) {
+      failures.push(`specs/${dir}/plan.md: the CodeGraph section is still the placeholder — list the queries you ran and what they found`);
+    }
+  }
   const rows = tableRows(md, /^## Surfaces/m) ?? [];
   for (const s of registry.filter((s) => s.since <= date)) {
     const row = rows.find(([cell]) => cell.startsWith(s.name));
