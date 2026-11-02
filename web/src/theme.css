@@ -159,8 +159,6 @@
    the document itself is never glass. */
 .menu,
 .fs-popover,
-.view-tab-menu,
-.view-add-menu,
 .relation-menu {
   background: var(--glass);
   -webkit-backdrop-filter: blur(18px) saturate(150%);

@@ -85,27 +85,27 @@ description: "Tasks for every menu item has an icon, and an icon means one thing
 
 **Independent Test**: quickstart §2–§4 on the view tab right-click, view options, templates beside New, a template's ⋯, a board card's menu (button and right-click), add view, the database share popover.
 
-- [ ] T024 [US1] [ui] `CollectionView.tsx` view tab right-click (`CollectionView.tsx:846`) and view options "…": one `ui/Menu` per tab opened at the pointer, keeping the `embed` guard and the per-tab state (#24); items `rename` (`opensDialog`), `moveLeft`, `moveRight`, `delete`; view options holds **Open pages in** (menus 7, 8)
-- [ ] T025 [US4] [ui] `ViewOpenMenu.tsx` as `MenuRadioGroup`/`MenuRadioItem` inside the view options menu, hidden for forms as today
-- [ ] T026 [US1] [ui] `CollectionView.tsx` templates beside **New** and one template's ⋯: `newPage` (Empty row), `MenuValues` of templates (each with its own page icon), and `edit`, `duplicate`, `moveToTrash` (menus 9, 10); `narrow="sheet"`
-- [ ] T027 [US1] [ui] `CollectionView.tsx` board card menu, by its button and its right-click (`CollectionView.tsx:2285`): `open`, `openInNewTab`, `MenuValues` of columns under "Move to", `moveToTrash` (menu 11)
-- [ ] T028 [US1] [ui] `CollectionView.tsx` add view **+**: `MenuValues` of the eight view types with their tab icons (research R1) (menu 12); `narrow="sheet"`
-- [ ] T029 [US1] [ui] `CollectionView.tsx` database share popover: **Copy link** gets `copyLink` (menu 15)
-- [ ] T030 [US1] [ui] Remove `menuStyleFor` from `web/src/anchoredMenu.ts` and its import; `anchoredMenuStyle`, `SHEET_MAX_WIDTH` and `check-anchoredmenu.mjs` stay for `ColumnsControl` and the sheet rule (research R13) (depends on T024–T028)
-- [ ] T031 [P] [US1] [i18n] Accessible names for the menus of T024–T029 in `de.json`, `es.json`, `nl.json`
-- [ ] T032 [US3] [test] `check-menu-icons.mjs`: switch `REPORT_ONLY` off, so rules 1 and 3 fail; `npm run check` green (depends on T024–T030)
-- [ ] T033 [US1] [test] Update `web/tests/database-toolbar-menus.mjs` and the `chart-*.mjs` specs to roles, keeping the phone assertions (wholly on screen, takes a tap at its centre; now as a sheet at phone width)
-- [ ] T034 [US4] [test] Extend `web/tests/menu-keyboard.mjs` and `menu-icons.mjs` to menus 7–12: keyboard, Rename view returning focus to the tab, the radio group, the board card's right-click
+- [x] T024 [US1] [ui] `CollectionView.tsx` view tab right-click (`CollectionView.tsx:846`) and view options "…": one `ui/Menu` per tab opened at the pointer, keeping the `embed` guard and the per-tab state (#24); items `rename` (`opensDialog`), `moveLeft`, `moveRight`, `delete`; view options holds **Open pages in** (menus 7, 8)
+- [x] T025 [US4] [ui] `ViewOpenMenu.tsx` as `MenuRadioGroup`/`MenuRadioItem` inside the view options menu, hidden for forms as today
+- [x] T026 [US1] [ui] `CollectionView.tsx` templates beside **New** and one template's ⋯: `newPage` (Empty row), `MenuValues` of templates (each with its own page icon), and `edit`, `duplicate`, `moveToTrash` (menus 9, 10); `narrow="sheet"`
+- [x] T027 [US1] [ui] `CollectionView.tsx` board card menu, by its button and its right-click (`CollectionView.tsx:2285`): `open`, `openInNewTab`, `MenuValues` of columns under "Move to", `moveToTrash` (menu 11)
+- [x] T028 [US1] [ui] `CollectionView.tsx` add view **+**: `MenuValues` of the eight view types with their tab icons (research R1) (menu 12); `narrow="sheet"`
+- [x] T029 [US1] [ui] `CollectionView.tsx` database share popover: **Copy link** gets `copyLink` (menu 15)
+- [x] T030 [US1] [ui] Remove `menuStyleFor` from `web/src/anchoredMenu.ts` and its import; `anchoredMenuStyle`, `SHEET_MAX_WIDTH` and `check-anchoredmenu.mjs` stay for `ColumnsControl` and the sheet rule (research R13) (depends on T024–T028)
+- [x] T031 [P] [US1] [i18n] Accessible names for the menus of T024–T029 in `de.json`, `es.json`, `nl.json`
+- [x] T032 [US3] [test] `check-menu-icons.mjs`: switch `REPORT_ONLY` off, so rules 1 and 3 fail; `npm run check` green (depends on T024–T030)
+- [x] T033 [US1] [test] Update `web/tests/database-toolbar-menus.mjs` and the `chart-*.mjs` specs to roles, keeping the phone assertions (wholly on screen, takes a tap at its centre; now as a sheet at phone width)
+- [x] T034 [US4] [test] Extend `web/tests/menu-keyboard.mjs` and `menu-icons.mjs` to menus 7–12: keyboard, Rename view returning focus to the tab, the radio group, the board card's right-click
 
 ---
 
 ## Phase 7: Polish and cross-cutting (PR 2)
 
-- [ ] T035 [ui] `rawButtons` in `web/tokens/budgets.json` lowered to the count measured after PR 2; bundle gzip measured
-- [ ] T036 [P] [wiki] Retake the screenshots `check-wiki.mjs` lists as stale with `node web/scripts/shoot-wiki.mjs <id>`; if the wiki lists keys per control, add the menu keys
-- [ ] T037 [P] [ui] `.specify/memory/surfaces.md` **Menu icons** row checked against what shipped (wording only if it differs)
-- [ ] T038 [test] SC-004 by hand (quickstart §5) and `ux-ui-audit` in light and dark at desktop and phone width on the page, row and view menus; findings fixed or filed
-- [ ] T039 [test] `/code-review` on each PR's diff before it is offered; findings fixed or filed
+- [x] T035 [ui] `rawButtons` in `web/tokens/budgets.json` lowered to the count measured after PR 2; bundle gzip measured
+- [x] T036 [P] [wiki] Retake the screenshots `check-wiki.mjs` lists as stale with `node web/scripts/shoot-wiki.mjs <id>`; if the wiki lists keys per control, add the menu keys
+- [x] T037 [P] [ui] `.specify/memory/surfaces.md` **Menu icons** row checked against what shipped (wording only if it differs)
+- [x] T038 [test] SC-004 by hand (quickstart §5) and `ux-ui-audit` in light and dark at desktop and phone width on the page, row and view menus; findings fixed or filed
+- [x] T039 [test] `/code-review` on each PR's diff before it is offered; findings fixed or filed
 
 ---
 

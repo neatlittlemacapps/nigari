@@ -17,7 +17,7 @@ await withFixture(async ({ page, api, base, workspace }) => {
   const addChart = async (id) => {
     await page.goto(`${base}/p/${id}`);
     await page.getByTitle('Add view').click();
-    await page.locator('.view-add-menu').getByRole('button', { name: 'Chart', exact: true }).click();
+    await page.getByRole('menu', { name: 'Add view' }).getByRole('menuitem', { name: 'Chart', exact: true }).click();
   };
   const figure = page.locator('figure.chart');
   const settings = page.locator('.chart-settings');

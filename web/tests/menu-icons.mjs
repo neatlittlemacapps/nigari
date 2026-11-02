@@ -8,7 +8,7 @@ import { withFixture } from './fixture.mjs';
 // a person actually sees, menu by menu: one hidden icon per item, the
 // accessible name is the label alone, the same function shows the same icon
 // in two menus, and a toggle keeps its icon.
-await withFixture(async ({ page, api, base, workspace }) => {
+await withFixture(async ({ page, api, base, workspace, path }) => {
   page.setDefaultTimeout(15000);
 
   // Each item: exactly one icon, hidden from assistive technology, and an
@@ -74,6 +74,15 @@ await withFixture(async ({ page, api, base, workspace }) => {
   await page.locator('.user-menu-btn').click();
   await icons(page.getByRole('menu', { name: 'Account' }), 'account menu');
   await page.keyboard.press('Escape');
+
+  // The database's view options, and a template's actions under the
+  // templates menu (spec 010, part 2).
+  await page.goto(`${base}/p/${path.split("/").pop()}`);
+  await page.getByRole('button', { name: 'View options', exact: true }).click();
+  const viewIcons = await icons(page.getByRole('menu', { name: 'View options' }), 'view options');
+  assert.notEqual(viewIcons.get('Remove view'), trash, 'Remove view shares the bin with Move to trash');
+  await page.keyboard.press('Escape');
+  await page.goto(`${base}/p/${doc.id}`);
 
   // No two different functions share a picture inside one menu.
   for (const [what, map] of [['page menu', pageIcons], ['page "…"', moreIcons]]) {

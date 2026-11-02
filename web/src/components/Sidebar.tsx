@@ -107,8 +107,10 @@ export interface TreeCtx {
   dropTarget: DropTarget | null;
   menuFor: string | null;
   // Where a right-click opened the ⋯ menu; null when it opens under the ⋯.
-  menuPoint: MenuPoint | null;
-  setMenuPoint: (p: MenuPoint | null) => void;
+  // Kept with the row it belongs to after the menu closes, so the exit
+  // animation stays where the menu was instead of jumping to the ⋯.
+  menuPoint: (MenuPoint & { id: string }) | null;
+  setMenuPoint: (p: (MenuPoint & { id: string }) | null) => void;
   // The row a right-click opened the menu on: focus returns there.
   menuReturn: React.MutableRefObject<HTMLElement | null>;
   onNavigate: (id: string) => void;
@@ -550,7 +552,7 @@ export default function Sidebar({
 }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [menuFor, setMenuFor] = useState<string | null>(null);
-  const [menuPoint, setMenuPoint] = useState<MenuPoint | null>(null);
+  const [menuPoint, setMenuPoint] = useState<(MenuPoint & { id: string }) | null>(null);
   const menuReturn = useRef<HTMLElement | null>(null);
   const [addFor, setAddFor] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
@@ -650,7 +652,7 @@ export default function Sidebar({
   // its ⋯ or a right-click at the pointer (#20), and closed like every other
   // menu by a click elsewhere or Escape (ui/Menu).
   const [tplMenuFor, setTplMenuFor] = useState<string | null>(null);
-  const [tplPoint, setTplPoint] = useState<MenuPoint | null>(null);
+  const [tplPoint, setTplPoint] = useState<(MenuPoint & { id: string }) | null>(null);
   const tplReturn = useRef<HTMLElement | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   // 't' for a page from a template, under the same single-letter rule as the
@@ -1311,7 +1313,8 @@ export default function Sidebar({
                 onContextMenu={(e) => {
                   e.preventDefault();
                   tplReturn.current = e.currentTarget;
-                  setTplPoint(e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : null);
+                  const box = e.currentTarget.getBoundingClientRect();
+                  setTplPoint(e.clientX || e.clientY ? { id: p.id, x: e.clientX, y: e.clientY } : { id: p.id, x: box.left, y: box.bottom });
                   setTplMenuFor(p.id);
                 }}
               >
@@ -1328,7 +1331,7 @@ export default function Sidebar({
                     label={t('Template actions')}
                     align="start"
                     open={tplMenuFor === p.id}
-                    anchorPoint={tplMenuFor === p.id ? tplPoint : null}
+                    anchorPoint={tplPoint?.id === p.id ? tplPoint : null}
                     returnFocus={tplReturn.current ? tplReturn : undefined}
                     onOpenChange={(o) => {
                       if (o) {

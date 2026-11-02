@@ -23,7 +23,7 @@ await withFixture(async ({ page, base, path }) => {
     }, [menuSelector, box.x + box.width / 2, box.y + box.height / 2]);
     assert(hit, `${label} (${size}): something else covers the menu`);
     await page.keyboard.press('Escape');
-    await page.locator('.fs-backdrop').last().click({ position: { x: 2, y: 2 } }).catch(() => {});
+    await menu.waitFor({ state: 'hidden' });
   };
 
   for (const [size, viewport] of [['phone', { width: 390, height: 844 }], ['desktop', { width: 1200, height: 900 }]]) {
@@ -32,12 +32,14 @@ await withFixture(async ({ page, base, path }) => {
     const templates = page.getByRole('button', { name: 'Templates', exact: true });
     await templates.scrollIntoViewIfNeeded();
     await templates.click();
-    await reachable('.dbt-menu', 'templates', size);
+    // ui/Menu since spec 010: found by the popup's role and name, no longer by
+    // a class; at phone width it is a sheet along the bottom edge.
+    await reachable('[role="menu"][aria-label="Templates"]', 'templates', size);
 
     const options = page.getByRole('button', { name: 'View options', exact: true });
     await options.scrollIntoViewIfNeeded();
     await options.click();
-    await reachable('.view-tab-menu', 'view options', size);
+    await reachable('[role="menu"][aria-label="View options"]', 'view options', size);
   }
 
   console.log('Toolbar menus: templates and view options open in full, on a phone and a desktop.');

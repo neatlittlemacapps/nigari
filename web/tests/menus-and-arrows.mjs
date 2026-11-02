@@ -12,7 +12,7 @@ await withFixture(async ({ page, api, base, workspace, read }) => {
   // #24 — the right-click acts on the tab it was made on, not on the view
   // you happen to be looking at (Table).
   await page.locator('.view-tab', { hasText: 'Board' }).click({ button: 'right' });
-  await page.getByRole('button', { name: 'Remove view', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Remove view', exact: true }).click();
   await eventually(async () => (await read()).views.map((v) => v.id).join() === 'table');
 
   // #20 — a template row opens its menu on a right-click, and the menu closes

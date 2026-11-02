@@ -45,6 +45,7 @@ from today.
 | `showFiles` | `Paperclip` | Files in this subtree (2) |
 | `saveAsTemplate` | `LayoutTemplate` | Save as template, Save as a template of this database (2) |
 | `removeTemplateFlag` | `SquareDashed` ✱ | Remove template flag (3) |
+| `newTemplate` | `SquarePlus` (added in part 2) | New template (9): a blank template, not a copy of the page |
 | `edit` | `Pencil` | Edit the template itself (3), Edit (10) |
 | `exportMarkdown` | `FileDown` ✱ | Export Markdown (2), Markdown (.md) (5) |
 | `exportHtml` | `FileCode` | Web page (.html) (5) |

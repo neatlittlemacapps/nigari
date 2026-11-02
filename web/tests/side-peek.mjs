@@ -96,7 +96,7 @@ await withFixture(async ({ page, api, base, path }) => {
   await page.getByTitle('View options').click();
   await Promise.all([
     page.waitForResponse((r) => r.url().endsWith(path) && r.request().method() === 'PUT'),
-    page.getByRole('radio', { name: 'Side peek' }).click(),
+    page.getByRole('menuitemradio', { name: 'Side peek' }).click(),
   ]);
   const board = (await api('GET', path)).views.find((v) => v.id === 'board');
   assert.equal(board.openIn, 'side_peek', `the board stored ${JSON.stringify(board.openIn)}`);
@@ -111,7 +111,7 @@ await withFixture(async ({ page, api, base, path }) => {
   await page.getByTitle('View options').click();
   await Promise.all([
     page.waitForResponse((r) => r.url().endsWith(path) && r.request().method() === 'PUT'),
-    page.getByRole('radio', { name: 'Full page' }).click(),
+    page.getByRole('menuitemradio', { name: 'Full page' }).click(),
   ]);
   const plain = (await api('GET', path)).views.find((v) => v.id === 'board');
   assert.equal('openIn' in plain, false, `full page stored ${JSON.stringify(plain.openIn)}`);

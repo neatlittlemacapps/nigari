@@ -93,6 +93,17 @@
   justify-content: center;
 }
 
+/* The arrow of a value with actions (MenuValueSubmenu) is its own tap target:
+   tapping it opens the actions. At least 24px wide for a finger (SC 2.5.8). */
+.ui-menu-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--space-600);
+  align-self: stretch;
+  margin-left: auto;
+}
+
 .ui-menu-tick,
 .ui-menu-chevron {
   flex: none;
@@ -159,6 +170,9 @@
 }
 .ui-menu-positioner[data-sheet] .ui-menu {
   width: 100%;
+  /* A menu's own max-width (the templates menu's 320px) must not narrow the
+     sheet: on a phone every toolbar menu is the full width (audit, part 2). */
+  max-width: none;
   max-height: 72vh;
 }
 

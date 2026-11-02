@@ -89,6 +89,7 @@ import {
   ShieldCheck,
   Smile,
   SquareDashed,
+  SquarePlus,
   Star,
   Table2,
   TableProperties,
@@ -139,6 +140,9 @@ export const MENU_ICONS = {
   showFiles: Paperclip,
   saveAsTemplate: LayoutTemplate,
   removeTemplateFlag: SquareDashed,
+  // A blank template for a database (the templates menu beside New). Not
+  // saveAsTemplate: that copies the page you are on.
+  newTemplate: SquarePlus,
   edit: Pencil,
   exportMarkdown: FileDown,
   exportHtml: FileCode,

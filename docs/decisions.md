@@ -7,6 +7,21 @@ entries are not edited away.
 
 ---
 
+## 2026-11-02 — The release with spec 010's database menus is v2.1.0
+
+**Decision** (owner: "Yes"): `server.Version` moves from 2.0.0 to 2.1.0 in the pull request
+that finishes spec 010 (#422), so the release workflow starts the 2.1 line at v2.1.0
+instead of continuing with v2.0.16.
+
+**Why:** spec 010 changes how every menu behaves, for every person: arrow keys and
+type-to-jump everywhere, a right-click opening the same menu, bottom sheets on a phone,
+and a modal menu that takes the next outside click. A patch number would understate that.
+
+**Turned down:** v2.0.16 (the automatic next number; it would say nothing changed for
+users); v3.0.0 (nothing is removed or incompatible: the same data, routes and tools).
+
+---
+
 ## 2026-11-02 — Spec 010 rebuilds the menus on Base UI, not only their icons
 
 **Decision** (owner: "B"): spec 010 also does the menus part of spec 001's next batch.
