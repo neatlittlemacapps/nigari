@@ -102,9 +102,9 @@ description: "Tasks for every menu item has an icon, and an icon means one thing
 ## Phase 7: Polish and cross-cutting (PR 2)
 
 - [x] T035 [ui] `rawButtons` in `web/tokens/budgets.json` lowered to the count measured after PR 2; bundle gzip measured
-- [ ] T036 [P] [wiki] Retake the screenshots `check-wiki.mjs` lists as stale with `node web/scripts/shoot-wiki.mjs <id>`; if the wiki lists keys per control, add the menu keys
+- [x] T036 [P] [wiki] Retake the screenshots `check-wiki.mjs` lists as stale with `node web/scripts/shoot-wiki.mjs <id>`; if the wiki lists keys per control, add the menu keys
 - [x] T037 [P] [ui] `.specify/memory/surfaces.md` **Menu icons** row checked against what shipped (wording only if it differs)
-- [ ] T038 [test] SC-004 by hand (quickstart §5) and `ux-ui-audit` in light and dark at desktop and phone width on the page, row and view menus; findings fixed or filed
+- [x] T038 [test] SC-004 by hand (quickstart §5) and `ux-ui-audit` in light and dark at desktop and phone width on the page, row and view menus; findings fixed or filed
 - [x] T039 [test] `/code-review` on each PR's diff before it is offered; findings fixed or filed
 
 ---
