@@ -7,6 +7,56 @@ entries are not edited away.
 
 ---
 
+## 2026-11-02 — Spec 010 rebuilds the menus on Base UI, not only their icons
+
+**Decision** (owner: "B"): spec 010 also does the menus part of spec 001's next batch.
+Every menu except the editor library's two becomes `ui/Menu` (Base UI `Menu`, with
+a right-click opening the same menu at the pointer), so every menu gets arrow keys,
+type-to-jump, Escape and focus return in one place. `AnchoredMenu` and `menuStyleFor` are
+removed. `anchoredMenu.ts` and its check stay: on a phone the toolbar menus remain bottom
+sheets, and `ColumnsControl` still uses the module (found by CodeGraph, research R13). Two pull
+requests: the sidebar, page and account menus first, then the database menus.
+`specs/010-menu-icons/research.md` R10–R12.
+
+**Why:** with icons only, every menu would be rewritten twice, once for the icons and
+again when the menus move to Base UI. Doing both at once costs more testing now, but
+less work overall, and the keyboard gain reaches every menu at the same time.
+
+**Turned down:** icons only (option A: smaller, but leaves the menus without arrow
+keys and means a second rewrite); rebuilding the editor's `/` and block menus too
+(they are BlockNote's, already work from the keyboard, and would need its internals
+forked).
+
+---
+
+## 2026-11-02 — Menu icons: one pairing, our icons on the editor's items, view types are values
+
+**Decision** (spec 010 plan; the verb-alone rule is the owner's "A", 2026-10-29): every
+menu item is drawn by `ui/MenuItem`, which takes its icon from one module,
+`web/src/menuIcons.ts`, by function name. The editor library's `/` and block menu items
+get their icons from the same module, keyed by BlockNote's own item keys. The view types
+in the add-view menu, and the workspace, template and column lists inside menus, are
+values (`ui/MenuValues` with a reason), not functions. `check-menu-icons.mjs` enforces it.
+The full pairing and the collisions it resolves are in
+`specs/010-menu-icons/data-model.md` and `research.md` R5.
+
+**Why:** with the icon looked up by function, one function cannot show two icons, and
+the check only has to compare one list. BlockNote draws `react-icons`, a second icon set,
+so "the same icon" means nothing across the two sets. Owning the icon for each library
+key makes a collision impossible, and a library upgrade that adds an item fails the build
+until someone picks its icon. The view types keep the icon their tab shows, which is the
+one a person learns.
+
+**Turned down:** keeping icons inline and checking by label (labels differ for one
+function, "Export Markdown" / "Markdown (.md)", so the check would need its own pairing:
+two lists); a full `Menu` component that also places the menu (bigger than asked;
+`AnchoredMenu` works); comparing the library's icons with ours (different icon sets);
+leaving the library's items out (the owner said they count); counting view types as
+functions (eight type icons in the pairing, colliding with the `/` menu's table and
+chart blocks, which are different things).
+
+---
+
 ## 2026-11-02 — Every session uses CodeGraph, from the spec on
 
 **Decision** (owner: "You should use codegraph also whilst speccing"; "Ensure any new

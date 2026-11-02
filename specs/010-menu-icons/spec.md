@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Issues**: to be filed
+**Issues**: #380 (tasks #381–#419)
 
 **Input**: Owner, 2026-10-29: "add new rule -> menu-items should have an icon.
 Ensure that no 2 functions have the same icon". Answered while asked: the same
@@ -38,6 +38,16 @@ interface cannot rely on them.
   the menu it is in. Two verbs that do different things are different
   functions even when they sound alike: "Move to trash" can be undone,
   "Delete" cannot, so they get different icons.
+
+### Session 2026-11-02
+
+- Q: The plan found that spec 001 (design system) already planned to rebuild
+  the menus on Base UI as its next batch. Does this feature also do that
+  (menus get arrow keys, type-to-jump and proper focus), or only the icons?
+  → A: Both (owner: "B"). Every menu this feature touches is rebuilt once, on
+  the design system's menu component, instead of twice. The editor's own `/`
+  and block menus stay the editor library's (they are not ours to rebuild) and
+  get only the icons.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -125,6 +135,41 @@ both. Fix it; the check passes.
    menu icons into one salt.md uses for another function, **When** the checks
    run, **Then** they fail.
 
+---
+
+### User Story 4 - Use any menu from the keyboard (Priority: P2)
+
+A person opens the page menu with the keyboard, moves through it with the
+arrow keys, jumps to "Move to trash" by typing "m", and presses Enter. Escape
+closes the menu and puts focus back on the button that opened it. The same
+works in every menu, because every menu is the same component.
+
+**Why this priority**: Owner's answer to the plan's question (B). Today each
+menu is hand-built: Tab walks through the items, arrows do nothing, and a
+dialog opened from a menu item sometimes loses where focus was.
+
+**Independent Test**: Open each menu from the keyboard only and use it as
+described; nothing needs the mouse.
+
+**Acceptance Scenarios**:
+
+1. **Given** a menu opened with Enter or Space on its button, **When** it
+   opens, **Then** focus is on its first item and ↑/↓ move through the items,
+   skipping labels and separators.
+2. **Given** an open menu, **When** the person types the first letters of an
+   item, **Then** focus jumps to it.
+3. **Given** an open menu, **When** Escape is pressed or the person clicks
+   outside it, **Then** it closes and focus returns to the button that opened
+   it.
+4. **Given** a menu item that opens a dialog, **When** the dialog closes,
+   **Then** focus returns to the menu's button.
+5. **Given** a menu with a submenu ("Move to workspace"), **When** → is
+   pressed on it, **Then** the submenu opens with focus on its first entry,
+   and ← closes it again.
+6. **Given** a menu opened near the edge of the screen, in a scrolling list,
+   or on a phone, **When** it opens, **Then** it is wholly on screen and
+   nothing clips it.
+
 ### Edge Cases
 
 - **Labels, separators and headings inside a menu** ("Move to workspace" above
@@ -180,6 +225,17 @@ both. Fix it; the check passes.
 - **FR-011**: The rule MUST be written into the project's instructions for
   contributors and agents (the design system's README and the registry of
   surfaces), so a later feature that adds a menu answers for it in its plan.
+- **FR-012**: Every menu of the interface except the editor library's own
+  MUST be built from one design-system menu component, which gives arrow-key
+  movement, type-to-jump, Escape and outside click to close, and focus back
+  on the opening button (User Story 4).
+- **FR-013**: A right-click menu (a page in the sidebar, a view tab, a
+  template) MUST open where the pointer is and behave like the button-opened
+  menus otherwise.
+- **FR-014**: Moving the menus MUST NOT bring back a bug the hand-built menus
+  were fixed for: a menu clipped by the sidebar's scroll (#21) or by the
+  database toolbar on a phone, a right-click acting on the wrong tab (#24),
+  or Escape in a menu inside a dialog also closing the dialog.
 
 ### Key Entities
 
@@ -205,6 +261,9 @@ both. Fix it; the check passes.
   the right item by its icon alone (checked by hand on the page, row and view
   menus before the pull request).
 
+- **SC-005**: Every menu except the editor library's can be opened, used and
+  closed from the keyboard alone, checked by a browser test on each menu.
+
 ## Agent parity and other surfaces
 
 - **MCP**: not affected. Icons are presentation; no agent action changes,
@@ -225,3 +284,6 @@ both. Fix it; the check passes.
 - The rule covers menus only, as asked; icons on toolbar buttons and elsewhere
   are free to repeat a menu icon for the same function, unchecked.
 - Built after spec 008 (owner's order); nothing in this spec depends on 008.
+- The menus part of spec 001's next batch ("menus and popovers") is done
+  here; popovers (the share panels, the tag colour picker, the person and
+  relation pickers) stay for that batch.
