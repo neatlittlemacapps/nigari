@@ -72,17 +72,30 @@ status_options="$(jq -c '.data.user.projectV2.status.options // []' <<<"$project
 [[ -n "$surface_field" ]] || echo "::warning::board-sync: no single-select field \"$field_name\"; Surface not synced"
 [[ -n "$status_field" ]] || echo "::warning::board-sync: no single-select field \"Status\"; Status not synced"
 
+# gh_retry CMD… — runs a gh call up to three times. GitHub answered a field
+# mutation with "Something went wrong" twice on 2026-11-02, in two runs of
+# --all, at different issues; the call is idempotent, so a retry is safe and a
+# single hiccup no longer stops the run for every issue after it.
+gh_retry() {
+  local try
+  for try in 1 2 3; do
+    "$@" && return 0
+    [[ $try -lt 3 ]] && { echo "  (GitHub error, retrying)" >&2; sleep $((try * 5)); }
+  done
+  return 1
+}
+
 # set_field ITEM FIELD OPTION_ID — clears the field when OPTION_ID is empty.
 set_field() {
   local item="$1" field="$2" option="$3"
   if [[ -n "$option" ]]; then
-    gh api graphql -f project="$project_id" -f item="$item" -f field="$field" -f option="$option" -f query='
+    gh_retry gh api graphql -f project="$project_id" -f item="$item" -f field="$field" -f option="$option" -f query='
       mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
         updateProjectV2ItemFieldValue(input: { projectId: $project, itemId: $item, fieldId: $field,
           value: { singleSelectOptionId: $option } }) { projectV2Item { id } }
       }' >/dev/null
   else
-    gh api graphql -f project="$project_id" -f item="$item" -f field="$field" -f query='
+    gh_retry gh api graphql -f project="$project_id" -f item="$item" -f field="$field" -f query='
       mutation($project: ID!, $item: ID!, $field: ID!) {
         clearProjectV2ItemFieldValue(input: { projectId: $project, itemId: $item, fieldId: $field }) { projectV2Item { id } }
       }' >/dev/null
@@ -163,21 +176,22 @@ sync_one() {
 
   # The board's Priority goes onto the issue as a priority:N label, because a
   # label is what every tool shows: the issue page, the issue list, and the
-  # GitHub tools of an agent that cannot read the board. "P1", "1" and
-  # "Priority 1" all become priority:1, the labels the issues already carry;
+  # GitHub tools of an agent that cannot read the board. The board's options
+  # are "P1 - High", "P2 - Medium", "P3 - Low"; those, "P1", "1" and
+  # "Priority 1" all become priority:1 (and so on), the labels the issues already carry;
   # any other value becomes priority:<value>. An issue with no Priority on the
   # board keeps the labels it has. Changing the field sends no event to this
   # workflow (a user's board has no projects_v2_item webhook), so a label
   # follows on the nightly run or a Run workflow.
   if [[ "$priority" != "—" ]]; then
     local wanted have
-    wanted="priority:$(sed -E 's/^([Pp]riority[ ]*|[Pp])?([0-9]+)$/\2/' <<<"$priority" | tr '[:upper:] ' '[:lower:]-')"
+    wanted="priority:$(sed -E 's/^([Pp]riority[ ]*|[Pp])?([0-9]+)([^0-9].*)?$/\2/' <<<"$priority" | tr '[:upper:] ' '[:lower:]-')"
     have="$(jq -r '.[] | select(startswith("priority:"))' <<<"$labels")"
     for l in $have; do
-      [[ "$l" == "$wanted" ]] || gh api -X DELETE "repos/$repo/issues/$number/labels/$l" >/dev/null
+      [[ "$l" == "$wanted" ]] || gh_retry gh api -X DELETE "repos/$repo/issues/$number/labels/$l" >/dev/null
     done
     if ! grep -qxF "$wanted" <<<"$have"; then
-      gh api -X POST "repos/$repo/issues/$number/labels" -f "labels[]=$wanted" >/dev/null
+      gh_retry gh api -X POST "repos/$repo/issues/$number/labels" -f "labels[]=$wanted" >/dev/null
       report+=" (label $wanted)"
     fi
   fi
