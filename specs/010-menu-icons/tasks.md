@@ -9,7 +9,7 @@ description: "Tasks for every menu item has an icon, and an icon means one thing
 
 **Tests**: required. The check (`check-menu-icons.mjs`) and its self-test, two new browser specs, and the eight existing specs that open menus kept green.
 
-**Issues**: none yet
+**Issues**: parent #380; T001–T039 are #381–#419, in order.
 
 **Delivery**: two pull requests (research R12). Phases 1–5 are **PR 1** (foundation; sidebar, page "…" and account menus; the editor's two menus). Phases 6–7 are **PR 2** (database menus, the check switched to failing, polish). The stories cut across both PRs: every task carries the story it serves.
 

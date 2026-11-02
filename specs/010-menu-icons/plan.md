@@ -1,6 +1,6 @@
 # Implementation Plan: Every menu item has an icon, and an icon means one thing
 
-**Branch**: `claude/010-menu-icons` | **Date**: 2026-11-02 | **Spec**: [spec.md](spec.md) | **Issue**: to be filed with the tasks
+**Branch**: `claude/010-menu-icons` | **Date**: 2026-11-02 | **Spec**: [spec.md](spec.md) | **Issue**: #380
 
 **Input**: Feature specification from `/specs/010-menu-icons/spec.md`
 

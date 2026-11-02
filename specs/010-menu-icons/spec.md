@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Issues**: to be filed
+**Issues**: #380 (tasks #381–#419)
 
 **Input**: Owner, 2026-10-29: "add new rule -> menu-items should have an icon.
 Ensure that no 2 functions have the same icon". Answered while asked: the same
