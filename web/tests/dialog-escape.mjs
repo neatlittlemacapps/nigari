@@ -17,7 +17,8 @@ await withFixture(async ({ page }) => {
   const open = async (item) => {
     await menuButton.focus();
     await page.keyboard.press('Enter');
-    const button = page.getByRole('button', { name: item, exact: true });
+    // role="menuitem" since spec 010 (ui/Menu).
+    const button = page.getByRole('menuitem', { name: item, exact: true });
     await button.focus();
     await page.keyboard.press('Enter');
   };

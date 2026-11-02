@@ -26,7 +26,7 @@ import StrandedWorkspaces from './StrandedWorkspaces';
 import { modalOpen, useExclusiveModal, useMenuDismiss } from '../modal';
 import { chordFor, hint, useShortcut } from '../keys';
 import { focusRegion, focusedKey, navItem, useNavRegion, withFocusSurvival } from '../nav';
-import { Sun, Moon, Search, Library, Plus, Table2, FileText, Trash2, LayoutTemplate, Tag, ChevronRight, ChevronDown, Users, Check, Download, Upload, Image, PanelLeftClose, PanelLeftOpen, Pencil, Star, ShieldAlert, ScrollText, Paperclip, SquareArrowOutUpRight, Copy, CornerUpRight, CornerLeftUp, Undo2, X, MoreHorizontal, Settings2, Globe } from 'lucide-react';
+import { Search, Library, Plus, Table2, FileText, LayoutTemplate, Tag, ChevronRight, ChevronDown, Upload, PanelLeftClose, PanelLeftOpen, Star, MoreHorizontal, Globe } from 'lucide-react';
 import { AgentDot } from './AgentBadge';
 import { tagColorClass } from '../tags';
 import { childrenForSection, topLevelForDocs } from '../treeMode';

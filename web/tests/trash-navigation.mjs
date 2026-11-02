@@ -11,7 +11,7 @@ await withFixture(async ({ page, api, base, workspace, path }) => {
   await page.locator('.board-card', { hasText: 'First row' }).click();
   const rowId = page.url().split('/').at(-1);
   await page.getByRole('button', { name: 'More actions', exact: true }).click();
-  await page.getByRole('button', { name: 'Move to trash', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Move to trash', exact: true }).click();
   await eventually(async () => page.url() === `${base}/p/${collectionId}`);
   await page.locator('.view-tab', { hasText: 'Board' }).waitFor();
   assert.equal((await api('GET', `/api/pages/${rowId}`)).trashed, true);
@@ -21,7 +21,7 @@ await withFixture(async ({ page, api, base, workspace, path }) => {
   const child = await api('POST', '/api/pages', { title: 'Child document', parentId: parent.id });
   await page.goto(`${base}/p/${child.id}`);
   await page.getByRole('button', { name: 'More actions', exact: true }).click();
-  await page.getByRole('button', { name: 'Move to trash', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Move to trash', exact: true }).click();
   await eventually(async () => page.url() === `${base}/p/${parent.id}`);
   console.log('Trash navigation: collection rows and child documents return to their parent and remove the deleted tab.');
 });

@@ -1286,5 +1286,7 @@
   "Step applied": "Paso aplicado",
   "Account": "Cuenta",
   "Page actions": "Acciones de la página",
-  "Template actions": "Acciones de la plantilla"
+  "Template actions": "Acciones de la plantilla",
+  "Header column": "Columna de encabezado",
+  "Header row": "Fila de encabezado"
 }

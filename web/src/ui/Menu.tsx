@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
 import { Check, ChevronRight } from 'lucide-react';
 import { MenuIcon, type MenuFunction } from '../menuIcons';
@@ -41,6 +41,13 @@ function useNarrow(enabled: boolean): boolean {
   return enabled && narrow;
 }
 
+// A dialog an item opens waits until the menu has finished closing: until then
+// the item still has focus (the popup animates out), modal.ts would remember
+// it as the element to return to, and focus would land on nothing when the
+// dialog closed (dialog-escape.mjs caught it). After the close, Base UI has
+// put focus back on the trigger, which is what the dialog then returns to.
+const AfterClose = createContext<((run: () => void) => void) | null>(null);
+
 export type MenuProps = {
   /** The button that opens the menu, rendered as the trigger. Omit it for a
    *  menu that only opens on a right-click (then pass open and anchorPoint). */
@@ -66,8 +73,22 @@ export type MenuProps = {
 
 export function Menu({ trigger, label, children, open, onOpenChange, anchorPoint, side = 'bottom', align = 'end', narrow, className }: MenuProps) {
   const sheet = useNarrow(narrow === 'sheet');
+  const pending = useRef<(() => void) | null>(null);
+  const afterClose = (run: () => void) => {
+    pending.current = run;
+  };
   return (
-    <BaseMenu.Root open={open} onOpenChange={onOpenChange ? (o) => onOpenChange(o) : undefined}>
+    <AfterClose.Provider value={afterClose}>
+    <BaseMenu.Root
+      open={open}
+      onOpenChange={onOpenChange ? (o) => onOpenChange(o) : undefined}
+      onOpenChangeComplete={(o) => {
+        if (o || !pending.current) return;
+        const run = pending.current;
+        pending.current = null;
+        run();
+      }}
+    >
       {trigger && <BaseMenu.Trigger render={trigger} />}
       <BaseMenu.Portal>
         <BaseMenu.Positioner
@@ -85,6 +106,7 @@ export function Menu({ trigger, label, children, open, onOpenChange, anchorPoint
         </BaseMenu.Positioner>
       </BaseMenu.Portal>
     </BaseMenu.Root>
+    </AfterClose.Provider>
   );
 }
 
@@ -100,10 +122,9 @@ type ItemProps = {
   filled?: boolean;
   /** A shortcut hint at the right edge. Never replaces the icon. */
   chord?: string;
-  /** The item opens a dialog: close the menu first and open it on the next
-   *  frame, so Base UI's focus return to the trigger and the dialog's own
-   *  autofocus do not race (research R13). modal.ts then returns focus to the
-   *  trigger when the dialog closes. */
+  /** The item opens a dialog: it runs once the menu has finished closing and
+   *  focus is back on the trigger (see AfterClose), so the dialog returns
+   *  focus there when it closes (research R13). */
   opensDialog?: boolean;
   closeOnClick?: boolean;
   className?: string;
@@ -115,9 +136,10 @@ function itemClass(danger?: boolean, className?: string) {
 }
 
 export function MenuItem({ fn, children, onClick, danger, disabled, filled, chord, opensDialog, closeOnClick = true, className, title }: ItemProps) {
+  const afterClose = useContext(AfterClose);
   const run = () => {
     if (!onClick) return;
-    if (opensDialog) requestAnimationFrame(() => onClick());
+    if (opensDialog && afterClose) afterClose(onClick);
     else onClick();
   };
   return (

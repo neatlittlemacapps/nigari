@@ -3,6 +3,7 @@ import type { PeekMode } from '../peek';
 import {
   useCreateBlockNote,
   SuggestionMenuController,
+  SideMenuController,
   getDefaultReactSlashMenuItems,
 } from '@blocknote/react';
 import { filterSuggestionItems, insertOrUpdateBlockForSlashMenu, SuggestionMenu } from '@blocknote/core';
@@ -39,7 +40,8 @@ import { tagColorClass, TAG_PALETTE } from '../tags';
 import { collectTags, suggestTags } from '../tagSuggest';
 import { modalOpen, useMenuDismiss } from '../modal';
 import { Menu, MenuCheckboxItem, MenuItem, MenuLabel, MenuSeparator } from '../ui/Menu';
-import { Menu as MenuGlyph, Copy, Star, Lock, LockOpen, Globe, MessageSquare, History, MoreHorizontal, Printer, FileCode, FileText, Upload, AlignLeft, Check, Image as ImageIcon , Smile, PanelRight, Link2, Trash2, FilePlus2, Columns2, Workflow, MoveHorizontal, LayoutTemplate, ChartBar, ChartColumn, ChartLine, ChartPie, Hash} from 'lucide-react';
+import { SideMenuWithIcons, slashIcon, withPairedIcons } from '../slashIcons';
+import { Menu as MenuGlyph, Copy, Star, Lock, LockOpen, Globe, MessageSquare, MoreHorizontal, FileText, Upload, AlignLeft, Check, Image as ImageIcon, Smile, PanelRight, Link2, FilePlus2, LayoutTemplate } from 'lucide-react';
 import { CHART_SLASH_KINDS } from '../chartInsert';
 import type { ChartKind } from '../chartLayout';
 import { blockTypeFor, carriesExternalFiles } from '../dropFiles';
@@ -1805,11 +1807,11 @@ function BlockContent({
   // The chart entries' words, in the order of CHART_SLASH_KINDS.
   const chartSlashItems = () => {
     const words: Record<ChartKind, { title: string; subtext: string; icon: ReactElement; aliases: string[] }> = {
-      bar: { title: t('Bar chart'), subtext: t('Compare groups of a database as bars'), icon: <ChartColumn size={18} />, aliases: ['chart', 'bar', 'diagramm', 'balken', 'grafico', 'barras'] }, // i18n-ok: search aliases, deliberately multilingual
-      hbar: { title: t('Horizontal bar chart'), subtext: t('Bars side by side, for long names'), icon: <ChartBar size={18} />, aliases: ['chart', 'horizontal', 'diagramm', 'balken', 'grafico', 'barras'] }, // i18n-ok: search aliases, deliberately multilingual
-      line: { title: t('Line chart'), subtext: t('A trend over time'), icon: <ChartLine size={18} />, aliases: ['chart', 'line', 'trend', 'diagramm', 'linie', 'grafico', 'linea'] }, // i18n-ok: search aliases, deliberately multilingual
-      donut: { title: t('Donut chart'), subtext: t('Parts of a whole'), icon: <ChartPie size={18} />, aliases: ['chart', 'donut', 'pie', 'diagramm', 'kreis', 'torte', 'grafico', 'circular'] }, // i18n-ok: search aliases, deliberately multilingual
-      number: { title: t('Number chart'), subtext: t('One total, count or average'), icon: <Hash size={18} />, aliases: ['chart', 'number', 'kpi', 'total', 'zahl', 'summe', 'numero'] }, // i18n-ok: search aliases, deliberately multilingual
+      bar: { title: t('Bar chart'), subtext: t('Compare groups of a database as bars'), icon: slashIcon('barChart'), aliases: ['chart', 'bar', 'diagramm', 'balken', 'grafico', 'barras'] }, // i18n-ok: search aliases, deliberately multilingual
+      hbar: { title: t('Horizontal bar chart'), subtext: t('Bars side by side, for long names'), icon: slashIcon('horizontalBarChart'), aliases: ['chart', 'horizontal', 'diagramm', 'balken', 'grafico', 'barras'] }, // i18n-ok: search aliases, deliberately multilingual
+      line: { title: t('Line chart'), subtext: t('A trend over time'), icon: slashIcon('lineChart'), aliases: ['chart', 'line', 'trend', 'diagramm', 'linie', 'grafico', 'linea'] }, // i18n-ok: search aliases, deliberately multilingual
+      donut: { title: t('Donut chart'), subtext: t('Parts of a whole'), icon: slashIcon('donutChart'), aliases: ['chart', 'donut', 'pie', 'diagramm', 'kreis', 'torte', 'grafico', 'circular'] }, // i18n-ok: search aliases, deliberately multilingual
+      number: { title: t('Number chart'), subtext: t('One total, count or average'), icon: slashIcon('numberChart'), aliases: ['chart', 'number', 'kpi', 'total', 'zahl', 'summe', 'numero'] }, // i18n-ok: search aliases, deliberately multilingual
     };
     return CHART_SLASH_KINDS.map((kind) => ({ kind, ...words[kind] }));
   };
@@ -1822,7 +1824,7 @@ function BlockContent({
         subtext: t('A flow chart written as text'),
         aliases: ['diagram', 'diagramm', 'mermaid', 'flow', 'flussdiagramm', 'graph'], // i18n-ok: search aliases, deliberately multi
         group: 'Advanced',
-        icon: <Workflow size={18} />,
+        icon: slashIcon('diagram'),
         onItemClick: () =>
           insertOrUpdateBlockForSlashMenu(editor, {
             type: 'mermaid',
@@ -1834,7 +1836,7 @@ function BlockContent({
         subtext: t('Two blocks side by side'),
         aliases: ['columns', 'spalten', 'nebeneinander'], // i18n-ok: search aliases, deliberately multi
         group: 'Basic blocks',
-        icon: <Columns2 size={18} />,
+        icon: slashIcon('columns'),
         // Inserted WITH its two children, because an empty columns block is a
         // control strip and nothing else — there would be no column to type in
         // and no obvious way to make one.
@@ -1850,7 +1852,7 @@ function BlockContent({
         subtext: t('A highlighted note with an emoji'),
         aliases: ['callout', 'hinweis', 'info', 'warnung'], // i18n-ok: search aliases, deliberately multilingual so a German user can type it
         group: 'Basic blocks',
-        icon: <span>💡</span>,
+        icon: slashIcon('callout'),
         onItemClick: () =>
           insertOrUpdateBlockForSlashMenu(editor, { type: 'callout' } as never),
       },
@@ -1859,7 +1861,7 @@ function BlockContent({
         subtext: t('A link card, or a YouTube/Vimeo player'),
         aliases: ['bookmark', 'embed', 'link', 'video', 'youtube'], // i18n-ok: search aliases, deliberately multilingual so a German user can type it
         group: 'Media',
-        icon: <span>🔖</span>,
+        icon: slashIcon('bookmark'),
         onItemClick: () =>
           insertOrUpdateBlockForSlashMenu(editor, { type: 'bookmark' } as never),
       },
@@ -1868,7 +1870,7 @@ function BlockContent({
         subtext: t('Show an existing collection inside the document'),
         aliases: ['datenbank', 'database', 'db', 'tabelle', 'board', 'kanban'], // i18n-ok: search aliases, deliberately multilingual so a German user can type it
         group: 'Basic blocks',
-        icon: <span>▦</span>,
+        icon: slashIcon('embedCollection'),
         onItemClick: () =>
           insertOrUpdateBlockForSlashMenu(editor, { type: 'database' } as never),
       },
@@ -1888,7 +1890,7 @@ function BlockContent({
         subtext: t('Auto-generated list of every heading'),
         aliases: ['toc', 'inhalt', 'inhaltsverzeichnis', 'outline'], // i18n-ok: search aliases, deliberately multilingual so a German user can type it
         group: 'Basic blocks',
-        icon: <span>📑</span>,
+        icon: slashIcon('tableOfContents'),
         onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: 'toc' } as never),
       },
       {
@@ -1896,13 +1898,13 @@ function BlockContent({
         subtext: t('List of pages below this one'),
         aliases: ['subpages', 'unterseiten', 'children', 'sub-pages'], // i18n-ok: search aliases, deliberately multilingual so a German user can type it
         group: 'Basic blocks',
-        icon: <span>📄</span>,
+        icon: slashIcon('subPages'),
         onItemClick: () => insertOrUpdateBlockForSlashMenu(editor, { type: 'subpages' } as never),
       },
     ];
     const matches = filterSuggestionItems(
       [
-        ...getDefaultReactSlashMenuItems(editor),
+        ...withPairedIcons(getDefaultReactSlashMenuItems(editor)),
         ...custom,
       ],
       query,
@@ -2204,8 +2206,9 @@ function BlockContent({
         {/* The database block renders inside the editor and would otherwise
             not reach the page list, the tag colours or navigation. */}
         <BlockContext.Provider value={{ pagesById, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged, pageId: provider.pageId }}>
-        <BlockNoteView editor={editor} theme={theme} editable={canEdit} slashMenu={false}>
+        <BlockNoteView editor={editor} theme={theme} editable={canEdit} slashMenu={false} sideMenu={false}>
           <SuggestionMenuController triggerCharacter="/" getItems={getSlashItems} />
+          <SideMenuController sideMenu={SideMenuWithIcons} />
           <SuggestionMenuController
             triggerCharacter="@"
             getItems={getMentionItems}

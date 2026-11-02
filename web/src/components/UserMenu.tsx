@@ -10,7 +10,7 @@ import { Menu, MenuCheckboxItem, MenuItem, MenuSeparator } from '../ui/Menu';
 import { formatDay, formatMoment } from '../format';
 import { plural, t } from '../i18n';
 import { AdminSettingsModal, TwoFAModal, CalendarSubModal } from './AdminSettings';
-import { Key, History, CalendarDays, ShieldCheck, Users, Settings, LogOut, Bot, Server, User as UserIcon, Columns2, Type, Languages, Undo2, Keyboard, SquareArrowOutUpRight } from 'lucide-react';
+import { Key, Bot, Server, User as UserIcon, Undo2, Keyboard } from 'lucide-react';
 import { chordFor } from '../keys';
 import { LanguageTimeModal } from './LanguageTime';
 import { RowOpenModal } from './RowOpenSettings';

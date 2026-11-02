@@ -163,3 +163,17 @@
     transform: translateY(-2px);
   }
 }
+
+/* The editor's block menu (BlockNote's Mantine menu, research R4): its items
+   are the library's, their icon and label are ours (src/slashIcons.tsx). */
+.bn-menu-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-200);
+}
+.bn-menu-label .menu-icon {
+  flex: none;
+  width: var(--menu-icon-size);
+  height: var(--menu-icon-size);
+  color: var(--color-text-muted);
+}

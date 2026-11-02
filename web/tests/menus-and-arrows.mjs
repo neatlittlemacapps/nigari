@@ -21,9 +21,14 @@ await withFixture(async ({ page, api, base, workspace, read }) => {
   await api('PATCH', `/api/pages/${template.id}`, { isTemplate: true });
   await page.reload();
   await page.locator('.tree-item', { hasText: 'Weekly template' }).click({ button: 'right' });
-  const editTemplate = page.getByRole('button', { name: 'Edit the template itself', exact: true });
+  // Menu items are role="menuitem" since spec 010 (ui/Menu).
+  const editTemplate = page.getByRole('menuitem', { name: 'Edit the template itself', exact: true });
   await editTemplate.waitFor();
-  await page.locator('.main').click({ position: { x: 400, y: 400 } });
+  // A plain click at a point: while a ui/Menu is open its backdrop takes the
+  // click (and closes the menu), which Playwright's element click refuses as
+  // "covered".
+  const mainBox = await page.locator('.main').boundingBox();
+  await page.mouse.click(mainBox.x + 400, mainBox.y + 400);
   await editTemplate.waitFor({ state: 'hidden' });
 
   // #21 — enough collections that the last one sits at the foot of the tree,
@@ -35,15 +40,16 @@ await withFixture(async ({ page, api, base, workspace, read }) => {
   const lastRow = page.locator('.tree-item', { hasText: 'Shelf 13' });
   await lastRow.scrollIntoViewIfNeeded();
   await lastRow.click({ button: 'right' });
-  const menu = lastRow.locator('.menu');
+  // ui/Menu draws the popup in a portal (spec 010), no longer inside the row.
+  const menu = page.getByRole('menu', { name: 'Page actions' });
   await menu.waitFor();
   const box = await menu.boundingBox();
   const viewport = page.viewportSize();
   assert(box.y >= 0 && box.y + box.height <= viewport.height, 'the menu fits the screen');
-  for (const entry of await menu.locator('button').all()) {
+  for (const entry of await menu.getByRole('menuitem').all()) {
     const b = await entry.boundingBox();
     const onTop = await page.evaluate(
-      ([x, y]) => !!document.elementFromPoint(x, y)?.closest('.menu'),
+      ([x, y]) => !!document.elementFromPoint(x, y)?.closest('[role="menu"]'),
       [b.x + b.width / 2, b.y + b.height / 2],
     );
     assert(onTop, 'no entry of the menu is covered by the section below');

@@ -1286,5 +1286,7 @@
   "Step applied": "Schritt angewendet",
   "Account": "Konto",
   "Page actions": "Seitenaktionen",
-  "Template actions": "Vorlagenaktionen"
+  "Template actions": "Vorlagenaktionen",
+  "Header column": "Kopfspalte",
+  "Header row": "Kopfzeile"
 }
