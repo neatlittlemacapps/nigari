@@ -42,6 +42,15 @@
   background: var(--color-active);
 }
 
+/* From the keyboard the highlight alone is too faint to follow: the row's
+   tint is 1.16:1 against the popup in light and 1.21:1 in dark (measured in
+   spec 010's audit). A focus ring like every other control's marks it. Only
+   for keyboard focus: a hover keeps just the tint. */
+.ui-menu-item:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
 .ui-menu-item.is-danger {
   color: var(--color-danger);
 }

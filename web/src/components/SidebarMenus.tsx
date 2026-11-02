@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useRef, useState, type ComponentPropsWithoutRef } from 'react';
 import { Plus, MoreHorizontal } from 'lucide-react';
 import { api } from '../api';
 import { toast } from '../toast';
@@ -25,6 +25,26 @@ export function openRowMenu(ctx: TreeCtx, id: string, e: React.MouseEvent<HTMLEl
   ctx.setMenuPoint(e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : null);
   ctx.setMenuFor(id);
 }
+
+// The two buttons, one definition each: plain until the row is armed, then the
+// trigger of their menu. forwardRef and the spread props are what Base UI's
+// Trigger needs to attach its ref and handlers to the button.
+type RowButtonProps = ComponentPropsWithoutRef<'button'>;
+const AddButton = forwardRef<HTMLButtonElement, RowButtonProps>(function AddButton(props, ref) {
+  return (
+    <button ref={ref} title={t('Add inside')} aria-label={t('Add inside')} {...props}>
+      <Plus size={14} />
+    </button>
+  );
+});
+
+const MoreButton = forwardRef<HTMLButtonElement, RowButtonProps>(function MoreButton(props, ref) {
+  return (
+    <button ref={ref} title={t('More')} aria-label={t('More')} {...props}>
+      <MoreHorizontal size={14} />
+    </button>
+  );
+});
 
 export function RowActions({
   id,
@@ -57,12 +77,8 @@ export function RowActions({
   if (!armed && !open) {
     return (
       <span className="tree-actions" onClick={(e) => e.stopPropagation()} ref={ref}>
-        <button title={t('Add inside')} aria-label={t('Add inside')} onClick={() => ctx.setAddFor(id)}>
-          <Plus size={14} />
-        </button>
-        <button title={t('More')} aria-label={t('More')} onClick={() => ctx.setMenuFor(id)}>
-          <MoreHorizontal size={14} />
-        </button>
+        <AddButton onClick={() => ctx.setAddFor(id)} />
+        <MoreButton onClick={() => ctx.setMenuFor(id)} />
       </span>
     );
   }
@@ -87,11 +103,7 @@ function AddMenu({ id, ctx }: { id: string; ctx: TreeCtx }) {
         if (o) ctx.setMenuFor(null);
         ctx.setAddFor(o ? id : null);
       }}
-      trigger={
-        <button title={t('Add inside')} aria-label={t('Add inside')}>
-          <Plus size={14} />
-        </button>
-      }
+      trigger={<AddButton />}
     >
       <MenuItem fn="newPage" onClick={() => ctx.onCreateChild(id)}>
         {t('Page')}
@@ -135,11 +147,7 @@ function PageMenu({
         }
         ctx.setMenuFor(o ? id : null);
       }}
-      trigger={
-        <button title={t('More')} aria-label={t('More')}>
-          <MoreHorizontal size={14} />
-        </button>
-      }
+      trigger={<MoreButton />}
     >
       {/* The visible way to get a second tab — ⌘-click and middle-click
           exist too, but nothing in the interface said so. */}

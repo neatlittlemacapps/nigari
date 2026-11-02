@@ -29,6 +29,10 @@ await withFixture(async ({ page, api, base, workspace }) => {
   const pageMenu = page.getByRole('menu', { name: 'Page actions' });
   await pageMenu.waitFor();
   await eventually(async () => (await focused()) === 'Open in new tab').catch(() => assert.fail('page menu: Enter did not land on the first item'));
+  // The keyboard's item has a focus ring: the row tint alone is 1.16:1 against
+  // the popup (spec 010 audit), too faint to follow.
+  const ring = await page.evaluate(() => getComputedStyle(document.activeElement).outlineStyle);
+  assert.equal(ring, 'solid', 'page menu: the focused item has no focus ring');
   await page.keyboard.press('ArrowDown');
   await eventually(async () => (await focused()) === 'Add to favorites').catch(async () => assert.fail('page menu: ↓ did not move, focus: ' + (await focused())));
   await page.keyboard.press('d');
