@@ -10,7 +10,7 @@ entries are not edited away.
 ## 2026-11-02 — Spec 010 rebuilds the menus on Base UI, not only their icons
 
 **Decision** (owner: "B"): spec 010 also does the menus part of spec 001's next batch.
-Every menu except the editor library's two becomes `ui/Menu` (Base UI `Menu` and
+Every menu except the editor library's two becomes `ui/Menu` (Base UI `Menu`, with
 a right-click opening the same menu at the pointer), so every menu gets arrow keys,
 type-to-jump, Escape and focus return in one place. `AnchoredMenu` and `menuStyleFor` are
 removed. `anchoredMenu.ts` and its check stay: on a phone the toolbar menus remain bottom
