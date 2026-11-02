@@ -525,6 +525,7 @@ function RowProperties({
               onChange={canEdit ? (v) => setProp(p.id, v) : undefined}
               onOptionsChange={canEdit ? (o) => setOptions(p.id, o) : undefined}
               readOnly={!canEdit}
+              showEmpty
             />
           </div>
         </div>

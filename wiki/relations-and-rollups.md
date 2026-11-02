@@ -54,7 +54,7 @@ A relation with no target shows **No target** in every cell instead of a value.
 
 ### Filling one in
 
-An empty relation cell reads **＋ Link**. Click it and a popover opens with a
+An empty relation cell reads **Add link**. Click it and a popover opens with a
 **Search…** box and the rows of the target collection; click a row to link it,
 click it again to unlink. Filled cells show one chip per linked row, carrying
 that row's icon and title.

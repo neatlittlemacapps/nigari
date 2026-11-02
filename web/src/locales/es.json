@@ -5,7 +5,6 @@
   "+ Add a tag": "+ Añadir etiqueta",
   "+ Add filter…": "+ Añadir filtro…",
   "+ Option": "+ Opción",
-  "+ Sub-task": "+ Subtarea",
   "+ Tag": "+ Etiqueta",
   "+ User": "+ Usuario",
   "+{n} more": "+{n} más",
@@ -1102,8 +1101,6 @@
   "⚠ Google and Microsoft accept HTTPS redirect URIs only (localhost aside). Start a tunnel (the “Domain & proxy” tab) or enter a public HTTPS base URL under “General”. It then appears here on its own.": "⚠ Google y Microsoft solo aceptan URIs de redirección HTTPS (excepto localhost). Inicia un túnel (pestaña «Dominio y proxy») o introduce una URL base HTTPS pública en «General». Aparecerá aquí automáticamente.",
   "⚠ This is the URL of the running quick tunnel. It changes on every start. For OAuth that lasts, use a named tunnel or your own domain and enter it as the base URL.": "⚠ Esta es la URL del túnel rápido activo. Cambia en cada inicio. Para OAuth permanente, utiliza un túnel con nombre o tu propio dominio e introdúcelo como URL base.",
   "✓ Resolved": "✓ Resuelto",
-  "＋ Link": "＋ Enlace",
-  "＋ Person": "＋ Persona",
   "This page is not public. A link lets anyone who has it read the page.": "Esta página no es pública. Con un enlace, cualquiera que lo tenga puede leerla.",
   "Create link": "Crear enlace",
   "Could not stop sharing": "No se pudo dejar de compartir",
@@ -1290,5 +1287,9 @@
   "Header column": "Columna de encabezado",
   "Header row": "Fila de encabezado",
   "Row actions": "Acciones de la fila",
-  "View actions": "Acciones de la vista"
+  "View actions": "Acciones de la vista",
+  "Empty": "Vacío",
+  "Add person": "Añadir persona",
+  "Add link": "Añadir enlace",
+  "Add sub-task": "Añadir subtarea"
 }

@@ -5,7 +5,6 @@
   "+ Add a tag": "+ Tag hinzufügen",
   "+ Add filter…": "+ Filter hinzufügen…",
   "+ Option": "+ Option",
-  "+ Sub-task": "+ Teilaufgabe",
   "+ Tag": "+ Tag",
   "+ User": "+ Nutzer",
   "+{n} more": "+{n} weitere",
@@ -1082,8 +1081,6 @@
   "⚠ Google and Microsoft accept HTTPS redirect URIs only (localhost aside). Start a tunnel (the “Domain & proxy” tab) or enter a public HTTPS base URL under “General”. It then appears here on its own.": "⚠ Google & Microsoft akzeptieren nur HTTPS-Redirect-URIs (außer localhost). Starte einen Tunnel (Tab „Domain & Proxy“) oder trage unter „Allgemein“ eine öffentliche HTTPS-Basis-URL ein. Dann erscheint sie hier automatisch.",
   "⚠ This is the URL of the running quick tunnel. It changes on every start. For OAuth that lasts, use a named tunnel or your own domain and enter it as the base URL.": "⚠ Das ist die URL des laufenden Quick-Tunnels. Sie wechselt bei jedem Start. Für dauerhaftes OAuth einen benannten Tunnel oder eine eigene Domain nutzen und als Basis-URL eintragen.",
   "✓ Resolved": "✓ Erledigt",
-  "＋ Link": "＋ Link",
-  "＋ Person": "＋ Person",
   "Drag to reorder property": "Ziehen, um die Eigenschaft neu anzuordnen",
   "Click to edit; drag to reorder. Keyboard: Alt + Left/Right.": "Zum Bearbeiten klicken; zum Sortieren ziehen. Tastatur: Alt + Links/Rechts.",
   "Delete option “{name}”?": "Option „{name}“ löschen?",
@@ -1290,5 +1287,9 @@
   "Header column": "Kopfspalte",
   "Header row": "Kopfzeile",
   "Row actions": "Zeilenaktionen",
-  "View actions": "Ansichtsaktionen"
+  "View actions": "Ansichtsaktionen",
+  "Empty": "Leer",
+  "Add person": "Person hinzufügen",
+  "Add link": "Link hinzufügen",
+  "Add sub-task": "Teilaufgabe hinzufügen"
 }

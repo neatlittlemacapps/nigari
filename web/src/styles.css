@@ -2836,6 +2836,31 @@ body.is-col-resizing {
   opacity: 0.5;
 }
 
+/* An empty date (and, on the row page, an empty number) is a button until it
+   is clicked (#269). It sits in the field's place like the value would: the
+   width of its cell, the height of a line of text, no frame until hovered.
+   ui/Button has no inline variant yet (#379 is about adding the shapes such
+   buttons need), so this states the inline shape over the ghost button, with
+   the attribute selector outweighing Button's own [data-size] rule. */
+.ui-button.prop-empty-edit[data-size] {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 1.6em;
+  padding: var(--space-50) var(--space-100);
+  border-radius: var(--radius-scale-md);
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: normal;
+}
+
+/* On the row page every value starts at the same place, 4px in like a
+   person or relation chip, so a column of "Empty" lines up (#269). */
+.row-prop-value .prop-url-edit,
+.row-prop-value .prop-checklist-toggle {
+  padding-left: var(--space-100);
+}
+
 /* Schema editor */
 
 .schema-list {

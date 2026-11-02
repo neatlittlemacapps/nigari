@@ -73,6 +73,15 @@ This is the single most common source of confusion when writing values from
 outside the interface. Call `get_collection` first; it returns every property
 id, every type and every option id.
 
+## How an empty value looks
+
+On the row page every empty field you can fill in reads *Empty*, in muted
+text, so you can tell it apart from a value and still see where to click.
+Person, relation and checklist fields say what a click does instead: **Add
+person**, **Add link**, **Add sub-task**. Formulas, rollups and other computed
+values show `—`, because there is nothing to fill in. In a table or on a board,
+empty cells stay blank so the values that are there stand out.
+
 ## The thirteen types
 
 | Type | In the dialog | Stores |
@@ -191,6 +200,12 @@ A calendar date, `2026-07-18`, optionally with a time, `2026-07-18T14:30`. The
 cell is a date picker, so the interface writes dates without a time; a time can
 arrive from an import or from an agent, and is shown when it is there.
 
+**An empty date looks empty.** Until it has a value, the field is a blank spot
+(in a table or on a board) or the word *Empty* (on the row page); click it and
+the date picker opens. Browsers draw an empty picker their own way, and Safari
+draws today's date, which made a row look dated when it was not. Clearing a
+date stores nothing, the same as never filling it in.
+
 **A date is never converted between time zones.** A deadline on the 18th is the
 18th for a reader in Auckland and for one in Los Angeles. This is deliberate and
 pinned by tests: converting it moves it, and a contract then expires a day
@@ -240,7 +255,7 @@ boxes: for the case where a row has a handful of steps that do not deserve a
 collection of their own.
 
 A filled cell shows a progress bar with a percentage; the tooltip says how many
-of how many. An empty one reads **+ Sub-task**, so there is always something to
+of how many. An empty one reads **Add sub-task**, so there is always something to
 click. Inside: tick items, type over their text, press Enter or click
 **Sub-task** to add the next one, use the bin to remove one, and click **Done**
 to close. Empty items are kept while the list is open (you have to be able to
@@ -283,7 +298,7 @@ contact icons: on a card a full address is noise.
 
 One person, or several: an account, or a name typed for somebody without one.
 
-Click the cell (an empty one reads **＋ Person** so there is always something to
+Click the cell (an empty one reads **Add person** so there is always something to
 hit) and pick a colleague from the list, or type a name and take it as it
 stands. Enter takes the single remaining match, or, if there is none, the text
 as typed, so somebody without an account can be entered without touching the
@@ -318,7 +333,7 @@ and the names are in the tooltip. Three faces are shown, the rest become "+2".
 
 A pointer at rows in another collection, or in the same one.
 
-Click the cell (**＋ Link** when empty) and pick rows by title; the picker
+Click the cell (**Add link** when empty) and pick rows by title; the picker
 searches the target collection and shows each row's icon. Picking again removes
 it. The value is **always a list**, even for a single target. The picker loads
 up to 500 rows of the target collection and searches within those, so a row
