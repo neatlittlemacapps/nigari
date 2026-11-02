@@ -13,6 +13,7 @@
 #                  workflow's own GITHUB_TOKEN cannot reach a user's Project.
 #   BOARD_PROJECT  the Project's number (from its URL: …/projects/<number>)
 #   BOARD_FIELD    the single-select field to fill (default: Surface)
+# It also copies the board's Priority field onto a priority:N label (see below).
 #   GITHUB_REPOSITORY  owner/repo (set by Actions)
 #
 # Why Surface: the surface lives on the issue as a label, because labels are
@@ -159,6 +160,27 @@ sync_one() {
     [.projectItems.nodes[] | select(.project.id == $p) | .priority // {} | (.name // .number // .text)]
     | map(select(. != null)) | first // "—"' <<<"$issue")"
   report+=" Priority=$priority"
+
+  # The board's Priority goes onto the issue as a priority:N label, because a
+  # label is what every tool shows: the issue page, the issue list, and the
+  # GitHub tools of an agent that cannot read the board. "P1", "1" and
+  # "Priority 1" all become priority:1, the labels the issues already carry;
+  # any other value becomes priority:<value>. An issue with no Priority on the
+  # board keeps the labels it has. Changing the field sends no event to this
+  # workflow (a user's board has no projects_v2_item webhook), so a label
+  # follows on the nightly run or a Run workflow.
+  if [[ "$priority" != "—" ]]; then
+    local wanted have
+    wanted="priority:$(sed -E 's/^([Pp]riority[ ]*|[Pp])?([0-9]+)$/\2/' <<<"$priority" | tr '[:upper:] ' '[:lower:]-')"
+    have="$(jq -r '.[] | select(startswith("priority:"))' <<<"$labels")"
+    for l in $have; do
+      [[ "$l" == "$wanted" ]] || gh api -X DELETE "repos/$repo/issues/$number/labels/$l" >/dev/null
+    done
+    if ! grep -qxF "$wanted" <<<"$have"; then
+      gh api -X POST "repos/$repo/issues/$number/labels" -f "labels[]=$wanted" >/dev/null
+      report+=" (label $wanted)"
+    fi
+  fi
   echo "$report"
 
   parent="$(jq -r '.parent.number // empty' <<<"$issue")"
