@@ -29,6 +29,16 @@ Use it as a coding tool, not a curiosity:
   hops grep cannot see (a component rendered, a callback, a REST route and
   its handler). This is what keeps a change from missing a surface: the MCP
   path beside the REST path, the second caller of a gate.
+- **While carrying out tasks, too** (owner, 2026-11-02). Before editing a
+  component or function, `codegraph_explore` it (its source, callers and
+  blast radius in one call). After the edits, and before a pull request,
+  `codegraph sync`, then `codegraph callers` on every exported symbol the
+  branch added, moved or stopped using, and compare with what the plan said.
+  Spec 010's first PR did this for `useMenuDismiss` (7 callers down to the
+  2 the plan kept) and `RowActions`. `codegraph affected` does not link the
+  Playwright specs in `web/tests/` to the source, because they drive the UI
+  over HTTP and never import it. Pick those specs with text search on the
+  selectors and labels the change touches.
 - **Then read the code itself.** The graph says where to look and what
   depends on what; the decision still rests on the source and the tests.
   Grep stays right for strings: translation keys, CSS classes, comments.
