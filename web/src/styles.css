@@ -254,7 +254,7 @@ button {
 }
 
 .tree-item:hover {
-  background-color: var(--hover); /* siehe .tree-item.active: keine Kurzschreibweise */
+  background-color: var(--hover); /* as in .tree-item.active: no shorthand */
 }
 
 /* The active page carries colour rather than mere grey — it is findable at a
@@ -7687,7 +7687,7 @@ a,
 :root[data-theme='light'] .prop-date.is-overdue { color: #c2410c; }
 :root[data-theme='light'] .prop-date.is-soon { color: #a16207; }
 
-/* URL als kompakter Verweis statt als volle Zeile Rohtext. */
+/* A URL as a compact link instead of a full line of raw text. */
 .prop-url-chip {
   display: inline-flex;
   align-items: center;

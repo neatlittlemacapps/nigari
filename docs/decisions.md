@@ -7,6 +7,38 @@ entries are not edited away.
 
 ---
 
+## 2026-11-02 — The database views epic is two specs; column order is per view; anyone who can edit may lock
+
+**Decision** (owner: "1 A, 2 A, 3 A", for epic #426):
+
+1. Two specs instead of one. **012** covers how a view looks and handles:
+   #131 text size, #132 dragging columns, #133 the board drop marker, #280
+   the fold-away toolbar, #270 the Settings panel. **013** covers what a view
+   stores: #18 Status, #19 quick filters and sub-groups, #279 personal
+   filters, #281 lock, #178 the activity log.
+2. Dragging a column header changes the order **in that view only**, stored
+   on the view beside its column widths. The Properties dialog still sets the
+   order a view starts from.
+3. **Anyone who can edit a database** may lock and unlock its views (#281,
+   spec 013).
+
+**Why:**
+
+1. 012 is mostly interface and can ship first; 013 changes the server and
+   the agent tools. One spec for all ten would be one long plan with nothing
+   shipping for a long time.
+2. Widths are already per view (`colWidths`), so two views of one database
+   can be laid out for different jobs. An order that moved every view would
+   undo that.
+3. The lock guards against accidents, not against people: whoever may edit
+   the views may also lift the lock.
+
+**Turned down:** one spec for the whole epic; a column drag that changes the
+property order everywhere; locking reserved for workspace owners and admins
+(a permission of its own, with its own gates and tests, for a guard rail).
+
+---
+
 ## 2026-11-02 — The board's Priority field is copied onto priority:N labels by the board sync
 
 **Decision** (owner: "can't you find a job or something that mirrors project priority to a field

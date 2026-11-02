@@ -2023,7 +2023,7 @@ function BoardView({
   // card so it survives a re-render, and forgotten on leaving the view — an
   // opened card is a glance, not a setting.
   const [openCards, setOpenCards] = useState<Set<string>>(new Set());
-  // Zeiger-basiertes Ziehen statt des ruckeligen nativen Drags (siehe boardDrag).
+  // Pointer-based dragging instead of the jerky native drag (see boardDrag).
   const { drag, armedRow, startDrag, consumeClick } = useBoardDrag((rowId, toCol) =>
     onDrop(rowId, groupBy, toCol),
   );

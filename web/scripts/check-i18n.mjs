@@ -279,11 +279,35 @@ for (const file of files) {
 const GERMAN_WORDS =
   /(?<![\w-])(und|nicht|wird|werden|sind|eine|einen|einem|einer|kann|muss|soll|sollen|beim|des|dem|der|das|den|für|fuer|aus|nach|über|ueber|ohne|damit|weil|wenn|dann|noch|nur|schon|sich|hier|aber|oder|bitte|kein|keine|wurde|wurden|diese|dieser|dieses|jeder|jede|mehr|sehr|immer|wieder|zwischen|während|waehrend|deshalb|sonst|bereits|jetzt|etwas|nichts|alles|ihre|seine|unser|gibt|geben|machen|macht|lassen|bleibt|steht|liegt|dabei|darauf|dafür|dafuer|dadurch|daher|sowie|zum|zur|vom|ist|sein|haben|hoehe|höhe|breite|farbe|zeile|zeilen|spalte|spalten|duerfen|koennen|muessen|gehoert|eigene|eigenen|jeweils|nichts)(?![\w])/giu;
 const UMLAUT = /[äöüßÄÖÜ]/;
+// One of these is enough on its own: no English word is spelled like them, so
+// a line holding one is German whatever else it says. Two words from the list
+// above were too many for "Zeiger-basiertes Ziehen statt des ruckeligen
+// nativen Drags (siehe boardDrag)", which has no umlaut and only "des" from
+// it, and three German comments sat in web/src unreported until #427. The Go
+// side's germanStrong (server/language_test.go) works the same way.
+const GERMAN_LINE_STRONG =
+  /(?<![\w-])(siehe|statt|jedoch|sondern|zunächst|zunaechst|nämlich|naemlich|außerdem|ausserdem|stattdessen|trotzdem|allerdings|eigentlich|überhaupt|ueberhaupt)(?![\w])/iu;
 
 function readsGerman(line) {
   if (/i18n-ok:\s*\S/.test(line)) return false;
   if (UMLAUT.test(line)) return true;
+  if (GERMAN_LINE_STRONG.test(line)) return true;
   return (line.match(GERMAN_WORDS) ?? []).length >= 2;
+}
+
+// The rule's own cases (#427), so a change to the word lists cannot quietly
+// let these through again, or start flagging English.
+for (const [line, german] of [
+  ['// Zeiger-basiertes Ziehen statt des ruckeligen nativen Drags (siehe boardDrag).', true], // i18n-ok: test case
+  ['/* URL als kompakter Verweis statt als volle Zeile Rohtext. */', true], // i18n-ok: test case
+  ['/* siehe .tree-item.active: keine Kurzschreibweise */', true], // i18n-ok: test case
+  ['// Pointer-based dragging instead of the jerky native drag (see boardDrag).', false],
+  ['// Start the stats: statement, state and status stay English.', false],
+]) {
+  if (readsGerman(line) !== german) {
+    console.error(`  ✗ check-i18n's German rule: ${JSON.stringify(line)} should ${german ? '' : 'not '}read as German`);
+    process.exit(1);
+  }
 }
 
 const germanLines = [];
