@@ -21,18 +21,18 @@ description: "Tasks for every menu item has an icon, and an icon means one thing
 
 ## Phase 1: Setup
 
-- [ ] T001 [ui] Component token `menu.icon-size` (16px) in `web/tokens/component.tokens.json`, with a `$description` saying it is the one size of every menu icon (research R7); rebuild `web/src/tokens.css` with `node scripts/build-tokens.mjs`
+- [x] T001 [ui] Component token `menu.icon-size` (16px) in `web/tokens/component.tokens.json`, with a `$description` saying it is the one size of every menu icon (research R7); rebuild `web/src/tokens.css` with `node scripts/build-tokens.mjs`
 
 ---
 
 ## Phase 2: Foundational (blocks every story)
 
-- [ ] T002 [US2] [ui] New `web/src/menuIcons.ts`: `MENU_ICONS` with every function and icon in `data-model.md` (85 functions), `MenuFunction`, `SLASH_FUNCTIONS` (the 24 BlockNote `slash_menu` keys + the 12 own items), `DRAG_HANDLE_FUNCTIONS` (the 4 `drag_handle` keys), `MenuIcon` (`aria-hidden`, `menu.icon-size`, `filled`), and the three toggle-heading composites (research R6). Comments say why: one function, one icon, and the bin shared by Move to trash and Remove view that started it
-- [ ] T003 [US4] [ui] New `web/src/ui/Menu.tsx` + `Menu.css` on `@base-ui/react/menu` (contracts/ui.md): `Menu` (`trigger`, `label`, `side`/`align`, `open`/`onOpenChange`, `anchorPoint`, `narrow="sheet"` at or below `SHEET_MAX_WIDTH` from `web/src/anchoredMenu.ts`), `MenuItem` (`fn`, `danger`, `disabled`, `filled`, `chord`, `opensDialog` = close, then run on the next frame, research R13), `MenuCheckboxItem`, `MenuSubmenu`, `MenuValues` (required `reason`), `MenuValueItem`, `MenuRadioGroup`, `MenuRadioItem`, `MenuLabel`, `MenuSeparator`. Popup on `layer.dropdown`; styles move from `.menu`, `.menu button`, `.menu-item svg`, `.menu-sep`, `.menu-label` in `web/src/styles.css` into `Menu.css` with token names (depends on T001, T002)
-- [ ] T004 [P] [US4] [ui] `web/src/ui/README.md`: the `Menu` entry (which part for what, the icon rule, value lists, right-click via `anchorPoint`, phone sheets) and `.claude/rules/frontend.md`: menus are in the layer now (depends on T003)
-- [ ] T005 [P] [US4] [ui] Catalogue section for `Menu` in `web/catalog/main.tsx`: button menu, right-click menu, danger, disabled, checkbox, submenu, value list, radio group, chord, phone sheet; light and dark (depends on T003)
-- [ ] T006 [P] [US4] [test] Keyboard cases for `Menu` in `web/tests/catalog.mjs`: Enter/Space/↓ open on the first item, ↑/↓/Home/End move, typeahead, →/← submenu, Escape returns focus to the trigger (depends on T005)
-- [ ] T007 [US3] [test] New `web/scripts/check-menu-icons.mjs` (research R3, contracts/ui.md messages): rules 1–5 with the TypeScript compiler API, rule 4 reading `@blocknote/core/locales` through esbuild as `check-anchoredmenu.mjs` does, a self-test of rules 1–3 on inline snippets, and a `REPORT_ONLY` switch that makes rules 1 and 3 print a count instead of failing while menus remain to move. Added to `npm run check` in `web/package.json` (depends on T002)
+- [x] T002 [US2] [ui] New `web/src/menuIcons.ts`: `MENU_ICONS` with every function and icon in `data-model.md` (85 functions), `MenuFunction`, `SLASH_FUNCTIONS` (the 24 BlockNote `slash_menu` keys + the 12 own items), `DRAG_HANDLE_FUNCTIONS` (the 4 `drag_handle` keys), `MenuIcon` (`aria-hidden`, `menu.icon-size`, `filled`), and the three toggle-heading composites (research R6). Comments say why: one function, one icon, and the bin shared by Move to trash and Remove view that started it
+- [x] T003 [US4] [ui] New `web/src/ui/Menu.tsx` + `Menu.css` on `@base-ui/react/menu` (contracts/ui.md): `Menu` (`trigger`, `label`, `side`/`align`, `open`/`onOpenChange`, `anchorPoint`, `narrow="sheet"` at or below `SHEET_MAX_WIDTH` from `web/src/anchoredMenu.ts`), `MenuItem` (`fn`, `danger`, `disabled`, `filled`, `chord`, `opensDialog` = close, then run on the next frame, research R13), `MenuCheckboxItem`, `MenuSubmenu`, `MenuValues` (required `reason`), `MenuValueItem`, `MenuRadioGroup`, `MenuRadioItem`, `MenuLabel`, `MenuSeparator`. Popup on `layer.dropdown`; styles move from `.menu`, `.menu button`, `.menu-item svg`, `.menu-sep`, `.menu-label` in `web/src/styles.css` into `Menu.css` with token names (depends on T001, T002)
+- [x] T004 [P] [US4] [ui] `web/src/ui/README.md`: the `Menu` entry (which part for what, the icon rule, value lists, right-click via `anchorPoint`, phone sheets) and `.claude/rules/frontend.md`: menus are in the layer now (depends on T003)
+- [x] T005 [P] [US4] [ui] Catalogue section for `Menu` in `web/catalog/main.tsx`: button menu, right-click menu, danger, disabled, checkbox, submenu, value list, radio group, chord, phone sheet; light and dark (depends on T003)
+- [x] T006 [P] [US4] [test] Keyboard cases for `Menu` in `web/tests/catalog.mjs`: Enter/Space/↓ open on the first item, ↑/↓/Home/End move, typeahead, →/← submenu, Escape returns focus to the trigger (depends on T005)
+- [x] T007 [US3] [test] New `web/scripts/check-menu-icons.mjs` (research R3, contracts/ui.md messages): rules 1–5 with the TypeScript compiler API, rule 4 reading `@blocknote/core/locales` through esbuild as `check-anchoredmenu.mjs` does, a self-test of rules 1–3 on inline snippets, and a `REPORT_ONLY` switch that makes rules 1 and 3 print a count instead of failing while menus remain to move. Added to `npm run check` in `web/package.json` (depends on T002)
 
 ---
 
@@ -42,18 +42,18 @@ description: "Tasks for every menu item has an icon, and an icon means one thing
 
 **Independent Test**: quickstart §3 and §4 on the sidebar **+**, a page's ⋯ and right-click, a template's right-click, the workspace switcher, the page "…" and the account menu.
 
-- [ ] T008 [US1] [ui] `Sidebar.tsx` `AddMenu`: `ui/Menu` with `newPage`, `newCollection` (menu 1)
-- [ ] T009 [US1] [ui] `Sidebar.tsx` `PageMenu` through `RowActions` and `TreeItem`: one `ui/Menu` per row, opened by ⋯ and by a right-click at the pointer (`anchorPoint`), keeping the shared `TreeCtx.setMenuFor` state so one menu is open at a time and the add menu closes (research R13). Includes `DbRows`' right-click (`Sidebar.tsx:223`). Items: `openInNewTab`, `favorite`, `duplicate`, `newCollection`, `moveToTopLevel`, `MenuSubmenu fn="moveTo"` over `MenuValues` of workspaces, `showFiles`, `saveAsTemplate` (both labels), `exportMarkdown`, `moveToTrash` with its chord (menu 2)
-- [ ] T010 [US1] [ui] `Sidebar.tsx` template row menu (right-click, `Sidebar.tsx:1555`): `edit`, `removeTemplateFlag`, `moveToTrash` (menu 3)
-- [ ] T011 [US1] [ui] `Sidebar.tsx` workspace switcher: `MenuValues` of workspaces (with the current one ticked), `workspaceSettings` (`opensDialog`), `newWorkspace`, `unattendedWorkspaces` (menu 4); remove its `useMenuDismiss`
-- [ ] T012 [US1] [ui] Remove `web/src/components/AnchoredMenu.tsx` and the `useMenuDismiss` calls of `Sidebar`, `TreeItem`, `RowActions` (depends on T008–T011)
-- [ ] T013 [US1] [ui] `Editor.tsx` `PageHeader` page "…": `description`, `toComments`, `versionHistory`, `commentsPanel`, `visibility` (one icon), `shareToWeb`, `import`, `MenuCheckboxItem fn="fullWidth"`, `exportMarkdown`, `exportHtml`, `print`, `moveToTrash` (menu 5); its `useMenuDismiss` stays only for the share panel. Works in the full page and the side peek (Page containers)
-- [ ] T014 [US1] [ui] `UserMenu.tsx`: `connectAgent`, `profile`, `apiTokens`, `activityLog`, `subscribeCalendar`, `twoFactor`, `languageAndTime`, `shortcuts` (chord), checkboxes `notesMode`, `fonts`, `openRowsInNewTab`, then `manageUsers`, `instanceSettings`, `signOut` (menu 6); every item that opens a modal uses `opensDialog`
-- [ ] T015 [P] [US1] [i18n] Accessible names for the menu popups added in T008–T014 ("Page actions", "Workspaces", "Account", …) in `web/src/locales/de.json`, `es.json`, `nl.json` (depends on T008–T014)
-- [ ] T016 [P] [US2] [ui] `Editor.tsx` `getSlashItems`: every item's icon from `SLASH_FUNCTIONS`; the own items' emoji (💡 🔖 ▦ 📑 📄) become their Lucide icons; the chart items read the pairing (menu 13). New logic goes in a small module the big file imports (`web/src/slashIcons.ts`), per the frontend rule
-- [ ] T017 [P] [US2] [ui] `Editor.tsx`: `SideMenuController` with a `DragHandleMenu` of the four default items rebuilt with `DragHandleMenuItem` and `DRAG_HANDLE_FUNCTIONS` icons; the colours submenu kept (menu 14)
-- [ ] T018 [US1] [test] Update `web/tests/menus-and-arrows.mjs`, `dialog-escape.mjs`, `design-system-dialog.mjs`, `editor-tokens.mjs` to roles (`menuitem`, `menu` by name), keeping every assertion (#20, #21, #24, focus back after the account menu's dialogs) (research R11)
-- [ ] T019 [US1] [test] New `web/tests/menu-icons.mjs`, registered in `web/tests/package.json`: in menus 2, 5, 6, 13, 14 every `[role=menuitem]` has exactly one `svg[aria-hidden="true"]` and an accessible name equal to its label (FR-010); Duplicate shows the same icon in the page and template menus; favourite on/off keeps its icon; dark mode legible
+- [x] T008 [US1] [ui] `Sidebar.tsx` `AddMenu`: `ui/Menu` with `newPage`, `newCollection` (menu 1)
+- [x] T009 [US1] [ui] `Sidebar.tsx` `PageMenu` through `RowActions` and `TreeItem`: one `ui/Menu` per row, opened by ⋯ and by a right-click at the pointer (`anchorPoint`), keeping the shared `TreeCtx.setMenuFor` state so one menu is open at a time and the add menu closes (research R13). Includes `DbRows`' right-click (`Sidebar.tsx:223`). Items: `openInNewTab`, `favorite`, `duplicate`, `newCollection`, `moveToTopLevel`, `MenuSubmenu fn="moveTo"` over `MenuValues` of workspaces, `showFiles`, `saveAsTemplate` (both labels), `exportMarkdown`, `moveToTrash` with its chord (menu 2)
+- [x] T010 [US1] [ui] `Sidebar.tsx` template row menu (right-click, `Sidebar.tsx:1555`): `edit`, `removeTemplateFlag`, `moveToTrash` (menu 3)
+- [x] T011 [US1] [ui] `Sidebar.tsx` workspace switcher: `MenuValues` of workspaces (with the current one ticked), `workspaceSettings` (`opensDialog`), `newWorkspace`, `unattendedWorkspaces` (menu 4); remove its `useMenuDismiss`
+- [x] T012 [US1] [ui] Remove `web/src/components/AnchoredMenu.tsx` and the `useMenuDismiss` calls of `Sidebar`, `TreeItem`, `RowActions` (depends on T008–T011)
+- [x] T013 [US1] [ui] `Editor.tsx` `PageHeader` page "…": `description`, `toComments`, `versionHistory`, `commentsPanel`, `visibility` (one icon), `shareToWeb`, `import`, `MenuCheckboxItem fn="fullWidth"`, `exportMarkdown`, `exportHtml`, `print`, `moveToTrash` (menu 5); its `useMenuDismiss` stays only for the share panel. Works in the full page and the side peek (Page containers)
+- [x] T014 [US1] [ui] `UserMenu.tsx`: `connectAgent`, `profile`, `apiTokens`, `activityLog`, `subscribeCalendar`, `twoFactor`, `languageAndTime`, `shortcuts` (chord), checkboxes `notesMode`, `fonts`, `openRowsInNewTab`, then `manageUsers`, `instanceSettings`, `signOut` (menu 6); every item that opens a modal uses `opensDialog`
+- [x] T015 [P] [US1] [i18n] Accessible names for the menu popups added in T008–T014 ("Page actions", "Workspaces", "Account", …) in `web/src/locales/de.json`, `es.json`, `nl.json` (depends on T008–T014)
+- [x] T016 [P] [US2] [ui] `Editor.tsx` `getSlashItems`: every item's icon from `SLASH_FUNCTIONS`; the own items' emoji (💡 🔖 ▦ 📑 📄) become their Lucide icons; the chart items read the pairing (menu 13). New logic goes in a small module the big file imports (`web/src/slashIcons.ts`), per the frontend rule
+- [x] T017 [P] [US2] [ui] `Editor.tsx`: `SideMenuController` with a `DragHandleMenu` of the four default items rebuilt with `DragHandleMenuItem` and `DRAG_HANDLE_FUNCTIONS` icons; the colours submenu kept (menu 14)
+- [x] T018 [US1] [test] Update `web/tests/menus-and-arrows.mjs`, `dialog-escape.mjs`, `design-system-dialog.mjs`, `editor-tokens.mjs` to roles (`menuitem`, `menu` by name), keeping every assertion (#20, #21, #24, focus back after the account menu's dialogs) (research R11)
+- [x] T019 [US1] [test] New `web/tests/menu-icons.mjs`, registered in `web/tests/package.json`: in menus 2, 5, 6, 13, 14 every `[role=menuitem]` has exactly one `svg[aria-hidden="true"]` and an accessible name equal to its label (FR-010); Duplicate shows the same icon in the page and template menus; favourite on/off keeps its icon; dark mode legible
 
 ---
 
@@ -63,8 +63,8 @@ description: "Tasks for every menu item has an icon, and an icon means one thing
 
 **Independent Test**: quickstart §4 on menus 1–6.
 
-- [ ] T020 [US4] [test] New `web/tests/menu-keyboard.mjs`, registered in `web/tests/package.json`: for menus 1–6 open from the keyboard, move, typeahead, Escape, focus on the trigger; → / ← on "Move to workspace"; Workspace settings from the switcher and Profile from the account menu return focus to their trigger on close; the page "…" from inside a side peek draws over it; at phone width the menus are wholly on screen
-- [ ] T021 [US4] [ui] Fix what T020 finds in `ui/Menu.tsx` or the menus of Phase 3 (Base UI focus return vs. `modal.ts` `focusBefore()`, research R13)
+- [x] T020 [US4] [test] New `web/tests/menu-keyboard.mjs`, registered in `web/tests/package.json`: for menus 1–6 open from the keyboard, move, typeahead, Escape, focus on the trigger; → / ← on "Move to workspace"; Workspace settings from the switcher and Profile from the account menu return focus to their trigger on close; the page "…" from inside a side peek draws over it; at phone width the menus are wholly on screen
+- [x] T021 [US4] [ui] Fix what T020 finds in `ui/Menu.tsx` or the menus of Phase 3 (Base UI focus return vs. `modal.ts` `focusBefore()`, research R13)
 
 ---
 
@@ -74,8 +74,8 @@ description: "Tasks for every menu item has an icon, and an icon means one thing
 
 **Independent Test**: quickstart §2 rows 2–5.
 
-- [ ] T022 [US3] [test] Run `node web/scripts/check-menu-icons.mjs`: rules 2, 4, 5 green; rules 1 and 3 report only the menus of PR 2 (`CollectionView.tsx`, `ViewOpenMenu.tsx`); record the count in the PR
-- [ ] T023 [US3] [ui] `rawButtons` in `web/tokens/budgets.json` lowered to the count `check-tokens.mjs` measures after PR 1; bundle gzip measured against `check-bundle.mjs` and written in the PR
+- [x] T022 [US3] [test] Run `node web/scripts/check-menu-icons.mjs`: rules 2, 4, 5 green; rules 1 and 3 report only the menus of PR 2 (`CollectionView.tsx`, `ViewOpenMenu.tsx`); record the count in the PR
+- [x] T023 [US3] [ui] `rawButtons` in `web/tokens/budgets.json` lowered to the count `check-tokens.mjs` measures after PR 1; bundle gzip measured against `check-bundle.mjs` and written in the PR
 
 ---
 
