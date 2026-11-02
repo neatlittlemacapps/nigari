@@ -12,10 +12,15 @@ of the plan.
   `newCollection`; `delete`, not `deleteView`).
 - **Icon**: a Lucide React component, or one of the composites in
   `menuIcons.ts` (R6). Unique across `MENU_ICONS` (the check, rule 2).
-- **Menu item**: a `<MenuItem fn label …>` in a component. Many items can
+- **Menu**: a `ui/Menu` (opened from a button) or `ui/ContextMenu` (opened
+  by a right-click), on Base UI (research R10). No other menus exist once
+  pull request 2 lands.
+- **Menu item**: a `<MenuItem fn …>`, `<MenuCheckboxItem fn …>` or
+  `<MenuSubmenu fn …>` in a component. Many items can
   share one function; each function has exactly one icon.
-- **Value list**: a `<MenuValues reason>` inside a menu. Its buttons are
-  values, not functions, and carry no icon from the pairing.
+- **Value list**: a `<MenuValues reason>` inside a menu. Its
+  `MenuValueItem`s (and a `MenuRadioGroup`'s items) are values, not
+  functions, and carry no icon from the pairing.
 - **Library key**: a key of BlockNote's `slash_menu` or `drag_handle`
   dictionary, mapped to a function in `SLASH_FUNCTIONS` /
   `DRAG_HANDLE_FUNCTIONS`.
@@ -143,13 +148,16 @@ from today.
 
 - Every value of `MENU_ICONS` is unique (check rule 2).
 - Every library key maps to a function (check rule 4).
-- Every `<button>` inside a menu is a `MenuItem`, or sits in a
-  `MenuValues` with a reason (check rules 1, 3).
+- No hand-built menu (`className="menu …"`, `AnchoredMenu`, `role="menu"`)
+  and no Base UI menu import outside `web/src/ui/`; every item is a
+  `MenuItem`/`MenuCheckboxItem`/`MenuSubmenu`, or a `MenuValueItem` inside
+  a `MenuValues` with a reason (check rules 1, 3).
 - `fn` is a literal the check can read (check rule 5); `tsc` checks it is a
   real function.
 
 ## State
 
 A toggle item keeps its function and icon in both states (FR-004). Only the
-label changes, plus the fill for `favorite`, as today. `fullWidth` stays a
-`menuitemcheckbox` with its tick.
+label changes, plus the fill for `favorite`, as today. `fullWidth`, `notesMode`,
+`fonts` and `openRowsInNewTab` are `MenuCheckboxItem`s: same icon, a tick
+when on.

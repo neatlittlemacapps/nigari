@@ -56,12 +56,13 @@ export const MENU_ICONS = { duplicate: CopyPlus, moveToTrash: Trash2, … } sati
 export type MenuFunction = keyof typeof MENU_ICONS;
 ```
 
-A new design-system component, `ui/MenuItem.tsx`, is the only way to draw a
-menu item: `<MenuItem fn="duplicate" onClick={…}>{t('Duplicate')}</MenuItem>`.
-It renders the button with `role="menuitem"` (or `menuitemcheckbox` with
-`checked`), the icon from the pairing (`aria-hidden`, one size), the label,
-an optional shortcut chord, and `danger`/`disabled` states. Menus stop
-importing icons for their items.
+A new design-system component, `ui/Menu.tsx`, on Base UI's `Menu` (owner's
+answer B, R10), is the only way to draw a menu. Its `MenuItem` is the only
+way to draw an item: `<MenuItem fn="duplicate" onClick={…}>{t('Duplicate')}</MenuItem>`.
+It renders Base UI's `Menu.Item` (or `CheckboxItem` with `checked`), the icon
+from the pairing (`aria-hidden`, one size), the label, an optional shortcut
+chord, and `danger`/`disabled` states. Menus stop importing icons for their
+items.
 
 **Rationale**: FR-005 says one place every menu reads. With `fn` typed as
 `MenuFunction`, a function cannot have two icons (FR-002) by construction, and
@@ -74,8 +75,7 @@ Markdown" / "Markdown (.md)"), so the check would need its own pairing anyway:
 two lists. (b) a full `Menu` component on Base UI's `Menu`, which also owns the
 container, positioning and arrow-key navigation. That is spec 001's planned
 batch 2 ("menus and popovers", `specs/001-design-system/tasks.md`), found
-through CodeGraph (R9). It is a bigger change than this spec asks for. Owner's
-call: see R9.
+through CodeGraph (R9). **Chosen by the owner (B, 2026-11-02)**: see R10.
 
 ## R3. The check
 
@@ -214,10 +214,98 @@ The first draft of this research was written from text search alone. Then
   in web/src/ui yet (spec 001 batch 2)". Spec 001 chose Base UI, which has a
   `Menu`, and batch 2 (menus and popovers) has no tasks yet. Either this spec
   builds `MenuItem` as a plain button whose props a Base UI version can keep
-  later, or it does batch 2's menus now. The owner decides.
+  later, or it does batch 2's menus now. The owner chose the second (B).
 - **The raw-button ratchet.** `check-tokens.mjs` counts `<button` outside
   `web/src/ui/` against `rawButtons` in `web/tokens/budgets.json` (332). The
   count may only go down, and the check fails when the count falls below the
   budget until the budget is lowered. Moving the menu items into
   `ui/MenuItem` lowers it, so the same pull request lowers the budget to the
   measured count.
+
+## R10. Menus on Base UI (owner: B)
+
+Graph queries for this section: `codegraph callers useMenuDismiss` (7:
+`Sidebar`, `TreeItem`, `RowActions` in `Sidebar.tsx`; `TagChip`, `PageHeader`
+in `Editor.tsx`), `codegraph callers menuStyleFor` (2, `CollectionView`),
+`codegraph impact AnchoredMenu` (`AddMenu`, `PageMenu`, `TreeItem`,
+`RowActions`, `Sidebar`), `codegraph explore` on `ui/Popover` and `ui/Select`
+(the Base UI pattern already in `web/src/ui/`).
+
+**Decision**: `web/src/ui/Menu.tsx` wraps `@base-ui/react/menu` (1.9.0,
+already a dependency) and `@base-ui/react/context-menu` the way
+`ui/Popover.tsx` wraps its popover: Root, Trigger (`render` = the existing
+button), Portal, Positioner (`collisionPadding` 8, layer `layer.dropdown`),
+Popup. Parts exported:
+
+| Part | Base UI | Used for |
+|------|---------|----------|
+| `Menu` (`trigger`, `label`, `side`, `align`, optional `open`/`onOpenChange`) | `Menu.Root` … `Popup` | every button-opened menu |
+| `ContextMenu` (`children` = the area, `label`) | `ContextMenu.Root/Trigger` + the same popup | right-click on a sidebar row, a view tab, a template (FR-013) |
+| `MenuItem` (`fn`, …) | `Menu.Item` | every action |
+| `MenuCheckboxItem` (`fn`, `checked`) | `Menu.CheckboxItem` | Full width, Notes mode, nigari fonts, Open rows in new tab |
+| `MenuSubmenu` (`fn`, `label`) | `Menu.SubmenuRoot/SubmenuTrigger` | Move to workspace (today an inline `menu-sub` list) |
+| `MenuValues` (`reason`) + `MenuValueItem` | `Menu.Group` + `Menu.Item` | the workspace, template and column lists |
+| `MenuRadioGroup` + `MenuRadioItem` | `Menu.RadioGroup/RadioItem` | **Open pages in** (replaces `ViewOpenMenu`'s native radios, as its own comment expected) |
+| `MenuLabel`, `MenuSeparator` | `Menu.GroupLabel`, `Menu.Separator` | headings and lines |
+
+What goes away: `AnchoredMenu.tsx` and `anchoredMenu.ts` (`menuStyleFor`).
+The Positioner places every menu in a portal, on screen, which is what both
+were written to do (#21 and the phone toolbar). `check-anchoredmenu.mjs`
+asserted `anchoredMenu.ts`'s placement, so it goes with the module. The
+behaviour it protected stays tested in the browser: `database-toolbar-menus.mjs`
+checks the menu is on screen and takes a tap at its centre, and
+`menus-and-arrows.mjs` covers #21. Deleting a check is a decision for a person,
+so the pull request names it for the owner. `useMenuDismiss` stays for its two
+callers that are not menus (`TagChip`'s colour picker and `PageHeader`'s share
+panel); its other five calls go.
+
+**Focus and dialogs**: a menu item that opens a dialog (rename, workspace
+settings, profile) closes the menu first. Base UI returns focus to the
+trigger, and the dialog's `returnFocus` (spec 001, `ui/Dialog`) points at the
+same trigger, so focus lands back on the button that started it (User Story 4,
+scenario 4). Escape inside a menu inside a dialog is stopped by Base UI at the
+menu (FR-014; `dialog-escape.mjs` keeps checking it).
+
+**The editor's menus** (`/` and the block menu) stay BlockNote's Mantine
+menus. They belong to the library and already work from the keyboard, and
+replacing them would mean forking its suggestion and side-menu logic. They get
+only the icons (R4).
+
+**Rationale**: one component for every menu gives the keyboard behaviour
+(FR-012) in one place, and every menu migrates once instead of twice. The Base
+UI pattern is already in `web/src/ui/` (Popover, Select, Dialog) and the
+dependency is installed, so nothing new comes in.
+
+**Alternatives considered**: keeping `AnchoredMenu` and putting only Base UI
+items inside it (Base UI's item keyboard handling needs its own Root and
+Popup); a filterable menu (`Menu.FilterRoot`, new in 1.9) for the long
+workspace list (not asked; a later change can add it).
+
+## R11. What the browser tests must change
+
+Text search over `web/tests/` (strings, so it is the right tool here) finds
+eight specs that open menus. Four lookups use
+`getByRole('button', { name: 'Remove view' })` and the like. Items become
+`role="menuitem"`, so those become `getByRole('menuitem', …)`. Class selectors
+(`.overflow-menu`, `.dbt-menu`, `.view-tab-menu`, `.card-move-menu`) become the
+popup's accessible name (`getByRole('menu', { name: … })`). What each spec
+asserts stays the same: they guard real bugs (#20, #21, #24, the phone
+toolbar, the user menu's dialogs returning focus). A new `menu-keyboard.mjs`
+covers User Story 4 on each menu.
+
+## R12. Two pull requests
+
+1. **Foundation, plus the sidebar and account menus**: `menuIcons.ts`,
+   `ui/Menu.tsx` + css + catalogue, `check-menu-icons.mjs` (rules 2, 4 and 5
+   fail; rules 1 and 3 report the menus not moved yet, with their count), menus
+   1–6 (Sidebar, the page "…", UserMenu), `AnchoredMenu` removed, icons for the
+   editor's `/` and block menus, and the tests for those menus.
+2. **The database menus and the switch**: menus 7–12 and 15 in
+   `CollectionView.tsx`, `ViewOpenMenu` as a radio group, `anchoredMenu.ts`
+   and `check-anchoredmenu.mjs` removed, rules 1 and 3 switched to failing,
+   `rawButtons` lowered, the registry row, screenshots, the remaining tests.
+
+**Rationale**: each pull request leaves `main` working and releasable, and the
+second can start as soon as the first's component is merged. The sidebar goes
+first: it has the most menus, and the most bugs were fixed there before (#20,
+#21), so it teaches the most.

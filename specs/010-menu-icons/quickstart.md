@@ -52,7 +52,18 @@ Automated: `npm test --prefix web/tests` runs `menu-icons.mjs` (every
 `[role=menuitem]` in the opened menus has one `svg[aria-hidden="true"]`, and
 the accessible name equals the label).
 
-## 4. SC-004 by hand
+## 4. From the keyboard (User Story 4)
+
+In each menu (not the editor's two): Tab to its button, Enter opens it with
+focus on the first item; ↓/↑ and Home/End move; typing "m" jumps to "Move…";
+→ on "Move to workspace" opens the submenu and ← closes it; Escape closes the
+menu and focus is back on the button. Open "Rename view" from the view menu,
+press Escape in the dialog: focus is back on the view menu's button. Repeat
+the page menu from inside a side peek, and at phone width.
+
+Automated: `menu-keyboard.mjs` in `npm test --prefix web/tests`.
+
+## 5. SC-004 by hand
 
 On the page, row and view menus, find **Duplicate**, **Move to trash** and
 **Rename view** by icon alone, before the pull request is offered.

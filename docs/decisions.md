@@ -7,6 +7,27 @@ entries are not edited away.
 
 ---
 
+## 2026-11-02 — Spec 010 rebuilds the menus on Base UI, not only their icons
+
+**Decision** (owner: "B"): spec 010 also does the menus part of spec 001's next batch.
+Every menu except the editor library's two becomes `ui/Menu` (Base UI `Menu` and
+`ContextMenu`), so every menu gets arrow keys, type-to-jump, Escape and focus return in
+one place. `AnchoredMenu`, `anchoredMenu.ts` and `check-anchoredmenu.mjs` are removed; the
+bugs they fixed (#21, the phone toolbar) stay covered by two browser specs. Two pull
+requests: the sidebar, page and account menus first, then the database menus.
+`specs/010-menu-icons/research.md` R10–R12.
+
+**Why:** with icons only, every menu would be rewritten twice, once for the icons and
+again when the menus move to Base UI. Doing both at once costs more testing now, but
+less work overall, and the keyboard gain reaches every menu at the same time.
+
+**Turned down:** icons only (option A: smaller, but leaves the menus without arrow
+keys and means a second rewrite); rebuilding the editor's `/` and block menus too
+(they are BlockNote's, already work from the keyboard, and would need its internals
+forked).
+
+---
+
 ## 2026-11-02 — Menu icons: one pairing, our icons on the editor's items, view types are values
 
 **Decision** (spec 010 plan; the verb-alone rule is the owner's "A", 2026-10-29): every

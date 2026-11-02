@@ -7,44 +7,59 @@
 ## Summary
 
 One module, `web/src/menuIcons.ts`, pairs every menu function with one Lucide
-icon (R2). A new design-system component, `ui/MenuItem`, is the only way to
-draw a menu item, and takes its icon from that pairing by function name, so
-a function cannot show two icons. Lists of values inside menus are wrapped
-in `ui/MenuValues` with a stated reason. The editor's `/` menu and block menu
-take their icons from the same pairing, keyed by BlockNote's own item keys
-(R4). A new check, `check-menu-icons.mjs`, fails the build on a menu item
-without an icon, two functions with one icon, an undeclared value list, or a
-library item the pairing does not know (R3). The collisions found today are
-resolved in [data-model.md](data-model.md) (R5). Front end only: no server,
-MCP, schema or route change.
+icon (R2). A new design-system component, `ui/Menu`, built on Base UI's `Menu`
+and `ContextMenu` (owner's answer B, R10), becomes the only way to draw a
+menu. Its `MenuItem` takes its icon from the pairing by function name, so a
+function cannot show two icons, and every menu gains arrow keys, type-to-jump,
+Escape and focus return in one place. Lists of values inside menus are
+`MenuValues` with a stated reason. The editor's `/` menu and block menu stay
+BlockNote's but take their icons from the same pairing, keyed by BlockNote's
+own item keys (R4). A new check, `check-menu-icons.mjs`, fails the build on a
+hand-built menu, an item without an icon, two functions with one icon, an
+undeclared value list, or a library item the pairing does not know (R3).
+`AnchoredMenu`, `menuStyleFor` and `check-anchoredmenu.mjs` go: the Base UI
+positioner does their job (R10). The collisions found today are resolved in
+[data-model.md](data-model.md) (R5). Front end only. Two pull requests (R12).
 
 ## Technical Context
 
 **Language/Version**: TypeScript 5.6 + React 18 (`web/src/`); Go 1.27 untouched
 
-**Primary Dependencies**: `lucide-react` 1.25 (the existing icon set), `@blocknote/react` 0.51.4 (`DragHandleMenu`, `DragHandleMenuItem`, `SuggestionMenuController`), `typescript` compiler API and `esbuild` (already installed) for the check. New dependencies: none
+**Primary Dependencies**: `@base-ui/react` 1.9.0 (`menu`, `context-menu`; already used by `ui/Popover`, `ui/Select`, `ui/Dialog`), `lucide-react` 1.25 (the existing icon set), `@blocknote/react` 0.51.4 (`DragHandleMenu`, `DragHandleMenuItem`, `SuggestionMenuController`), the `typescript` compiler API and `esbuild` (already installed) for the check. New dependencies: none
 
 **Storage**: none
 
-**Testing**: `npm run check` (new `check-menu-icons.mjs` with its self-test), Playwright `web/tests/menu-icons.mjs` (new), catalogue (`web/catalog/`) for `MenuItem`
+**Testing**: `npm run check` (new `check-menu-icons.mjs` with its self-test; `check-anchoredmenu.mjs` removed in PR 2), Playwright: new `menu-icons.mjs` and `menu-keyboard.mjs`, and the eight existing specs that open menus updated (R11). Catalogue (`web/catalog/`) for `ui/Menu`
 
 **Target Platform**: browser, desktop and phone widths; desktop shell (same frontend)
 
-**Performance Goals**: no request or query; bundle stays under the `check-bundle.mjs` gzip cap (about 25 more Lucide icons, tree-shaken; BlockNote still ships `react-icons` for its toolbar)
+**Performance Goals**: no request or query. Bundle stays under the `check-bundle.mjs` gzip cap: Base UI's menu adds to a library already in the bundle, plus about 25 tree-shaken Lucide icons; `AnchoredMenu` and `anchoredMenu.ts` come out. Measured in each PR
 
-**Constraints**: English source; design system (no new literal: icon size becomes token `menu.icon-size`); `CGO_ENABLED=0` unaffected
+**Constraints**: English source; design system (icon size becomes token `menu.icon-size`; menu layer `layer.dropdown`); `CGO_ENABLED=0` unaffected
 
-**Scale/Scope**: 15 menus, 85 functions ([data-model.md](data-model.md))
+**Scale/Scope**: 15 menus (13 ours, 2 the editor library's), 85 functions ([data-model.md](data-model.md))
+
+## CodeGraph
+
+Index checked with `codegraph status` (up to date) before each round.
+
+- `codegraph explore "components that render menus: AnchoredMenu, menu-item buttons, role=menu, DragHandleMenu, SuggestionMenuController; callers of AnchoredMenu and ViewOpenMenu"`: `AnchoredMenu` is rendered by `Sidebar`, `AddMenu`, `PageMenu`; `ViewOpenMenu` by `CollectionView`. The inventory in R1 holds. `ViewOpenMenu`'s comment points at spec 001's unplanned menu batch, which became the owner's question (B).
+- `codegraph impact AnchoredMenu`: `AddMenu`, `PageMenu`, `TreeItem`, `RowActions`, `Sidebar`. All in `Sidebar.tsx`, all migrate in PR 1.
+- `codegraph callers useMenuDismiss`: 7 calls (`Sidebar`, `TreeItem`, `RowActions`, `TagChip`, `PageHeader`). Five go with the menus. `TagChip`'s colour picker and `PageHeader`'s share panel are not menus and keep it (R10).
+- `codegraph callers menuStyleFor`: 2 calls, both in `CollectionView`. Both go in PR 2, and `anchoredMenu.ts` with them.
+- `codegraph explore "ui Popover and Select built on @base-ui/react"`: `ui/Popover` is the pattern `ui/Menu` copies (Root, Trigger `render`, Portal, Positioner, Popup). `Portal` has 35 callers; untouched.
+- No test reaches `AnchoredMenu`, `menuStyleFor` or `useMenuDismiss` within three caller hops (graph). The browser specs that open menus were found by text search in `web/tests/` (R11).
+- Not from the graph: the raw-button budget (`check-tokens.mjs`, found while reading `ViewOpenMenu`'s comment) and BlockNote's item keys (read from `@blocknote/core/locales`).
 
 ## Constitution Check
 
-- I. One binary, no external services: ✅ no dependency, no server change
-- II. Agent parity: ✅ not affected. No agent action changes and no tool describes icons (spec). No new gap
-- III. Gates are one function: ✅ no gate touched
-- IV. Derive from code: ✅ the rule has its check (`check-menu-icons.mjs`), including the library's keys
-- V. English source: ✅ no new labels expected. Any new one goes through `t()` with `de`/`es`/`nl`
+- I. One binary, no external services: ✅ no dependency added, no server change
+- II. Agent parity: ✅ not affected. No agent action changes and no tool describes menus (spec). No new gap
+- III. Gates are one function: ✅ no gate touched; each menu item keeps its handler
+- IV. Derive from code: ✅ the rule has its check (`check-menu-icons.mjs`), including the library's keys. One check is deleted (`check-anchoredmenu.mjs`) with the module it asserts; its bug stays covered in the browser (R10). Named for the owner in PR 2
+- V. English source: ✅ new strings (menu names for screen readers, e.g. "Page actions") through `t()` with `de`/`es`/`nl`
 - VI. Every surface, every time: ✅ table below, plus a new registry row, **Menu icons**
-- VII. Measured, not assumed: ✅ bundle size measured in the PR; no query
+- VII. Measured, not assumed: ✅ bundle measured in each PR; no query
 
 Re-checked after Phase 1 design: unchanged.
 
@@ -57,33 +72,30 @@ Re-checked after Phase 1 design: unchanged.
 | REST routes (`server/server.go`, middleware) | No change: no route added or altered | backend |
 | MCP tools (`server/mcp*.go`, descriptions, `wrapUntrusted`, read-scope refusal) | No change: no tool describes menus or icons (spec, "Agent parity") | mcp |
 | Closed-to-agents list (`not_available_via_mcp`) | No change: no capability added | mcp |
-| UI components (`web/src/…`, light + dark, keyboard) | New `menuIcons.ts` (R2, R4, R6). Every menu item in `Sidebar.tsx` (menus 1–4), `Editor.tsx` (5), `UserMenu.tsx` (6), `CollectionView.tsx` (7–12, 15) becomes a `MenuItem`. Value lists become `MenuValues`. `Editor.tsx`: `getSlashItems` sets each item's icon from `SLASH_FUNCTIONS`, and the own items move from emoji to Lucide; `SideMenuController` with a `DragHandleMenu` of the four rebuilt items. Keyboard unchanged: items stay buttons in the same order; `role="menuitem"` now on every item (several lack it today). Light and dark checked (R7) | ui |
-| Translations (`t()`, `de.json`/`es.json`/`nl.json`) | No new string planned: labels unchanged. `Import (.md / .zip)` and `Markdown (.md)` stay untranslated: file-format names, out of scope. Any string added during the build gets German, Spanish and Dutch | i18n |
+| UI components (`web/src/…`, light + dark, keyboard) | New `menuIcons.ts`. Every menu becomes a `ui/Menu` or `ui/ContextMenu`: `Sidebar.tsx` (menus 1–4: add, page menu as button and right-click, template row, workspace switcher), `Editor.tsx` (5), `UserMenu.tsx` (6) in PR 1; `CollectionView.tsx` (7–12, 15) and `ViewOpenMenu.tsx` (radio group) in PR 2. "Move to workspace" becomes a submenu. `Editor.tsx`: `getSlashItems` sets every item's icon from `SLASH_FUNCTIONS`; own items move from emoji to Lucide; `SideMenuController` with a `DragHandleMenu` of the four rebuilt items. Keyboard: Base UI's menu keys everywhere (User Story 4); focus back on the trigger, also after a dialog an item opened. Light and dark checked | ui |
+| Translations (`t()`, `de.json`/`es.json`/`nl.json`) | Labels unchanged. New: an accessible name per menu popup where none exists (e.g. "Page actions", "View actions", "Account"), with German, Spanish and Dutch. `Import (.md / .zip)` and `Markdown (.md)` stay untranslated: file-format names, out of scope | i18n |
 | Server error codes (`web/src/serverErrors.ts`) | No change: no server error added | i18n |
-| Wiki (`wiki/*.md`, `mcp-tools.md`, stale screenshots, `docs/what-it-does.md`) | Screenshots that show an open menu and that `check-wiki.mjs` lists as stale after the change are retaken with `shoot-wiki.mjs`. `mcp-tools.md` and `what-it-does.md`: no change, no capability changes. The rule itself is written in `web/src/ui/README.md`, not the user wiki: it is for contributors | wiki |
-| Tests (Go incl. refusal paths, Playwright spec, check scripts) | `check-menu-icons.mjs` with a self-test of rules 1–3 (R3). Playwright `web/tests/menu-icons.mjs`: opens menus 2, 5, 6, 8, 11, 13, 14 and checks that every `[role=menuitem]` has exactly one `svg[aria-hidden="true"]`, that its accessible name equals its label (FR-010), that Duplicate shows the same icon in the page and template menus, and that the favourite toggle keeps its icon. No Go test: no server change | test |
-| Performance (query plans, payload size, per-request work) | No query or request. Bundle gzip measured against the `check-bundle.mjs` cap | perf |
+| Wiki (`wiki/*.md`, `mcp-tools.md`, stale screenshots, `docs/what-it-does.md`) | Screenshots that show an open menu and that `check-wiki.mjs` lists as stale are retaken with `shoot-wiki.mjs`. The wiki page that lists keyboard keys gains the menu keys, if it lists keys per control. `mcp-tools.md`, `what-it-does.md`: no change, no capability changes. The rule itself goes in `web/src/ui/README.md` (for contributors) | wiki |
+| Tests (Go incl. refusal paths, Playwright spec, check scripts) | `check-menu-icons.mjs` with a self-test of rules 1–3 (R3). New Playwright `menu-icons.mjs` (every `[role=menuitem]` has one `svg[aria-hidden="true"]`, the accessible name equals the label, Duplicate has the same icon in two menus, the favourite toggle keeps its icon) and `menu-keyboard.mjs` (User Story 4 on each of menus 1–12). The eight specs that open menus are updated to roles, keeping their assertions (R11). `check-anchoredmenu.mjs` removed with `anchoredMenu.ts` (PR 2). No Go test: no server change | test |
+| Performance (query plans, payload size, per-request work) | No query or request. Bundle gzip measured against the `check-bundle.mjs` cap in both PRs | perf |
 | Manifest (`capabilities.json`, `gapBudget`, `parity_property_test.go`) | No change: no route or tool; `gapBudget` unchanged | mcp |
-| Design system (`web/src/ui/`, tokens, `check-tokens.mjs` budgets) | New `ui/MenuItem.tsx` + `MenuItem.css` (styles move from `.menu button` / `.menu-item svg` in `styles.css`) and `ui/MenuValues.tsx`: README entries, catalogue section (default, danger, disabled, checked, with chord, light and dark). New component token `menu.icon-size` (16px). No new colour. `rawButtons` in `web/tokens/budgets.json` (332 today) is lowered to the count measured after the menus move into `MenuItem` (R9). Overlaps spec 001 batch 2 (menus on Base UI): scope decided by the owner (R9) | ui |
+| Design system (`web/src/ui/`, tokens, `check-tokens.mjs` budgets) | New `ui/Menu.tsx` + `Menu.css` (the parts in R10; styles move from `.menu`, `.menu button`, `.menu-item svg`, `.menu-sep`, `.menu-label` in `styles.css`): README entry, catalogue section (button and right-click menus; default, danger, disabled, checkbox, submenu, value list, radio group, chord; light and dark; keyboard cases in `web/tests/catalog.mjs`). New component token `menu.icon-size` (16px); the popup sits on `layer.dropdown`. Spec 001's batch 2 is done here for menus; popovers stay for that batch. `rawButtons` in `web/tokens/budgets.json` (332 today) is lowered to the count measured after each PR. No new colour; budgets only go down | ui |
 | Storage budgets (`bench_world_test.go`, p95 in spec 002 research) | No change: no query | perf |
-| Page containers (full page, side peek, centre peek) | The page "…" menu (5) is drawn by the shared `Editor` in every container, so it changes in all of them at once. No new control | ui |
+| Page containers (full page, side peek, centre peek) | The page "…" menu (5) is drawn by the shared `Editor` in every container and changes in all of them at once. A menu opened from inside the side peek must draw over it: `layer.dropdown` (200) is above `side-panel.layer` (90), as that token's description already requires. Checked in `menu-keyboard.mjs` from a peek | ui |
 | Aggregation (`server/aggregate.go`) | No change: no property type | backend |
 | Stored data (`server/upgrade_steps.go`) | No change: nothing stored | backend |
-| Outside names (env vars, cookies, storage keys, …) | No change: no outside name. CSS class `menu-item` is internal | backend |
-| Menu icons (new registry row, R8) | Added to `.specify/memory/surfaces.md` by this plan. This feature is the first to meet it: every menu, the editor's included | ui |
+| Outside names (env vars, cookies, storage keys, …) | No change: no outside name. CSS classes `menu`, `menu-item` are internal | backend |
+| Menu icons (new registry row, R8) | Added to `.specify/memory/surfaces.md` with this plan. This feature is the first to meet it: every menu, the editor's included | ui |
 
-**Parity statement**: not applicable. Icons are presentation. No agent action
-is added, changed or removed, and no MCP tool returns menu structure.
+**Parity statement**: not applicable. Icons and menus are presentation. No
+agent action is added, changed or removed, and no MCP tool returns menu
+structure.
 
 **Manifest**: unchanged routes and tools; no new gap; `gapBudget` unchanged.
 
 **Registry**: new row *Menu icons* (tag `ui`, Since 2026-11-03, introduced by
-spec 010): "A new menu item is drawn with `ui/MenuItem` and a function from
-`web/src/menuIcons.ts`; a new function gets an icon no other function has; a
-list of values inside a menu is a `ui/MenuValues` with its reason;
-`check-menu-icons.mjs` enforces it, the editor library's items included." Since
-is the day after this plan, as spec 007 did, so plans already written are not
-asked about it.
+spec 010), worded in `.specify/memory/surfaces.md`. Since is the day after this
+plan, as spec 007 did, so plans already written are not asked about it.
 
 ## Project Structure
 
@@ -91,12 +103,12 @@ asked about it.
 
 ```text
 specs/010-menu-icons/
-├── spec.md
+├── spec.md              # Clarifications 2026-11-02 (B), User Story 4, FR-012–014, SC-005
 ├── plan.md
-├── research.md
+├── research.md          # R1–R12
 ├── data-model.md        # the pairing, function by function
 ├── quickstart.md
-├── contracts/ui.md      # MenuItem, MenuValues, menuIcons.ts, check messages
+├── contracts/ui.md      # ui/Menu parts, menuIcons.ts, check messages
 ├── checklists/
 └── tasks.md             # /speckit-tasks
 ```
@@ -105,34 +117,43 @@ specs/010-menu-icons/
 
 ```text
 web/src/
-├── menuIcons.ts                 # new: MENU_ICONS, MenuFunction, SLASH_FUNCTIONS, DRAG_HANDLE_FUNCTIONS, MenuIcon, toggle-heading composites
-├── ui/MenuItem.tsx, MenuItem.css, MenuValues.tsx, README.md   # new components
-├── styles.css                   # .menu button / .menu-item svg rules move to MenuItem.css
-├── components/Sidebar.tsx       # menus 1–4
-├── components/Editor.tsx        # menu 5, getSlashItems, own slash items, DragHandleMenu
-├── components/UserMenu.tsx      # menu 6
-└── components/CollectionView.tsx  # menus 7–12, 15
-web/tokens/component.tokens.json # menu.icon-size
-web/tokens/budgets.json          # rawButtons lowered to the measured count
-web/catalog/main.tsx             # MenuItem section
-web/scripts/check-menu-icons.mjs # new, added to npm run check
-web/package.json                 # check script list
-web/tests/menu-icons.mjs, web/tests/package.json   # new spec
-wiki/img/…                       # stale shots retaken by shoot-wiki.mjs only
-.specify/memory/surfaces.md      # Menu icons
-docs/decisions.md                # verb-alone pairing, library icons owned by us, view types as values
+├── menuIcons.ts                     # new: MENU_ICONS, MenuFunction, SLASH_FUNCTIONS, DRAG_HANDLE_FUNCTIONS, MenuIcon, toggle-heading composites
+├── ui/Menu.tsx, ui/Menu.css, ui/README.md   # new: Menu, ContextMenu, MenuItem, MenuCheckboxItem, MenuSubmenu, MenuValues, MenuValueItem, MenuRadioGroup, MenuRadioItem, MenuLabel, MenuSeparator
+├── styles.css                       # .menu* rules move to ui/Menu.css
+├── modal.ts                         # useMenuDismiss keeps 2 callers
+├── components/Sidebar.tsx           # PR 1: menus 1–4
+├── components/AnchoredMenu.tsx      # PR 1: removed
+├── components/Editor.tsx            # PR 1: menu 5, getSlashItems, own slash items, DragHandleMenu
+├── components/UserMenu.tsx          # PR 1: menu 6
+├── components/CollectionView.tsx    # PR 2: menus 7–12, 15
+├── components/ViewOpenMenu.tsx      # PR 2: MenuRadioGroup
+├── anchoredMenu.ts                  # PR 2: removed
+└── locales/de.json, es.json, nl.json  # menu names
+web/tokens/component.tokens.json     # menu.icon-size
+web/tokens/budgets.json              # rawButtons lowered to the measured count
+web/catalog/main.tsx                 # Menu section
+web/scripts/check-menu-icons.mjs     # new, in npm run check
+web/scripts/check-anchoredmenu.mjs   # PR 2: removed (named for the owner)
+web/package.json                     # check script list
+web/tests/menu-icons.mjs, menu-keyboard.mjs, package.json   # new specs
+web/tests/menus-and-arrows.mjs, database-toolbar-menus.mjs, dialog-escape.mjs, design-system-dialog.mjs, chart-*.mjs, editor-tokens.mjs, catalog.mjs   # roles instead of classes
+wiki/img/…                           # stale shots retaken by shoot-wiki.mjs only
+.specify/memory/surfaces.md          # Menu icons
+docs/decisions.md                    # B: menus on Base UI here; check-anchoredmenu removed
 ```
 
-**Structure Decision**: one pairing module, two small design-system
-components and one check. The four big components only swap their item markup.
-Menu containers and positioning (`AnchoredMenu`, `menuStyleFor`) stay as they
-are, unless the owner folds spec 001 batch 2 in (R2 alternative b, R9).
+**Structure Decision**: one pairing module, one design-system menu component,
+one check. The four big components swap their menu markup for `ui/Menu`, and
+the two positioning helpers go.
 
-**Order of work** (one pull request, or two if the diff is large): pairing +
-components + check in report-only mode → menus 1–12, 15 → editor menus 13–14
-→ check switched to failing → catalogue, README, registry, decisions,
-screenshots, Playwright spec.
+**Order of work** (R12): PR 1 = pairing, `ui/Menu`, the check (rules 2, 4, 5
+failing; 1 and 3 reporting), menus 1–6, the editor's two menus' icons,
+`AnchoredMenu` out, their tests. PR 2 = menus 7–12 and 15, radio group,
+`anchoredMenu.ts` and its check out, rules 1 and 3 failing, budget, screenshots,
+the remaining tests.
 
 ## Complexity Tracking
 
-None. No principle is bent.
+| Item | Why | Simpler option rejected because |
+|------|-----|---------------------------------|
+| `check-anchoredmenu.mjs` deleted | Its module (`anchoredMenu.ts`) is deleted; the placement it asserted is now Base UI's | A check on a module that no longer exists cannot run; the bug it guarded (#21, the phone toolbar) stays covered by two browser specs |
