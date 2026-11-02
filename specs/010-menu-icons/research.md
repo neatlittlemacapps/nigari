@@ -71,9 +71,11 @@ one.
 **Alternatives considered**: (a) keep icons inline and have the check compare
 import names per label. Labels differ for the same function ("Export
 Markdown" / "Markdown (.md)"), so the check would need its own pairing anyway:
-two lists. (b) a full `Menu` component that also owns the container and
-positioning. Bigger than asked: positioning is `AnchoredMenu`'s job today and
-works; a later change can fold containers in.
+two lists. (b) a full `Menu` component on Base UI's `Menu`, which also owns the
+container, positioning and arrow-key navigation. That is spec 001's planned
+batch 2 ("menus and popovers", `specs/001-design-system/tasks.md`), found
+through CodeGraph (R9). It is a bigger change than this spec asks for. Owner's
+call: see R9.
 
 ## R3. The check
 
@@ -193,3 +195,29 @@ with `ui/MenuItem` and a function from `web/src/menuIcons.ts`; a new function
 gets an icon no other function has; a new list of values inside a menu is a
 `MenuValues` with its reason; `check-menu-icons.mjs` enforces it." The open
 backlog item #370 (a row menu for table rows) will be the first to answer it.
+
+## R9. What CodeGraph added (2026-11-02, checked after the first draft)
+
+The first draft of this research was written from text search alone. Then
+`codegraph explore` / `impact` / `callers` were run over the menu code
+(index up to date). They found:
+
+- **The inventory holds.** `AnchoredMenu` has three render sites, all in
+  `Sidebar.tsx` (`AddMenu`, `PageMenu`, and the templates row through
+  `TreeItem`/`RowActions`); `ViewOpenMenu` has one, in `CollectionView`.
+  None was missing from R1.
+- **No test reaches any menu.** `AnchoredMenu`, `menuStyleFor` (2 callers)
+  and `useMenuDismiss` (7 callers in `Sidebar.tsx` and `Editor.tsx`) have no
+  test within three caller hops. `web/tests/menu-icons.mjs` is the first test
+  that opens them, so it also covers opening and dismissing the menus.
+- **Spec 001 already plans menus.** `ViewOpenMenu.tsx` says the menus are "not
+  in web/src/ui yet (spec 001 batch 2)". Spec 001 chose Base UI, which has a
+  `Menu`, and batch 2 (menus and popovers) has no tasks yet. Either this spec
+  builds `MenuItem` as a plain button whose props a Base UI version can keep
+  later, or it does batch 2's menus now. The owner decides.
+- **The raw-button ratchet.** `check-tokens.mjs` counts `<button` outside
+  `web/src/ui/` against `rawButtons` in `web/tokens/budgets.json` (332). The
+  count may only go down, and the check fails when the count falls below the
+  budget until the budget is lowered. Moving the menu items into
+  `ui/MenuItem` lowers it, so the same pull request lowers the budget to the
+  measured count.

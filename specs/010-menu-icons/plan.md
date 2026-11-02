@@ -64,7 +64,7 @@ Re-checked after Phase 1 design: unchanged.
 | Tests (Go incl. refusal paths, Playwright spec, check scripts) | `check-menu-icons.mjs` with a self-test of rules 1–3 (R3). Playwright `web/tests/menu-icons.mjs`: opens menus 2, 5, 6, 8, 11, 13, 14 and checks that every `[role=menuitem]` has exactly one `svg[aria-hidden="true"]`, that its accessible name equals its label (FR-010), that Duplicate shows the same icon in the page and template menus, and that the favourite toggle keeps its icon. No Go test: no server change | test |
 | Performance (query plans, payload size, per-request work) | No query or request. Bundle gzip measured against the `check-bundle.mjs` cap | perf |
 | Manifest (`capabilities.json`, `gapBudget`, `parity_property_test.go`) | No change: no route or tool; `gapBudget` unchanged | mcp |
-| Design system (`web/src/ui/`, tokens, `check-tokens.mjs` budgets) | New `ui/MenuItem.tsx` + `MenuItem.css` (styles move from `.menu button` / `.menu-item svg` in `styles.css`) and `ui/MenuValues.tsx`: README entries, catalogue section (default, danger, disabled, checked, with chord, light and dark). New component token `menu.icon-size` (16px). No new colour; budgets only go down | ui |
+| Design system (`web/src/ui/`, tokens, `check-tokens.mjs` budgets) | New `ui/MenuItem.tsx` + `MenuItem.css` (styles move from `.menu button` / `.menu-item svg` in `styles.css`) and `ui/MenuValues.tsx`: README entries, catalogue section (default, danger, disabled, checked, with chord, light and dark). New component token `menu.icon-size` (16px). No new colour. `rawButtons` in `web/tokens/budgets.json` (332 today) is lowered to the count measured after the menus move into `MenuItem` (R9). Overlaps spec 001 batch 2 (menus on Base UI): scope decided by the owner (R9) | ui |
 | Storage budgets (`bench_world_test.go`, p95 in spec 002 research) | No change: no query | perf |
 | Page containers (full page, side peek, centre peek) | The page "…" menu (5) is drawn by the shared `Editor` in every container, so it changes in all of them at once. No new control | ui |
 | Aggregation (`server/aggregate.go`) | No change: no property type | backend |
@@ -113,6 +113,7 @@ web/src/
 ├── components/UserMenu.tsx      # menu 6
 └── components/CollectionView.tsx  # menus 7–12, 15
 web/tokens/component.tokens.json # menu.icon-size
+web/tokens/budgets.json          # rawButtons lowered to the measured count
 web/catalog/main.tsx             # MenuItem section
 web/scripts/check-menu-icons.mjs # new, added to npm run check
 web/package.json                 # check script list
@@ -125,7 +126,7 @@ docs/decisions.md                # verb-alone pairing, library icons owned by us
 **Structure Decision**: one pairing module, two small design-system
 components and one check. The four big components only swap their item markup.
 Menu containers and positioning (`AnchoredMenu`, `menuStyleFor`) stay as they
-are (R2, alternative b).
+are, unless the owner folds spec 001 batch 2 in (R2 alternative b, R9).
 
 **Order of work** (one pull request, or two if the diff is large): pairing +
 components + check in report-only mode → menus 1–12, 15 → editor menus 13–14
