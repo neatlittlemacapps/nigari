@@ -6,7 +6,7 @@ import { eventually, withFixture } from './fixture.mjs';
 // to the colourful palette's third colour, which is the very green Done takes.
 // This is the fixture's own select, which is where the bug was seen. The rule
 // itself is checked in scripts/check-chartcolours.mjs; this checks the chart
-// on the page, where a token's colour is read from the stylesheet.
+// as drawn on the page.
 await withFixture(async ({ page, api, base, path }) => {
   page.setDefaultTimeout(15000);
   const collectionId = path.split('/').pop();
@@ -19,13 +19,18 @@ await withFixture(async ({ page, api, base, path }) => {
 
   const swatches = () => page.locator('figure.chart .chart-group .chart-swatch')
     .evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundColor));
+  const seen = {};
   for (const scheme of ['light', 'dark']) {
     await page.emulateMedia({ colorScheme: scheme });
     await page.goto(`${base}/p/${collectionId}`);
     await eventually(async () => (await swatches()).length === 3);
     const colours = await swatches();
     assert.equal(new Set(colours).size, 3, `${scheme}: three groups, three colours; got ${colours.join(', ')}`);
+    seen[scheme] = colours.join(' ');
   }
+  // The dark run drew dark colours, so it tested dark and not light twice
+  // (a theme saved in the app would outrank the emulated system setting).
+  assert.notEqual(seen.dark, seen.light, 'the dark run must draw the dark palette');
 
   console.log('Chart colours: To do, Done and Third are three colours on Automatic, light and dark.');
 });

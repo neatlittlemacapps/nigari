@@ -1,33 +1,41 @@
 // Asserts the automatic chart colours (src/chartTheme.ts): no two groups of
-// one chart in the same colour while colours are left (#278).
+// one chart in the same colour while colours are left, and never a group in
+// an option's colour (#278).
 //
 //   node scripts/check-chartcolours.mjs
 //
-// Same shape as check-chartdefaults.mjs. What a token draws as is read from
-// src/tokens.css itself, light and dark, so the check follows the tokens:
-// the colourful palette's group 3 IS the green a green option takes, and a
-// check comparing token names would have passed with the bug in place.
+// groupColourTokens compares token names, which is only right if every
+// colour of the colourful palette has one name. So this also reads
+// src/tokens.css (light, dark, and the system-dark copy) and fails if two of
+// those names draw the same colour, or if an option's token no longer draws
+// what the single-hue palette of that name draws (the colour options were
+// drawn in before #278 moved them onto the colourful palette's names).
 
 import { build } from 'esbuild';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const web = join(here, '..');
 const tmp = mkdtempSync(join(tmpdir(), 'nigari-chartcolours-'));
 const bundle = join(tmp, 'chartcolours.mjs');
 
-// The token values of one block of tokens.css: :root (light) or
-// [data-theme='dark'].
-function tokenValues(selector) {
-  const css = readFileSync(join(web, 'src/tokens.css'), 'utf8');
+// The chart token values of one rule of tokens.css, by its exact selector.
+// The file is generated (build-tokens.mjs): one declaration per line, literal
+// values, no comments inside a rule. A var() here would mean the browser and
+// this check could disagree, so it fails instead.
+function tokenValues(css, selector) {
   const start = css.indexOf(selector + ' {');
-  if (start < 0) throw new Error(`tokens.css has no ${selector} block`);
+  if (start < 0) throw new Error(`tokens.css has no "${selector} {" rule`);
   const block = css.slice(start, css.indexOf('}', start));
   const values = new Map();
-  for (const m of block.matchAll(/(--color-chart-[\w-]+):\s*([^;]+);/g)) values.set(m[1], m[2].trim().toLowerCase());
+  for (const m of block.matchAll(/(--color-chart-[\w-]+):\s*([^;]+);/g)) {
+    if (m[2].includes('var(')) throw new Error(`${selector} ${m[1]} is a var(), not a colour`);
+    values.set(m[1], m[2].trim().toLowerCase());
+  }
+  if (!values.size) throw new Error(`"${selector}" holds no chart colours`);
   return values;
 }
 
@@ -35,7 +43,11 @@ try {
   // chartTheme reads the option palette, whose names go through i18n.ts,
   // which only Vite can load (import.meta.glob); the names play no part here.
   await build({
-    entryPoints: [join(web, 'src/chartTheme.ts')],
+    stdin: {
+      contents: "export * from './src/chartTheme'; export { OPTION_HEXES } from './src/selectOptions';",
+      resolveDir: web,
+      loader: 'ts',
+    },
     bundle: true,
     format: 'esm',
     outfile: bundle,
@@ -50,48 +62,59 @@ try {
     }],
   });
 
-  const { groupColourTokens } = await import(bundle);
+  const { groupColourTokens, OPTION_TOKEN, OPTION_HEXES } = await import(pathToFileURL(bundle).href);
   const out = [];
   const check = (name, got, want) => out.push({ name, got: JSON.stringify(got), want: JSON.stringify(want) });
-  const hex = { gray: '#787774', brown: '#9f6b53', orange: '#d9730d', yellow: '#cb912f', green: '#448361', blue: '#337ea9', purple: '#9065b0', pink: '#c14c8a', red: '#d44c47' };
+  const [gray, brown, orange, yellow, green, blue, purple, pink, red] = OPTION_HEXES;
   const prop = (colours) => ({ id: 's', name: 's', type: 'select', options: colours.map((c, i) => ({ id: 'o' + i, name: 'o' + i, color: c })) });
   const groups = (n) => Array.from({ length: n }, (_, i) => ({ key: 'o' + i, label: 'o' + i, value: 1 }));
   const distinct = (list) => new Set(list).size === list.length;
+  const imported = (n) => Array.from({ length: n }, (_, i) => '#0000' + (16 + i).toString(16));
 
-  for (const [theme, selector] of [['light', ':root'], ['dark', "[data-theme='dark']"]]) {
-    const values = tokenValues(selector);
-    const colourOf = (t) => values.get(t) ?? t;
-    const drawnColours = (tokens) => tokens.map(colourOf);
-
-    // The issue's own case: To do (blue), Done (green), Third (an imported hex).
-    const issue = groupColourTokens(groups(3), 'auto', prop([hex.blue, hex.green, '#123456']), false, colourOf);
-    check(`${theme}: #278 To do, Done, Third differ`, distinct(drawnColours(issue)), true);
-    check(`${theme}: option colours stay the option's`, issue.slice(0, 2), ['--color-chart-blue-3', '--color-chart-green-3']);
-
-    // Every option colour at once, then imported hexes after them: none of
-    // those may repeat a colour already drawn.
-    const all = Object.values(hex);
-    const mixed = groupColourTokens(groups(all.length + 3), 'auto', prop([...all, '#123456', '#abcdef', '#010203']), false, colourOf);
-    check(`${theme}: nine option colours and three imported ones all differ`, distinct(drawnColours(mixed)), true);
-
-    // Imported hexes first, options after: an option keeps its colour, so the
-    // imported ones move off it instead.
-    const first = groupColourTokens(groups(4), 'auto', prop(['#123456', '#654321', '#111111', hex.blue]), false, colourOf);
-    check(`${theme}: imported before an option still differ`, distinct(drawnColours(first)), true);
-    check(`${theme}: the blue option is still blue`, first[3], '--color-chart-blue-3');
-
-    // No options at all: the colourful palette in order, as before.
-    const plain = groupColourTokens(groups(3), 'auto', undefined, false, colourOf);
-    check(`${theme}: without options the palette goes in order`, plain, ['--color-chart-1', '--color-chart-2', '--color-chart-3']);
-
-    // More groups than colours: it cycles instead of failing.
-    const many = groupColourTokens(groups(14), 'colorful', undefined, false, colourOf);
-    check(`${theme}: fourteen groups cycle`, [many[0], many[12], many[13]], ['--color-chart-1', '--color-chart-1', '--color-chart-2']);
-
-    // Each row stays one colour; Colourful gives each its own (#318).
-    check(`${theme}: each row is one colour`, distinct(groupColourTokens(groups(3), 'auto', undefined, true, colourOf)), false);
-    check(`${theme}: each row in Colourful is many`, distinct(groupColourTokens(groups(3), 'colorful', undefined, true, colourOf)), true);
+  // The tokens: one name per colour, and options drawn as they were.
+  const css = readFileSync(join(web, 'src/tokens.css'), 'utf8');
+  const hueOf = { [orange]: 'orange', [yellow]: 'yellow', [green]: 'green', [blue]: 'blue', [purple]: 'purple', [pink]: 'pink', [red]: 'red' };
+  for (const [theme, selector] of [['light', ':root'], ['dark', "[data-theme='dark']"], ['system dark', ":root:not([data-theme='light'])"]]) {
+    const v = tokenValues(css, selector);
+    const names = [...Array(12)].map((_, i) => `--color-chart-${i + 1}`).concat('--color-chart-gray-2', '--color-chart-gray-3');
+    check(`${theme}: every colourful and grey name draws its own colour`, distinct(names.map((n) => v.get(n))), true);
+    for (const [hex, hue] of Object.entries(hueOf)) {
+      check(`${theme}: a ${hue} option draws as before`, v.get(OPTION_TOKEN[hex]), v.get(`--color-chart-${hue}-3`));
+    }
   }
+
+  // The issue's own case: To do (blue), Done (green), Third (an imported hex).
+  const issue = groupColourTokens(groups(3), 'auto', prop([blue, green, '#123456']));
+  check('#278: To do, Done, Third differ', distinct(issue), true);
+  check('option colours stay the option\'s', issue.slice(0, 2), [OPTION_TOKEN[blue], OPTION_TOKEN[green]]);
+
+  // Every option colour at once, then imported ones: all differ.
+  const mixed = groupColourTokens(groups(12), 'auto', prop([...OPTION_HEXES, ...imported(3)]));
+  check('nine option colours and three imported ones all differ', distinct(mixed), true);
+
+  // Imported first, an option after: the option keeps its colour, the
+  // imported ones move off it.
+  const first = groupColourTokens(groups(4), 'auto', prop([...imported(3), blue]));
+  check('imported before an option still differ', distinct(first), true);
+  check('the blue option is still blue', first[3], OPTION_TOKEN[blue]);
+
+  // More imported groups than free colours: they repeat among themselves,
+  // never on an option's colour (the review of this fix found that the last
+  // ones fell back onto Done's green).
+  const wide = groupColourTokens(groups(16), 'auto', prop([blue, green, ...imported(14)]));
+  check('past the free colours, no imported group takes an option colour', wide.slice(2).filter((t) => t === OPTION_TOKEN[blue] || t === OPTION_TOKEN[green]), []);
+
+  // Unchanged where there is no clash: no options, Colourful, cycling.
+  check('without options the palette goes in order', groupColourTokens(groups(3), 'auto'), ['--color-chart-1', '--color-chart-2', '--color-chart-3']);
+  const many = groupColourTokens(groups(14), 'colorful');
+  check('fourteen groups cycle', [many[0], many[12], many[13]], ['--color-chart-1', '--color-chart-1', '--color-chart-2']);
+  check('Colourful ignores option colours', groupColourTokens(groups(2), 'colorful', prop([red, red])), ['--color-chart-1', '--color-chart-2']);
+  check('a gray option is the grey scale', groupColourTokens(groups(1), 'auto', prop([gray])), ['--color-chart-gray-3']);
+  check('a brown option is brown', groupColourTokens(groups(1), 'auto', prop([brown])), ['--color-chart-11']);
+
+  // Each row stays one colour; Colourful gives each its own (#318).
+  check('each row is one colour', distinct(groupColourTokens(groups(3), 'auto', undefined, true)), false);
+  check('each row in Colourful is many', distinct(groupColourTokens(groups(3), 'colorful', undefined, true)), true);
 
   const bad = out.filter((c) => c.got !== c.want);
   for (const c of bad) console.error(`  ✗ ${c.name}: got ${c.got}, want ${c.want}`);

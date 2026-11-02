@@ -16,20 +16,25 @@ export type Palette = NonNullable<ChartStyle['palette']>;
 const HUES = ['gray', 'blue', 'yellow', 'green', 'purple', 'teal', 'orange', 'pink', 'red'] as const;
 
 // A select option stores one of the option palette's hexes (selectOptions.ts).
-// Its chart colour is the chart token of the same name: the option's own hex
-// is tuned for a chip's background, not for a bar on the page, and several of
-// them fall short of 3:1 there. Brown has no single-colour palette of its own
-// and takes the colourful palette's brown.
-const OPTION_TOKEN: Record<string, string> = {
+// Its chart colour is the colourful palette's colour of that hue: the option's
+// own hex is tuned for a chip's background, not for a bar on the page, and
+// several of them fall short of 3:1 there. These are the colourful palette's
+// own tokens (group 3 is "green", semantic.tokens.json), not the single-hue
+// palettes' --color-chart-green-3, which holds the same colour under a second
+// name: with one name per colour, "another group already shows this colour"
+// is a comparison of names (#278), and check-chartcolours.mjs fails if two
+// names of the colourful palette ever draw the same colour. Gray has no place
+// in the colourful palette and keeps the grey scale's lightest.
+export const OPTION_TOKEN: Record<string, string> = {
   [OPTION_HEXES[0]]: '--color-chart-gray-3',
-  [OPTION_HEXES[1]]: '--color-chart-11',
-  [OPTION_HEXES[2]]: '--color-chart-orange-3',
-  [OPTION_HEXES[3]]: '--color-chart-yellow-3',
-  [OPTION_HEXES[4]]: '--color-chart-green-3',
-  [OPTION_HEXES[5]]: '--color-chart-blue-3',
-  [OPTION_HEXES[6]]: '--color-chart-purple-3',
-  [OPTION_HEXES[7]]: '--color-chart-pink-3',
-  [OPTION_HEXES[8]]: '--color-chart-red-3',
+  [OPTION_HEXES[1]]: '--color-chart-11', // brown
+  [OPTION_HEXES[2]]: '--color-chart-2', // orange
+  [OPTION_HEXES[3]]: '--color-chart-7', // yellow
+  [OPTION_HEXES[4]]: '--color-chart-3', // green
+  [OPTION_HEXES[5]]: '--color-chart-1', // blue
+  [OPTION_HEXES[6]]: '--color-chart-4', // purple
+  [OPTION_HEXES[7]]: '--color-chart-6', // pink
+  [OPTION_HEXES[8]]: '--color-chart-8', // red
 };
 
 /** The token each drawn group is painted with, in drawing order. "No value"
@@ -42,30 +47,24 @@ const OPTION_TOKEN: Record<string, string> = {
  *  nothing at all on these charts (#318).
  *
  *  On Automatic, an option in one of the option palette's colours takes the
- *  chart colour of that name, and any other group takes the colourful
- *  palette's colour for its place. Those two sets overlap by design: the
- *  colourful palette's group 3 is the green that a green option takes. So
- *  the option Done (green) and the option Third (an imported #123456, third
- *  in line) were drawn in the same green side by side (#278). A group in
- *  its place's colour now moves on to the next colour that no option in this
- *  chart, and no group before it, already shows. `colourOf` says what a
- *  token draws as, so "the same colour" means the same on the screen, not
- *  the same token name; without it, names are compared. */
-export function groupColourTokens(
-  drawn: DrawnGroup[],
-  palette: Palette,
-  groupProp?: PropDef,
-  series = false,
-  colourOf: (token: string) => string = (token) => token,
-): string[] {
+ *  colourful palette's colour of that hue, and any other group takes the
+ *  colourful palette's colour for its place. Those overlap: the place colour
+ *  of group 3 is the green a green option takes. So the option Done (green)
+ *  and the option Third (an imported #123456, third in line) were drawn in
+ *  the same green side by side (#278). A group in its place's colour now
+ *  moves on to the next colour that no option in this chart shows and, while
+ *  any are left, no group before it either. With more groups than colours
+ *  the place colours repeat, but still never an option's colour. */
+export function groupColourTokens(drawn: DrawnGroup[], palette: Palette, groupProp?: PropDef, series = false): string[] {
   const oneColour = series && palette !== 'colorful';
   const options = new Map((groupProp?.options ?? []).map((o) => [o.id, o.color]));
   const optionToken = (g: DrawnGroup) =>
     palette === 'auto' ? OPTION_TOKEN[(options.get(g.key) ?? '').toLowerCase()] : undefined;
   // What the option-coloured groups of this chart show: the place colours
   // stay off these.
-  const taken = new Set(drawn.map(optionToken).filter((t): t is string => !!t).map(colourOf));
+  const taken = new Set(drawn.map(optionToken).filter((t): t is string => !!t));
   const used = new Set<string>();
+  const place = (n: number) => `--color-chart-${(n % 12) + 1}`;
   let i = 0;
   return drawn.map((g) => {
     if (g.key === NO_VALUE) return '--color-chart-gray-2';
@@ -74,17 +73,19 @@ export function groupColourTokens(
     if (palette === 'auto' || palette === 'colorful') {
       const fromOption = optionToken(g);
       if (fromOption) return fromOption;
-      if (oneColour) return '--color-chart-1';
-      // Twelve tries at most: with every colour taken, the place colour stands.
-      for (let k = 0; k < 12; k++) {
-        const token = `--color-chart-${((n + k) % 12) + 1}`;
-        const c = colourOf(token);
-        if (!taken.has(c) && !used.has(c)) {
-          used.add(c);
-          return token;
+      if (oneColour) return place(0);
+      // First a colour nobody shows yet, then (all used) any but an option's.
+      for (const fresh of [true, false]) {
+        for (let k = 0; k < 12; k++) {
+          const token = place(n + k);
+          if (!taken.has(token) && (!fresh || !used.has(token))) {
+            used.add(token);
+            return token;
+          }
         }
       }
-      return `--color-chart-${(n % 12) + 1}`;
+      // Twelve options with twelve colours: nothing is left to avoid.
+      return place(n);
     }
     const hue = palette === 'colorless' ? 'gray' : (HUES as readonly string[]).includes(palette) ? palette : 'blue';
     // Darkest first, so the largest groups of a sorted chart stand out most.

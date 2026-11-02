@@ -151,14 +151,7 @@ export default function ChartFigure(props: ChartFigureProps) {
   selectRef.current = select;
   // A donut of Each row is still slices of one whole, each its own colour.
   const series = eachRow && kind !== 'donut';
-  // Tokens are compared by the colour they draw as (#278). Read off the
-  // document: which chart colours equal which is the same in both themes, so
-  // a chart in a dark peek over a light page comes to the same answer.
-  const tokens = useMemo(() => {
-    const cs = typeof document === 'undefined' ? null : getComputedStyle(document.documentElement);
-    const colourOf = (token: string) => cs?.getPropertyValue(token).trim().toLowerCase() || token;
-    return groupColourTokens(drawn, style.palette ?? 'auto', groupProp, series, colourOf);
-  }, [drawn, style.palette, groupProp, series]);
+  const tokens = useMemo(() => groupColourTokens(drawn, style.palette ?? 'auto', groupProp, series), [drawn, style.palette, groupProp, series]);
   const tokensRef = useRef(tokens);
   tokensRef.current = tokens;
 
