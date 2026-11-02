@@ -137,7 +137,7 @@ for its column.
 
 The cells are the same editors the table uses, so they behave the same way:
 click a select to open its list, type in the box to create an option, use the
-`＋ Link` cell to point a relation at another row. Creating or recolouring an
+`Add link` cell to point a relation at another row. Creating or recolouring an
 option here changes the **schema**, which means it changes for everybody looking
 at that collection, not just for this row. The same is true of the chips on a
 board card, which is where most people will do it without noticing.
