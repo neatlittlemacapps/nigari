@@ -14,15 +14,17 @@ import type { TreeCtx } from './Sidebar';
 
 /** A right-click on a row opens the same ⋯ menu, at the pointer. One menu
  *  open at a time across the tree (the shared menuFor), and the ＋ closes.
- *  A context-menu key or Shift+F10 reports (0, 0): then it opens under the ⋯
- *  as if clicked. */
+ *  A context-menu key or Shift+F10 reports (0, 0): then it opens under the
+ *  start of the row. */
 export function openRowMenu(ctx: TreeCtx, id: string, e: React.MouseEvent<HTMLElement>) {
   e.preventDefault();
   // Focus comes back to the row, not to its ⋯, which hides again when the
   // menu closes unless the pointer is on the row (Shift+F10, then Escape).
   ctx.menuReturn.current = e.currentTarget;
   ctx.setAddFor(null);
-  ctx.setMenuPoint(e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : null);
+  // Shift+F10 or the menu key report (0, 0): then under the row's start.
+  const box = e.currentTarget.getBoundingClientRect();
+  ctx.setMenuPoint(e.clientX || e.clientY ? { id, x: e.clientX, y: e.clientY } : { id, x: box.left, y: box.bottom });
   ctx.setMenuFor(id);
 }
 
@@ -129,7 +131,7 @@ function PageMenu({
   ctx: TreeCtx;
 }) {
   const open = ctx.menuFor === id;
-  const point: MenuPoint | null = open ? ctx.menuPoint : null;
+  const point: MenuPoint | null = ctx.menuPoint?.id === id ? ctx.menuPoint : null;
   const others = ctx.workspaces.filter((w) => w.id !== workspaceId);
   return (
     <Menu

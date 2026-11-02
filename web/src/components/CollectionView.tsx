@@ -353,7 +353,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // A right-click on a view's tab opens the same actions the ⋯ holds, for THAT
   // view, at the pointer (#24). The ⋯ only ever acted on the view you are on.
   // Focus goes back to the tab the menu was opened on.
-  const [tabMenu, setTabMenu] = useState<{ view: ViewDef; point: MenuPoint | null } | null>(null);
+  // The view and point stay after the menu closes, so its exit animation does
+  // not show an empty popup jumping to a default place; `open` is separate.
+  const [tabMenu, setTabMenu] = useState<{ view: ViewDef; point: MenuPoint } | null>(null);
+  const [tabMenuOpen, setTabMenuOpen] = useState(false);
   const tabMenuReturn = useRef<HTMLElement | null>(null);
   const PAGE = 200;
 
@@ -720,20 +723,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   };
 
   const addView = (type: ViewDef['type']) => {
-    const labels: Record<ViewDef['type'], string> = {
-      table: t('Table'),
-      board: t('Board'),
-      gallery: t('Gallery'),
-      calendar: t('Calendar'),
-      list: t('List'),
-      form: t('Form'),
-      timeline: t('Timeline'),
-      chart: t('Chart'),
-    };
     const id = 'v' + Math.random().toString(36).slice(2, 9);
     // A chart starts drawn, grouped by the first select (chartDefaults.ts),
     // never as an empty frame waiting for its first setting.
-    const nv: ViewDef = type === 'chart' ? defaultChartView('bar', schema, id, labels[type]) : { id, name: labels[type], type };
+    const nv: ViewDef = type === 'chart' ? defaultChartView('bar', schema, id, viewTypeLabel(type)) : { id, name: viewTypeLabel(type), type };
     if (type === 'board') nv.groupBy = schema.find((p) => p.type === 'select' || p.type === 'multiselect')?.id;
     if (type === 'calendar') nv.dateProp = schema.find((p) => p.type === 'date')?.id;
     if (type === 'timeline') {
@@ -802,7 +795,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
                 if (embed) return;
                 e.preventDefault();
                 tabMenuReturn.current = e.currentTarget;
-                setTabMenu({ view: v, point: e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : null });
+                // Shift+F10 or the menu key report (0, 0): open under the tab.
+                const r = e.currentTarget.getBoundingClientRect();
+                setTabMenu({ view: v, point: e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : { x: r.left, y: r.bottom } });
+                setTabMenuOpen(true);
               }}
             >
               <span className="view-tab-ic">{tabIcon(v.type)}</span>
@@ -814,18 +810,18 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           <AddViewMenu
             types={['table', 'board', 'gallery', 'calendar', 'timeline', 'list', 'form', 'chart']}
             icon={tabIcon}
-            label={(vt) => viewTypeLabel(vt)}
+            label={viewTypeLabel}
             onAdd={addView}
           />
         )}
       </div>
       <Menu
         label={t('View actions')}
-        open={!!tabMenu}
+        open={tabMenuOpen}
         anchorPoint={tabMenu?.point ?? null}
         returnFocus={tabMenuReturn}
         onOpenChange={(o) => {
-          if (!o) setTabMenu(null);
+          if (!o) setTabMenuOpen(false);
         }}
       >
         {tabMenu && (
@@ -956,10 +952,12 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
                         <MenuItem fn="edit" opensDialog onClick={() => (onEditTemplate ?? onNavigate)(p.id)}>
                           {t('Edit')}
                         </MenuItem>
-                        <MenuItem fn="duplicate" onClick={() => void duplicateTemplate(p)}>
+                        {/* These two keep the menu open, so the list reloads in
+                            front of you: the copy appears, the trashed one goes. */}
+                        <MenuItem fn="duplicate" closeOnClick={false} onClick={() => void duplicateTemplate(p)}>
                           {t('Duplicate')}
                         </MenuItem>
-                        <MenuItem fn="moveToTrash" danger onClick={() => void trashTemplate(p)}>
+                        <MenuItem fn="moveToTrash" danger closeOnClick={false} onClick={() => void trashTemplate(p)}>
                           {t('Move to trash')}
                         </MenuItem>
                       </MenuValueSubmenu>
@@ -2019,7 +2017,7 @@ function BoardView({
   const [moveMenu, setMoveMenu] = useState<string | null>(null);
   // A right-click on a card opens its ⋯ menu at the pointer; focus then
   // returns to the card, not to the ⋯ (shown only on hover).
-  const [movePoint, setMovePoint] = useState<MenuPoint | null>(null);
+  const [movePoint, setMovePoint] = useState<{ key: string; point: MenuPoint } | null>(null);
   const moveReturn = useRef<HTMLElement | null>(null);
   // Cards whose overflow ("+3") the reader opened. Kept here rather than per
   // card so it survives a re-render, and forgotten on leaving the view — an
@@ -2122,6 +2120,9 @@ function BoardView({
                   (drag?.rowId === r.id && drag.fromCol === col.id ? ' is-dragging' : '') +
                   (armedRow === r.id ? ' is-armed' : '')
                 }
+                // Focusable by script only (not a Tab stop): a menu opened by a
+                // right-click on the card gives focus back to the card.
+                tabIndex={-1}
                 onPointerDown={(e) => startDrag(e, r.id, col.id, r.title || t('Untitled'))}
                 onClick={(e) => {
                   // Do NOT open after a drag — otherwise every move jumps
@@ -2137,7 +2138,8 @@ function BoardView({
                 onContextMenu={(e) => {
                   e.preventDefault();
                   moveReturn.current = e.currentTarget;
-                  setMovePoint(e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : null);
+                  const box = e.currentTarget.getBoundingClientRect();
+                  setMovePoint({ key: `${col.id}:${r.id}`, point: e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : { x: box.right, y: box.top } });
                   setMoveMenu(`${col.id}:${r.id}`);
                 }}
               >
@@ -2173,8 +2175,8 @@ function BoardView({
                       stay whatever else joins it. */}
                   <CardMenu
                     open={moveMenu === `${col.id}:${r.id}`}
-                    point={moveMenu === `${col.id}:${r.id}` ? movePoint : null}
-                    returnFocus={movePoint ? moveReturn : undefined}
+                    point={movePoint?.key === `${col.id}:${r.id}` ? movePoint.point : null}
+                    returnFocus={movePoint?.key === `${col.id}:${r.id}` ? moveReturn : undefined}
                     onOpenChange={(o) => {
                       if (o) setMovePoint(null);
                       setMoveMenu(o ? `${col.id}:${r.id}` : null);

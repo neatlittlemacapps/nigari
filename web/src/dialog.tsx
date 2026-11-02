@@ -88,7 +88,13 @@ export function DialogHost() {
     returnRef.current = null;
     // After React removed the dialog, and only if the element is still there:
     // the answer may have removed it (a confirmed delete).
-    if (el) requestAnimationFrame(() => el.isConnected && el.focus());
+    // And only if nothing else took focus meanwhile: a caller that focuses
+    // something after its await (a new input, a page title) keeps it.
+    if (el)
+      requestAnimationFrame(() => {
+        const now = document.activeElement;
+        if (el.isConnected && (!now || now === document.body)) el.focus();
+      });
   };
   const cancel = () => {
     if (req.kind === 'confirm') req.resolve(false);

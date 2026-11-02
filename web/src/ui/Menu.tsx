@@ -295,10 +295,21 @@ export function MenuValueSubmenu({
 }) {
   return (
     <BaseMenu.SubmenuRoot>
-      <BaseMenu.SubmenuTrigger className={itemClass()} onClick={onClick}>
+      <BaseMenu.SubmenuTrigger
+        className={itemClass()}
+        onClick={(e) => {
+          // A tap or click on the arrow opens the actions instead: on a touch
+          // screen there is no hover and no → key, and the actions must still
+          // be reachable (code review of spec 010, part 2).
+          if ((e.target as Element).closest('.ui-menu-actions')) return;
+          onClick();
+        }}
+      >
         {icon !== undefined && <span className="ui-menu-value-icon" aria-hidden>{icon}</span>}
         <span className="ui-menu-label">{label}</span>
-        <ChevronRight className="ui-menu-chevron" size={14} aria-hidden />
+        <span className="ui-menu-actions" aria-hidden>
+          <ChevronRight className="ui-menu-chevron" size={14} />
+        </span>
       </BaseMenu.SubmenuTrigger>
       <BaseMenu.Portal>
         <BaseMenu.Positioner className="ui-menu-positioner" side="right" align="start" sideOffset={2} collisionPadding={8}>

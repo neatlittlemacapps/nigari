@@ -138,6 +138,23 @@ await withFixture(async ({ page, api, base, workspace, path }) => {
   await optionsMenu.waitFor({ state: 'hidden' });
   await eventually(() => isFocused(viewOptions)).catch(() => assert.fail('view options: Escape did not give focus back'));
 
+  // A board card's ⋯ from the keyboard, without hovering first: the plain
+  // button is swapped for the menu's trigger on focus, and focus must stay on
+  // it (code review of part 2), so Enter opens the card's menu.
+  await page.locator('.view-tab', { hasText: 'Board' }).click();
+  const cardMore = page.locator('.board-card .card-move-btn').first();
+  await cardMore.waitFor({ state: 'attached' });
+  await page.mouse.move(0, 0);
+  await cardMore.focus();
+  await eventually(() => page.evaluate(() => document.activeElement?.classList.contains('card-move-btn'))).catch(() =>
+    assert.fail('card ⋯: focus did not stay on the button when it became the menu trigger'),
+  );
+  await page.keyboard.press('Enter');
+  const cardMenu = page.getByRole('menu', { name: 'Row actions' });
+  await cardMenu.waitFor();
+  await page.keyboard.press('Escape');
+  await cardMenu.waitFor({ state: 'hidden' });
+
   // At phone width the account menu opens wholly on screen.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${base}/p/${doc.id}`);

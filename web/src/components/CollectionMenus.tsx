@@ -105,13 +105,26 @@ export function CardMenu({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const [armed, setArmed] = useState(false);
+  const [armed, setArmed] = useState<false | 'pointer' | 'focus'>(false);
   useEffect(() => {
     const card = ref.current?.closest('.board-card');
     if (!card || armed) return;
-    const arm = () => setArmed(true);
-    card.addEventListener('pointerenter', arm);
-    return () => card.removeEventListener('pointerenter', arm);
+    const byPointer = () => setArmed('pointer');
+    // The ⋯ is a Tab stop even while it is transparent: a keyboard reaches it
+    // without hovering. Arm then too, and put focus on the trigger that
+    // replaces the plain button, or it would fall to the page.
+    const byFocus = (e: FocusEvent) => {
+      if (ref.current?.contains(e.target as Node)) setArmed('focus');
+    };
+    card.addEventListener('pointerenter', byPointer);
+    card.addEventListener('focusin', byFocus as EventListener);
+    return () => {
+      card.removeEventListener('pointerenter', byPointer);
+      card.removeEventListener('focusin', byFocus as EventListener);
+    };
+  }, [armed]);
+  useEffect(() => {
+    if (armed === 'focus') ref.current?.querySelector('button')?.focus();
   }, [armed]);
   return (
     <span ref={ref} className="card-move" onClick={(e) => e.stopPropagation()}>

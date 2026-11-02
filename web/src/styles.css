@@ -2298,7 +2298,9 @@ body:has(.icon-picker) .bn-side-menu {
   opacity: 0;
 }
 
-.board-card:hover .card-move-btn {
+.board-card:hover .card-move-btn,
+.card-move-btn:focus-visible,
+.card-move-btn[data-popup-open] {
   opacity: 1;
 }
 
