@@ -9,7 +9,7 @@ description: "Tasks for database views that read comfortably and handle the way 
 
 **Tests**: required. Go tests for the stored order on both doors and a parity pair; two pure checks (`check-columndrag.mjs`, `check-boarddrag.mjs`); four new browser specs; the existing specs that press the old toolbar controls kept green.
 
-**Issues**: none yet
+**Issues**: parent #426; T001–T040 are #429–#468, in order.
 
 **Delivery**: two pull requests (research R12), built by the helper stream on its own branch. Phases 1–4 are **PR 1** (text size, column order with its server and MCP part, board marker). Phases 5–7 are **PR 2** (Settings menu, fold-away toolbar, polish).
 
