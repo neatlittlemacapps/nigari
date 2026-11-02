@@ -36,9 +36,11 @@ await withFixture(async ({ page }) => {
   await boardTab.click();
   await firstRow.waitFor();
   await firstRow.click({ button: 'right' });
-  await page.getByRole('button', { name: 'Open in new tab', exact: true }).waitFor();
+  await page.getByRole('menuitem', { name: 'Open in new tab', exact: true }).waitFor();
 
   // An ordinary click still navigates the active tab instead of adding one.
+  // Escape first: an open ui/Menu takes the next click outside it to close.
+  await page.keyboard.press('Escape');
   await page.locator('.board-card', { hasText: 'Second row' }).click();
   await eventually(async () => (await tabs.filter({ hasText: 'Second row' }).count()) === 1);
   assert.equal(await tabs.count(), 2);

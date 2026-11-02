@@ -29,7 +29,7 @@ await withFixture(async ({ page, api, base, workspace, path }) => {
 
   await page.goto(`${base}/p/${collectionId}`);
   await page.getByTitle('Add view').click();
-  await page.locator('.view-add-menu').getByRole('button', { name: 'Chart', exact: true }).click();
+  await page.getByRole('menu', { name: 'Add view' }).getByRole('menuitem', { name: 'Chart', exact: true }).click();
 
   // ---- US1: drawn at once, grouped by the first select ----
   const figure = page.locator('figure.chart');

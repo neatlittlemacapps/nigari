@@ -8,7 +8,7 @@ import { eventually, withFixture } from './fixture.mjs';
 // sidebar's ＋ and ⋯, the workspace switcher, the page "…" and the account
 // menu without a mouse; follows a dialog opened from a menu back to its
 // button; and checks that at phone width a menu stays wholly on screen.
-await withFixture(async ({ page, api, base, workspace }) => {
+await withFixture(async ({ page, api, base, workspace, path }) => {
   page.setDefaultTimeout(15000);
   const focused = () => page.evaluate(() => (document.activeElement?.textContent ?? '').replace(/\s+/g, ' ').trim());
   const isFocused = (loc) => loc.evaluate((el) => el === document.activeElement);
@@ -110,6 +110,33 @@ await withFixture(async ({ page, api, base, workspace }) => {
   await page.keyboard.press('Escape');
   await moreMenu.waitFor({ state: 'hidden' });
   await eventually(() => isFocused(pageMore)).catch(() => assert.fail('page "…": Escape did not give focus back'));
+
+  // The database's menus (spec 010, part 2). A tab's right-click opens its
+  // actions; Rename view opens a dialog; when it closes, focus is back on the
+  // tab (#24 made the tab the subject of that menu). The view options ⋯ opens
+  // from the keyboard and holds the "Open pages in" radio group.
+  await page.goto(`${base}/p/${path.split("/").pop()}`);
+  const tab = page.locator('.view-tab').first();
+  await tab.waitFor();
+  await tab.click({ button: 'right' });
+  const viewActions = page.getByRole('menu', { name: 'View actions' });
+  await viewActions.waitFor();
+  await viewActions.getByRole('menuitem', { name: 'Rename view' }).click();
+  const renameDialog = page.locator('.modal-overlay').last();
+  await renameDialog.waitFor();
+  await page.keyboard.press('Escape');
+  await renameDialog.waitFor({ state: 'detached' });
+  await eventually(() => isFocused(tab)).catch(async () => assert.fail('Rename view: focus did not return to the tab, it is on: ' + (await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 120)))));
+  const viewOptions = page.getByRole('button', { name: 'View options', exact: true });
+  await viewOptions.focus();
+  await page.keyboard.press('Enter');
+  const optionsMenu = page.getByRole('menu', { name: 'View options' });
+  await optionsMenu.waitFor();
+  await eventually(async () => (await focused()) === 'Rename view').catch(() => assert.fail('view options: Enter did not land on Rename view'));
+  assert((await optionsMenu.getByRole('menuitemradio').count()) >= 2, 'view options: no "Open pages in" radio items');
+  await page.keyboard.press('Escape');
+  await optionsMenu.waitFor({ state: 'hidden' });
+  await eventually(() => isFocused(viewOptions)).catch(() => assert.fail('view options: Escape did not give focus back'));
 
   // At phone width the account menu opens wholly on screen.
   await page.setViewportSize({ width: 390, height: 844 });

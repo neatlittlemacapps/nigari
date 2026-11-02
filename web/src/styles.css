@@ -409,11 +409,6 @@ button {
   background: none;
 }
 
-/* Two short words do not need a menu as wide as "Remove from favorites". */
-.add-menu {
-  min-width: 132px;
-}
-
 /* Overflow ("…") menu: secondary page actions grouped out of the topbar. */
 .overflow-menu {
   min-width: 210px;
@@ -2312,24 +2307,6 @@ body:has(.icon-picker) .bn-side-menu {
   color: var(--fg);
 }
 
-.card-move-menu {
-  right: 0;
-  top: 22px;
-  min-width: 150px;
-}
-
-.card-move-menu button {
-  text-align: left;
-  padding: 7px 10px;
-  border-radius: 6px;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-.card-move-menu button:hover {
-  background: var(--hover);
-}
-
 /* On touch devices the move button is always visible (no hover). */
 @media (hover: none) {
   .card-move-btn {
@@ -2725,24 +2702,6 @@ body.is-col-resizing {
 .view-add:hover {
   background: var(--hover);
   color: var(--fg);
-}
-.view-add-menu {
-  min-width: 172px;
-}
-.view-add-menu button {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 7px 10px;
-  border-radius: 6px;
-  font-size: 13px;
-}
-.view-add-menu button:hover {
-  background: var(--hover);
-}
-.view-add-menu .view-tab-ic {
-  display: inline-flex;
-  color: var(--muted);
 }
 
 /* Property-visibility panel (Notion "Sichtbarkeit von Eigenschaften"): shown /
@@ -4501,17 +4460,6 @@ body.is-col-resizing {
   z-index: 310;
 }
 
-/* Menus that live behind .fs-backdrop.
- *
- * .menu is z-index 50 and the backdrop is 310, so a menu that only carries
- * .menu sits UNDER the sheet meant to catch clicks outside it: every click on
- * an item lands on the backdrop, which closes the menu and does nothing else.
- * It reads as a dead menu, not as a stacking bug. .fs-popover already had the
- * higher value; these two were missed and were dead from the day they shipped. */
-.view-tab-menu,
-.view-add-menu {
-  z-index: 320;
-}
 
 .fs-popover {
   z-index: 320;
@@ -9112,13 +9060,6 @@ body:has(.confirm-dialog) .dialog:not(.confirm-dialog) {
   display: inline-flex;
 }
 
-.view-tab-menu {
-  top: 30px;
-  right: 0;
-  left: auto;
-  min-width: 170px;
-}
-
 /* The address a token was last used from, beside its date. Muted and
    monospaced: it is there to be recognised or not recognised at a glance, not
    to be read as prose. */
@@ -10426,12 +10367,7 @@ body:has(.live-down) .update-banner {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
-.menu.dbt-menu {
-  /* Above .fs-backdrop (310), which catches the click that closes it. */
-  z-index: 320;
-  top: 32px;
-  right: 0;
-  left: auto;
+.ui-menu.dbt-menu {
   min-width: 240px;
   max-width: 320px;
 }
@@ -10440,48 +10376,10 @@ body:has(.live-down) .update-banner {
   font-size: 12.5px;
   color: var(--muted);
 }
-/* One row, one highlight. The name and the ⋯ are both .menu buttons, and each
-   used to paint its own hover, which drew a box inside a box. The row owns the
-   highlight; the buttons inside it stay transparent. */
-.dbt-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  border-radius: 8px;
-}
-.dbt-item:hover,
-.dbt-item:focus-within {
-  background: var(--active);
-}
-.menu .dbt-item > button,
-.menu .dbt-item > button:hover {
-  background: transparent;
-}
-.dbt-item > button:first-child {
-  flex: 1;
-  min-width: 0;
-}
 .dbt-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.dbt-more {
-  flex: none;
-  opacity: 0.55;
-}
-.dbt-item:hover .dbt-more,
-.dbt-more:focus-visible {
-  opacity: 1;
-}
-/* The ⋯ menu of one template: edit, duplicate, trash. Opens under the row, on
-   top of the menu it belongs to. */
-.menu.dbt-row-menu {
-  top: calc(100% + 2px);
-  right: 0;
-  left: auto;
-  min-width: 170px;
-  z-index: 330;
 }
 /* Said above the title of a template that belongs to a database: you are
    editing what later rows start from, not a row. */

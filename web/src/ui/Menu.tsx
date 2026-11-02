@@ -104,6 +104,10 @@ export function Menu({ trigger, label, children, open, onOpenChange, anchorPoint
         if (o || !pending.current) return;
         const run = pending.current;
         pending.current = null;
+        // A menu opened by a right-click had no trigger to return to, and a
+        // pointer close does not always move focus: put it where the menu was
+        // opened from before the dialog opens, so the dialog gives it back there.
+        returnFocus?.current?.focus();
         run();
       }}
     >
@@ -267,6 +271,43 @@ export function MenuValueItem({
       <span className="ui-menu-label">{children}</span>
       {checked && <Check className="ui-menu-tick" size={14} aria-hidden />}
     </BaseMenu.Item>
+  );
+}
+
+/** A value that also has actions of its own (a database template: click it to
+ *  use it, → or hover for Edit / Duplicate / Move to trash). The click runs
+ *  `onClick` and closes the menu through the caller's `open` state; the
+ *  submenu holds the actions. One row instead of a value and a ⋯ beside it,
+ *  which a keyboard could not reach inside a menu. */
+export function MenuValueSubmenu({
+  children,
+  label,
+  icon,
+  onClick,
+  actionsLabel,
+}: {
+  children: ReactNode;
+  label: ReactNode;
+  icon?: ReactNode;
+  onClick: () => void;
+  /** The submenu's accessible name, translated. */
+  actionsLabel: string;
+}) {
+  return (
+    <BaseMenu.SubmenuRoot>
+      <BaseMenu.SubmenuTrigger className={itemClass()} onClick={onClick}>
+        {icon !== undefined && <span className="ui-menu-value-icon" aria-hidden>{icon}</span>}
+        <span className="ui-menu-label">{label}</span>
+        <ChevronRight className="ui-menu-chevron" size={14} aria-hidden />
+      </BaseMenu.SubmenuTrigger>
+      <BaseMenu.Portal>
+        <BaseMenu.Positioner className="ui-menu-positioner" side="right" align="start" sideOffset={2} collisionPadding={8}>
+          <BaseMenu.Popup className="ui-menu" data-nav-skip="" aria-label={actionsLabel}>
+            {children}
+          </BaseMenu.Popup>
+        </BaseMenu.Positioner>
+      </BaseMenu.Portal>
+    </BaseMenu.SubmenuRoot>
   );
 }
 

@@ -1288,5 +1288,7 @@
   "Page actions": "Seitenaktionen",
   "Template actions": "Vorlagenaktionen",
   "Header column": "Kopfspalte",
-  "Header row": "Kopfzeile"
+  "Header row": "Kopfzeile",
+  "Row actions": "Zeilenaktionen",
+  "View actions": "Ansichtsaktionen"
 }

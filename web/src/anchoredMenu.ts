@@ -65,10 +65,3 @@ export function anchoredMenuStyle(anchor: AnchorRect, viewport: Viewport, width:
     ...(scroll ? { maxHeight: viewport.height - anchor.bottom - 24, overflowY: 'auto' } : {}),
   };
 }
-
-/** anchoredMenuStyle for a button element, against the current window. */
-export function menuStyleFor(button: HTMLElement | null, width: number, scroll = false): CSSProperties | undefined {
-  if (!button) return undefined;
-  const r = button.getBoundingClientRect();
-  return anchoredMenuStyle(r, { width: window.innerWidth, height: window.innerHeight }, width, scroll);
-}

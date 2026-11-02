@@ -1288,5 +1288,7 @@
   "Page actions": "Acciones de la página",
   "Template actions": "Acciones de la plantilla",
   "Header column": "Columna de encabezado",
-  "Header row": "Fila de encabezado"
+  "Header row": "Fila de encabezado",
+  "Row actions": "Acciones de la fila",
+  "View actions": "Acciones de la vista"
 }

@@ -22,9 +22,9 @@
 //   6. Base UI's menu is imported outside src/ui, which would build a menu
 //      that skips the pairing.
 //
-// The menus still to move (spec 010's second pull request) are reported by
-// rule 1 with their count instead of failing, while REPORT_ONLY_HAND_BUILT is
-// true. The second pull request sets it to false.
+// REPORT_ONLY_HAND_BUILT made rule 1 report instead of fail while spec 010's
+// first pull request left the database menus hand-built. The second moved
+// them, so a hand-built menu fails the build now.
 //
 // A self-test runs first: rules 1–3 on three inline snippets that must fail.
 // A check that finds nothing because it broke is worse than no check.
@@ -34,7 +34,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const REPORT_ONLY_HAND_BUILT = true;
+const REPORT_ONLY_HAND_BUILT = false;
 
 const here = dirname(fileURLToPath(import.meta.url));
 const web = join(here, '..');
@@ -124,8 +124,8 @@ export function scanFile(rel, text) {
         }
         next = { ...next, inValues: true };
       }
-      if (tag === 'MenuValueItem' && !ctx.inValues) {
-        problems.push(`${at(open)}: <MenuValueItem> outside a <MenuValues>. Wrap the list in <MenuValues reason="…">, or make it a <MenuItem fn="…">.`);
+      if ((tag === 'MenuValueItem' || tag === 'MenuValueSubmenu') && !ctx.inValues) {
+        problems.push(`${at(open)}: <${tag}> outside a <MenuValues>. Wrap the list in <MenuValues reason="…">, or make it a <MenuItem fn="…">.`);
       }
       if (tag === 'button' && ctx.inMenu) {
         problems.push(`${at(open)}: "${labelOf(node)}" is a menu item without an icon. Draw it with <MenuItem fn="…">, adding the function to src/menuIcons.ts if it is new.`);

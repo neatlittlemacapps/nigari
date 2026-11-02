@@ -50,10 +50,16 @@ export function DialogHost() {
   const [req, setReq] = useState<Req | null>(null);
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  // Where focus was when the question was asked, to give it back on either
+  // answer. Without it focus fell to <body> when the dialog closed: a menu's
+  // "Rename view" left the keyboard nowhere (spec 010, menu-keyboard.mjs).
+  const returnRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const onReq = (e: Event) => {
       const detail = (e as CustomEvent<Req>).detail;
+      const active = document.activeElement;
+      returnRef.current = active instanceof HTMLElement && active !== document.body ? active : null;
       setReq(detail);
       setValue(detail.kind === 'prompt' ? detail.defaultValue ?? '' : '');
     };
@@ -77,15 +83,24 @@ export function DialogHost() {
 
   if (!req) return null;
 
+  const giveFocusBack = () => {
+    const el = returnRef.current;
+    returnRef.current = null;
+    // After React removed the dialog, and only if the element is still there:
+    // the answer may have removed it (a confirmed delete).
+    if (el) requestAnimationFrame(() => el.isConnected && el.focus());
+  };
   const cancel = () => {
     if (req.kind === 'confirm') req.resolve(false);
     else req.resolve(null);
     setReq(null);
+    giveFocusBack();
   };
   const ok = () => {
     if (req.kind === 'confirm') req.resolve(true);
     else req.resolve(value.trim() ? value.trim() : null);
     setReq(null);
+    giveFocusBack();
   };
 
   return (

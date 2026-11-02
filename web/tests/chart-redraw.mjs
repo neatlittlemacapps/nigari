@@ -42,7 +42,7 @@ await withFixture(async ({ page, api, base, workspace }) => {
   // ---- #368: a new chart view on 20 rows is built once ----
   await page.goto(`${base}/p/${c.id}`);
   await page.getByTitle('Add view').click();
-  await page.locator('.view-add-menu').getByRole('button', { name: 'Chart', exact: true }).click();
+  await page.getByRole('menu', { name: 'Add view' }).getByRole('menuitem', { name: 'Chart', exact: true }).click();
   const figure = page.locator('figure.chart');
   await eventually(async () => (await figure.locator('.chart-group').count()) > 0);
   await settle();
