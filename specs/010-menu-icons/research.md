@@ -401,3 +401,28 @@ and has a test.
   imported as `MenuGlyph`.
 - **`rawButtons` 332 → 291** after pull request 1. Two more literal budgets
   went down with the removed CSS: `fontSize` 377 → 376, `radius` 256 → 255.
+
+## R15. What building pull request 2 found
+
+- **Menu 15 is not a menu.** The database share bar's "Copy link" is a
+  button in the form view's share bar, not an item of a menu. T029 needed no
+  change.
+- **Templates beside New.** Each template used to be a row with a ⋯ beside
+  it, which a keyboard could not reach inside a menu. Now it is one
+  `MenuValueSubmenu`: click it to use the template, or press →, hover, or
+  tap its arrow for Edit / Duplicate / Move to trash. Duplicate and Move to
+  trash keep the menu open, so the list reloads in front of you. "New
+  template" needed a function of its own, `newTemplate` (86 functions now).
+- **The confirm and rename dialogs** (`dialog.tsx`) never gave focus back.
+  This was true before spec 010 too. They now return it to where it was,
+  unless the caller has moved it since.
+- **Modal menus take the outside click.** A ui/Menu is modal: the first
+  click outside closes it and does not also act on what is under it.
+  `tabs.mjs` presses Escape before clicking another card. The assertion,
+  that a plain click navigates, is unchanged.
+- **The code review** led to: the right-click menus keep their point and
+  content through the exit animation; the card is focusable by script, so
+  focus can return to it; Shift+F10 opens under the tab or row; and a card's
+  ⋯ keeps focus when it turns into the menu's trigger.
+- Budgets after part 2: `rawButtons` 271, `zIndex` 40, `radius` 252,
+  `fontSize` 374.
