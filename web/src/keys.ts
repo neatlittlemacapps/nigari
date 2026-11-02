@@ -110,6 +110,10 @@ export function isTypingTarget(el: Element | null): boolean {
   if (!el) return false;
   const html = el as HTMLElement;
   if (html.isContentEditable) return true;
+  // An open menu types too: its letters jump to an item (typeahead, spec
+  // 010). Without this, "m" in the page menu toggled Notes mode instead of
+  // reaching "Move to…", and "f" favourited the page.
+  if (typeof html.closest === 'function' && html.closest('[role="menu"]')) return true;
   const tag = html.tagName;
   if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
   if (tag === 'INPUT') {

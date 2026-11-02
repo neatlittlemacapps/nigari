@@ -89,6 +89,8 @@ try {
   check('radio is NOT typing', isTypingTarget({ tagName: 'INPUT', type: 'radio' }), 'false');
   check('button is NOT typing', isTypingTarget({ tagName: 'BUTTON' }), 'false');
   check('nothing focused is NOT typing', isTypingTarget(null), 'false');
+  check('an item of an open menu is typing (its letters are typeahead)', isTypingTarget({ tagName: 'DIV', closest: (s) => (s === '[role="menu"]' ? {} : null) }), 'true');
+  check('a div outside any menu is NOT typing', isTypingTarget({ tagName: 'DIV', closest: () => null }), 'false');
 
   // ---- who wins ----
   const fired = [];

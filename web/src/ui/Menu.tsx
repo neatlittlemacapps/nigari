@@ -100,7 +100,10 @@ export function Menu({ trigger, label, children, open, onOpenChange, anchorPoint
           anchor={anchorPoint ? pointAnchor(anchorPoint) : undefined}
           data-sheet={sheet ? '' : undefined}
         >
-          <BaseMenu.Popup className={'ui-menu' + (className ? ' ' + className : '')} aria-label={label}>
+          {/* data-nav-skip: the arrows are the menu's own here. Without it the
+              app's "way back in" (nav.ts useNavEntry) took ↓ from an item, as
+              focus in a portal belongs to no region, and moved it to the tree. */}
+          <BaseMenu.Popup className={'ui-menu' + (className ? ' ' + className : '')} aria-label={label} data-nav-skip="">
             {children}
           </BaseMenu.Popup>
         </BaseMenu.Positioner>
@@ -201,7 +204,7 @@ export function MenuSubmenu({ fn, label, children, disabled }: { fn: MenuFunctio
       </BaseMenu.SubmenuTrigger>
       <BaseMenu.Portal>
         <BaseMenu.Positioner className="ui-menu-positioner" side="right" align="start" sideOffset={2} collisionPadding={8}>
-          <BaseMenu.Popup className="ui-menu">{children}</BaseMenu.Popup>
+          <BaseMenu.Popup className="ui-menu" data-nav-skip="">{children}</BaseMenu.Popup>
         </BaseMenu.Positioner>
       </BaseMenu.Portal>
     </BaseMenu.SubmenuRoot>

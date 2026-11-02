@@ -246,7 +246,6 @@ export default function UserMenu({ user, onLogout, onUserChanged, onOpenAgents, 
         align="start"
         open={open}
         onOpenChange={setOpen}
-        className="user-menu-popup"
         trigger={
           <button ref={menuButton} className="user-menu-btn">
             <Avatar user={user} />
@@ -256,7 +255,7 @@ export default function UserMenu({ user, onLogout, onUserChanged, onOpenAgents, 
       >
         {onOpenAgents && (
           <MenuItem fn="connectAgent" opensDialog className="agents-menu-item" onClick={onOpenAgents}>
-            Agents &amp; MCP
+            <span className="agents-label">Agents &amp; MCP</span>
           </MenuItem>
         )}
         <MenuItem fn="profile" opensDialog onClick={() => setModal('profile')}>

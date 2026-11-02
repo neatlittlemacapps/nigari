@@ -1061,7 +1061,6 @@ export default function Sidebar({
                 <ChevronDown size={14} className="ws-caret" />
               </button>
             }
-            className="ws-menu"
           >
             <MenuValues reason="Workspaces are values: switching to the one picked">
               {workspaces.map((w) => (
