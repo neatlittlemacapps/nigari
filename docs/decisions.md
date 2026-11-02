@@ -7,6 +7,28 @@ entries are not edited away.
 
 ---
 
+## 2026-11-02 — The board's Priority field is copied onto priority:N labels by the board sync
+
+**Decision** (owner: "can't you find a job or something that mirrors project priority to a field
+tag?", then "The GitHub action should tackle this, not you"): the owner sets priority in the
+board's Priority field (`P1 - High`, `P2 - Medium`, `P3 - Low`). `scripts/board-sync.sh`, which
+already reads every board item with `BOARD_TOKEN`, writes it onto the issue as `priority:1`,
+`priority:2` or `priority:3` and removes any other `priority:*` label. The board is the source;
+a `priority:N` label set by hand is overwritten on the next sync. An issue with no Priority on
+the board keeps its labels; a value without a number is left alone with a warning. Each run's
+log also prints every issue's Priority.
+
+**Why:** an agent in a cloud session cannot read a board's fields: its GitHub tools have no
+Projects access and `BOARD_TOKEN` exists only inside Actions. A label is what the issue page,
+the issue list and those tools all show. A user's board sends no event when a field changes, so
+the label follows on the nightly run (03:17 UTC) or on Actions → Board sync → Run workflow.
+
+**Turned down:** reading the priority from the run log only (agents would have to dig through
+logs, people would see nothing on the issue); a screenshot of the board each time (stale as
+soon as a priority changes); the agent running the sync itself (owner: the Action does it).
+
+---
+
 ## 2026-11-02 — The release with spec 010's database menus is v2.1.0
 
 **Decision** (owner: "Yes"): `server.Version` moves from 2.0.0 to 2.1.0 in the pull request

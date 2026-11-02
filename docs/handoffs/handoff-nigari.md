@@ -1,6 +1,6 @@
 # active-memory handoff: nigari (formerly salt.md fork): agentic setup and feature roadmap
 
-**Handoff #13** · 2026-11-02 · Lineage:
+**Handoff #14** · 2026-11-02 · Lineage:
 - **#1 (2026-10-25):** agentic setup (rules, gate, Spec Kit, parity manifest); four feature branches merged; 25 issues; three specs.
 - **#2 (2026-10-26):** find-and-replace edits (#13, PR #48); specs 001/002 planned; #47 fixed; surfaces registry, board sync, ruleset (PR #49).
 - **#3 (2026-10-26):** board derives its columns (PR #74); spec 002 tasks (#50–#73); storage benchmarks; fixes #75, #76; Codespaces (PR #77).
@@ -14,6 +14,7 @@
 - **#11 (2026-10-29/30):** review rule + steward skill (PR #325 → v1.6.12); spec 011 built and merged (PR #363 → **v2.0.0**); repo renamed to `neatlittlemacapps/nigari`; README "Built on salt.md" (PR #364 → v2.0.1); Dutch joins every translation step.
 - **#12 (2026-10-30):** Dutch shipped and required (PR #366 → v2.0.3); spec 008 part 2 (T020–T026) shipped, spec 008 finished (PR #367 → v2.0.4); "bugs before features" rule (PR #369); bug #368 filed (chart replays its animation per row); session moved to `neatlittlemacapps/nigari`.
 - **#13 (2026-10-30 → 11-02):** every open bug fixed: #368+#319 chart builds once (PR #372 → v2.0.8); #317 Enter stays in its column + **CodeGraph** set up for cloud sessions (PR #373 → v2.0.9); #318 Colourful on Each row + #320 neutral wiki shots + CodeGraph prompt hook off (PR #374 → v2.0.10); #375 flaky catalogue test (PR #376); backlog features #370, #371 filed.
+- **#14 (2026-11-02):** README Download line (PR #377 → v2.0.12); CodeGraph during specifying, planning and tasks (PR #378 → v2.0.13); spec 010 planned + tasks + issues #380–#419 (PR #420 → v2.0.14); spec 010 built on Base UI menus (option B) in two PRs (#421 → v2.0.15, #422 → **v2.1.0**); board cleaned; #379 (fewer hand-built buttons) filed; #278 labelled `bug`.
 
 ## 0. Instructions for Claude (read first)
 
@@ -34,7 +35,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - **Also:** "I want you to be able to do as much as possible yourself"; "ensure you have good board and issue hygiene".
 - **Why nigari exists (user, 2026-10-29/30):** "we are too far gone from the original salt to ever contribute back"; "mainly its me discovering how far I can get"; "I think the core is to pay extra attention to UX as well."
 - **CodeGraph (user, 2026-11-01):** "My goal is that Claude can use a continuously up-to-date code graph to understand the architecture, dependencies, function calls and relationships across the entire codebase before making coding changes." / "CodeGraph should be an active coding tool, not merely an installed MCP server."
-- **Order of work now** (no open bugs as of 2026-11-02): (1) README "Download" line (option A, agreed); (2) spec 010 menu icons: plan → tasks → issues; (3) 2 streams: helper session on Epic A (database views, spec 012) per the steward skill; (4) backlog #370, #371 (spec first, each multi-surface), #322, #323, #326. A new `bug` issue always jumps the queue (rule 19).
+- **Order of work now** (2026-11-02, after v2.1.0): (1) open bugs: #269 (an empty date looks filled in), then #278 (chart colour clash); (2) 2 streams: helper session on Epic A (database views, spec 012) per the steward skill; (3) backlog #370, #371 (spec first, each multi-surface), #322, #323, #326, #379. A new `bug` issue always jumps the queue (rule 19).
 
 ## 2. About the user (as relevant to this work)
 - GitHub `neatlittlemacapps` (id 60575307), display name "Frank De Graeve"; email neatlittlemacapps@gmail.com; owns `neatlittlemacapps/nigari` (renamed from `neatlittlemacapps/salt.md` on 2026-10-30), still a GitHub fork of `saltmd/salt.md` (AGPL-3.0); CLA signed upstream. Fork stays attached for now ("I'll leave it for now").
@@ -78,6 +79,8 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 19. Bugs before features (owner chose option A, 2026-10-30; `AGENTS.md`): "An open `bug` issue goes before starting the next feature or spec. A bug found while working gets an issue at once and is fixed in its own small pull request, not saved up."
 20. Code word: every reply starts with "Yes Boss!" (never drop it).
 21. CodeGraph is a working tool (owner, 2026-11-01): before a change that reaches past one function, query the graph (`codegraph_explore` MCP tool or `codegraph explore "<…>"`); callers/impact over text search; then read the source; check `codegraph status` before trusting it. Rules in `.claude/rules/codegraph.md`.
+22. CodeGraph at every step (owner, 2026-11-02): "You should use codegraph also whilst speccing." / "Ensure any new session always uses codegraph" / "Are you using codegraph during task execution as well? If it makes sense ensure you do so moving forward". Plans have a **CodeGraph** section (`check-surfaces.mjs` enforces it, `CODEGRAPH_SINCE = '2026-11-03'`); before a PR: `codegraph sync`, then `codegraph callers` on every exported symbol added/moved/dropped.
+23. Keep asking before each step (owner, 2026-11-02, asked "Why do I need to approve these steps?", then answered "No, continue" to the offer to stop asking): every step still ends with "Ready to continue with <next step>?".
 
 ## 5. Corrections log
 | # | Claude did | The user wanted |
@@ -154,6 +157,13 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 87 | (self) A retaken screenshot showed "nigari v2.0.7 is out" | `shoot-wiki.mjs` now hides `.update-banner`; any build works |
 | 88 | (self) `eventually(() => locator.textContent())` waited 30 s inside each try | `locator('[…]', { hasText }).waitFor()` |
 | 89 | (self) Reported 382 vs 381 files inconsistently | Quote `codegraph status`, the figure that is current |
+| 90 | Wrote spec 010's first plan without CodeGraph; user: "You should use codegraph also whilst speccing." / "How sure are you that you used codegraph to inform you in the plans" | Graph first in specify/plan/tasks; plan records what it found (rule 22) |
+| 91 | (self) Put a made-up commit hash "c6f2a1e" in PR #422's body | Real hashes 54383dd / 73ddf44; copy hashes from `git log`, never from memory |
+| 92 | (self) Offered to edit the v2.1.0 release notes | No tool edits releases: give the user the text to paste |
+| 93 | (self) `check-surfaces` regex missed a section at end of file (found by review) | Lookahead also matches end of file |
+| 94 | (self) Proposed to stop asking before each step | User: "No, continue" — keep asking (rule 23) |
+| 95 | (self) Hand-built menu triggered app shortcuts / stole ↓ / lost focus (found by tests) | `menuOwnsKey`, `data-nav-skip`, focus return in `DialogHost` + `AfterClose` |
+| 96 | (self) Main chunk 1.4 KB over the bundle cap | Lazy-load dialogs; never raise the cap to pass |
 
 ## 6. Decisions
 | Decision | Why |
@@ -193,6 +203,16 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | #317 and CodeGraph in one PR | User: "one PR for both" |
 | Each row: one colour by default and for single-colour palettes; **Colourful** gives each bar its own | #318; spec 004 R18 amended; PR #374 |
 | Wiki shots: `text` step puts `/data` in the data-directory cell; `.update-banner` hidden in every shot | #320; PR #374 |
+| Spec 010 option **B**: every menu rebuilt on `ui/Menu` (Base UI `@base-ui/react/menu` 1.9.0), not only icons | User: "B" |
+| Icons by function in `web/src/menuIcons.ts` (`MENU_ICONS`, 86 functions); `check-menu-icons.mjs` fails a hand-built menu, a shared icon, a raw button inside a Menu | Spec 010; rule 14 |
+| Right-click opens the same `Menu` at the pointer; a modal menu swallows the first outside click | Spec 010 research |
+| `anchoredMenu.ts` stays (`anchoredMenuStyle`, `SHEET_MAX_WIDTH`); `AnchoredMenu.tsx` deleted | Still used by non-menu popovers |
+| Bundle: lazy dialogs (AdminSettings, LanguageTime, 2FA, calendar) instead of raising the cap | Cap stays 590,146 B |
+| Spec 010 release = **v2.1.0** (minor bump) | User: "1. Yes" |
+| v2.1.0 release notes written by Claude, pasted by the user | User: "2. Yes" |
+| #278 is a bug | User: "3. Yes" |
+| README Download line done (option A) | PR #377 |
+| #379: shared button components to bring hand-built buttons down, look kept | User: "Ok"; backlog |
 
 ## 7. Changed / rejected
 - Earlier chats: decisions page in workspace → `docs/decisions.md`; fixed surfaces list → registry; force-push rebase → merge `main`; hand-moved cards → derived Status; committed catalogue baselines → reference per run; hand-drawn SVG charts → Chart.js; owner as commit author → Claude.
@@ -209,6 +229,10 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - CodeGraph install via `raw.githubusercontent.com` → npm `@colbymchenry/codegraph@1.6.2` (GitHub blocked by the session proxy).
 - CodeGraph prompt hook on → off.
 - `crypto.randomUUID` → `crypto.getRandomValues` (insecure contexts).
+- README "Download" line: agreed → done (PR #377).
+- Spec 010 option A (icons only) → option B (menus rebuilt).
+- Stop asking before each step → keep asking (user: "No, continue").
+- Raise the bundle cap → lazy dialogs.
 - ❌ Bugs-first option B. ❌ `nl.machine.json`. ❌ 3+ parallel streams.
 - ❌ Committing the CodeGraph index (25 MB, machine-specific). ❌ A repository `.mcp.json` for CodeGraph. ❌ An external database/R2/salt.md integration/custom graph engine (user's constraint).
 - ❌ Community Go/security/Flutter/mobile/AWS plugins. ❌ GitHub Pages docs site now (later as #326); own domain.
@@ -218,10 +242,12 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 
 **Repo and tooling**
 - Go 1.27.2 local, CI 1.27.3; Node 22.22.0. `modernc.org/sqlite` v1.60.1; Playwright 1.63.0; Chart.js 4.5.1; goose v3.29.0; BlockNote 0.51.4 (`@blocknote/core`, `/react`, `/mantine`); Base UI Select (`@base-ui/react/select`).
-- Go module `nigari`; `server.Version = "2.0.0"` in `server/backup.go` (releases stamp the tag); DB `nigari.db`; newest upgrade step 1.
+- Go module `nigari`; `server.Version = "2.1.0"` in `server/backup.go` (the version line; patch = last + 1) (releases stamp the tag); DB `nigari.db`; newest upgrade step 1.
 - `nigari version` prints `<release> (upgrade step N)`; a `-ldflags "-X nigari/server.Version=dev"` build prints `dev (upgrade step 1)` and has no update check.
 - Locales: de 1225, es 1225, nl 1225 entries (measured 2026-10-30; no strings added since). German and Dutch use informal address.
-- Constitution 1.2.0. 34 MCP tools; `gapBudget` 10; 18 registry rows. gofmt-exempt: `server/server.go`, `server/audit.go`, `server/desktop_auth.go`, `server/tunnel_update_test.go`.
+- Constitution 1.2.0. 34 MCP tools; `gapBudget` 10; 19 registry rows (new: "Menu icons", since 2026-11-03).
+- Budgets (`web/tokens/budgets.json`, after v2.1.0): rawButtons 271, zIndex 40, radius 252, fontSize 374. Component token `menu.icon-size` 16px. Bundle cap `check-bundle.mjs` 590,146 B gzip; main chunk ~17.2 KB under it.
+- Spec 010 tests: `web/tests/menu-icons.mjs`, `web/tests/menu-keyboard.mjs` (new); updated menus-and-arrows, dialog-escape, design-system-dialog, side-peek, trash-navigation, database-toolbar-menus, tabs, chart-*.mjs, catalog.mjs. gofmt-exempt: `server/server.go`, `server/audit.go`, `server/desktop_auth.go`, `server/tunnel_update_test.go`.
 - `check-names.mjs`: 382 old names in 49 allowlisted files. `check-upgrades.mjs` 7 cases. `check-storagemove.mjs` 14 cases. `check-columnenter.mjs` 17 cases (new). `scripts/test-install-move.sh` (bash) 4 cases.
 - New browser tests: `web/tests/chart-redraw.mjs` (#368/#319: 1 build for a new chart view on 20 rows; old code built 3), `web/tests/column-enter.mjs` (#317). `chart-each-row.mjs` checks swatches (#318). `catalog.mjs` waits for "Banana" highlighted (#375).
 - Full gate ~10 min: `timeout 900 scripts/agent-gate.sh > <scratchpad>/gate.log 2>&1`.
@@ -248,10 +274,15 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | v2.0.8 | #372 (chart builds once) | 2026-10-30 19:26 |
 | v2.0.9 | #373 (columns + CodeGraph) | 2026-11-01 23:19 |
 | v2.0.10 | #374 (Colourful, wiki shots, prompt hook off) | 2026-11-01 23:33 |
+| v2.0.12 | #377 (README Download) | 2026-11-02 |
+| v2.0.13 | #378 (CodeGraph everywhere) | 2026-11-02 |
+| v2.0.14 | #420 (spec 010 plan/tasks) | 2026-11-02 |
+| v2.0.15 | #421 (spec 010 part 1) | 2026-11-02 |
+| v2.1.0 | #422 (spec 010 part 2) | 2026-11-02 12:16:44 |
 - v2.0.5–v2.0.7 (#369 and the user's two release-notes edits) not checked individually. #376's release (expected v2.0.11) not checked.
 - Releases page: https://github.com/neatlittlemacapps/nigari/releases. Assets `nigari-<os>-<arch>` + `SHA256SUMS.txt`. Image `ghcr.io/neatlittlemacapps/nigari`. No desktop app published (#323).
 
-**Specs**: 008 done. 011 done. 010 menu icons: spec + clarify done (`specs/010-menu-icons/`), not planned yet.
+**Specs**: 008, 010 (menu icons, 39 tasks, parent #380, tasks #381–#419 all closed), 011 done.
 
 **Open issues**
 | # | Title |
@@ -261,7 +292,10 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 322 | nigari needs its own icon (user supplies artwork) |
 | 323 | The fork releases its desktop app (unsigned first) |
 | 326 | nigari has a docs site built from the wiki (GitHub Pages) |
-- No open `bug` issues (2026-11-02).
+| 379 | Fewer hand-built buttons: shared button components, same look |
+| 269 | `bug`: an empty date looks filled in |
+| 278 | `bug`: chart colour clash |
+- Open bugs: #269, #278 (2026-11-02). #263 closed in the board cleanup.
 - Epic A (stream B): #131, #132, #133, #18, #19, #270, #269, #279, #281, #280, #178. Epic B charts: #278, #277, #282, #266. Epic C: #22, #26, #24, #23. Epic D editor: #267, #268. Epic E agent parity: #3–#12, #14, #16, #17.
 - #370/#371 Notion reference screenshots were described in words; the owner attaches the images by hand (no API).
 
@@ -269,8 +303,9 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - **People:** the user (`neatlittlemacapps`, Frank De Graeve); upstream maintainer "Jeremia" (`jeremiaa`).
 - **Terms:** surface = registry row; gap = person can, agent can't; budget = count that only goes down; gate = `scripts/agent-gate.sh`; stream = a parallel work line; conductor = Claude; steward skill = `.claude/skills/steward/SKILL.md`; upgrade step = a numbered goose step; column head = a column's first block; Each row = chart grouping `__row`; code graph = CodeGraph index.
 - **Repo:** `neatlittlemacapps/nigari`.
-- **Branches:** working branch `claude/wizardly-johnson-y7nazn` (= main `29d7fc4` + this handoff). GitHub deletes it on every merge; fast-forward recreates it.
-- **Key files:** `web/src/components/ChartFigure.tsx`, `ChartView.tsx`, `web/src/chartTheme.ts` (`groupColourTokens(drawn, palette, groupProp, series)`), `web/src/columnEnter.ts` (`columnEnterAction`, `columnEnter`), `web/src/blocks.tsx` (`columnsSpec`), `web/src/keys.ts`, `web/src/components/Editor.tsx` (`column.enter` shortcut), `web/scripts/shoot-wiki.mjs` (`text` step), `.claude/hooks/codegraph.sh`, `.claude/rules/codegraph.md`, `server/upgrade.go`, `server/backup.go`, `docs/decisions.md`.
+- **Branches:** this handoff on `claude/handoff-14` (from main `69647dc`, merge of #422). Old working branch `claude/wizardly-johnson-y7nazn`. GitHub deletes it on every merge; fast-forward recreates it.
+- **Key files:** `web/src/components/ChartFigure.tsx`, `ChartView.tsx`, `web/src/chartTheme.ts` (`groupColourTokens(drawn, palette, groupProp, series)`), `web/src/columnEnter.ts` (`columnEnterAction`, `columnEnter`), `web/src/blocks.tsx` (`columnsSpec`), `web/src/keys.ts`, `web/src/components/Editor.tsx` (`column.enter` shortcut), `web/scripts/shoot-wiki.mjs` (`text` step), `.claude/hooks/codegraph.sh`, `.claude/rules/codegraph.md`, `server/upgrade.go`, `server/backup.go`, `docs/decisions.md`, `web/src/menuIcons.ts`, `web/src/ui/Menu.tsx` (+ `Menu.css`), `web/scripts/check-menu-icons.mjs`, `web/src/components/SidebarMenus.tsx`, `CollectionMenus.tsx`, `UserMenu.tsx`, `web/src/keys.ts` (`menuOwnsKey`), `web/src/dialog.tsx`.
+- **Terms (new):** option B = menus rebuilt on Base UI; menu function = the verb an item does (one icon each); hand-built button = a raw `<button>` counted by the rawButtons budget.
 
 ## 10. Work state
 | Item | Status | Location | Notes |
@@ -280,23 +315,29 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | CodeGraph setup | merged, v2.0.9; prompt hook off in v2.0.10 | PR #373, #374 | MCP tool confirmed live after a restart |
 | #318 Colourful, #320 wiki shots | merged, v2.0.10 | PR #374 | |
 | #375 flaky catalogue Select test | merged | PR #376 | not reproduced on demand; fix rests on Base UI's late first highlight |
-| README "Download" line | agreed, not started | — | option A |
-| Spec 010 menu icons | spec + clarify done | `specs/010-menu-icons/` | next feature |
+| README "Download" line | merged, v2.0.12 | PR #377 | |
+| CodeGraph in spec/plan/tasks | merged, v2.0.13 | PR #378 | |
+| Spec 010 menu icons | merged, **v2.1.0** | PRs #420, #421, #422 | SC-004 by-hand check by owner open |
+| Bugs #269, #278 | open | issues | next |
+| #379 buttons | filed | issue | backlog |
 | Epic A | proposed | section 8 | helper stream, spec 012 |
 | #370, #371 | filed | issues | spec first |
 
 ## 11. Next steps
-1. **Next action:** add the README "Download" line (option A: where the binaries are on Releases, that the desktop app is not published yet, #323) as a small PR.
-2. Spec 010: `/speckit-plan` → `/speckit-tasks` → `/speckit-github-taskstoissues`; then implement (query CodeGraph for every menu first).
+1. **Next action:** fix bug #269 (an empty date looks filled in): label `in-progress`, `codegraph explore` the date cell, small PR.
+2. Fix bug #278 (chart colour clash), own small PR.
 3. Start stream B (Epic A, spec 012) per the steward skill.
-4. Then #370 and #371 (spec first), #322, #323, #326.
+4. Then #370 and #371 (spec first), #322, #323, #326, #379.
 
 ## 12. Open questions ⚠️
 - Has the owner added the CodeGraph setup-script line to the environment settings? (Without it, the MCP tool may arrive only from a machine's second start.)
 - Has the owner attached the Notion screenshots to #370 and #371?
+- Did the owner paste the v2.1.0 release notes (Claude gave the text; no tool edits releases)?
+- Spec 010 SC-004 (by-hand keyboard check): done by the owner?
+- Delete the stray label `surface:performance`? (yes / leave)
 
 ## 13. Re-attach checklist
-Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on branch `claude/wizardly-johnson-y7nazn` of `neatlittlemacapps/nigari`. Start the new Claude Code session on **`neatlittlemacapps/nigari`**, branch `claude/wizardly-johnson-y7nazn`.
+Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on branch `claude/handoff-14` of `neatlittlemacapps/nigari`. Start the new Claude Code session on **`neatlittlemacapps/nigari`**, branch `claude/handoff-14`.
 
 ---
-<sub>Audit: 13/13 sections · 21 rules · 89 corrections · ~300 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
+<sub>Audit: 13/13 sections · 23 rules · 96 corrections · ~330 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>

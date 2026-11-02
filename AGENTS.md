@@ -152,6 +152,10 @@ added on the REST side and missing on the MCP side, found later one by one.
   `in-progress` when you start, tick the task in the PR that does it, and list
   every task issue it finishes as `Closes #N` (closing the feature issue does
   not close its sub-issues).
+- **Priority lives on the board.** The board's Priority field is copied onto
+  the issue as `priority:1`/`2`/`3` by the same sync (nightly, or Run
+  workflow); read priority from those labels, and never set one by hand —
+  the next sync overwrites it.
 - Small fixes can skip the spec: an issue, a branch, a pull request.
 - **Bugs before features** (owner, 2026-10-30). An open `bug` issue goes
   before starting the next feature or spec. A bug found while working gets an

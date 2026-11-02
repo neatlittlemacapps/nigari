@@ -8,7 +8,9 @@ name: Board sync
 # secret BOARD_TOKEN, and the board's number as the variable BOARD_PROJECT
 # (Settings → Secrets and variables → Actions). Without them the job skips.
 # Backfill: Actions → Board sync → Run workflow. A nightly run catches what no
-# event reports (sub-issues added or removed).
+# event reports (sub-issues added or removed). Each issue's line in the log also
+# shows its board Priority, which agents read from here (they cannot read the
+# board itself).
 
 on:
   issues:

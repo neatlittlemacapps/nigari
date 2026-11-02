@@ -15,6 +15,9 @@
 #   BOARD_FIELD    the single-select field to fill (default: Surface)
 #   GITHUB_REPOSITORY  owner/repo (set by Actions)
 #
+# It also copies the board's Priority field onto a priority:N label (see the
+# Priority block in sync_one).
+#
 # Why Surface: the surface lives on the issue as a label, because labels are
 # what /speckit-github-taskstoissues can set and what shows on the issue
 # itself. The board groups by a field, and GitHub cannot fill a field from a
@@ -71,17 +74,35 @@ status_options="$(jq -c '.data.user.projectV2.status.options // []' <<<"$project
 [[ -n "$surface_field" ]] || echo "::warning::board-sync: no single-select field \"$field_name\"; Surface not synced"
 [[ -n "$status_field" ]] || echo "::warning::board-sync: no single-select field \"Status\"; Status not synced"
 
+# gh_retry CMD… — runs a gh call up to three times when GitHub's answer is a
+# server-side hiccup. GitHub answered a field mutation with "Something went
+# wrong" twice on 2026-11-02, in two runs of --all, at different issues, and
+# each time the run stopped for every issue after it. Every call wrapped here
+# is idempotent, so a retry is safe. A permanent error (404, 422, a bad token)
+# is not retried: it fails at once, with gh's message.
+gh_retry() {
+  local try err out
+  err="$(mktemp)"
+  for try in 1 2 3; do
+    if out="$("$@" 2>"$err")"; then rm -f "$err"; printf '%s' "$out"; return 0; fi
+    grep -qiE 'something went wrong|HTTP 5[0-9][0-9]|timeout|timed out|connection reset' "$err" || break
+    [[ $try -lt 3 ]] && { echo "  (GitHub error, retrying)" >&2; sleep $((try * 5)); }
+  done
+  cat "$err" >&2; rm -f "$err"
+  return 1
+}
+
 # set_field ITEM FIELD OPTION_ID — clears the field when OPTION_ID is empty.
 set_field() {
   local item="$1" field="$2" option="$3"
   if [[ -n "$option" ]]; then
-    gh api graphql -f project="$project_id" -f item="$item" -f field="$field" -f option="$option" -f query='
+    gh_retry gh api graphql -f project="$project_id" -f item="$item" -f field="$field" -f option="$option" -f query='
       mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
         updateProjectV2ItemFieldValue(input: { projectId: $project, itemId: $item, fieldId: $field,
           value: { singleSelectOptionId: $option } }) { projectV2Item { id } }
       }' >/dev/null
   else
-    gh api graphql -f project="$project_id" -f item="$item" -f field="$field" -f query='
+    gh_retry gh api graphql -f project="$project_id" -f item="$item" -f field="$field" -f query='
       mutation($project: ID!, $item: ID!, $field: ID!) {
         clearProjectV2ItemFieldValue(input: { projectId: $project, itemId: $item, fieldId: $field }) { projectV2Item { id } }
       }' >/dev/null
@@ -92,24 +113,28 @@ set_field() {
 # depends on its sub-issues.
 sync_one() {
   local number="$1" issue_json issue_id labels item_id surface_id status status_id parent
-  issue_json="$(gh api graphql -f owner="$owner" -f name="$name" -F number="$number" -f query='
+  issue_json="$(gh_retry gh api graphql -f owner="$owner" -f name="$name" -F number="$number" -f query='
     query($owner: String!, $name: String!, $number: Int!) {
       repository(owner: $owner, name: $name) { issue(number: $number) { id state
         labels(first: 50) { nodes { name } }
         parent { number }
         subIssues(first: 100) { nodes { state labels(first: 20) { nodes { name } } } }
         closedByPullRequestsReferences(first: 10, includeClosedPrs: false) { nodes { state } }
-        projectItems(first: 20) { nodes { id project { id } } } } }
+        projectItems(first: 20) { nodes { id project { id }
+          priority: fieldValueByName(name: "Priority") {
+            ... on ProjectV2ItemFieldSingleSelectValue { name }
+            ... on ProjectV2ItemFieldNumberValue { number }
+            ... on ProjectV2ItemFieldTextValue { text } } } } } }
     }' 2>/dev/null || true)"
   issue_id="$(jq -r '.data.repository.issue.id // empty' <<<"$issue_json")"
-  [[ -n "$issue_id" ]] || { echo "  #$number: not an issue, skipped"; return; }
+  [[ -n "$issue_id" ]] || { echo "  #$number: not an issue (or GitHub did not answer), skipped"; return; }
   local issue
   issue="$(jq -c '.data.repository.issue' <<<"$issue_json")"
   labels="$(jq -c '[.labels.nodes[].name | ascii_downcase]' <<<"$issue")"
   item_id="$(jq -r --arg p "$project_id" '.projectItems.nodes[] | select(.project.id == $p) | .id' <<<"$issue" | head -1)"
 
   if [[ -z "$item_id" ]]; then
-    item_id="$(gh api graphql -f project="$project_id" -f content="$issue_id" -f query='
+    item_id="$(gh_retry gh api graphql -f project="$project_id" -f content="$issue_id" -f query='
       mutation($project: ID!, $content: ID!) {
         addProjectV2ItemById(input: { projectId: $project, contentId: $content }) { item { id } }
       }' -q .data.addProjectV2ItemById.item.id)"
@@ -145,6 +170,48 @@ sync_one() {
       report+=" Status=$status"
     else
       echo "::warning::board-sync: the Status field has no option \"$status\""
+    fi
+  fi
+  # Priority is set by hand on the board and only read here, so that the run
+  # log carries it: an agent in a cloud session cannot read the board's
+  # fields, but it can read this log (Actions → Board sync → a --all run).
+  local priority
+  priority="$(jq -r --arg p "$project_id" '
+    [.projectItems.nodes[] | select(.project.id == $p) | .priority // {} | (.name // .number // .text)]
+    | map(select(. != null)) | first // "—"' <<<"$issue")"
+  report+=" Priority=$priority"
+
+  # The board's Priority goes onto the issue as a priority:N label, because a
+  # label is what every tool shows: the issue page, the issue list, and the
+  # GitHub tools of an agent that cannot read the board. The board's options
+  # are "P1 - High", "P2 - Medium", "P3 - Low"; a value that starts with
+  # P<n>, <n> or "Priority <n>" becomes priority:<n>, the labels the issues
+  # already carried. Any other value is left alone with a warning rather than
+  # turned into a label: a renamed option must not strip priority:1 from every
+  # issue. An issue with no Priority on the board keeps the labels it has.
+  # Changing the field sends no event to this workflow (a user's board has no
+  # projects_v2_item webhook), so a label follows on the nightly run or a Run
+  # workflow. A label call that fails is a warning, not the end of the run.
+  if [[ "$priority" != "—" ]]; then
+    local wanted l
+    wanted="$(sed -nE 's/^([Pp]riority[ ]*|[Pp])?([0-9]+)([^0-9].*)?$/priority:\2/p' <<<"$priority")"
+    if [[ -z "$wanted" ]]; then
+      echo "::warning::board-sync: #$number has Priority \"$priority\", which names no number; labels left alone"
+    else
+      local -a have=()
+      mapfile -t have < <(jq -r '.[] | select(startswith("priority:"))' <<<"$labels")
+      for l in "${have[@]}"; do
+        [[ "$l" == "$wanted" ]] && continue
+        gh_retry gh api -X DELETE "repos/$repo/issues/$number/labels/$(jq -rn --arg l "$l" '$l | @uri')" >/dev/null \
+          || echo "::warning::board-sync: #$number: could not remove label $l"
+      done
+      if ! printf '%s\n' "${have[@]}" | grep -qxF "$wanted"; then
+        if gh_retry gh api -X POST "repos/$repo/issues/$number/labels" -f "labels[]=$wanted" >/dev/null; then
+          report+=" (label $wanted)"
+        else
+          echo "::warning::board-sync: #$number: could not add label $wanted"
+        fi
+      fi
     fi
   fi
   echo "$report"
