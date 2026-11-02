@@ -99,7 +99,11 @@ sync_one() {
         parent { number }
         subIssues(first: 100) { nodes { state labels(first: 20) { nodes { name } } } }
         closedByPullRequestsReferences(first: 10, includeClosedPrs: false) { nodes { state } }
-        projectItems(first: 20) { nodes { id project { id } } } } }
+        projectItems(first: 20) { nodes { id project { id }
+          priority: fieldValueByName(name: "Priority") {
+            ... on ProjectV2ItemFieldSingleSelectValue { name }
+            ... on ProjectV2ItemFieldNumberValue { number }
+            ... on ProjectV2ItemFieldTextValue { text } } } } } }
     }' 2>/dev/null || true)"
   issue_id="$(jq -r '.data.repository.issue.id // empty' <<<"$issue_json")"
   [[ -n "$issue_id" ]] || { echo "  #$number: not an issue, skipped"; return; }
@@ -147,6 +151,14 @@ sync_one() {
       echo "::warning::board-sync: the Status field has no option \"$status\""
     fi
   fi
+  # Priority is set by hand on the board and only read here, so that the run
+  # log carries it: an agent in a cloud session cannot read the board's
+  # fields, but it can read this log (Actions → Board sync → a --all run).
+  local priority
+  priority="$(jq -r --arg p "$project_id" '
+    [.projectItems.nodes[] | select(.project.id == $p) | .priority // {} | (.name // .number // .text)]
+    | map(select(. != null)) | first // "—"' <<<"$issue")"
+  report+=" Priority=$priority"
   echo "$report"
 
   parent="$(jq -r '.parent.number // empty' <<<"$issue")"
