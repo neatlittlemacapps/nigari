@@ -38,6 +38,14 @@ docker run -d -p 8420:8420 -v salt-data:/data ghcr.io/neatlittlemacapps/nigari:l
 The volume keeps salt.md's name, `salt-data`, so an install from before the
 rename finds its data; a new name would be a new, empty volume.
 
+Or download the binary yourself: every release on the
+[Releases page](https://github.com/neatlittlemacapps/nigari/releases/latest)
+carries `nigari-linux-amd64`, `nigari-linux-arm64`, `nigari-darwin-amd64`,
+`nigari-darwin-arm64` and `nigari-windows-amd64.exe`, with `SHA256SUMS.txt` to
+check them. There is no need to clone this repository to run nigari. The
+desktop app is not published yet
+([#323](https://github.com/neatlittlemacapps/nigari/issues/323)).
+
 There is nothing else to install: no database server, no cache, no object
 store. Reverse proxies, TLS and backups are in the
 [self-hosting guide](wiki/self-hosting.md).
