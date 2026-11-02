@@ -170,7 +170,7 @@ motion turned on.
 
 ### User Story 4 - A view's toolbar has one Settings button (Priority: P2)
 
-A person wants to change how a view works: its name, layout, which
+A person wants to change how a view works: its name, which
 properties show, how rows open, a timeline's dates, the database's
 properties. Today that is spread over a **Properties** button, an unlabelled
 **⋯** and loose dropdowns. Now there is one **Settings** button, with the
@@ -191,8 +191,8 @@ can be reached and done, by mouse and by keyboard, on desktop and phone.
    has one icon button with the sliders icon and the tooltip **Settings**,
    just before **New**, and no **Properties** or **⋯** button.
 2. **Given** the Settings panel, **When** it opens, **Then** it shows a **View
-   settings** section (view name, layout, property visibility with a count,
-   how rows open, and the view type's own options such as a timeline's dates
+   settings** section (view name, property visibility with a count, how rows
+   open, and the view type's own options such as a timeline's dates
    or a table's sub-items), then a divider and **Move left**, **Move right**
    and **Remove view** (in the danger colour, last), then a **Database
    settings** section (edit properties, templates).
@@ -204,9 +204,10 @@ can be reached and done, by mouse and by keyboard, on desktop and phone.
    panel while it is open.
 5. **Given** a phone, **When** Settings is tapped, **Then** the panel opens as
    the other menus do on a phone (full width from the bottom).
-6. **Given** a database embedded in a document, **When** Settings opens,
-   **Then** it shows only the view settings, as the embed's reduced toolbar
-   does today.
+6. **Given** a database embedded in a document, **When** its toolbar is
+   shown, **Then** it has no Settings button, as it has no **Properties** or
+   **⋯** today: renaming or removing a view is the database's business, not
+   the document's (#22; plan research R10).
 7. **Given** a person who can only read the database, **When** they open the
    toolbar, **Then** the settings that would change it are not offered, as
    today.
@@ -310,7 +311,7 @@ menu from them is open, and are always shown on a touch screen.
   **Settings**) just before **New**, replacing the **Properties** and **⋯**
   buttons and the per-view-type dropdowns.
 - **FR-013**: The Settings panel MUST hold, in a **View settings** section:
-  the view's name, layout, property visibility with a count, how rows open,
+  the view's name, property visibility with a count, how rows open,
   and the view type's own options; then a divider with Move left, Move right
   and Remove view (danger colour, last); and in a **Database settings**
   section: edit properties and templates.
@@ -321,8 +322,9 @@ menu from them is open, and are always shown on a touch screen.
 - **FR-016**: The panel MUST close on Escape with focus back on the button,
   keep Tab inside while open, and open from the bottom on a phone like the
   other menus.
-- **FR-017**: An embedded database's panel MUST show only view settings; a
-  read-only reader MUST NOT be offered changes.
+- **FR-017**: An embedded database MUST NOT show the Settings button (it
+  shows no Properties or ⋯ today, #22); a read-only reader MUST NOT be offered
+  changes.
 - **FR-018**: Filter, Sort, Search and New MUST stay in the toolbar.
 
 **Fold-away toolbar (#280)**
@@ -382,7 +384,8 @@ menu from them is open, and are always shown on a touch screen.
   "automations" does not exist yet and is not added here.
 - **Personal view changes** (#279) are spec 013's: in this spec, changes made
   from the Settings panel are saved for everyone, as today.
-- **The Settings panel** is built on the design system's existing menu or
-  panel components; whether it is one menu with submenus or a panel with
-  pages is decided in the plan.
+- **The Settings panel** is built on the design system's existing menu
+  component, as one menu with submenus (plan research R8).
+- **Layout** (changing a view's type), which #270 lists, is not offered
+  today and is left out: it is a feature of its own (plan research R9).
 - **Touch detection** uses whether the device can hover, not its width.
