@@ -417,7 +417,7 @@ function TagChip({
         </button>
       )}
       {open && (
-        <div className="menu tag-color-menu">
+        <div className="menu tag-color-menu" data-menu-exempt="a colour picker: values, not actions">
           <div className="menu-label">{t('Colour')}</div>
           <button
             className="tag-color-opt"
@@ -1068,7 +1068,7 @@ function PageHeader({
               <Globe size={17} />
             </button>
             {shareOpen && (
-              <div className="menu share-menu">
+              <div className="menu share-menu" data-menu-exempt="the share panel: a link and its settings, not a list of actions">
                 {shareUrl ? (
                   <>
                     <div className="share-hint">{t('Anyone with this link can view this page (read-only).')}</div>

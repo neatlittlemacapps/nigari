@@ -40,7 +40,8 @@ positioning. The look comes only from the design tokens (`web/tokens/` →
 | `Switch` | an on/off setting that applies at once | a choice saved with a form (`Checkbox`) | `switch` |
 | `SidePanel` | content beside a screen that must stay usable (a row's peek) | a task that takes over the screen (`Dialog`) | `side-panel` |
 | `CenterPanel` | content over a dimmed screen that may open dialogs of its own (a row's centre peek) | a task with a footer of actions (`Dialog`) | `center-panel` |
-| `Popover` | settings that apply at once, anchored to the button that opened them, with the screen still in view (a chart's settings) | a task that takes over the screen (`Dialog`); a list of commands (menus, a later batch) | `popover` |
+| `Popover` | settings that apply at once, anchored to the button that opened them, with the screen still in view (a chart's settings) | a task that takes over the screen (`Dialog`); a list of commands (`Menu`) | `popover` |
+| `Menu` and its parts | every list of actions, opened from a button or a right-click | settings that apply at once (`Popover`); one value from a fixed list in a form (`Select`) | `menu` |
 
 ## Button
 
@@ -169,3 +170,43 @@ content brings its own bar and close button).
 - Escape and a click outside close it; focus returns to the trigger. A `Select` inside opens
   and picks without closing it, and Escape on an open list closes only the list.
 - A visually hidden close button is rendered for touch screen readers (Base UI's requirement).
+
+## Menu
+
+Spec 010. Every menu in the app is built from these parts; `check-menu-icons.mjs`
+fails on a menu built by hand.
+
+**The icon rule.** An item names its **function** (`fn="duplicate"`), never an
+icon. The icon comes from `web/src/menuIcons.ts`, so one function looks the same in
+every menu and two functions never share a picture. A new function gets a new key
+there with an icon no other key has; the check refuses a shared one. The icon is
+decoration (`aria-hidden`); the label is what a screen reader reads.
+
+**Parts**
+- `Menu`: `trigger` (the button), `label` (the popup's accessible name, translated),
+  `side?`/`align?` (`bottom`/`end`), `open?`/`onOpenChange?` (controlled use),
+  `anchorPoint?` (`{x, y}`: opens at a right-click; the same menu as the button's,
+  one list of items), `narrow?="sheet"` (a full-width sheet along the bottom at phone
+  width, `SHEET_MAX_WIDTH` in `anchoredMenu.ts`; the database toolbar menus use it).
+- `MenuItem`: `fn`, `onClick`, `danger?`, `disabled?` (keeps its icon), `filled?`
+  (the favourite star's on state), `chord?` (a shortcut hint; never replaces the
+  icon), `opensDialog?` (closes the menu, then opens the dialog on the next frame, so
+  focus comes back to the trigger when the dialog closes).
+- `MenuCheckboxItem`: `fn`, `checked`, `onCheckedChange`. Same icon on and off, a
+  tick when on.
+- `MenuSubmenu`: `fn`, `label`. Opens with → or a hover.
+- `MenuValues` (`reason`, required) with `MenuValueItem`s: a list of values (the
+  workspaces under "Move to", a database's templates). Values carry no function
+  icon; `icon?` on a value is content, such as a page's own icon.
+- `MenuRadioGroup` / `MenuRadioItem`: one choice among a few, inside a menu.
+- `MenuLabel`, `MenuSeparator`.
+
+**Behaviour** (Base UI): Enter, Space or ↓ on the trigger opens it on the first item;
+↑/↓ and Home/End move; typing jumps to an item; →/← open and close a submenu; Escape
+or a click outside closes it and focus returns to the trigger. Layer
+`--layer-dropdown` (200): over dialogs and peeks. Icons at `--menu-icon-size`.
+
+**Not a menu:** a colour picker, a share panel, a person or row picker. They may wear
+the menu's look until spec 001's popover batch, marked
+`data-menu-exempt="<why>"` so the check knows.
+

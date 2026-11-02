@@ -26,9 +26,11 @@ paths:
   vite.catalog.config.ts`, then `/catalog.html`. A new component gets a README
   entry and a catalogue section (`web/tests/catalog.mjs` checks it).
   `check-tokens.mjs` counts raw `<button>`s and hand-built `role="dialog"`s
-  outside `web/src/ui/`, and those counts only go down. Not in the layer yet:
-  menus and toasts; reuse `dialog.tsx` (confirm/prompt), `modal.ts`,
-  `toast.ts` and `keys.ts` for those. BlockNote for the editor, Yjs for live
+  outside `web/src/ui/`, and those counts only go down. **Menus** are
+  `ui/Menu` (spec 010): an item names its function (`fn="…"`) and takes its
+  icon from `web/src/menuIcons.ts`; `check-menu-icons.mjs` refuses a
+  hand-built menu or two functions on one icon. Not in the layer yet: toasts;
+  reuse `dialog.tsx` (confirm/prompt), `modal.ts`, `toast.ts` and `keys.ts`. BlockNote for the editor, Yjs for live
   documents.
 - **Keyboard.** Shortcuts register in `keys.ts`; focus movement goes through
   `nav.ts`. Both have checks (`check-keys.mjs`, `check-nav.mjs`) — extend them

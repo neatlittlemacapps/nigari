@@ -1,0 +1,165 @@
+/* Menu: the look of today's .menu (styles.css + theme.css' floating glass),
+   stated once from tokens, for every menu (spec 010). */
+
+.ui-menu-positioner {
+  z-index: var(--layer-dropdown);
+  outline: none;
+}
+
+.ui-menu {
+  box-sizing: border-box;
+  min-width: 180px; /* token-ok: today's .menu min-width, so no menu changes width */
+  max-height: var(--available-height);
+  overflow-y: auto;
+  padding: var(--space-100);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-glass);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: var(--shadow-overlay);
+  color: var(--color-text-default);
+  outline: none;
+}
+
+.ui-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-200);
+  padding: 7px var(--space-250); /* token-ok: today's .menu button padding, so rows keep their height */
+  border-radius: var(--radius-scale-lg);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+/* One highlight for the pointer and the keyboard: Base UI marks the item it
+   moved to, so ↑/↓ shows the same row a hover would. */
+.ui-menu-item[data-highlighted] {
+  background: var(--color-active);
+}
+
+.ui-menu-item.is-danger {
+  color: var(--color-danger);
+}
+
+.ui-menu-item[data-disabled] {
+  color: var(--color-text-muted);
+  opacity: 0.45;
+  cursor: default;
+}
+.ui-menu-item[data-disabled][data-highlighted] {
+  background: none;
+}
+
+/* Every function's icon at the one menu size (token menu.icon-size), quiet
+   beside the label; a danger item's icon takes the item's colour. */
+.ui-menu .menu-icon,
+.ui-menu .menu-icon-composite {
+  flex: none;
+  color: var(--color-text-muted);
+}
+.ui-menu .menu-icon {
+  width: var(--menu-icon-size);
+  height: var(--menu-icon-size);
+}
+.ui-menu-item.is-danger .menu-icon {
+  color: inherit;
+}
+
+.ui-menu-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-menu-value-icon {
+  display: inline-flex;
+  flex: none;
+  width: var(--menu-icon-size);
+  justify-content: center;
+}
+
+.ui-menu-tick,
+.ui-menu-chevron {
+  flex: none;
+  margin-left: auto;
+  color: var(--color-text-muted);
+}
+
+/* A shortcut beside the action it performs: quiet, at the right edge; an
+   empty chord (not bound here) takes no room. */
+.ui-menu-chord {
+  margin-left: auto;
+  padding-left: var(--space-300);
+  font-family: inherit;
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+}
+.ui-menu-chord:empty {
+  display: none;
+}
+
+/* A radio dot in the menu's own colours, in the icon's column. */
+.ui-menu-radio {
+  flex: none;
+  width: 12px; /* token-ok: the dot sits in the 16px icon column */
+  height: 12px; /* token-ok: as above */
+  margin: 0 2px; /* token-ok: centres the 12px dot in the 16px column */
+  box-sizing: border-box;
+  border-radius: var(--radius-scale-full);
+  border: 1.5px solid var(--color-text-muted); /* token-ok: a hairline ring, like the native radio it replaces */
+}
+.ui-menu-radio[data-checked] {
+  border: 4px solid var(--color-accent-default); /* token-ok: the filled ring of a chosen radio */
+}
+
+.ui-menu-heading {
+  padding: var(--space-150) var(--space-250) var(--space-50);
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.ui-menu-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.ui-menu-sep {
+  height: 1px;
+  margin: var(--space-100) var(--space-50);
+  background: var(--color-border-default);
+}
+
+/* At phone width a toolbar menu is a sheet along the bottom edge, full width,
+   where the thumb reaches it (anchoredMenu.ts' rule, kept by spec 010). The
+   positioner places itself with inline styles; these win over them only in
+   sheet mode, which is why they need !important. */
+.ui-menu-positioner[data-sheet] {
+  position: fixed !important;
+  inset: auto var(--space-200) var(--space-200) var(--space-200) !important;
+  transform: none !important;
+  width: auto !important;
+}
+.ui-menu-positioner[data-sheet] .ui-menu {
+  width: 100%;
+  max-height: 72vh;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ui-menu {
+    transition: opacity var(--motion-duration-fast) var(--easing-out), transform var(--motion-duration-fast) var(--easing-out);
+  }
+  .ui-menu[data-starting-style],
+  .ui-menu[data-ending-style] {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}

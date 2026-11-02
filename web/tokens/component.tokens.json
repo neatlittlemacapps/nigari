@@ -299,5 +299,15 @@
       "$value": 150,
       "$description": "Above dialogs (dialog.layer 100) and the peeks (side-panel.layer 90), so a chart's settings open over a chart shown in a peek; below menus (layer.dropdown 200), because a Select inside the popover opens its list over it."
     }
+  },
+  "menu": {
+    "icon-size": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$description": "The one size of every menu icon (spec 010, research R7). Menus used to mix 15 and 16 px; ui/Menu draws every item's icon at this size so a function's icon looks the same in every menu."
+    }
   }
 }

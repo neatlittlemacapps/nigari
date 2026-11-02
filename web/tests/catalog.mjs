@@ -216,6 +216,17 @@ try {
       if (!shotsOnly) await axe(`${theme}, popover open`);
     }
 
+    // The menu (spec 010), skipped the same way on a base that predates it.
+    await page.goto(`${base}?theme=${theme}&open=menu`);
+    if (!shotsOnly || (await page.locator('[data-section="menu"]').count()) > 0) {
+      const menu = page.getByRole('menu', { name: 'Page actions' });
+      await menu.waitFor();
+      await page.evaluate(() => document.fonts.ready);
+      await page.waitForTimeout(250);
+      await matches(`menu-open-${theme}`, await menu.screenshot({ animations: 'disabled' }));
+      if (!shotsOnly) await axe(`${theme}, menu open`);
+    }
+
     // The centre panel (spec 007, phase 7), skipped the same way on a base
     // that predates it.
     await page.goto(`${base}?theme=${theme}&open=center-panel`);
@@ -312,6 +323,52 @@ try {
   await page.keyboard.press('Escape');
   await sidePanel.waitFor({ state: 'hidden' });
   assert(await panelOpener.evaluate((el) => el === document.activeElement), 'SidePanel: focus did not return to the button that opened it');
+
+  // Menu (spec 010): the hand-built menus had none of this, which is why
+  // every menu now goes through ui/Menu. Enter opens it on the first item;
+  // ↓ moves; typing jumps; → opens the submenu and ← closes it; Escape closes
+  // the menu and focus returns to the button; a disabled item is skipped by
+  // nothing but cannot fire; every item's icon is hidden from screen readers.
+  const menuOpener = page.getByRole('button', { name: 'Page actions' });
+  await menuOpener.focus();
+  await page.keyboard.press('Enter');
+  const menuPopup = page.getByRole('menu', { name: 'Page actions' });
+  await menuPopup.waitFor();
+  const focusedItem = async () => page.evaluate(() => document.activeElement?.textContent?.trim() ?? '');
+  await eventually(async () => (await focusedItem()) === 'Open in new tab').catch(() => {
+    throw new Error('Menu: Enter did not open the menu on its first item');
+  });
+  await page.keyboard.press('ArrowDown');
+  await eventually(async () => (await focusedItem()).startsWith('Add to favorites')).catch(() => {
+    throw new Error('Menu: ArrowDown did not move to the next item');
+  });
+  await page.keyboard.press('m');
+  await eventually(async () => (await focusedItem()).startsWith('Move to')).catch(() => {
+    throw new Error('Menu: typing "m" did not jump to an item starting with it');
+  });
+  // Typeahead lands on the first "M…": Move to workspace (the submenu).
+  await page.keyboard.press('ArrowRight');
+  const sub = page.getByRole('menuitem', { name: 'Design' });
+  await sub.waitFor();
+  await eventually(async () => (await focusedItem()) === 'Design').catch(() => {
+    throw new Error('Menu: ArrowRight did not open the submenu on its first entry');
+  });
+  await page.keyboard.press('ArrowLeft');
+  await sub.waitFor({ state: 'hidden' });
+  await page.keyboard.press('Escape');
+  await menuPopup.waitFor({ state: 'hidden' });
+  assert(await menuOpener.evaluate((el) => el === document.activeElement), 'Menu: focus did not return to the button that opened it');
+  await menuOpener.click();
+  await menuPopup.waitFor();
+  const hiddenIcons = await menuPopup.evaluate((m) =>
+    [...m.querySelectorAll('[role^="menuitem"]')].every((it) => {
+      const svgs = it.querySelectorAll('svg.menu-icon');
+      return svgs.length <= 1 && [...svgs].every((s) => s.getAttribute('aria-hidden') === 'true');
+    }),
+  );
+  assert(hiddenIcons, 'Menu: an item icon is not hidden from screen readers, or an item has two');
+  await page.keyboard.press('Escape');
+  await menuPopup.waitFor({ state: 'hidden' });
 
   // Popover (spec 004): opens from its trigger with focus inside; Tab stays
   // inside; a Select in it opens and picks without closing the panel (its

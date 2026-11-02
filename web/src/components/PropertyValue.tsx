@@ -619,7 +619,7 @@ function PersonValue({ def, value, onChange, readOnly, compact }: Props) {
         {shown ?? <span className="prop-empty">{t('＋ Person')}</span>}
       </button>
       {open && (
-        <div className="menu relation-menu">
+        <div className="menu relation-menu" data-menu-exempt="a person picker with a search field: values, not actions">
           <input
             className="prop-input"
             autoFocus
@@ -817,7 +817,7 @@ function RelationValue({ def, value, onChange, readOnly, compact, maxChips }: Pr
         {ids.length ? chips : <span className="prop-empty">{t('＋ Link')}</span>}
       </button>
       {open && (
-        <div className="menu relation-menu">
+        <div className="menu relation-menu" data-menu-exempt="a row picker with a search field: values, not actions">
           <input
             className="prop-input"
             autoFocus
