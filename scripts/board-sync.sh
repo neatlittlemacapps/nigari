@@ -15,8 +15,9 @@
 #   BOARD_FIELD    the single-select field to fill (default: Surface)
 #   GITHUB_REPOSITORY  owner/repo (set by Actions)
 #
-# It also copies the board's Priority field onto a priority:N label (see the
-# Priority block in sync_one).
+# It also copies the board's Priority field onto a priority:N label, and sets
+# Priority to P1 on an open issue labelled `breaking` (see the Priority block
+# in sync_one).
 #
 # Why Surface: the surface lives on the issue as a label, because labels are
 # what /speckit-github-taskstoissues can set and what shows on the issue
@@ -56,7 +57,8 @@ project_query='
   query($owner: String!, $number: Int!, $field: String!) {
     OWNER(login: $owner) { projectV2(number: $number) { id
       surface: field(name: $field) { ... on ProjectV2SingleSelectField { id options { id name } } }
-      status: field(name: "Status") { ... on ProjectV2SingleSelectField { id options { id name } } } } }
+      status: field(name: "Status") { ... on ProjectV2SingleSelectField { id options { id name } } }
+      priority: field(name: "Priority") { ... on ProjectV2SingleSelectField { id options { id name } } } } }
   }'
 # A user's board first, then an organisation's.
 project_json="$(gh api graphql -f owner="$owner" -F number="$BOARD_PROJECT" -f field="$field_name" \
@@ -71,6 +73,13 @@ surface_field="$(jq -r '.data.user.projectV2.surface.id // empty' <<<"$project_j
 surface_options="$(jq -c '.data.user.projectV2.surface.options // []' <<<"$project_json")"
 status_field="$(jq -r '.data.user.projectV2.status.id // empty' <<<"$project_json")"
 status_options="$(jq -c '.data.user.projectV2.status.options // []' <<<"$project_json")"
+priority_field="$(jq -r '.data.user.projectV2.priority.id // empty' <<<"$project_json")"
+# The option a breaking bug gets: the one named P1…, 1… or "Priority 1…"
+# ("P1 - High" today), matched the way the label mirror below reads a value.
+priority_one="$(jq -r '[.data.user.projectV2.priority.options // [] | .[]
+  | select(.name | test("^([Pp]riority *|[Pp])?1([^0-9]|$)"))] | first | .id // empty' <<<"$project_json")"
+priority_one_name="$(jq -r --arg id "$priority_one" '[.data.user.projectV2.priority.options // [] | .[]
+  | select(.id == $id) | .name] | first // empty' <<<"$project_json")"
 [[ -n "$surface_field" ]] || echo "::warning::board-sync: no single-select field \"$field_name\"; Surface not synced"
 [[ -n "$status_field" ]] || echo "::warning::board-sync: no single-select field \"Status\"; Status not synced"
 
@@ -179,6 +188,23 @@ sync_one() {
   priority="$(jq -r --arg p "$project_id" '
     [.projectItems.nodes[] | select(.project.id == $p) | .priority // {} | (.name // .number // .text)]
     | map(select(. != null)) | first // "—"' <<<"$issue")"
+
+  # A breaking bug is P1 (owner, 2026-11-02: "If there is a breaking bug it is
+  # p1"). P1 is not only for bugs; the rule runs one way. The agent that files
+  # the bug labels it `breaking`, because it can set a label but cannot reach
+  # the board, and this run sets the field. Only while the issue is open: a
+  # closed one's Priority no longer orders any work. Removing the label later
+  # leaves Priority as it is; the owner sets it by hand from there.
+  if jq -e '.state == "OPEN"' <<<"$issue" >/dev/null \
+     && jq -e 'index("breaking") != null' <<<"$labels" >/dev/null; then
+    if [[ -z "$priority_one" ]]; then
+      echo "::warning::board-sync: #$number is labelled breaking, but the Priority field has no P1 option"
+    elif [[ "$priority" != "$priority_one_name" ]]; then
+      set_field "$item_id" "$priority_field" "$priority_one"
+      priority="$priority_one_name"
+      report+=" (breaking → $priority_one_name)"
+    fi
+  fi
   report+=" Priority=$priority"
 
   # The board's Priority goes onto the issue as a priority:N label, because a
