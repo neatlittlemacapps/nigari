@@ -129,7 +129,7 @@ body {
 
 .cat-table th {
   color: var(--color-text-muted);
-  font-size: var(--font-size-2xs);
+  font-size: var(--font-size-xs);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -142,24 +142,4 @@ body {
 
 .cat-table--preview {
   font-size: 15px; /* token-ok: a one-off preview for the owner's choice (spec 012, R1); a token if chosen */
-}
-
-.cat-table-head--sm th {
-  font-size: var(--font-size-sm);
-}
-
-.cat-table-head--xs th {
-  font-size: var(--font-size-xs);
-}
-
-.cat-table-head--2xs th {
-  font-size: var(--font-size-2xs);
-}
-
-.cat-table-head--plain th {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: normal;
-  font-family: var(--font-family-sans);
 }

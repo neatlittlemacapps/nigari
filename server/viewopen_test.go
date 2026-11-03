@@ -357,7 +357,7 @@ func TestSetViewColumnOrder(t *testing.T) {
 		return err
 	}
 
-	if err := call(`{"page_id":"` + col + `","name":"Ordered","type":"table","column_order":["due","gone","due"]}`); err != nil {
+	if err := call(`{"page_id":"` + col + `","name":"Ordered","type":"table","column_order":["due","due"]}`); err != nil {
 		t.Fatalf("create with column_order: %v", err)
 	}
 	if v := viewByID(t, s, col, "ordered"); fmt.Sprint(v["colOrder"]) != "[due]" {
@@ -379,6 +379,25 @@ func TestSetViewColumnOrder(t *testing.T) {
 	}
 	if v := viewByID(t, s, col, "ordered"); fmt.Sprint(v["colOrder"]) != "[status due]" {
 		t.Errorf("a rename lost the order: %v", v["colOrder"])
+	}
+
+	// An id that is not a property is refused over MCP, as hidden refuses
+	// one: an agent passing names ("Status") would otherwise hear success
+	// while nothing changed. Create and update alike; nothing changes.
+	_, beforeNames, _ := s.loadCollection(col)
+	for _, bad := range []string{
+		`{"page_id":"` + col + `","name":"Named","type":"table","column_order":["Status","Due"]}`,
+		`{"page_id":"` + col + `","view_id":"ordered","column_order":["status","gone"]}`,
+	} {
+		if err := call(bad); err == nil || !strings.Contains(err.Error(), "not a property") {
+			t.Errorf("%s: %v, want a refusal naming the id", bad, err)
+		}
+	}
+	if _, after, _ := s.loadCollection(col); len(after) != len(beforeNames) {
+		t.Error("a refused create added a view")
+	}
+	if v := viewByID(t, s, col, "ordered"); fmt.Sprint(v["colOrder"]) != "[status due]" {
+		t.Errorf("a refused update changed the order: %v", v["colOrder"])
 	}
 
 	// Refusals: a board, on create and on update; nothing changes.
@@ -418,7 +437,7 @@ func TestSetViewColumnOrder(t *testing.T) {
 }
 
 // Both doors store the same view for the same request: an order with a
-// dropped id, and an order cleared with [], read back as the same bytes
+// repeat, and an order cleared with [], read back as the same bytes
 // whether a person or an agent saved it.
 func TestColumnOrderIsTheSameThroughBothDoors(t *testing.T) {
 	s := testServer(t)
@@ -439,7 +458,7 @@ func TestColumnOrderIsTheSameThroughBothDoors(t *testing.T) {
 	}
 	start := `{"views":[{"id":"t","name":"T","type":"table"}]}`
 	for _, c := range []struct{ name, rest, mcp string }{
-		{"an order with an unknown id", `["due","gone"]`, `["due","gone"]`},
+		{"an order with a repeat", `["due","due"]`, `["due","due"]`},
 		{"an order cleared", `[]`, `[]`},
 		// REST may send null; set_view's [] is its way to say the same.
 		{"an order sent as null", `null`, `[]`},

@@ -607,6 +607,13 @@ func applyViewSpec(view map[string]any, spec viewSpec, schema []map[string]any) 
 	if spec.ColumnOrder != nil {
 		order := make([]any, 0, len(*spec.ColumnOrder))
 		for _, id := range *spec.ColumnOrder {
+			// Refused here, where hidden and group_by refuse theirs: an agent
+			// that passes names instead of ids would otherwise be told the
+			// call worked while nothing changed. checkViewColOrder still drops
+			// ids a stored order holds for a property deleted since.
+			if !has(id) {
+				return fmt.Errorf("column_order: %q is not a property of this database (use the property ids from get_collection)", id)
+			}
 			order = append(order, id)
 		}
 		view["colOrder"] = order

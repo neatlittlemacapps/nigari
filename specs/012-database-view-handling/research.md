@@ -13,6 +13,13 @@ PR 1 adds a catalogue section with the table at 14px and at 15px
 owner to choose; if 15px wins, a component token `table.cell-font-size` is
 added rather than a literal.
 
+**Header, decided** (owner, 2026-11-03): the header is drawn by theme.css,
+not styles.css, as a 11.5px uppercase label, which the first draft of this
+entry missed. Of four options shown side by side (13px, 12px and 11px
+uppercase, 13px plain) the owner chose **12px uppercase**: `--font-size-xs`
+in both theme.css and styles.css, keeping the label's letter-spacing, weight
+and brand mono. The catalogue keeps only the 14px against 15px cells.
+
 **Why**: the type scale is the one source of sizes (spec 001). 14px is the
 scale's body step and the size the issue proposes first.
 
@@ -67,6 +74,14 @@ view, with an entry in `web/src/serverErrors.ts`.
 III). Agents cannot set `colWidths` today; widths are cosmetic per reader,
 order is not: an agent building a view for people ("put Status first") needs
 it.
+
+**Unknown ids over MCP** (conductor, 2026-11-03, from `/code-review`): an id
+an agent passes in `column_order` that is not a property is refused ("not a
+property of this database"), in `applyViewSpec` before `checkViewColOrder`,
+as `hidden` and `group_by` refuse one. An agent passing names instead of ids
+otherwise got a success and no change. The stored-data rule stays: ids in a
+view saved earlier, or sent by the interface's own save, that are no longer
+properties are dropped, not refused.
 
 **Turned down**: an interface-only setting (a parity gap for something agents
 are asked to do); a separate MCP tool (`set_view` already merges view keys).

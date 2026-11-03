@@ -2485,7 +2485,8 @@ body:has(.icon-picker) .bn-side-menu {
 
 /* Cells read at the type scale's body size (spec 012, #131): the 13.5px they
    had made a table in a document look a size smaller than the paragraph
-   above it. Set on the table so the cells inherit it; headers step down. */
+   above it. Set on the table so the cells inherit it; headers are the 12px
+   uppercase label (theme.css), the owner's choice. */
 .db-table {
   border-collapse: collapse;
   width: 100%;
@@ -2586,7 +2587,7 @@ body:has(.icon-picker) .bn-side-menu {
   background: var(--sidebar-bg);
   font-weight: 600;
   color: var(--muted);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs); /* as theme.css draws it (spec 012, R1) */
   position: relative;
 }
 
