@@ -161,6 +161,9 @@ export function useColumnDrag(onDrop: (id: string, gap: number) => void) {
         if (moved < START_THRESHOLD) return;
         l.started = true;
         document.body.classList.add('is-col-moving');
+        // What the pixels before the threshold selected would otherwise make
+        // the next press start the browser's own drag (boardDrag.ts).
+        window.getSelection()?.removeAllRanges();
       }
       // Scroll along at the table's sides, so a column can be taken past the
       // part of a wide table that is on screen.

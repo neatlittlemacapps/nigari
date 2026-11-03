@@ -77,10 +77,10 @@ description: "Tasks for database views that read comfortably and handle the way 
 
 **Independent Test**: quickstart §3.
 
-- [ ] T018 [US3] [ui] `dropIndex(cards, card, sort)` in `web/src/boardDrag.ts`: the column's cards in the view's sort order with the card inserted by the same comparator the view sorts with, by row order when there is no sort; over its own column, its own index (data-model.md "Board drop place", research R7)
-- [ ] T019 [P] [US3] [test] New `web/scripts/check-boarddrag.mjs`: sorted, unsorted, own column, ties, and a 500-card column timed; added to `npm run check` in `web/package.json`
-- [ ] T020 [US3] [ui] `BoardView` (`CollectionView.tsx`, the one caller of `useBoardDrag`): the column under the pointer gets the target style (`--color-hover` background, `--color-border-strong` outline) and a placeholder the card's height at `dropIndex(...)`; no transition under `prefers-reduced-motion`; nothing when the group property cannot be changed (no drag starts, as today)
-- [ ] T021 [US3] [test] New `web/tests/board-drop-marker.mjs`, registered in `web/tests/package.json`: ten drags across columns land where the placeholder was (SC-003); sorted and unsorted; own column changes nothing; a touch drag (`hasTouch`); reduced motion. Mutation-checked
+- [x] T018 [US3] [ui] `dropIndex(cards, card, sort)` in `web/src/boardDrag.ts`: the column's cards in the view's sort order with the card inserted by the same comparator the view sorts with, by row order when there is no sort; over its own column, its own index (data-model.md "Board drop place", research R7)
+- [x] T019 [P] [US3] [test] New `web/scripts/check-boarddrag.mjs`: sorted, unsorted, own column, ties, and a 500-card column timed; added to `npm run check` in `web/package.json`
+- [x] T020 [US3] [ui] `BoardView` (`CollectionView.tsx`, the one caller of `useBoardDrag`): the column under the pointer gets the target style (`--color-hover` background, `--color-border-strong` outline) and a placeholder the card's height at `dropIndex(...)`; no transition under `prefers-reduced-motion`; nothing when the group property cannot be changed (no drag starts, as today)
+- [x] T021 [US3] [test] New `web/tests/board-drop-marker.mjs`, registered in `web/tests/package.json`: ten drags across columns land where the placeholder was (SC-003); sorted and unsorted; own column changes nothing; a touch drag (`hasTouch`); reduced motion. Mutation-checked
 - [ ] T022 [P] [US3] [wiki] `wiki/views.md`: what the board shows while dragging
 
 ### Closing PR 1

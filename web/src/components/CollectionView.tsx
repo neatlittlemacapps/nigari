@@ -4,7 +4,7 @@ import { api } from '../api';
 import { onRefresh } from '../pwa';
 import Portal from './Portal';
 import { anchoredMenuStyle } from '../anchoredMenu';
-import { useBoardDrag } from '../boardDrag';
+import { dropIndex, sortComparator, useBoardDrag } from '../boardDrag';
 import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } from '../columnDrag';
 import { ColHead } from './TableColumnHead';
 import { tagColorClass } from '../tags';
@@ -230,17 +230,9 @@ function applyView(rows: Row[], view: ViewDef, schema: PropDef[]): Row[] {
     const isDate = dateProps.has(f.property);
     out = out.filter((r) => matchesFilter(r, f, isDate));
   }
-  const sort = view.sort;
-  if (sort) {
-    out = [...out].sort((a, b) => {
-      const av = a.props[sort.property];
-      const bv = b.props[sort.property];
-      const as = Array.isArray(av) ? av.join(',') : String(av ?? '');
-      const bs = Array.isArray(bv) ? bv.join(',') : String(bv ?? '');
-      const cmp = typeof av === 'number' && typeof bv === 'number' ? av - bv : compare(as, bs);
-      return sort.dir === 'desc' ? -cmp : cmp;
-    });
-  }
+  // The board's drop marker (dropIndex) sorts with the same comparator, so it
+  // shows the place this sort will give a dropped card.
+  if (view.sort) out = [...out].sort(sortComparator<Row>(view.sort));
   return out;
 }
 
@@ -742,6 +734,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   };
 
   const viewRows = applyView(rows, view, schema);
+  // Each row's place before the view's sort: how a sort's ties, and a view
+  // without one, order the rows. The board's drop marker reads it.
+  const rowOrder = new Map(rows.map((r, i) => [r.id, i]));
   const emptyLabel =
     rows.length > 0 && viewRows.length === 0
       ? t('No rows match the current filter.')
@@ -1005,6 +1000,8 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       ) : view.type === 'board' ? (
         <BoardView
           rows={viewRows}
+          sort={view.sort}
+          rowOrder={rowOrder}
           schema={visibleSchema}
           groupBy={view.groupBy || schema.find((p) => p.type === 'select')?.id || ''}
           tagColors={tagColors}
@@ -1999,6 +1996,8 @@ function BoardCardProps({
 
 function BoardView({
   rows,
+  sort,
+  rowOrder,
   schema,
   groupBy,
   tagColors,
@@ -2012,6 +2011,8 @@ function BoardView({
   onAddInColumn,
 }: {
   rows: Row[];
+  sort?: Sort | null;
+  rowOrder: Map<string, number>;
   schema: PropDef[];
   groupBy: string;
   tagColors: Record<string, string>;
@@ -2097,9 +2098,26 @@ function BoardView({
       return v === optId;
     });
 
+  // Where the dragged card will land in the column under the pointer (spec
+  // 012, US3): the place the view's sort gives it there, not the pointer's.
+  // Over its own column nothing is added: the card's own dimmed place is it.
+  const dragged = drag ? rows.find((r) => r.id === drag.rowId) : undefined;
+  const dropAt = (col: string, cards: Row[]): number => {
+    if (!drag || !dragged || drag.over !== col || drag.fromCol === col) return -1;
+    const value = col === UNSET ? (prop.type === 'select' ? '' : []) : prop.type === 'select' ? col : [col];
+    const moved = { ...dragged, props: { ...dragged.props, [groupBy]: value } };
+    return dropIndex(cards, moved, sort, (id) => rowOrder.get(id) ?? 0);
+  };
+  const placeholder = drag ? (
+    <div key="__drop" className="board-drop-place" style={{ height: drag.height }} aria-hidden="true" />
+  ) : null;
+
   return (
     <div className={'board' + (drag ? ' is-dragging' : '')}>
-      {columns.map((col) => (
+      {columns.map((col) => {
+        const cards = rowsFor(col.id);
+        const at = dropAt(col.id, cards);
+        return (
         <div
           key={col.id}
           data-col={col.id}
@@ -2119,14 +2137,15 @@ function BoardView({
               <span className="board-chip" style={{ background: col.color + '33', color: col.color }}>
                 {col.name}
               </span>
-              <span className="board-count">{rowsFor(col.id).length}</span>
+              <span className="board-count">{cards.length}</span>
             </span>
             <button className="board-add" title={t('New')} onClick={() => onAddInColumn(groupBy, col.id)}>
               <Plus size={14} />
             </button>
           </div>
           <div className="board-cards">
-            {rowsFor(col.id).map((r) => (
+            {cards.map((r, i) => [
+              i === at ? placeholder : null,
               <div
                 key={r.id}
                 className={
@@ -2251,11 +2270,13 @@ function BoardView({
                   onSetProp={onSetProp}
                   onSetOptions={onSetOptions}
                 />
-              </div>
-            ))}
+              </div>,
+            ])}
+            {at === cards.length && placeholder}
           </div>
         </div>
-      ))}
+        );
+      })}
 
       {/* Die schwebende Karte folgt dem Zeiger. Als letztes Kind mit
           position:fixed so it sits above everything; pointer-events:none so it

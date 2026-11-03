@@ -5748,13 +5748,38 @@ body.is-col-resizing {
   background: color-mix(in srgb, var(--col-c, transparent) 10%, var(--sidebar-bg));
   border-color: color-mix(in srgb, var(--col-c, transparent) 22%, transparent);
 }
-/* The drop highlight has to beat the tint rule — in dark mode that one sits
-   later in the file, and at equal specificity the tint won and the target
-   border was invisible. Higher specificity (attribute + two classes). */
-.board-col.drag-over,
-[data-theme='dark'] .board-col.drag-over {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, var(--sidebar-bg));
+/* The drop target (spec 012, US3): the column under a dragged card, from
+   tokens: the hover wash laid over the column's own tint, and a strong
+   outline. It has to beat the tint rules — theme.css states them later as
+   `:root .board-col` and `[data-theme='dark'] .board-col`, and at equal
+   specificity the tint won and the target was invisible. Three classes. */
+.board .board-col.drag-over {
+  background-image: linear-gradient(var(--color-hover), var(--color-hover));
+  outline: 2px solid var(--color-border-strong);
+  outline-offset: -2px;
+}
+
+/* Where the card will land: a gap the card's height at the place the view's
+   sort gives it (dropIndex), with a dashed hairline so it reads as a place,
+   not as a card. It fades in; under reduced motion it simply appears. */
+.board-drop-place {
+  flex: none;
+  border: 1.5px dashed var(--color-border-strong);
+  border-radius: var(--radius-scale-lg);
+  background: var(--color-hover);
+  animation: board-drop-in var(--motion-duration-fast) ease-out;
+}
+
+@keyframes board-drop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-drop-place {
+    animation: none;
+  }
 }
 
 /* ---- Galerie: neutraler Lift, feiner Akzentrahmen ---- */
