@@ -1,6 +1,6 @@
 # active-memory handoff: nigari (formerly salt.md fork): agentic setup and feature roadmap
 
-**Handoff #15** · 2026-11-02 · Lineage:
+**Handoff #16** · 2026-11-03 · Lineage:
 - **#1 (2026-10-25):** agentic setup (rules, gate, Spec Kit, parity manifest); four feature branches merged; 25 issues; three specs.
 - **#2 (2026-10-26):** find-and-replace edits (#13, PR #48); specs 001/002 planned; #47 fixed; surfaces registry, board sync, ruleset (PR #49).
 - **#3 (2026-10-26):** board derives its columns (PR #74); spec 002 tasks (#50–#73); storage benchmarks; fixes #75, #76; Codespaces (PR #77).
@@ -16,18 +16,12 @@
 - **#13 (2026-10-30 → 11-02):** every open bug fixed: #368+#319 chart builds once (PR #372 → v2.0.8); #317 Enter stays in its column + **CodeGraph** set up for cloud sessions (PR #373 → v2.0.9); #318 Colourful on Each row + #320 neutral wiki shots + CodeGraph prompt hook off (PR #374 → v2.0.10); #375 flaky catalogue test (PR #376); backlog features #370, #371 filed.
 - **#14 (2026-11-02):** README Download line (PR #377 → v2.0.12); CodeGraph during specifying, planning and tasks (PR #378 → v2.0.13); spec 010 planned + tasks + issues #380–#419 (PR #420 → v2.0.14); spec 010 built on Base UI menus (option B) in two PRs (#421 → v2.0.15, #422 → **v2.1.0**); board cleaned; #379 (fewer hand-built buttons) filed; #278 labelled `bug`.
 - **#15 (2026-11-02):** board Priority mirrored onto `priority:N` labels by the board-sync Action (PR #423 → v2.1.1); #269 empty values fixed (PR #424 → v2.1.2); #278 chart colours fixed (PR #425 → v2.1.3); epic #426 "database views" filed with 10 sub-issues; spec 012 spec + plan written; German-comment bug #427 found and fixed (PR #428, with spec 012 docs; release expected v2.1.4, not checked).
+- **#16 (2026-11-03):** spec 012 finished: PR 1 (#528 → v2.1.8) and PR 2 (#533 → v2.1.9), built by the helper stream, reviewed and audited by Claude; spec 013 docs merged (#523 → v2.1.10, after Claude resolved its `docs/decisions.md` conflict); owner's embed model (an embed owns its views) → **spec 014** written and clarified (`specs/014-embed-own-views/`, #371 under #426); bugs #524–#527, #532 filed (helper filed #529–#531).
 
-> **Update after handoff #15 (2026-11-02, next session):** spec 012 tasks are
-> done (`specs/012-database-view-handling/tasks.md`, 40 tasks, issues #429–#468
-> under #426): do **not** run `/speckit-tasks` or `/speckit-github-taskstoissues`
-> for it again. The tasks corrected the plan: MCP `set_view` does not call
-> `normalizeViews`; `colOrder` is checked by one rule, `checkViewColOrder`,
-> called from `normalizeViews` and `applyViewSpec`. New rule: a breaking bug is
-> labelled `bug` + `breaking`, and board-sync sets Priority P1 (`AGENTS.md`,
-> `docs/decisions.md`). Work goes by the board's Priority; "bugs before
-> features" (rule 19) is replaced: only a breaking bug jumps the queue. Layout switching filed as #469. Templates stay beside
-> New (Claude's default). Next: the helper stream builds spec 012; Claude
-> writes spec 013.
+> **Read first (2026-11-03):** a previous conductor session kept working
+> after handoff #15 was written and then failed; handoff #16 includes its
+> work. Before acting on this file, check what other sessions did since:
+> `list_sessions`, `git ls-remote --heads origin`, open PRs (correction 107).
 
 ## 0. Instructions for Claude (read first)
 
@@ -48,7 +42,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - **Also:** "I want you to be able to do as much as possible yourself"; "ensure you have good board and issue hygiene".
 - **Why nigari exists (user, 2026-10-29/30):** "we are too far gone from the original salt to ever contribute back"; "mainly its me discovering how far I can get"; "I think the core is to pay extra attention to UX as well."
 - **CodeGraph (user, 2026-11-01):** "My goal is that Claude can use a continuously up-to-date code graph to understand the architecture, dependencies, function calls and relationships across the entire codebase before making coding changes." / "CodeGraph should be an active coding tool, not merely an installed MCP server."
-- **Order of work now** (2026-11-02, after PR #428): no open bugs. (1) Epic #426 (database views): spec 012 tasks → `/speckit-github-taskstoissues` → helper stream (stream B) builds spec 012 in 2 PRs per the steward skill, while Claude (conductor) writes spec 013; (2) backlog #370, #371 (spec first), #322, #323, #326, #379. A new `bug` issue always jumps the queue (rule 19). Priority comes from the board's Priority field (rule 24).
+- **Order of work now** (2026-11-03, after #523): work goes by the board's Priority (rule 24); only a `bug` + `breaking` issue jumps to P1 (rule 19). (1) **Spec 014 plan** (`/speckit-plan`, then tasks and taskstoissues under #426); (2) **spec 013 build** (45 tasks #478–#522, parent #477) by a helper stream (stream B) per the steward skill, Claude reviews and audits; (3) open bugs by priority: #476, #524, #525, #526, #527, #529, #530, #531, #532; (4) backlog #370, #322, #323, #326, #379.
 
 ## 2. About the user (as relevant to this work)
 - GitHub `neatlittlemacapps` (id 60575307), display name "Frank De Graeve"; email neatlittlemacapps@gmail.com; owns `neatlittlemacapps/nigari` (renamed from `neatlittlemacapps/salt.md` on 2026-10-30), still a GitHub fork of `saltmd/salt.md` (AGPL-3.0); CLA signed upstream. Fork stays attached for now ("I'll leave it for now").
@@ -96,6 +90,8 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 23. Keep asking before each step (owner, 2026-11-02, asked "Why do I need to approve these steps?", then answered "No, continue" to the offer to stop asking): every step still ends with "Ready to continue with <next step>?".
 24. Priority (owner, 2026-11-02): "use the "Priority" field to assess priority" — the board's Priority field (options `P1 - High`, `P2 - Medium`, `P3 - Low`), mirrored onto `priority:1`/`2`/`3` labels; read priority from those labels, never set one by hand (`AGENTS.md`).
 25. Board sync (owner, 2026-11-02): "The GitHub action should tackle this, not you" — Claude does not run the board-sync workflow itself (no `workflow_dispatch` by Claude); the Action runs nightly 03:17 UTC, on issue events, or when the owner taps Actions → Board sync → Run workflow.
+26. Embeds (owner, 2026-11-03, with Notion screenshots): "You basically recreate a view from the originating database, but in itself it is a separate view hat only exists in combo with the embed block on this page. So if you want to add the other views you can but you'd need to add or recreate these." / "it is still possible to edit properties of the dbase and thus change the source base as well. Doing these type of actions (resulting in an alteration of the true source d-base or different views elsewhere) can happen but through a confirmation." / "So think really well on how this pans out".
+27. Conductor/helper (steward skill, applied 2026-11-03): the helper builds on its own branch (`claude/spec-012-views` for spec 012) and never opens PRs; the conductor merges its head into `claude/handoff-14`, reviews the diff, runs `ux-ui-audit`, and offers the PR from `claude/handoff-14`. Helper messages arrive via `send_message`, often late.
 
 ## 5. Corrections log
 | # | Claude did | The user wanted |
@@ -187,6 +183,14 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 102 | (self) Started #278 without the `in-progress` label | Label when starting (rule 8) |
 | 103 | (self) Issue #427 said check-i18n does not read comments | It does; it needed 2 listed words. Check claims against the code before writing an issue |
 | 104 | (self) Took "Done" (setup script fixed) as the wording choice for #269 | Label own defaults as defaults and say so (did) |
+| 105 | Offered "no Settings in embeds" (R10) as option A with a wrong reason ("#22", an upstream issue number from a pre-fork code comment) | User: "Did I ask to not have settings in embedded version? What was the ask here?" — read the owner's own issue (#270 asked for view settings in embeds) before offering options; never cite an issue number without opening it |
+| 106 | Asked the owner to choose 14px or 15px table text | User: "I'm confused why I need to make this choice. are you using a design token… go with 14 if you need one. What is the catalogue?" — when a token decides, use it; explain terms (catalogue = `web/catalog/`) |
+| 107 | (self) Started from handoff #15 without checking other sessions; a previous conductor had already built spec 012 PR 1 and written spec 013 | Check `list_sessions`, remote branches and open PRs first |
+| 108 | (self) Wrote a scratch audit script into `web/tests/` (the git-check would fail) | Scratch files only in the scratchpad |
+| 109 | (self) Playwright fixture build failed ("pattern all:web/dist: no matching files") after the gate | The gate deletes `web/dist`: `cd web && npx vite build` before any fixture run |
+| 110 | (self) Assumed GitHub closed every `Closes #N`; #131–#133 stayed open after #528 | After a merge, check every listed issue; close the rest by hand with a comment |
+| 111 | (self) Wrote the same three doc edits the helper had been asked for (its message arrived 50 min late); merge conflict | After asking the helper for an edit, wait for its report; do not do it too |
+| 112 | (self) Told the owner #371 would go into spec 013 | Spec 013 was already planned (45 tasks) by the other session: #371 became spec 014; say when an earlier plan no longer fits |
 
 ## 6. Decisions
 | Decision | Why |
@@ -244,6 +248,15 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Anyone who can edit a database may lock its views (#281, spec 013) | User: "3 A" |
 | Spec 012 plan amendments: no Settings button in embeds (#22); no Layout item | Claude's plan (R9, R10); owner not asked separately — PR #428 merged by owner |
 | #427: one German word with no English homograph marks a line German; self-test cases in check-i18n | PR #428 |
+| Table cells 14px (`--font-size-md`); headers 12px uppercase (`--font-size-xs`); catalogue shows 14px only | Owner: "go with 14"; header chosen by owner in the earlier conductor session |
+| Spec 012 R10: no Settings in embeds in spec 012; reason = embeds will own their views (spec 014), not "#22" | Owner's embed model (rule 26) |
+| An embedded database owns its views: starts with one table; **New view** lists types + "Views on <db>" to copy; changes never touch the database's views; Settings in embeds acts on embed views without asking | Owner (rule 26); `docs/decisions.md` 2026-11-03 |
+| #371 → **spec 014** (`specs/014-embed-own-views/`), under epic #426; not in 012 (doubles it) nor 013 (planned) | Owner "ok" |
+| Spec 014 Q1 **A**: every property change saved from a document asks first, naming the database | Owner "Ok" to recommendation |
+| Spec 014 Q2 **B**: an embed written before spec 014 gets a copy of every database view it could switch to (nothing visibly changes) | Owner "Ok" to recommendation |
+| Embeds lose the timeline Start/End pickers and the sub-items picker until spec 014 (option a) | Conductor's call, named in PR #533; owner merged |
+| Deleting a property asks for confirmation (#524) on every surface | Owner's Notion screenshots; filed as bug |
+| `docs/decisions.md` conflict on #523: keep both entries, newest first | Merge commit 03104d0 |
 
 ## 7. Changed / rejected
 - Earlier chats: decisions page in workspace → `docs/decisions.md`; fixed surfaces list → registry; force-push rebase → merge `main`; hand-moved cards → derived Status; committed catalogue baselines → reference per run; hand-drawn SVG charts → Chart.js; owner as commit author → Claude.
@@ -270,6 +283,10 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - #278 compare by computed style → compare token names (one name per colour).
 - One spec for epic #426 → two specs (012, 013). Schema-wide column order → per view. Lock for admins only → anyone who can edit.
 - #270 Settings in embeds and a Layout item → left out (spec 012 R9, R10).
+- R10 reason "#22 removed view settings from embeds" → "embeds will own their views (spec 014)".
+- Spec 012 catalogue 14px vs 15px comparison → 14px only.
+- #371 into spec 013 (Claude's first plan) → spec 014.
+- Embed Settings option B1 (all view settings on shared views) / B2 (minus rename/move/remove) → embed-owned views (owner's model).
 - ❌ Bugs-first option B. ❌ `nl.machine.json`. ❌ 3+ parallel streams.
 - ❌ Committing the CodeGraph index (25 MB, machine-specific). ❌ A repository `.mcp.json` for CodeGraph. ❌ An external database/R2/salt.md integration/custom graph engine (user's constraint).
 - ❌ Community Go/security/Flutter/mobile/AWS plugins. ❌ GitHub Pages docs site now (later as #326); own domain.
@@ -321,75 +338,71 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | v2.1.1 | #423 (board Priority → labels) | 2026-11-02 |
 | v2.1.2 | #424 (#269 empty values) | 2026-11-02 19:27:02 |
 | v2.1.3 | #425 (#278 chart colours) | 2026-11-02 20:05:48 |
-| (v2.1.4 expected) | #428 (#427 + spec 012 docs) | not checked |
+| (v2.1.4–v2.1.6) | #428, #470, #472 | not checked individually |
+| v2.1.7 | #474 (#473 read-only aggregate) | 2026-11-03 06:09:28 |
+| v2.1.8 | #528 (spec 012 part 1) | 2026-11-03 15:32:31 |
+| v2.1.9 | #533 (spec 012 part 2) | 2026-11-03 20:38:18 |
+| v2.1.10 | #523 (spec 013 docs) | 2026-11-03 (CI and Release green) |
 - v2.0.5–v2.0.7 (#369 and the user's two release-notes edits) not checked individually. #376's release (expected v2.0.11) not checked.
 - Releases page: https://github.com/neatlittlemacapps/nigari/releases. Assets `nigari-<os>-<arch>` + `SHA256SUMS.txt`. Image `ghcr.io/neatlittlemacapps/nigari`. No desktop app published (#323).
 
-**Specs**: 008, 010 (menu icons, 39 tasks, parent #380, tasks #381–#419 all closed), 011 done. **012** `specs/012-database-view-handling/` (spec + plan + research R1–R13 + data-model + contracts/mcp.md, contracts/ui.md + quickstart; no tasks yet), epic #426. **013** not written.
+**Specs**: 008, 010, 011 done. **012** done (40 tasks, #429–#468, all closed; PRs #528, #533). **013** `specs/013-view-filters-and-lock/` (spec, plan, tasks; 45 tasks T001–T045 = #478–#522, parent #477; nothing built). **014** `specs/014-embed-own-views/` (spec + checklist, clarified Q1 A, Q2 B; no plan yet; 6 user stories, FR-001–FR-016, SC-001–SC-005).
 
 **Board priorities read 2026-11-02** (from the board-sync log, #419 down to #274 only): P1 - High: #379, #371, #370, #323, #281, #279, #278 (closed), #277, #327/#315 (closed); P2 - Medium: #322, #282, #280; P3 - Low: #326. Others not read; labels follow on the nightly sync.
 
-**Spec 012 plan essentials**: PR 1 = US1 text (14px cells `--font-size-md`, 13px headers `--font-size-sm`, replacing 13.5/12.5px; catalogue shows 15px for owner's choice), US2 column order (`colOrder` on table view; `normalizeViews` in `server/viewopen.go`; MCP `set_view` `column_order`; error `invalid_view_column_order`; no upgrade step; header menu Move left/Move right/Hide in view; `columnDrag.ts`), US3 board marker (`dropIndex` in `boardDrag.ts`, sorted place). PR 2 = US4 Settings (`IconButton` + `ui/Menu` with submenus; `MenuSubmenu` gains `value`; replaces Properties, ⋯, Columns, timeline/sub-item selects; none in embeds), US5 fold-away toolbar in embeds (CSS opacity, `:hover`/`:focus-within`, always on `(hover: none)`). New menu functions proposed: hideInView, propertyVisibility, openRowsIn, timelineDates, subItems, editProperties. Board empty-state string "Open ⚙ Properties to add one" changes in PR 2.
+**Spec 012 as shipped** (measured 2026-11-03): bundle 579,895 B gzip (10.0 KB under the 590,146 cap); budgets rawButtons 265, fontSize 366, radius 250 (were 271, 371/374, 252). New: `web/src/columnDrag.ts`, `viewSort.ts`, `components/TableColumnHead.tsx`, `components/ViewSettingsMenu.tsx`; MCP `set_view` `column_order` (unknown ids refused), REST error `invalid_view_column_order`; menu functions `hideInView` EyeOff, `propertyVisibility` Eye, `openRowsIn` PanelRight, `timelineDates` CalendarRange, `subItems` Network, `editProperties` Rows3, `showAllProperties` ScanEye, `hideAllProperties` EyeClosed. Audit: cells 16.66:1 / 13.94:1, headers 4.89:1 / 4.99:1 (light/dark); Settings 26×29px; menu items 30px.
 
-**Open issues**
+**Embed today (spec 014 context)**: `database` block (`web/src/blocks.tsx`, `databaseSpec`) props `collectionId`, `local` (JSON `{viewId, views:{<viewId>:{filters,sort}}}`), `chartKind`; MCP `embed_database` (`server/mcp_pages.go` `mcpEmbedDatabase`) writes `local.viewId`; `get_page`/export render the block as `[Collection](/p/<id>)` (`server/export.go`); public page as `▦ Collection` link.
+
+**Open issues** (2026-11-03)
 | # | Title |
 |---|---|
-| 370 | Every row of a table view has a drag handle and a row menu (dragging removes the sort) — owner: important |
-| 371 | A nested (linked) database has its own views, separate from the original's |
-| 322 | nigari needs its own icon (user supplies artwork) |
-| 323 | The fork releases its desktop app (unsigned first) |
-| 326 | nigari has a docs site built from the wiki (GitHub Pages) |
-| 379 | Fewer hand-built buttons: shared button components, same look |
-| 426 | Epic: database views (10 sub-issues: #131, #132, #133, #18, #19, #279, #281, #280, #178, #270) |
-- Open bugs: none (2026-11-02, after #428). Closed this chat: #269, #278, #427.
-- Epic A = #426 (stream B). Epic B charts: #277, #282, #266. Epic C: #22, #26, #24, #23. Epic D editor: #267, #268. Epic E agent parity: #3–#12, #14, #16, #17.
-- #370/#371 Notion reference screenshots were described in words; the owner attaches the images by hand (no API).
+| 371 | Embed has its own views (spec 014), priority:1 |
+| 476 | Saving views ignores a failed schema load (bug) |
+| 524 | Deleting a property asks no confirmation (bug) |
+| 525 | Catalogue Select keyboard step failed on main again (bug; not reproduced in 76 local tries) |
+| 526 | German comment "Die schwebende Karte folgt dem Zeiger" in CollectionView.tsx passes check-i18n (bug) |
+| 527 | Muted sidebar/header text 4.43–4.49:1, light theme (bug) |
+| 529 | menu-icons.mjs fails ~half the time at the page ⋯ (bug, helper) |
+| 530 | saveConfig sends the whole views array and rolls back to its own snapshot (bug, helper) |
+| 531 | Filter/sort/group buttons lack aria-expanded (helper) |
+| 532 | A document ending with a database opens with that block node-selected; one Backspace removes it (bug) |
+| 477 | Spec 013 parent, tasks #478–#522 |
+| 370, 322, 323, 326, 379 | backlog |
+- Epic #426 now also holds #371 and spec 013's issues.
 
 ## 9. People, terms & names
 - **People:** the user (`neatlittlemacapps`, Frank De Graeve); upstream maintainer "Jeremia" (`jeremiaa`).
 - **Terms:** surface = registry row; gap = person can, agent can't; budget = count that only goes down; gate = `scripts/agent-gate.sh`; stream = a parallel work line; conductor = Claude; steward skill = `.claude/skills/steward/SKILL.md`; upgrade step = a numbered goose step; column head = a column's first block; Each row = chart grouping `__row`; code graph = CodeGraph index.
 - **Repo:** `neatlittlemacapps/nigari`.
-- **Branches:** work branch `claude/handoff-14`, fast-forwarded to main `a83d93b` (merge of #428) after each merge; this handoff is committed there. Old working branch `claude/wizardly-johnson-y7nazn`. GitHub deletes it on every merge; fast-forward recreates it.
+- **Sessions:** this conductor `session_01GhcW351E6Ld6xR87qCbfon` ("Handoff nigari documentation"); helper (stream B, spec 012) `session_01GhcW34o8KcL5EYGzn6ddSJ`, told its work is done; earlier conductor `session_01GhcW33zUfch6tMG6ga8nJc` (ended, usage limit).
+- **Branches:** work branch `claude/handoff-14`, fast-forwarded to main `8823253` (merge of #523); this handoff is committed there. Merged, to be deleted by the owner: `claude/spec-012-views`, `claude/spec-013`. Old: `claude/wizardly-johnson-y7nazn`, `claude/pensive-turing-plu40r`.
 - **Key files:** `web/src/components/ChartFigure.tsx`, `ChartView.tsx`, `web/src/chartTheme.ts` (`groupColourTokens(drawn, palette, groupProp, series)`), `web/src/columnEnter.ts` (`columnEnterAction`, `columnEnter`), `web/src/blocks.tsx` (`columnsSpec`), `web/src/keys.ts`, `web/src/components/Editor.tsx` (`column.enter` shortcut), `web/scripts/shoot-wiki.mjs` (`text` step), `.claude/hooks/codegraph.sh`, `.claude/rules/codegraph.md`, `server/upgrade.go`, `server/backup.go`, `docs/decisions.md`, `web/src/menuIcons.ts`, `web/src/ui/Menu.tsx` (+ `Menu.css`), `web/scripts/check-menu-icons.mjs`, `web/src/components/SidebarMenus.tsx`, `CollectionMenus.tsx`, `UserMenu.tsx`, `web/src/keys.ts` (`menuOwnsKey`), `web/src/dialog.tsx`.
 - **Terms (new):** option B = menus rebuilt on Base UI; menu function = the verb an item does (one icon each); hand-built button = a raw `<button>` counted by the rawButtons budget.
 
 ## 10. Work state
 | Item | Status | Location | Notes |
 |---|---|---|---|
-| #368 + #319 chart | merged, v2.0.8 | PR #372 | |
-| #317 column Enter | merged, v2.0.9 | PR #373 | |
-| CodeGraph setup | merged, v2.0.9; prompt hook off in v2.0.10 | PR #373, #374 | MCP tool confirmed live after a restart |
-| #318 Colourful, #320 wiki shots | merged, v2.0.10 | PR #374 | |
-| #375 flaky catalogue Select test | merged | PR #376 | not reproduced on demand; fix rests on Base UI's late first highlight |
-| README "Download" line | merged, v2.0.12 | PR #377 | |
-| CodeGraph in spec/plan/tasks | merged, v2.0.13 | PR #378 | |
-| Spec 010 menu icons | merged, **v2.1.0** | PRs #420, #421, #422 | SC-004 by-hand check by owner open |
-| Board Priority → labels | merged, v2.1.1 | PR #423 | mirrors on nightly/issue events |
-| #269 empty values | merged, v2.1.2 | PR #424 | Safari not tested (Chromium only) |
-| #278 chart colours | merged, v2.1.3 | PR #425 | |
-| #427 German comments | merged | PR #428 | release (v2.1.4?) not checked |
-| Epic #426 | filed | issue | 10 sub-issues |
-| Spec 012 | spec + plan on main | `specs/012-database-view-handling/` | next: tasks |
-| Spec 013 | not written | — | after 012 tasks, while helper builds |
-| #379 buttons | filed | issue | backlog |
-| #370, #371 | filed | issues | spec first |
+| Spec 012 part 1 (text, column order, board marker) | merged, v2.1.8 | PR #528 | |
+| Spec 012 part 2 (Settings, fold-away embed toolbar) | merged, v2.1.9 | PR #533 | embed pickers gone until spec 014 |
+| Spec 013 | docs merged, v2.1.10 | PR #523, `specs/013-view-filters-and-lock/` | build not started |
+| Spec 014 | spec + checklist on main | `specs/014-embed-own-views/` | next: plan |
+| Audit scripts | scratch only (lost with the container) | — | rebuild from `web/tests/fixture.mjs` + skill probes |
+| Bugs #524–#532, #476 | filed | issues | by priority |
 
 ## 11. Next steps
-1. **Next action:** check main's CI and the release for the #428 merge (`a83d93b`), then run `/speckit-tasks` for spec 012 (follow `.claude/skills/speckit-tasks/SKILL.md` by hand; CodeGraph per rule 22), then `/speckit-github-taskstoissues` with parent #426.
-2. Start the helper stream (stream B) for spec 012 per `.claude/skills/steward/SKILL.md`: own branch, owns the files in the plan's Project Structure; Claude reviews its diffs.
-3. Meanwhile Claude writes spec 013 (#18, #19, #279, #281, #178) with `/speckit-specify` and asks its clarifications.
-4. Then backlog: #370, #371 (spec first), #322, #323, #326, #379.
+1. **Next action:** `/speckit-plan` for spec 014 (`specs/014-embed-own-views/`; follow `.claude/skills/speckit-plan/SKILL.md` by hand; CodeGraph section, rule 22). The plan must answer: where embed views live (block `local` vs server), how server features that read views reach them (`rowPinsForView`/new-row pins, chart aggregate, spec 013's per-embed personal state, view lock not covering embeds), the MCP door for embed views (agent parity, `wrapUntrusted`), the upgrade of old embeds (Q2 B), and the confirmation (Q1 A, with #524).
+2. Then `/speckit-tasks` and `/speckit-github-taskstoissues` with parent #426 (or a new parent for spec 014, owner's call).
+3. Start a helper stream for spec 013's build (#478–#522) per the steward skill; Claude reviews, audits, opens PRs.
+4. Bugs by priority; backlog after.
 
 ## 12. Open questions ⚠️
-- Spec 012 table text: 14px (default) or 15px? Owner chooses from the catalogue in PR 1.
-- Spec 012 plan amendments (no Settings in embeds; no Layout item): owner merged PR #428 but was not asked about them separately — confirm.
-- Has the owner attached the Notion screenshots to #370 and #371?
-- Did the owner paste the v2.1.0 release notes?
-- Spec 010 SC-004 (by-hand keyboard check): done by the owner?
-- Delete the stray label `surface:performance`? (yes / leave)
+- Delete the stray label `surface:performance` (0 issues; `surface:perf` has 31)? Claude recommended delete; owner to do it (Issues → Labels → ⋯ → Delete).
+- Delete merged branches `claude/spec-012-views` and `claude/spec-013` (owner, Branches page → 🗑).
+- Spec 014 issues: under epic #426 directly, or a new parent issue like #477 for spec 013?
 
 ## 13. Re-attach checklist
-Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on branch `claude/handoff-14` of `neatlittlemacapps/nigari` (pushed). Start the new Claude Code session on **`neatlittlemacapps/nigari`**, branch `claude/handoff-14`.
+Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on branch `claude/handoff-14` of `neatlittlemacapps/nigari` (pushed). Start the new Claude Code session on **`neatlittlemacapps/nigari`**, branch `claude/handoff-14`. The owner's Notion screenshots for #371 are in its comments.
 
 ---
-<sub>Audit: 13/13 sections · 25 rules · 104 corrections · ~380 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
+<sub>Audit: 13/13 sections · 27 rules · 112 corrections · ~430 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
