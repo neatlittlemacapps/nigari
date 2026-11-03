@@ -217,10 +217,12 @@ own views, so Settings there would rename or remove them everywhere. That
 model is **spec 014** (#371, under epic #426), and Settings in embeds is
 built there, on embed-owned views.
 
-The embed also loses, until spec 014, the timeline's two date pickers and the
-table's sub-items picker it showed before: they too wrote the database's
-shared view, and they moved into Settings (conductor, 2026-11-03, asked by the
-helper while building PR 2).
+The embed also loses the timeline's Start and End date pickers and the
+table's sub-items picker, which it showed until now: they wrote the
+database's shared view like the settings above, so from inside a document
+they quietly changed that view for everyone (conductor, 2026-11-03, the
+owner's model). They come back in spec 014, on embed-owned views; the
+database's own page keeps both, under Settings.
 
 **Turned down**: Settings in embeds now, on the database's shared views
 (a rename in a document would rename everywhere); pulling #371 into spec 012
