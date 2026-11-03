@@ -171,7 +171,9 @@ connection.
 ### Scope: reading or reading and writing
 
 A read-only credential is refused at two places. Over the REST API every
-POST, PUT, PATCH and DELETE comes back as `token is read-only`. Over MCP the
+POST, PUT, PATCH and DELETE comes back as `token is read-only`, except
+`POST /api/collections/{id}/aggregate`, which only reads: it counts and sums
+a database's rows, as `query_rows` does over MCP. Over MCP the
 writing tools are refused by name (`create_page` and the rest answer "this API
 token is read-only; … requires a write token"), while the reading tools work
 normally.

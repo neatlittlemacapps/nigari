@@ -44,6 +44,22 @@ entries are not edited away.
 **Turned down:** Status in 013 (one long spec, nothing shipping for longer);
 personal changes only in the browser; every view save in the log; agents
 locking and unlocking; personal view state for agents.
+## 2026-11-03 — A read-only token may call named POST routes that only read
+
+**Decision:** the read-only check in `auth` (`server/users.go`) lets a
+read-scoped token through on the routes listed in `readOnlyPOSTRoutes`,
+matched by the mux's pattern. Today one: `POST /api/collections/{id}/aggregate`.
+A test checks every listed pattern is a registered route.
+
+**Why:** spec 004 decided a read-scoped credential may aggregate, and MCP
+`query_rows` let it, while REST refused every POST: one token, two answers
+(#473). Aggregate takes its filters and grouping in a body, which is why it
+is a POST.
+
+**Turned down:** making aggregate a GET (its body would move into a long
+query string, and the browser's chart code would change for a gate rule);
+a wrapper per route at registration (a second way to express the same gate,
+for one route); exempting POST by handler name (not available to middleware).
 
 ---
 
