@@ -1153,6 +1153,7 @@
   "Center peek": "Gecentreerde snelweergave",
   "Open pages in": "Pagina's openen in",
   "This way of opening pages is not available for this view, so the view was not saved.": "Deze manier van pagina's openen is niet beschikbaar voor deze weergave, dus is de weergave niet opgeslagen.",
+  "Only a table view can have its own column order, so the view was not saved.": "Alleen een tabelweergave kan een eigen kolomvolgorde hebben, dus is de weergave niet opgeslagen.",
   "(hidden)": "(verborgen)",
   "A row with several values is counted under each of them.": "Een rij met meerdere waarden wordt onder elk van die waarden geteld.",
   "Average": "Gemiddelde",

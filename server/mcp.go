@@ -423,7 +423,7 @@ var mcpTools = []map[string]any{
 	},
 	{
 		"name":        "set_view",
-		"description": "Create a view on a database, or change one. Without view_id it creates (type is then required); with view_id it MERGES into the existing view — what you do not pass stays as it is. A board needs group_by (a select, a multiselect or a relation property; a row with several tags appears under each of them); a calendar and a timeline need date_prop; a chart needs group_by unless chart_kind is number (group_by \"__row\" draws one bar per row, with aggregate sum and aggregate_property). To put a chart into a document, embed_database with its view_id. A view's type cannot be changed: delete it and create the new one. Call get_collection for the ids.",
+		"description": "Create a view on a database, or change one. Without view_id it creates (type is then required); with view_id it MERGES into the existing view — what you do not pass stays as it is. A board needs group_by (a select, a multiselect or a relation property; a row with several tags appears under each of them); a calendar and a timeline need date_prop; a chart needs group_by unless chart_kind is number (group_by \"__row\" draws one bar per row, with aggregate sum and aggregate_property). To put a chart into a document, embed_database with its view_id. A view's type cannot be changed: delete it and create the new one. table: column_order sets this view's column order without changing other views or the schema; get_collection returns it on the view as colOrder. Call get_collection for the ids.",
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{
 				"page_id":            map[string]any{"type": "string"},
@@ -445,6 +445,7 @@ var mcpTools = []map[string]any{
 				"filters":            map[string]any{"type": "array", "items": filterConditionSchema(), "description": "Conditions ANDed together, shaped like query_rows' filter. A board people actually work in usually needs one: without \"status is_not done\" the finished column grows forever and pushes the work aside. Pass [] to clear. A view keeps flat filters only, because that is all the interface shows; OR groups work in query_rows. On a date property a value can be a relative day (today, yesterday, tomorrow, today-1M), resolved on the day each query runs."},
 				"sort":               map[string]any{"type": "string", "description": "\"propertyId:asc\" or \"propertyId:desc\", the same spelling query_rows uses. Pass \"\" to clear."},
 				"hidden":             map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Property ids to hide in this view. Pass [] to show all."},
+				"column_order":       map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "table: property ids in the order this view shows them; ones you leave out follow in the schema's order, and the title column always stays first. Ids that are not properties are dropped. Pass [] to go back to the schema's order. Refused on any view that is not a table."},
 				"open_in":            map[string]any{"type": "string", "enum": []string{"full_page", "side_peek", "center_peek"}, "description": "How a click on one of this view's rows opens it for people: full_page (the tab navigates to the row, the default), side_peek (the row opens in a panel beside the view, which stays usable) or center_peek (the row opens in a panel over the dimmed view, a focused reading mode). Pass full_page to go back to the default. Not for form views, which show no rows. get_collection returns it on each view as openIn; no key means full_page."},
 			},
 			"required": []string{"page_id"}},
@@ -790,6 +791,8 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		Hidden  *[]string         `json:"hidden"`
 		// set_view: how a click opens the view's rows (spec 007).
 		OpenIn *string `json:"open_in"`
+		// set_view: a table view's column order (spec 012).
+		ColumnOrder *[]string `json:"column_order"`
 		// Charts (spec 004): query_rows aggregates, set_view's chart settings.
 		Period            *string         `json:"period"`
 		Aggregate         *string         `json:"aggregate"`
@@ -1189,7 +1192,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 			spec := viewSpec{
 				Name: args.Name, Type: args.Type, GroupBy: args.GroupBy,
 				DateProp: args.DateProp, EndDateProp: args.EndDateProp,
-				Filters: args.Filters, Sort: args.Sort, Hidden: args.Hidden, OpenIn: args.OpenIn,
+				Filters: args.Filters, Sort: args.Sort, Hidden: args.Hidden, OpenIn: args.OpenIn, ColumnOrder: args.ColumnOrder,
 				ChartKind: args.ChartKind, Period: args.Period, Aggregate: args.Aggregate,
 				AggregateProperty: args.AggregateProperty, ShowEmpty: args.ShowEmpty, ShowZero: args.ShowZero,
 				ChartSort: args.ChartSort, HiddenGroups: args.HiddenGroups, ChartStyle: args.ChartStyle}

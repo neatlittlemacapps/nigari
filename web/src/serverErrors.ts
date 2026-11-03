@@ -42,6 +42,10 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
     case 'invalid_view_open_in':
       return t('This way of opening pages is not available for this view, so the view was not saved.');
 
+    // ---- a table's column order (spec 012) ----
+    case 'invalid_view_column_order':
+      return t('Only a table view can have its own column order, so the view was not saved.');
+
     // ---- charts (spec 004) ----
     case 'invalid_chart':
       return t('This chart cannot be drawn with these settings. Choose another grouping or value.');

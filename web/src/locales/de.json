@@ -1153,6 +1153,7 @@
   "Center peek": "Zentrierte Vorschau",
   "Open pages in": "Seiten öffnen als",
   "This way of opening pages is not available for this view, so the view was not saved.": "Diese Art, Seiten zu öffnen, gibt es für diese Ansicht nicht, deshalb wurde die Ansicht nicht gespeichert.",
+  "Only a table view can have its own column order, so the view was not saved.": "Nur eine Tabellenansicht kann eine eigene Spaltenreihenfolge haben, deshalb wurde die Ansicht nicht gespeichert.",
   "(hidden)": "(ausgeblendet)",
   "A row with several values is counted under each of them.": "Eine Zeile mit mehreren Werten wird unter jedem von ihnen gezählt.",
   "Average": "Durchschnitt",
