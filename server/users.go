@@ -248,8 +248,11 @@ func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
 		}
 		// A read-only API token may not perform mutating HTTP methods. Cookie
 		// sessions (TokenScope=="") are unaffected. This is the single REST
-		// choke point that mirrors the per-tool MCP check.
-		if u.TokenScope == "read" {
+		// choke point that mirrors the per-tool MCP check. The routes in
+		// readOnlyPOSTRoutes are let through: they use POST for a body and
+		// only read, so a write added to one of their handlers must gate
+		// itself.
+		if u.TokenScope == "read" && !readOnlyPOSTRoutes[r.Pattern] {
 			switch r.Method {
 			case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
 				httpError(w, http.StatusForbidden, "token is read-only")
@@ -258,6 +261,20 @@ func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
 		}
 		next(w, r.WithContext(context.WithValue(r.Context(), userCtxKey, u)))
 	}
+}
+
+// readOnlyPOSTRoutes are the routes that use POST only to carry a request
+// body, and read: a read-only token may call them. Matched by the mux's
+// pattern (r.Pattern), so a route has to be named here on purpose, and a new
+// POST route stays refused until someone decides it reads.
+//
+// The aggregate route counts and sums a database's rows (spec 004). Spec 004
+// decided a read-scoped credential may aggregate, and MCP query_rows let it,
+// while the method check above refused the REST route: the same token got two
+// answers (#473, found by TestAgentParityHoldsForEveryCredentialShape on
+// seeds other than the default).
+var readOnlyPOSTRoutes = map[string]bool{
+	"POST /api/collections/{id}/aggregate": true,
 }
 
 // adminOnly: instance administration. Additionally requires a browser sign-in
