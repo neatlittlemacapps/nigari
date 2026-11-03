@@ -85,7 +85,14 @@ export async function withFixture(test) {
     ]) rows.push(await api('POST', '/api/pages', { parentId: collection.id, title, props }));
     const page = await context.newPage();
     await page.goto(`${base}/p/${collection.id}`);
-    const open = () => page.getByRole('button', { name: 'Properties', exact: true }).click();
+    // The properties dialog opens from the view's Settings menu (spec 012):
+    // Settings, then Edit properties. It was a Properties button before.
+    const open = async () => {
+      await page.locator('.collection-toolbar').getByRole('button', { name: 'Settings', exact: true }).click();
+      await page.getByRole('menuitem', { name: 'Edit properties', exact: true }).click();
+      // The dialog opens once the menu has closed (ui/Menu opensDialog).
+      await page.getByRole('heading', { name: 'Collection properties' }).waitFor();
+    };
     const chip = (index, name) => page.locator('.schema-options').nth(index)
       .getByRole('button', { name, exact: true });
     const field = page.getByRole('textbox', { name: 'Option name' });

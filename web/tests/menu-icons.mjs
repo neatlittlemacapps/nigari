@@ -78,8 +78,9 @@ await withFixture(async ({ page, api, base, workspace, path }) => {
   // The database's view options, and a template's actions under the
   // templates menu (spec 010, part 2).
   await page.goto(`${base}/p/${path.split("/").pop()}`);
-  await page.getByRole('button', { name: 'View options', exact: true }).click();
-  const viewIcons = await icons(page.getByRole('menu', { name: 'View options' }), 'view options');
+  // The view options (⋯) are in the view's Settings menu since spec 012.
+  await page.locator('.collection-toolbar').getByRole('button', { name: 'Settings', exact: true }).click();
+  const viewIcons = await icons(page.getByRole('menu', { name: /view settings$/ }), 'view settings');
   assert.notEqual(viewIcons.get('Remove view'), trash, 'Remove view shares the bin with Move to trash');
   await page.keyboard.press('Escape');
   await page.goto(`${base}/p/${doc.id}`);

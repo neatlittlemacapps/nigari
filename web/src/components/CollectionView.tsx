@@ -1,10 +1,13 @@
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { PeekMode } from '../peek';
 import { api } from '../api';
 import { onRefresh } from '../pwa';
 import Portal from './Portal';
 import { anchoredMenuStyle } from '../anchoredMenu';
-import { useBoardDrag } from '../boardDrag';
+import { dropIndex, useBoardDrag } from '../boardDrag';
+import { sortComparator } from '../viewSort';
+import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } from '../columnDrag';
+import { ColHead } from './TableColumnHead';
 import { tagColorClass } from '../tags';
 import { compare, firstWeekday, formatDay, formatMonth, isReadableDay, isUnfinishedRelativeDay, resolveSmartDate, toDayString, today, weekdayNames } from '../format';
 import { plural, t } from '../i18n';
@@ -23,7 +26,7 @@ import type {
 } from '../types';
 import PropertyValue, { PersonStack, idList, loadRelationOptions, type RelOption } from './PropertyValue';
 import { openCollectionRow, openPageAux, RowOpenContext, useOpenRow } from '../pageOpen';
-import ViewOpenMenu from './ViewOpenMenu';
+import ViewSettingsMenu from './ViewSettingsMenu';
 import { AddViewMenu, CardMenu, ViewActionItems } from './CollectionMenus';
 import { Menu, MenuItem, MenuLabel, MenuSeparator, MenuValueItem, MenuValues, MenuValueSubmenu, type MenuPoint } from '../ui/Menu';
 import { readViewId, readViewScroll, writeViewId, writeViewScroll } from '../pageUiState';
@@ -39,35 +42,7 @@ import { defaultChartView } from '../chartDefaults';
 const ChartPane = lazy(() => import('./ChartPane'));
 import { PageIcon } from '../pageIcon';
 import { toast } from '../toast';
-import { Table2, Columns3, LayoutGrid, CalendarDays, List, Settings2, Plus, Filter as FilterIcon, ArrowUpDown, Eye, EyeOff, AlignLeft, Calendar, Hash, CircleDot, Tags, SquareCheck, User, Link2, Sigma, ClipboardList, Check, Send, Share2, Globe, ChartPie, GanttChartSquare, MessageSquare, Mail, Phone, MapPin, MoreHorizontal, History, ChevronDown, LayoutTemplate, Copy } from 'lucide-react';
-
-// Small type glyph shown next to each property (Notion-style visibility panel).
-function propTypeIcon(t: PropDef['type']) {
-  const s = 14;
-  switch (t) {
-    case 'select':
-      return <CircleDot size={s} />;
-    case 'multiselect':
-      return <Tags size={s} />;
-    case 'date':
-      return <Calendar size={s} />;
-    case 'number':
-      return <Hash size={s} />;
-    case 'checkbox':
-      return <SquareCheck size={s} />;
-    case 'person':
-      return <User size={s} />;
-    case 'relation':
-      return <Link2 size={s} />;
-    case 'rollup':
-    case 'formula':
-      return <Sigma size={s} />;
-    case 'lastActivity':
-      return <History size={s} />;
-    default:
-      return <AlignLeft size={s} />;
-  }
-}
+import { Table2, Columns3, LayoutGrid, CalendarDays, List, Plus, Filter as FilterIcon, ArrowUpDown, Calendar, Link2, ClipboardList, Check, Send, Share2, Globe, ChartPie, GanttChartSquare, MessageSquare, Mail, Phone, MapPin, ChevronDown, LayoutTemplate, Copy } from 'lucide-react';
 
 /** A collection shown inside a document rather than as its own page.
  *
@@ -228,17 +203,9 @@ function applyView(rows: Row[], view: ViewDef, schema: PropDef[]): Row[] {
     const isDate = dateProps.has(f.property);
     out = out.filter((r) => matchesFilter(r, f, isDate));
   }
-  const sort = view.sort;
-  if (sort) {
-    out = [...out].sort((a, b) => {
-      const av = a.props[sort.property];
-      const bv = b.props[sort.property];
-      const as = Array.isArray(av) ? av.join(',') : String(av ?? '');
-      const bs = Array.isArray(bv) ? bv.join(',') : String(bv ?? '');
-      const cmp = typeof av === 'number' && typeof bv === 'number' ? av - bv : compare(as, bs);
-      return sort.dir === 'desc' ? -cmp : cmp;
-    });
-  }
+  // The board's drop marker (dropIndex) sorts with the same comparator, so it
+  // shows the place this sort will give a dropped card.
+  if (view.sort) out = [...out].sort(sortComparator<Row>(view.sort));
   return out;
 }
 
@@ -258,6 +225,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     embed?.onViewId(id);
   };
   const [schemaOpen, setSchemaOpen] = useState(false);
+  // A popover of the filter or sort controls is open: with the templates
+  // menu, what keeps an embed's folding toolbar shown (data-menu-open).
+  const [fsOpen, setFsOpen] = useState(false);
   // The arrow beside New: this database's own templates, loaded when it opens
   // so the list is never older than the click.
   const [tplOpen, setTplOpen] = useState(false);
@@ -740,6 +710,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   };
 
   const viewRows = applyView(rows, view, schema);
+  // Each row's place before the view's sort: how a sort's ties, and a view
+  // without one, order the rows. The board's drop marker reads it.
+  const rowOrder = view.type === 'board' ? new Map(rows.map((r, i) => [r.id, i])) : undefined;
   const emptyLabel =
     rows.length > 0 && viewRows.length === 0
       ? t('No rows match the current filter.')
@@ -771,11 +744,18 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // Columns hidden in this view are dropped from every renderer.
   const hidden = new Set(view.hidden ?? []);
   const visibleSchema = schema.filter((p) => !hidden.has(p.id));
+  // A table draws its columns in the view's own order (spec 012): colOrder
+  // first, the rest in schema order. Other views keep the schema's.
+  const propById = new Map(schema.map((p) => [p.id, p]));
+  const tableColumns = orderedColumns(schema.map((p) => p.id), view.colOrder, hidden).map((id) => propById.get(id)!);
   // Relation props that point back at this same collection — candidates for the
   // sub-item (task hierarchy) relation that the table can render as a tree.
   const selfRelProps = schema.filter((p) => p.type === 'relation' && p.relationCollection === collectionId);
   // Date props — the timeline's Start/End pickers choose from these.
   const dateProps = schema.filter((p) => p.type === 'date');
+
+  // A filter that actually narrows the rows (an unfinished one does not).
+  const viewFiltered = (view.filters ?? []).some((f) => filterIsArmed(f, isDateProp(f.property)));
 
   const viewSwitcher = (
     <div className="collection-toolbar">
@@ -786,13 +766,15 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
               className={'view-tab view-tab--' + v.type + (v.id === view.id ? ' active' : '')}
               onClick={() => pickView(v.id)}
               onDoubleClick={() => {
-                if (!embed) void renameView(v);
+                if (!embed && canEdit) void renameView(v);
               }}
               onContextMenu={(e) => {
                 // Inside a document the views are the collection's business,
                 // reached through "Open as page" — not something a reader of
                 // the document should rename or remove by accident.
-                if (embed) return;
+                // A reader may not rename, move or remove a view: the server
+                // refuses it, so offering it only promises what it undoes.
+                if (embed || !canEdit) return;
                 e.preventDefault();
                 tabMenuReturn.current = e.currentTarget;
                 // Shift+F10 or the menu key report (0, 0): open under the tab.
@@ -806,7 +788,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             </button>
           </span>
         ))}
-        {!embed && (
+        {!embed && canEdit && (
           <AddViewMenu
             types={['table', 'board', 'gallery', 'calendar', 'timeline', 'list', 'form', 'chart']}
             icon={tabIcon}
@@ -828,87 +810,40 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           <ViewActionItems view={tabMenu.view} views={config.views} onRename={renameView} onMove={moveView} onRemove={removeView} />
         )}
       </Menu>
-      <div className="collection-actions">
-        {view.type === 'timeline' && (
-          <>
-            <select
-              className="subitems-select"
-              title={t('Start date for the bars')}
-              value={view.dateProp ?? ''}
-              onChange={(e) => updateView({ dateProp: e.target.value || undefined })}
-            >
-              <option value="">{t('Start: (none)')}</option>
-              {dateProps.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {t('Start:')} {p.name}
-                </option>
-              ))}
-            </select>
-            <select
-              className="subitems-select"
-              title={t('End date for the bars (blank = one-day bars)')}
-              value={view.endDateProp ?? ''}
-              onChange={(e) => updateView({ endDateProp: e.target.value || undefined })}
-            >
-              <option value="">{t('End: (none)')}</option>
-              {dateProps.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {t('End:')} {p.name}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
-        {view.type === 'table' && selfRelProps.length > 0 && (
-          <select
-            className="subitems-select"
-            title={t('Sub-item relation for the tree view')}
-            value={view.subItemProp ?? ''}
-            onChange={(e) => updateView({ subItemProp: e.target.value || undefined })}
-          >
-            <option value="">{t('No sub-items')}</option>
-            {selfRelProps.map((p) => (
-              <option key={p.id} value={p.id}>
-                ⿴ {p.name}
-              </option>
-            ))}
-          </select>
-        )}
-        {view.type !== 'form' && <FilterSortControls schema={schema} view={view} onChange={updateView} />}
-        {/* What the collection IS — its columns, its properties, its views —
-            is edited on its own page. An embed is a window onto the rows, and
-            carrying the whole toolbar into a document made it look like a
-            second copy of the collection (#22). */}
-        {!embed && <ColumnsControl schema={schema} view={view} onChange={updateView} />}
-        {!embed && (
-          <button className="btn-sm" onClick={() => setSchemaOpen(true)}>
-            <Settings2 size={14} /> {t('Properties')}
-          </button>
-        )}
-        {/* Renaming and removing the view you are on. It sat inside the tab as a
-            ⋯ first, which looked like a smudge in the pill and had to reserve
-            room in a row where nothing else does. This bar is already "settings
-            for the current view" — filter, sort, group, columns — so it is
-            where the last two belong. */}
-        {!embed && (
-        <div className="view-menu-wrap">
-          {/* narrow="sheet": the toolbar scrolls sideways on a phone, so the
-              menu is a sheet along the bottom there (anchoredMenu.ts' rule). */}
-          <Menu
-            label={t('View options')}
-            narrow="sheet"
+      {/* In a document the toolbar's buttons fold away until they are
+          reached for (spec 012, US5); a filter or a sort of the view must not
+          fold away with them (FR-021), so it is said here, beside the tabs,
+          and stays when the buttons are hidden. */}
+      {embed && (viewFiltered || view.sort) && (
+        <span className="embed-view-state">
+          {viewFiltered && <span className="embed-view-state-item">{t('Filtered')}</span>}
+          {view.sort && <span className="embed-view-state-item">{t('Sorted')}</span>}
+        </span>
+      )}
+      <div className="collection-actions" data-menu-open={fsOpen || tplOpen ? '' : undefined}>
+        {view.type !== 'form' && <FilterSortControls schema={schema} view={view} onChange={updateView} onOpenChange={setFsOpen} />}
+        {/* Everything that configures the view and the database, in one menu
+            (spec 012, US4): what the Columns popover, the Properties button,
+            the ⋯ and the timeline's and sub-items' <select>s did. Not in a
+            document: an embed shows the database's own views, so a setting
+            changed there would change them everywhere (research R10; embeds
+            get views of their own in spec 014). A reader is offered nothing
+            to change. */}
+        {!embed && canEdit && (
+          <ViewSettingsMenu
+            view={view}
+            views={config.views}
+            schema={schema}
+            selfRelProps={selfRelProps}
+            dateProps={dateProps}
             open={viewMenuFor === view.id}
             onOpenChange={(o) => setViewMenuFor(o ? view.id : null)}
-            trigger={
-              <button className="btn-sm" title={t('View options')} aria-label={t('View options')}>
-                <MoreHorizontal size={14} />
-              </button>
-            }
-          >
-            <ViewActionItems view={view} views={config.views} onRename={renameView} onMove={moveView} onRemove={removeView} />
-            <ViewOpenMenu view={view} onChange={(openIn) => updateView({ openIn })} />
-          </Menu>
-        </div>
+            onChange={updateView}
+            onRename={renameView}
+            onMove={moveView}
+            onRemove={removeView}
+            onEditProperties={() => setSchemaOpen(true)}
+          />
         )}
         {view.type !== 'form' && (
           <div className="view-menu-wrap split-btn">
@@ -982,8 +917,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       className={
         'collection-scroll' +
         (view.type === 'board' ? ' is-board' : '') +
-        (embed ? ' is-embed' : '') +
-        (embed && (view.filters ?? []).some((f) => filterIsArmed(f, isDateProp(f.property))) ? ' is-filtered' : '')
+        (embed ? ' is-embed' : '')
       }
     >
       {viewSwitcher}
@@ -999,6 +933,8 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       ) : view.type === 'board' ? (
         <BoardView
           rows={viewRows}
+          sort={view.sort}
+          rowOrder={rowOrder ?? new Map()}
           schema={visibleSchema}
           groupBy={view.groupBy || schema.find((p) => p.type === 'select')?.id || ''}
           tagColors={tagColors}
@@ -1082,7 +1018,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       ) : (
         <TableView
           rows={viewRows}
-          schema={visibleSchema}
+          schema={tableColumns}
           emptyLabel={emptyLabel}
           tagColors={tagColors}
           subItemProp={
@@ -1090,6 +1026,17 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           }
           colWidths={view.colWidths}
           onSetColWidths={(colWidths) => updateView({ colWidths })}
+          // Moving and hiding a column are this view's own (spec 012): only a
+          // table stores an order, and a reader is offered neither. Nor is a
+          // database in a document: its columns are the database's, edited on
+          // its own page (#22, the reason it has no Columns control), and a
+          // column hidden there could not be shown again from there.
+          onSetColumns={
+            canEdit && !embed && view.type === 'table'
+              ? (visible) => updateView({ colOrder: storedOrder(schema.map((p) => p.id), view.colOrder, visible) })
+              : undefined
+          }
+          onHideColumn={canEdit && !embed && view.type === 'table' ? (id) => updateView({ hidden: [...(view.hidden ?? []), id] }) : undefined}
           onNavigate={onNavigate}
           onOpenInNewTab={onOpenInNewTab}
           onSetProp={setRowProp}
@@ -1478,12 +1425,23 @@ function FilterSortControls({
   schema,
   view,
   onChange,
+  onOpenChange,
 }: {
   schema: PropDef[];
   view: ViewDef;
   onChange: (patch: Partial<ViewDef>) => void;
+  /** Whether one of its popovers is open: an embed's folding toolbar stays
+   *  shown while it is (spec 012, FR-020). */
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState<'filter' | 'sort' | 'group' | null>(null);
+  // The cleanup matters: unmounted with a popover open (the view switched to a
+  // form, which has no filter controls), it would otherwise leave the embed's
+  // toolbar held open and its "Filtered" marker hidden.
+  useEffect(() => {
+    onOpenChange?.(open !== null);
+    return () => onOpenChange?.(false);
+  }, [open, onOpenChange]);
   const controlsRef = useRef<HTMLDivElement>(null);
   // Titles for every relation in this schema, so a filter on one can offer
   // rows to pick instead of demanding an id. Keyed by property id; the
@@ -1512,19 +1470,13 @@ function FilterSortControls({
       setPos(null);
       return;
     }
-    const r = controlsRef.current.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    if (vw <= 640) {
-      setPos({ position: 'fixed', left: 8, right: 8, bottom: 8, maxHeight: vh * 0.72 });
-    } else {
-      // Wider than it was: a tick list of option names and a pair of date
-      // fields need the room, and the old 300 is what everything was being
-      // squeezed into.
-      const width = 340;
-      const left = Math.max(8, Math.min(r.right - width, vw - width - 8));
-      setPos({ position: 'fixed', left, width, top: r.bottom + 6, maxHeight: vh - r.bottom - 24 });
-    }
+    // The one rule for where a toolbar menu goes (anchoredMenu.ts), which the
+    // ui/Menu sheets read the breakpoint from too: a copy here drifted from it
+    // the moment the breakpoint moved. 340 wide, because a tick list of option
+    // names and a pair of date fields need the room.
+    setPos(
+      anchoredMenuStyle(controlsRef.current.getBoundingClientRect(), { width: window.innerWidth, height: window.innerHeight }, 340, true),
+    );
   }, [open]);
   const filters = view.filters ?? [];
   const sort = view.sort ?? null;
@@ -1985,6 +1937,8 @@ function BoardCardProps({
 
 function BoardView({
   rows,
+  sort,
+  rowOrder,
   schema,
   groupBy,
   tagColors,
@@ -1998,6 +1952,8 @@ function BoardView({
   onAddInColumn,
 }: {
   rows: Row[];
+  sort?: Sort | null;
+  rowOrder: Map<string, number>;
   schema: PropDef[];
   groupBy: string;
   tagColors: Record<string, string>;
@@ -2050,7 +2006,7 @@ function BoardView({
   if (!prop || (prop.type !== 'select' && prop.type !== 'multiselect' && prop.type !== 'relation')) {
     return (
       <div className="board-empty">
-        {t('This board needs a {type} property to group by. Open ⚙ Properties to add one.', { type: t('Select') })}
+        {t('This board needs a {type} property to group by. Open Settings, then Edit properties, to add one.', { type: t('Select') })}
       </div>
     );
   }
@@ -2083,9 +2039,29 @@ function BoardView({
       return v === optId;
     });
 
+  // Where the dragged card will land in the column under the pointer (spec
+  // 012, US3): the place the view's sort gives it there, not the pointer's.
+  // Over its own column nothing is added: the card's own dimmed place is it.
+  const dragged = drag ? rows.find((r) => r.id === drag.rowId) : undefined;
+  const dropAt = (col: string, cards: Row[]): number => {
+    if (!drag || !dragged || drag.over !== col || drag.fromCol === col) return -1;
+    // On a multi-select or relation board the card can already be in this
+    // column too; then it is its own place there, as in its own column.
+    if (cards.some((c) => c.id === dragged.id)) return -1;
+    const value = col === UNSET ? (prop.type === 'select' ? '' : []) : prop.type === 'select' ? col : [col];
+    const moved = { ...dragged, props: { ...dragged.props, [groupBy]: value } };
+    return dropIndex(cards, moved, sort, (id) => rowOrder.get(id) ?? 0);
+  };
+  const placeholder = drag ? (
+    <div className="board-drop-place" style={{ height: drag.height }} aria-hidden="true" />
+  ) : null;
+
   return (
     <div className={'board' + (drag ? ' is-dragging' : '')}>
-      {columns.map((col) => (
+      {columns.map((col) => {
+        const cards = rowsFor(col.id);
+        const at = dropAt(col.id, cards);
+        return (
         <div
           key={col.id}
           data-col={col.id}
@@ -2105,16 +2081,17 @@ function BoardView({
               <span className="board-chip" style={{ background: col.color + '33', color: col.color }}>
                 {col.name}
               </span>
-              <span className="board-count">{rowsFor(col.id).length}</span>
+              <span className="board-count">{cards.length}</span>
             </span>
             <button className="board-add" title={t('New')} onClick={() => onAddInColumn(groupBy, col.id)}>
               <Plus size={14} />
             </button>
           </div>
           <div className="board-cards">
-            {rowsFor(col.id).map((r) => (
+            {cards.map((r, i) => (
+              <Fragment key={r.id}>
+              {i === at && placeholder}
               <div
-                key={r.id}
                 className={
                   'board-card' +
                   (drag?.rowId === r.id && drag.fromCol === col.id ? ' is-dragging' : '') +
@@ -2238,10 +2215,13 @@ function BoardView({
                   onSetOptions={onSetOptions}
                 />
               </div>
+              </Fragment>
             ))}
+            {at === cards.length && placeholder}
           </div>
         </div>
-      ))}
+        );
+      })}
 
       {/* Die schwebende Karte folgt dem Zeiger. Als letztes Kind mit
           position:fixed so it sits above everything; pointer-events:none so it
@@ -2260,35 +2240,6 @@ function BoardView({
 
 // ---- Table ----
 
-/** A column heading with the grip that resizes it.
- *
- *  The grip hangs off an inner BLOCK, not off the <th> itself. In a table with
- *  border-collapse: collapse the cell does not act as a containing block a
- *  browser will hit-test against: the handle painted in exactly the right place,
- *  the pointer went to the <th> underneath, and dragging did nothing at all
- *  while looking entirely correct. */
-function ColHead({
-  label,
-  onResize,
-  onReset,
-}: {
-  label: string;
-  onResize: (e: React.PointerEvent<HTMLSpanElement>) => void;
-  onReset: () => void;
-}) {
-  return (
-    <span className="th-inner">
-      {label}
-      <span
-        className="col-resize"
-        title={t('Drag to resize, double-click to fit the content')}
-        onPointerDown={onResize}
-        onDoubleClick={onReset}
-      />
-    </span>
-  );
-}
-
 /** The name column's key in colWidths — the title is not a property, so it has
  *  no id of its own. Nothing the interface generates can collide with it: prop
  *  ids are slugged to [a-z0-9-] (see SchemaEditor). An agent writing a schema
@@ -2305,6 +2256,8 @@ function TableView({
   subItemProp,
   colWidths,
   onSetColWidths,
+  onSetColumns,
+  onHideColumn,
   onNavigate,
   onOpenInNewTab,
   onSetProp,
@@ -2317,6 +2270,10 @@ function TableView({
   subItemProp?: string;
   colWidths?: Record<string, number>;
   onSetColWidths: (next: Record<string, number>) => void;
+  /** The visible columns in their new order, after a drag or a Move. Absent:
+   *  the columns do not move (a reader, a view that is not a table). */
+  onSetColumns?: (visible: string[]) => void;
+  onHideColumn?: (id: string) => void;
   onNavigate: (id: string) => void;
   onOpenInNewTab?: (id: string) => void;
   onSetProp: (rowId: string, propId: string, value: unknown) => void;
@@ -2329,6 +2286,43 @@ function TableView({
   // drag is local and instant: writing to the view on every pointermove would
   // put one request per pixel on the wire and re-render the whole table.
   const [drag, setDrag] = useState<{ key: string; px: number } | null>(null);
+
+  // Moving a column (spec 012, US2). The ids drawn, in order; the title is
+  // not among them and cannot move.
+  const ids = schema.map((p) => p.id);
+  const idsKey = ids.join('\u0000');
+  const theadRef = useRef<HTMLTableSectionElement>(null);
+  // After a Move, focus goes back to the header that moved (FR-005); after
+  // Hide in view, to its neighbour. The header is re-rendered in its new
+  // place once the order arrives, so this runs after that render.
+  const focusAfter = useRef<string | null>(null);
+  useEffect(() => {
+    const id = focusAfter.current;
+    if (!id) return;
+    focusAfter.current = null;
+    const el = theadRef.current?.querySelector<HTMLElement>(`[data-col-id="${CSS.escape(id)}"] .th-label`);
+    el?.focus();
+  }, [idsKey]);
+  const setColumns = (next: string[], focus: string) => {
+    if (!onSetColumns || next.join('\u0000') === idsKey) return;
+    focusAfter.current = focus;
+    onSetColumns(next);
+  };
+  const { drag: colDrag, startDrag: startColDrag, consumeClick: consumeColClick } = useColumnDrag((id, gap) =>
+    setColumns(moveToGap(ids, id, gap), id),
+  );
+  const dragFrom = colDrag ? ids.indexOf(colDrag.id) : -1;
+  // The marker sits on the gap the column would go to; the two gaps beside the
+  // column itself would change nothing, so they show none.
+  const markerGap = colDrag && colDrag.gap !== dragFrom && colDrag.gap !== dragFrom + 1 ? colDrag.gap : -1;
+  const headClass = (i: number, id: string) =>
+    [
+      colDrag?.id === id ? 'is-col-dragged' : '',
+      markerGap === i ? 'col-drop-before' : '',
+      markerGap === ids.length && i === ids.length - 1 ? 'col-drop-after' : '',
+    ]
+      .filter(Boolean)
+      .join(' ') || undefined;
 
   const widthOf = (key: string) =>
     drag?.key === key ? drag.px : colWidths?.[key];
@@ -2450,14 +2444,32 @@ function TableView({
   return (
     <div className="table-wrap">
       <table className="db-table">
-        <thead>
+        <thead ref={theadRef}>
           <tr>
             <th className="db-title-col" style={colStyle(TITLE_COL)}>
               <ColHead label={t('Name')} onResize={startResize(TITLE_COL)} onReset={resetCol(TITLE_COL)} />
             </th>
-            {schema.map((p) => (
-              <th key={p.id} style={colStyle(p.id)}>
-                <ColHead label={p.name} onResize={startResize(p.id)} onReset={resetCol(p.id)} />
+            {schema.map((p, i) => (
+              <th key={p.id} data-col-id={p.id} className={headClass(i, p.id)} style={colStyle(p.id)}>
+                <ColHead
+                  label={p.name}
+                  onResize={startResize(p.id)}
+                  onReset={resetCol(p.id)}
+                  moves={
+                    onSetColumns && onHideColumn
+                      ? {
+                          onStartDrag: (e) => startColDrag(e, p.id),
+                          consumeClick: () => consumeColClick(p.id),
+                          onMoveLeft: i > 0 ? () => setColumns(moveColumn(ids, p.id, -1), p.id) : undefined,
+                          onMoveRight: i < ids.length - 1 ? () => setColumns(moveColumn(ids, p.id, 1), p.id) : undefined,
+                          onHide: () => {
+                            focusAfter.current = ids[i + 1] ?? ids[i - 1] ?? null;
+                            onHideColumn(p.id);
+                          },
+                        }
+                      : undefined
+                  }
+                />
               </th>
             ))}
           </tr>
@@ -2547,83 +2559,6 @@ function TableView({
   );
 }
 
-// ---- Column visibility control ----
-
-function ColumnsControl({
-  schema,
-  view,
-  onChange,
-}: {
-  schema: PropDef[];
-  view: ViewDef;
-  onChange: (patch: Partial<ViewDef>) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState<React.CSSProperties | null>(null);
-  useLayoutEffect(() => {
-    if (!open || !btnRef.current) {
-      setPos(null);
-      return;
-    }
-    const r = btnRef.current.getBoundingClientRect();
-    setPos(anchoredMenuStyle(r, { width: window.innerWidth, height: window.innerHeight }, 268, true));
-  }, [open]);
-
-  const hidden = new Set(view.hidden ?? []);
-  const shown = schema.filter((p) => !hidden.has(p.id));
-  const hiddenProps = schema.filter((p) => hidden.has(p.id));
-  const toggle = (id: string) => {
-    const next = new Set(hidden);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    onChange({ hidden: [...next] });
-  };
-  const propRow = (p: PropDef, isHidden: boolean) => (
-    <button key={p.id} className="col-row" onClick={() => toggle(p.id)}>
-      <span className="col-row-ic">{propTypeIcon(p.type)}</span>
-      <span className="col-row-name">{p.name}</span>
-      {isHidden ? <EyeOff className="col-row-eye off" size={16} /> : <Eye className="col-row-eye" size={16} />}
-    </button>
-  );
-
-  return (
-    <div className="fs-controls">
-      <button ref={btnRef} className={'btn-sm' + (hidden.size ? ' active' : '')} onClick={() => setOpen((o) => !o)}>
-        <Eye size={14} /> {t('Columns')}
-        {hidden.size ? ` (${shown.length}/${schema.length})` : ''}
-      </button>
-      {open && pos && (
-        <Portal>
-          <div className="fs-backdrop" onClick={() => setOpen(false)} />
-          <div className="fs-popover col-popover" style={pos}>
-            <div className="col-section-head">
-              <span>{t('Shown')}</span>
-              {shown.length > 0 && (
-                <button className="col-bulk" onClick={() => onChange({ hidden: schema.map((p) => p.id) })}>
-                  {t('Hide all')}
-                </button>
-              )}
-            </div>
-            {shown.map((p) => propRow(p, false))}
-            {shown.length === 0 && <div className="col-empty">{t('Nothing shown')}</div>}
-            <div className="col-section-head">
-              <span>{t('Hidden')}</span>
-              {hiddenProps.length > 0 && (
-                <button className="col-bulk" onClick={() => onChange({ hidden: [] })}>
-                  {t('Show all')}
-                </button>
-              )}
-            </div>
-            {hiddenProps.map((p) => propRow(p, true))}
-            {hiddenProps.length === 0 && <div className="col-empty">{t('Nothing hidden')}</div>}
-          </div>
-        </Portal>
-      )}
-    </div>
-  );
-}
-
 // ---- Calendar view ----
 
 const ymd = toDayString;
@@ -2653,7 +2588,7 @@ function TimelineView({
   if (!startProp || !schema.some((p) => p.id === startProp && p.type === 'date')) {
     return (
       <div className="board-empty">
-        {t('This timeline needs a {type} property as its start. Open ⚙ Properties to add one.', { type: t('Date') })}
+        {t('This timeline needs a {type} property as its start. Open Settings, then Edit properties, to add one.', { type: t('Date') })}
       </div>
     );
   }
@@ -2793,7 +2728,7 @@ function CalendarView({
   if (!dateProp || !schema.some((p) => p.id === dateProp && p.type === 'date')) {
     return (
       <div className="board-empty">
-        {t('This calendar needs a {type} property. Open ⚙ Properties to add one.', { type: t('Date') })}
+        {t('This calendar needs a {type} property. Open Settings, then Edit properties, to add one.', { type: t('Date') })}
       </div>
     );
   }

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Sort } from './types';
+import { sortComparator } from './viewSort';
 
 // Pointer-based dragging for the kanban board.
 //
@@ -12,11 +14,42 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // card moves. Hit testing goes through `data-col` on the column element rather
 // than refs passed down — which keeps the caller lean.
 
+// ---- Where a dropped card lands (spec 012, US3, #133) ----
+//
+// A board has no order of its own: a card takes its place in a column from
+// the view's sort, or, without one, from the order of the rows. So the place
+// marker shows that place, not the pointer's: a line at the pointer promised a
+// position the card would not keep. The view sorts with sortComparator
+// (viewSort.ts), and so does dropIndex, so the two cannot disagree.
+
+/** The index the dragged card will take among a column's cards once dropped
+ *  there. `cards` are the column's cards as drawn (the view's order); `card`
+ *  is the dragged one with its group value already set to this column;
+ *  `rowIndex` is each row's place in the unsorted rows, which breaks ties as
+ *  the stable sort does. Over its own column the answer is its own index. */
+export function dropIndex<T extends { id: string; props: Record<string, unknown> }>(
+  cards: readonly T[],
+  card: T,
+  sort: Sort | null | undefined,
+  rowIndex: (id: string) => number,
+): number {
+  const cmp = sortComparator<T>(sort);
+  const at = rowIndex(card.id);
+  let index = 0;
+  for (const c of cards) {
+    if (c.id === card.id) continue;
+    const d = cmp(c, card);
+    if (d < 0 || (d === 0 && rowIndex(c.id) < at)) index++;
+  }
+  return index;
+}
+
 export interface DragState {
   rowId: string;
   fromCol: string;
   title: string;
   width: number;
+  height: number; // the card's, for the placeholder
   // current pointer position and grab offset (where the card was taken hold of)
   x: number;
   y: number;
@@ -50,6 +83,7 @@ export function useBoardDrag(onMove: (rowId: string, toCol: string) => void) {
     fromCol: string;
     title: string;
     width: number;
+    height: number;
     dx: number;
     dy: number;
     startX: number;
@@ -93,6 +127,12 @@ export function useBoardDrag(onMove: (rowId: string, toCol: string) => void) {
         if (moved < START_THRESHOLD) return;
         l.started = true;
         draggedRef.current = true;
+        // The pixels before the threshold select the card's text, and the
+        // class that stops selecting only arrives with the drag. Left behind,
+        // that selection made the next press on the card start the browser's
+        // own drag of it, which cancels this one: the card would not move
+        // twice in a row (found by board-drop-marker.mjs).
+        window.getSelection()?.removeAllRanges();
       }
       l.over = colUnder(e.clientX, e.clientY);
       setDrag({
@@ -100,6 +140,7 @@ export function useBoardDrag(onMove: (rowId: string, toCol: string) => void) {
         fromCol: l.fromCol,
         title: l.title,
         width: l.width,
+        height: l.height,
         x: e.clientX,
         y: e.clientY,
         dx: l.dx,
@@ -166,6 +207,7 @@ export function useBoardDrag(onMove: (rowId: string, toCol: string) => void) {
         fromCol,
         title,
         width: card.width,
+        height: card.height,
         dx: e.clientX - card.left,
         dy: e.clientY - card.top,
         startX: e.clientX,

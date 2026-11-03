@@ -73,8 +73,8 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// The views half is stored as sent, but the rules MCP set_view applies to
-	// a view apply here too: its open mode (spec 007) and a chart's settings
-	// (spec 004). A value the interface cannot honour would otherwise be stored
+	// a view apply here too: its open mode (spec 007), a table's column order
+	// (spec 012) and a chart's settings (spec 004). A value the interface cannot honour would otherwise be stored
 	// by any script that can PUT.
 	if hasViews {
 		schema, stored, _ := s.loadCollection(id)
@@ -86,7 +86,11 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 		}
 		views, err := normalizeViews(body.Views, schema, stored)
 		var chartErr errChart
+		var orderErr errViewColOrder
 		switch {
+		case errors.As(err, &orderErr):
+			httpErrorCode(w, 400, "invalid_view_column_order", err.Error())
+			return
 		case errors.As(err, &chartErr):
 			httpErrorCode(w, 400, "invalid_chart", err.Error())
 			return

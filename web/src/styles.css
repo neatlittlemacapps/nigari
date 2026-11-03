@@ -2127,20 +2127,64 @@ body:has(.icon-picker) .bn-side-menu {
   max-height: min(560px, 70vh);
 }
 
-/* An embed is a window onto the rows, not a second copy of the collection
-   (#22): its toolbar keeps to filter, sort and New, and steps back until the
-   pointer comes to the embed. Only where there IS a pointer (on a touch screen
-   nothing would ever bring it back), and never while a filter of the embed's
-   own is on: rows quietly missing from a table are worse than a toolbar. */
+/* An embed is a window onto the rows, not a second copy of the collection:
+   its toolbar keeps to filter, sort and New, and folds away until it is
+   reached for (spec 012, US5, research R11), so a document reads as text:
+   shown while the pointer is over the embed, while focus is inside it, and
+   while a menu or popover from it is open (data-menu-open; the menus are
+   portaled, so neither :hover nor :focus-within can see them). Opacity, not
+   visibility: the buttons keep their box, so nothing moves when they appear,
+   and stay in the tab order and the accessibility tree, so one Tab from the
+   view reveals them. Only where there IS a pointer: on a touch screen nothing
+   would ever bring them back. A filter or a sort of the embed's own is said
+   beside the tabs instead (.embed-view-state): rows quietly missing from a
+   table must not fold away with the button that explains them. */
 @media (hover: hover) {
-  .collection-scroll.is-embed:not(.is-filtered) .collection-actions {
+  .collection-scroll.is-embed .collection-actions {
     opacity: 0;
-    transition: opacity 0.15s;
+    transition: opacity var(--motion-duration-base) ease;
   }
   .bn-db-embed:hover .collection-scroll.is-embed .collection-actions,
-  .bn-db-embed:focus-within .collection-scroll.is-embed .collection-actions {
+  .bn-db-embed:focus-within .collection-scroll.is-embed .collection-actions,
+  .collection-scroll.is-embed .collection-actions[data-menu-open] {
     opacity: 1;
   }
+  /* The marker says it while the buttons are folded, and gives way once
+     they show it themselves. */
+  .bn-db-embed:hover .embed-view-state,
+  .bn-db-embed:focus-within .embed-view-state,
+  .collection-toolbar:has(.collection-actions[data-menu-open]) .embed-view-state {
+    visibility: hidden;
+  }
+}
+@media (hover: none) {
+  .embed-view-state {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .collection-scroll.is-embed .collection-actions {
+    transition: none;
+  }
+}
+
+/* Beside the view tabs: the toolbar spaces its children apart, and the auto
+   margin keeps this one against the tabs rather than in the middle. */
+.embed-view-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-150);
+  margin-right: auto;
+  flex: none;
+}
+
+.embed-view-state-item {
+  padding: 1px var(--space-200);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-scale-full);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  white-space: nowrap;
 }
 
 /* Widened from 272px. At that width a normal task title broke after three or
@@ -2483,10 +2527,14 @@ body:has(.icon-picker) .bn-side-menu {
   overscroll-behavior-x: contain;
 }
 
+/* Cells read at the type scale's body size (spec 012, #131): the 13.5px they
+   had made a table in a document look a size smaller than the paragraph
+   above it. Set on the table so the cells inherit it; headers are the 12px
+   uppercase label (theme.css), the owner's choice. */
 .db-table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 13.5px;
+  font-size: var(--font-size-md);
 }
 
 .db-table th,
@@ -2583,7 +2631,7 @@ body:has(.icon-picker) .bn-side-menu {
   background: var(--sidebar-bg);
   font-weight: 600;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: var(--font-size-xs); /* as theme.css draws it (spec 012, R1) */
   position: relative;
 }
 
@@ -2592,6 +2640,55 @@ body:has(.icon-picker) .bn-side-menu {
 .th-inner {
   position: relative;
   display: block;
+}
+
+/* A property column's label is a button (spec 012): a click opens the
+   column's menu, a drag from it moves the column. It reads as the heading it
+   was, not as a button, so it takes the heading's type and no frame. */
+.db-table th .th-label {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  padding: 0;
+  height: auto;
+  min-height: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  white-space: normal;
+  cursor: grab;
+}
+
+body.is-col-moving,
+body.is-col-moving .db-table th .th-label {
+  cursor: grabbing;
+  user-select: none;
+}
+
+/* The header being dragged, dimmed, and the marker on the gap it would drop
+   into: a 2px line in the accent colour on the border between two headers. */
+.db-table th.is-col-dragged {
+  opacity: 0.5;
+}
+
+.db-table th.col-drop-before::before,
+.db-table th.col-drop-after::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-accent-default);
+  pointer-events: none;
+}
+
+.db-table th.col-drop-before::before {
+  left: -1px;
+}
+
+.db-table th.col-drop-after::after {
+  right: -1px;
 }
 
 /* The grip on a column's right edge. -10px is the cell's own horizontal padding,
@@ -2704,77 +2801,6 @@ body.is-col-resizing {
 .view-add:hover {
   background: var(--hover);
   color: var(--fg);
-}
-
-/* Property-visibility panel (Notion "Sichtbarkeit von Eigenschaften"): shown /
-   hidden sections, per-property eye toggle, type glyph, bulk show/hide. */
-.col-popover {
-  padding: 6px;
-  gap: 0;
-}
-.col-section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  padding: 9px 8px 4px;
-}
-.col-bulk {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--accent);
-  text-transform: none;
-  letter-spacing: 0;
-}
-.col-bulk:hover {
-  text-decoration: underline;
-}
-.col-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 7px;
-  font-size: 14px;
-  text-align: left;
-  width: 100%;
-}
-.col-row:hover {
-  background: var(--hover);
-}
-.col-row-grip {
-  color: var(--muted);
-  opacity: 0.35;
-  flex-shrink: 0;
-}
-.col-row-ic {
-  color: var(--muted);
-  display: inline-flex;
-  flex-shrink: 0;
-}
-.col-row-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.col-row-eye {
-  color: var(--muted);
-  flex-shrink: 0;
-}
-.col-row-eye.off {
-  opacity: 0.5;
-}
-.col-empty {
-  font-size: 12px;
-  color: var(--muted);
-  padding: 4px 8px 8px;
-  opacity: 0.7;
 }
 
 .prop-chip.toggle {
@@ -5695,13 +5721,38 @@ body.is-col-resizing {
   background: color-mix(in srgb, var(--col-c, transparent) 10%, var(--sidebar-bg));
   border-color: color-mix(in srgb, var(--col-c, transparent) 22%, transparent);
 }
-/* The drop highlight has to beat the tint rule — in dark mode that one sits
-   later in the file, and at equal specificity the tint won and the target
-   border was invisible. Higher specificity (attribute + two classes). */
-.board-col.drag-over,
-[data-theme='dark'] .board-col.drag-over {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, var(--sidebar-bg));
+/* The drop target (spec 012, US3): the column under a dragged card, from
+   tokens: the hover wash laid over the column's own tint, and a strong
+   outline. It has to beat the tint rules — theme.css states them later as
+   `:root .board-col` and `[data-theme='dark'] .board-col`, and at equal
+   specificity the tint won and the target was invisible. Three classes. */
+.board .board-col.drag-over {
+  background-image: linear-gradient(var(--color-hover), var(--color-hover));
+  outline: 2px solid var(--color-border-strong);
+  outline-offset: -2px;
+}
+
+/* Where the card will land: a gap the card's height at the place the view's
+   sort gives it (dropIndex), with a dashed hairline so it reads as a place,
+   not as a card. It fades in; under reduced motion it simply appears. */
+.board-drop-place {
+  flex: none;
+  border: 1.5px dashed var(--color-border-strong);
+  border-radius: var(--radius-scale-lg);
+  background: var(--color-hover);
+  animation: board-drop-in var(--motion-duration-fast) ease-out;
+}
+
+@keyframes board-drop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-drop-place {
+    animation: none;
+  }
 }
 
 /* ---- Galerie: neutraler Lift, feiner Akzentrahmen ---- */
@@ -6993,18 +7044,6 @@ a.btn {
 }
 .db-tree-toggle:hover { background: var(--hover); color: var(--fg); }
 .db-tree-spacer { flex: none; width: 18px; display: inline-block; }
-.subitems-select {
-  padding: 5px 9px;
-  border-radius: 7px;
-  border: 1px solid var(--border);
-  font-size: 12.5px;
-  background: var(--card);
-  color: var(--fg);
-  font-family: inherit;
-  cursor: pointer;
-  max-width: 190px;
-}
-
 /* ---- Notes list (Bear-style middle column, W57) ---- */
 .notes-list {
   width: 292px;

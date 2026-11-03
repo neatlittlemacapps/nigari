@@ -90,10 +90,15 @@ await withFixture(async ({ page, api, base, path }) => {
   await page.waitForURL((u) => u.pathname !== `/p/${collectionId}`);
   assert.equal(await panel.count(), 0, 'a full-page view opened a peek');
 
-  // ---- US2: the setting, per view, from the ⋯ menu ----
+  // ---- US2: the setting, per view, from Settings › Open rows in (the ⋯ menu
+  // before spec 012) ----
+  const openRowsIn = async () => {
+    await page.locator('.collection-toolbar').getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('menuitem', { name: /^Open rows in/ }).hover();
+  };
   await page.goto(`${base}/p/${collectionId}`);
   await page.locator('.view-tab', { hasText: 'Board' }).click();
-  await page.getByTitle('View options').click();
+  await openRowsIn();
   await Promise.all([
     page.waitForResponse((r) => r.url().endsWith(path) && r.request().method() === 'PUT'),
     page.getByRole('menuitemradio', { name: 'Side peek' }).click(),
@@ -108,7 +113,7 @@ await withFixture(async ({ page, api, base, path }) => {
   await panel.waitFor({ state: 'hidden' });
 
   // Back to Full page: stored as no setting at all.
-  await page.getByTitle('View options').click();
+  await openRowsIn();
   await Promise.all([
     page.waitForResponse((r) => r.url().endsWith(path) && r.request().method() === 'PUT'),
     page.getByRole('menuitemradio', { name: 'Full page' }).click(),

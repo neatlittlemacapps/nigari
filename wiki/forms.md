@@ -45,11 +45,11 @@ another one. It is the same view machinery in all three places.
 
 The new view is called *Form* and appears as the last tab.
 
-To rename it, double-click the tab, or open the `⋯` button on the view bar
-(tooltip **View options**) and choose **Rename view**. That opens a small dialog
+To rename it, double-click the tab, or open **Settings** (the sliders icon) on
+the view bar and choose **Rename view**. That opens a small dialog
 with the current name filled in; its confirm button reads **Rename**.
 
-The same `⋯` menu holds **Move left** and **Move right**, which change the tab
+The same menu holds **Move left** and **Move right**, which change the tab
 order, and, since the public link serves the first form view, they also decide
 which form the world sees. It also holds **Remove view**, which deletes the view
 you are on. All four of these appear only when the collection has more than one
@@ -132,14 +132,14 @@ Two details worth knowing before you design the schema around a form:
   is fine for "who should we contact" and wrong for "assign this to somebody".
 - **A `multiselect` property with no options defined** shows the line
   **No options defined** instead of a field, and nothing can be submitted for it.
-  The fix is the **Properties** button on the view bar: open the property there
+  The fix is **Settings** › **Edit properties** on the view bar: open the property there
   and type option names into the **+ Option** box, one per Enter, then press
   **Save**. The same box is where a `select` gets its options.
 
 ### The order the fields appear in
 
 Fields follow the collection's schema order (the order the properties are listed
-in the **Properties** dialog), both on the form inside the app and on the public
+in the properties dialog), both on the form inside the app and on the public
 page. Nothing in the interface reorders that list, and no MCP tool does either:
 `set_view` carries no field order, and `update_schema` merges into the properties
 it finds and appends new ones at the end. The one way to move a property is to
@@ -148,15 +148,15 @@ values already in the rows.
 
 ### Hiding fields
 
-The **Columns** button on the view bar works on a form view the same way it works
-on a table: the properties under **Shown** appear on the form, the ones under
-**Hidden** do not. **Hide all** and **Show all** move the whole list at once. This
-is how you keep a form short when the collection has columns that only the team
+**Settings** › **Property visibility** on the view bar works on a form view the
+same way it works on a table: the ticked properties appear on the form, the
+others do not. **Show all** and **Hide all** do the whole list at once. This is
+how you keep a form short when the collection has columns that only the team
 fills in: a status, an internal note, an owner.
 
-Once anything is hidden, the button reads **Columns** followed by a count in
-brackets: `(4/7)`, shown over total. That count is the only sign on the bar that
-the form has been shortened.
+The item reads the count of fields shown over the total, `4 of 7`. Open
+**Settings** to see it: the bar itself no longer shows that the form has been
+shortened.
 
 Hiding is per view, so hiding a property on the form leaves the table untouched,
 and a field you hide is not sent to the visitor's browser at all. The server does

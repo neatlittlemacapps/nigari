@@ -400,6 +400,10 @@ type viewSpec struct {
 	// side_peek. Checked by checkViewOpenIn, the rule PUT /api/collections
 	// applies too.
 	OpenIn *string `json:"open_in"`
+	// A table's column order (spec 012): property ids, stored as colOrder.
+	// Checked by checkViewColOrder, the rule PUT /api/collections applies
+	// too. A pointer so [] can mean "back to the schema's order".
+	ColumnOrder *[]string `json:"column_order"`
 	// A chart's settings (spec 004), checked by checkChartView, the rule PUT
 	// /api/collections applies too.
 	ChartKind         *string         `json:"chart_kind"`
@@ -599,6 +603,25 @@ func applyViewSpec(view map[string]any, spec viewSpec, schema []map[string]any) 
 		if err := checkViewOpenIn(view); err != nil {
 			return err
 		}
+	}
+	if spec.ColumnOrder != nil {
+		order := make([]any, 0, len(*spec.ColumnOrder))
+		for _, id := range *spec.ColumnOrder {
+			// Refused here, where hidden and group_by refuse theirs: an agent
+			// that passes names instead of ids would otherwise be told the
+			// call worked while nothing changed. checkViewColOrder still drops
+			// ids a stored order holds for a property deleted since.
+			if !has(id) {
+				return fmt.Errorf("column_order: %q is not a property of this database (use the property ids from get_collection)", id)
+			}
+			order = append(order, id)
+		}
+		view["colOrder"] = order
+	}
+	// Run on every create and update, not only when column_order is passed:
+	// it is the same call normalizeViews makes for every view REST stores.
+	if err := checkViewColOrder(view, schema); err != nil {
+		return err
 	}
 	if err := applyChartSpec(view, spec); err != nil {
 		return err

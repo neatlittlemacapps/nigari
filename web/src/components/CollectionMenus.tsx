@@ -18,18 +18,24 @@ export function ViewActionItems({
   onRename,
   onMove,
   onRemove,
+  rename = true,
 }: {
   view: ViewDef;
   views: ViewDef[];
   onRename: (v: ViewDef) => void;
   onMove: (v: ViewDef, delta: -1 | 1) => void;
   onRemove: (v: ViewDef) => void;
+  /** false in the Settings menu, which puts Rename view at its top, with the
+   *  view's other settings, and the moves and the removal after a divider. */
+  rename?: boolean;
 }) {
   return (
     <>
-      <MenuItem fn="rename" opensDialog onClick={() => onRename(view)}>
-        {t('Rename view')}
-      </MenuItem>
+      {rename && (
+        <MenuItem fn="rename" opensDialog onClick={() => onRename(view)}>
+          {t('Rename view')}
+        </MenuItem>
+      )}
       {views.length > 1 && (
         <>
           <MenuItem fn="moveLeft" disabled={views[0]?.id === view.id} onClick={() => onMove(view, -1)}>
