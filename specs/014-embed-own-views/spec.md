@@ -70,6 +70,13 @@ How an embedded database works today, from the code graph and the source
   properties from there is allowed with a confirmation (owner, the quote
   above). Settings in embeds is this spec, not spec 012 (owner: "ok" to the
   split, 2026-11-03).
+- Q: Which property changes made from a document ask first? → A: Every
+  change saved there, not only deleting a property or an option (owner,
+  "Ok" to recommendation A, 2026-11-03).
+- Q: What does an embed written before this change get? → A: A copy of every
+  database view it could switch between, with its own filters and sort on
+  each, and the same view open; nothing visibly changes (owner, "Ok" to
+  recommendation B, 2026-11-03).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -171,9 +178,8 @@ From an embed, **Edit properties** opens the database's properties. Saving a
 change there asks first: "Change the properties of **Tasks**? This changes
 the database and every view of it, everywhere." Deleting a property says
 what is lost: "Delete **Owner** from **Tasks**? It will be removed from all
-views." [NEEDS CLARIFICATION: which property changes made from a document
-ask first — every change, or only deleting a property or an option and
-changing a property's type?]
+views." Every property change saved from a document asks, not only deletions
+(owner, Q1 A).
 
 **Why this priority**: the owner asked that a change reaching beyond the
 document never happens silently.
@@ -201,8 +207,9 @@ confirmation; nothing changes. Confirm; the database's page shows the change.
 A document written before this change embeds Tasks, showing its "Board" view
 with the embed's own filter to Project A. After the change, it shows the same
 board with the same filter, as a view of its own.
-[NEEDS CLARIFICATION: does an existing embed get a copy of only the view it
-shows, or of every database view it could switch between?]
+It also keeps the other tabs it could switch to: each of the database's views
+becomes a view of its own in that embed, so nothing visibly changes (owner,
+Q2 B).
 
 **Why this priority**: an upgrade that changes what documents show breaks
 trust in every document at once.
@@ -315,8 +322,9 @@ opening the document sees it; the database's views are unchanged.
 **Existing embeds**
 
 - **FR-014**: An embed written before this change MUST show the same view,
-  rows, filters and sort after it, without a manual step, and its first
-  change MUST NOT change the database's views.
+  rows, filters and sort after it, without a manual step, with a view of its
+  own for each database view it could switch to; its first change MUST NOT
+  change the database's views.
 
 **Agents**
 

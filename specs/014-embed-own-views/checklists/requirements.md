@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,8 +31,7 @@
 
 ## Notes
 
-- Two markers wait for the owner: which property changes from a document ask
-  first (US4), and what an existing embed copies (US5).
+- Both markers answered by the owner on 2026-11-03 (Q1 A, Q2 B).
 - The Context section names code (`blocks.tsx`, `embed_database`) because it
   records what the code graph showed, as every spec here does; the
   requirements themselves stay at the level of what people and agents do.
