@@ -19,9 +19,13 @@ type Value = NonNullable<ViewDef['openIn']> | 'full_page';
 export default function ViewOpenMenu({
   view,
   onChange,
+  bare = false,
 }: {
   view: ViewDef;
   onChange: (openIn: ViewDef['openIn']) => void;
+  /** Inside the Settings menu's "Open rows in" submenu, which already names
+   *  the choice: no heading of its own. */
+  bare?: boolean;
 }) {
   if (view.type === 'form') return null; // a form shows no rows to open
   const current: Value = view.openIn ?? 'full_page';
@@ -32,7 +36,7 @@ export default function ViewOpenMenu({
   if (CENTER_PEEK_SHIPPED) options.push({ value: 'center_peek', label: t('Center peek') });
   return (
     <MenuRadioGroup
-      label={t('Open pages in')}
+      label={bare ? undefined : t('Open pages in')}
       value={current}
       onValueChange={(v) => onChange(v === 'full_page' ? undefined : (v as ViewDef['openIn']))}
     >

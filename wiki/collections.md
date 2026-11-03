@@ -145,8 +145,8 @@ board card, which is where most people will do it without noticing.
 ## How rows open
 
 A click on a row, a card, a list item or a calendar or timeline entry opens
-that row's page. How it opens is a setting of each view, under **Open pages in**
-in the view's `⋯` menu:
+that row's page. How it opens is a setting of each view, under **Settings** ›
+**Open rows in**:
 
 | Setting | A click on a row |
 | --- | --- |
@@ -191,21 +191,17 @@ right, the settings for the view you are on.
 | View tabs | Switch views. **Double-click** a tab to rename it. |
 | `+` (Add view) | Menu: **Table**, **Board**, **Gallery**, **Calendar**, **Timeline**, **List**, **Form**, **Chart**. The new view is named after its type and opens straight away. |
 | **Chart**, **What to show**, **Period**, **Value**, **Of** | Chart only: the kind of chart, what it groups by, a date's period, and what each group shows. See [Views](views.md#chart). |
-| **Start:** / **End:** | Timeline only: which date property draws the bars. Leaving End empty gives one-day bars. |
-| Sub-item picker | Table only, and only when a relation points back at this same collection. Choosing it draws the table as a tree; **No sub-items** turns it off. |
 | **Filter** | Conditions on properties, ANDed. The button shows the count. |
 | **Sort** | One property, **Ascending** or **Descending**, or **No sort**. |
 | **Group** | Board only: which property makes the columns. |
-| **Columns** | Show and hide properties. Two lists, **Shown** and **Hidden**, with **Hide all** and **Show all**. The button reads **Columns**, and `Columns (4/7)` once something is hidden. |
-| **Properties** | Opens the schema dialog (see below). |
-| `⋯` (View options) | **Rename view**, **Move left**, **Move right**, **Remove view**, and **Open pages in** (see [How rows open](#how-rows-open)). The arrows grey out at the ends; with only one view left there is no **Move** or **Remove**. |
+| **Settings** (the sliders icon) | One menu for the view and the database. *View settings*: **Rename view**; **Property visibility** (which properties the view shows, with **Show all** and **Hide all**; the item reads `4 of 7`); **Open rows in** (see [How rows open](#how-rows-open)); on a timeline **Start date** and **End date** (leaving End empty gives one-day bars); on a table whose collection has a relation pointing back at itself, **Sub-items** (choosing it draws the table as a tree; **No sub-items** turns it off); then **Move left**, **Move right** and **Remove view** (the arrows grey out at the ends; with only one view left there is no **Move** or **Remove**). *Database settings*: **Edit properties**, the schema dialog (see below). Each item that holds a value shows it on the right. See [Views](views.md#settings). |
 | **New** | Creates a row. The view stays as it is; a click opens the row. The arrow beside it lists the database's own templates: see [Templates](templates.md#templates-that-belong-to-a-database). |
 
-On a **form** view the bar keeps only **Columns**, **Properties** and the `⋯`.
-There is nothing to filter, sort or add by hand there, and hiding a property
-under Columns removes its field from the form.
+On a **form** view the bar keeps only **Settings**. There is nothing to filter,
+sort or add by hand there.
 
-**Columns hides a property everywhere in that view, not only in a table.** The
+**Property visibility hides a property everywhere in that view, not only in a
+table.** The
 same filtered list of properties is handed to the board cards, the gallery, the
 list, the calendar, the timeline and the form's fields. A column hidden here
 disappears from the cards too, and stops being asked on a shared form.
@@ -308,7 +304,8 @@ Grouping by a **relation** turns the rows of the other collection into the
 columns: one column per customer, per system, per whatever the rows point at.
 
 If the grouping property is missing, the board says
-*This board needs a Select property to group by. Open ⚙ Properties to add one.*
+*This board needs a Select property to group by. Open Settings, then Edit
+properties, to add one.*
 The calendar and the timeline say the same about a date property.
 
 ### What the chart adds
@@ -337,7 +334,8 @@ the public link, even when the view shows it everywhere else.
 
 ## Editing the schema
 
-**Properties** in the toolbar opens the **Collection properties** dialog. It
+**Settings** › **Edit properties** in the toolbar opens the **Collection
+properties** dialog. It
 lists every property with its name (editable in place), a type dropdown, and a
 `✕` to remove it. At the bottom, **New property name** plus a type, then
 **Add**. Nothing is written until you press **Save**; **Cancel** throws the
@@ -382,7 +380,8 @@ Three things about editing a schema that are worth knowing before you do it:
   and a calendar at the first date. Options with no colour get one written in,
   so the dialog and the board agree. **A timeline is not repaired**: delete the
   date property its bars were drawn from and it keeps pointing at nothing and
-  shows its empty message until somebody picks a new **Start:**.
+  shows its empty message until somebody picks a new **Start date** under
+  **Settings**.
 
 Agents change the schema with `update_schema`, which **merges**: properties you
 do not mention stay untouched, an id you pass changes that property, and one
@@ -432,7 +431,9 @@ description in muted text under the name (cut off after two lines); the search
 matches the description as well as the name. What you get is fully usable
 in place (filter it, add rows, drag cards), with the document's own text above
 and below it. The heading of the block opens it as its own page
-(**Open as page ↗**).
+(**Open as page ↗**). Its toolbar stays out of the way of the text until you
+reach for it, and it has no **Settings**: the views are the database's own. See
+[Views](views.md#in-a-document).
 
 Only a reference is stored. The collection stays one object in one place, the
 same collection can be embedded in several documents, and an edit made in one of

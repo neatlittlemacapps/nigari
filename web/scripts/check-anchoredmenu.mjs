@@ -9,8 +9,15 @@
 // options menu were drawn inside the sideways-scrolling toolbar, which clipped
 // them to a white rim under the buttons. Where a menu goes is a rule now, and a
 // rule nobody checks drifts back.
+//
+// Two kinds of toolbar menu follow it, and they must agree on where a phone
+// begins. The menus (templates, a view's Settings) are ui/Menu with
+// narrow="sheet", which reads SHEET_MAX_WIDTH and draws the sheet in CSS; the
+// filter, sort and group popovers place themselves with anchoredMenuStyle.
+// Spec 012 removed the Columns popover and left that function with one caller,
+// which is checked below: an inline copy of the rule was what drifted before.
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -61,6 +68,17 @@ try {
   check('desktop: kept inside on the left', am.anchoredMenuStyle({ right: 100, bottom: 200 }, desk, 280).left, 8);
   check('desktop: kept inside on the right', am.anchoredMenuStyle({ right: 1300, bottom: 200 }, desk, 280).left, 1280 - 280 - 8);
   check('desktop: scroll caps to the room below', am.anchoredMenuStyle({ right: 900, bottom: 200 }, desk, 280, true).maxHeight, 800 - 200 - 24);
+
+  // One breakpoint for both kinds. The ui/Menu sheet reads SHEET_MAX_WIDTH
+  // through a media query; a popover that hardcoded the same number went on
+  // using it when the breakpoint moved (code review, spec 012 PR 2).
+  const read = (f) => readFileSync(join(web, f), 'utf8');
+  const menu = read('src/ui/Menu.tsx');
+  check('ui/Menu reads the breakpoint from anchoredMenu.ts', /import \{ SHEET_MAX_WIDTH \} from '\.\.\/anchoredMenu'/.test(menu), true);
+  check('and turns it into its media query', /max-width: \$\{SHEET_MAX_WIDTH\}px/.test(menu), true);
+  const toolbar = read('src/components/CollectionView.tsx');
+  check('the toolbar popovers are placed by the rule, not by a copy of it', /anchoredMenuStyle\(/.test(toolbar), true);
+  check('and no breakpoint is written out beside it', !/innerWidth\s*<=\s*\d/.test(toolbar) && !/vw\s*<=\s*\d/.test(toolbar), true);
 
   let fail = 0;
   for (const c of out) {
