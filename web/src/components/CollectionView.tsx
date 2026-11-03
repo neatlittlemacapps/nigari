@@ -1,10 +1,13 @@
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { PeekMode } from '../peek';
 import { api } from '../api';
 import { onRefresh } from '../pwa';
 import Portal from './Portal';
 import { anchoredMenuStyle } from '../anchoredMenu';
-import { useBoardDrag } from '../boardDrag';
+import { dropIndex, useBoardDrag } from '../boardDrag';
+import { sortComparator } from '../viewSort';
+import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } from '../columnDrag';
+import { ColHead } from './TableColumnHead';
 import { tagColorClass } from '../tags';
 import { compare, firstWeekday, formatDay, formatMonth, isReadableDay, isUnfinishedRelativeDay, resolveSmartDate, toDayString, today, weekdayNames } from '../format';
 import { plural, t } from '../i18n';
@@ -228,17 +231,9 @@ function applyView(rows: Row[], view: ViewDef, schema: PropDef[]): Row[] {
     const isDate = dateProps.has(f.property);
     out = out.filter((r) => matchesFilter(r, f, isDate));
   }
-  const sort = view.sort;
-  if (sort) {
-    out = [...out].sort((a, b) => {
-      const av = a.props[sort.property];
-      const bv = b.props[sort.property];
-      const as = Array.isArray(av) ? av.join(',') : String(av ?? '');
-      const bs = Array.isArray(bv) ? bv.join(',') : String(bv ?? '');
-      const cmp = typeof av === 'number' && typeof bv === 'number' ? av - bv : compare(as, bs);
-      return sort.dir === 'desc' ? -cmp : cmp;
-    });
-  }
+  // The board's drop marker (dropIndex) sorts with the same comparator, so it
+  // shows the place this sort will give a dropped card.
+  if (view.sort) out = [...out].sort(sortComparator<Row>(view.sort));
   return out;
 }
 
@@ -740,6 +735,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   };
 
   const viewRows = applyView(rows, view, schema);
+  // Each row's place before the view's sort: how a sort's ties, and a view
+  // without one, order the rows. The board's drop marker reads it.
+  const rowOrder = view.type === 'board' ? new Map(rows.map((r, i) => [r.id, i])) : undefined;
   const emptyLabel =
     rows.length > 0 && viewRows.length === 0
       ? t('No rows match the current filter.')
@@ -771,6 +769,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // Columns hidden in this view are dropped from every renderer.
   const hidden = new Set(view.hidden ?? []);
   const visibleSchema = schema.filter((p) => !hidden.has(p.id));
+  // A table draws its columns in the view's own order (spec 012): colOrder
+  // first, the rest in schema order. Other views keep the schema's.
+  const propById = new Map(schema.map((p) => [p.id, p]));
+  const tableColumns = orderedColumns(schema.map((p) => p.id), view.colOrder, hidden).map((id) => propById.get(id)!);
   // Relation props that point back at this same collection — candidates for the
   // sub-item (task hierarchy) relation that the table can render as a tree.
   const selfRelProps = schema.filter((p) => p.type === 'relation' && p.relationCollection === collectionId);
@@ -999,6 +1001,8 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       ) : view.type === 'board' ? (
         <BoardView
           rows={viewRows}
+          sort={view.sort}
+          rowOrder={rowOrder ?? new Map()}
           schema={visibleSchema}
           groupBy={view.groupBy || schema.find((p) => p.type === 'select')?.id || ''}
           tagColors={tagColors}
@@ -1082,7 +1086,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       ) : (
         <TableView
           rows={viewRows}
-          schema={visibleSchema}
+          schema={tableColumns}
           emptyLabel={emptyLabel}
           tagColors={tagColors}
           subItemProp={
@@ -1090,6 +1094,17 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           }
           colWidths={view.colWidths}
           onSetColWidths={(colWidths) => updateView({ colWidths })}
+          // Moving and hiding a column are this view's own (spec 012): only a
+          // table stores an order, and a reader is offered neither. Nor is a
+          // database in a document: its columns are the database's, edited on
+          // its own page (#22, the reason it has no Columns control), and a
+          // column hidden there could not be shown again from there.
+          onSetColumns={
+            canEdit && !embed && view.type === 'table'
+              ? (visible) => updateView({ colOrder: storedOrder(schema.map((p) => p.id), view.colOrder, visible) })
+              : undefined
+          }
+          onHideColumn={canEdit && !embed && view.type === 'table' ? (id) => updateView({ hidden: [...(view.hidden ?? []), id] }) : undefined}
           onNavigate={onNavigate}
           onOpenInNewTab={onOpenInNewTab}
           onSetProp={setRowProp}
@@ -1985,6 +2000,8 @@ function BoardCardProps({
 
 function BoardView({
   rows,
+  sort,
+  rowOrder,
   schema,
   groupBy,
   tagColors,
@@ -1998,6 +2015,8 @@ function BoardView({
   onAddInColumn,
 }: {
   rows: Row[];
+  sort?: Sort | null;
+  rowOrder: Map<string, number>;
   schema: PropDef[];
   groupBy: string;
   tagColors: Record<string, string>;
@@ -2083,9 +2102,29 @@ function BoardView({
       return v === optId;
     });
 
+  // Where the dragged card will land in the column under the pointer (spec
+  // 012, US3): the place the view's sort gives it there, not the pointer's.
+  // Over its own column nothing is added: the card's own dimmed place is it.
+  const dragged = drag ? rows.find((r) => r.id === drag.rowId) : undefined;
+  const dropAt = (col: string, cards: Row[]): number => {
+    if (!drag || !dragged || drag.over !== col || drag.fromCol === col) return -1;
+    // On a multi-select or relation board the card can already be in this
+    // column too; then it is its own place there, as in its own column.
+    if (cards.some((c) => c.id === dragged.id)) return -1;
+    const value = col === UNSET ? (prop.type === 'select' ? '' : []) : prop.type === 'select' ? col : [col];
+    const moved = { ...dragged, props: { ...dragged.props, [groupBy]: value } };
+    return dropIndex(cards, moved, sort, (id) => rowOrder.get(id) ?? 0);
+  };
+  const placeholder = drag ? (
+    <div className="board-drop-place" style={{ height: drag.height }} aria-hidden="true" />
+  ) : null;
+
   return (
     <div className={'board' + (drag ? ' is-dragging' : '')}>
-      {columns.map((col) => (
+      {columns.map((col) => {
+        const cards = rowsFor(col.id);
+        const at = dropAt(col.id, cards);
+        return (
         <div
           key={col.id}
           data-col={col.id}
@@ -2105,16 +2144,17 @@ function BoardView({
               <span className="board-chip" style={{ background: col.color + '33', color: col.color }}>
                 {col.name}
               </span>
-              <span className="board-count">{rowsFor(col.id).length}</span>
+              <span className="board-count">{cards.length}</span>
             </span>
             <button className="board-add" title={t('New')} onClick={() => onAddInColumn(groupBy, col.id)}>
               <Plus size={14} />
             </button>
           </div>
           <div className="board-cards">
-            {rowsFor(col.id).map((r) => (
+            {cards.map((r, i) => (
+              <Fragment key={r.id}>
+              {i === at && placeholder}
               <div
-                key={r.id}
                 className={
                   'board-card' +
                   (drag?.rowId === r.id && drag.fromCol === col.id ? ' is-dragging' : '') +
@@ -2238,10 +2278,13 @@ function BoardView({
                   onSetOptions={onSetOptions}
                 />
               </div>
+              </Fragment>
             ))}
+            {at === cards.length && placeholder}
           </div>
         </div>
-      ))}
+        );
+      })}
 
       {/* Die schwebende Karte folgt dem Zeiger. Als letztes Kind mit
           position:fixed so it sits above everything; pointer-events:none so it
@@ -2260,35 +2303,6 @@ function BoardView({
 
 // ---- Table ----
 
-/** A column heading with the grip that resizes it.
- *
- *  The grip hangs off an inner BLOCK, not off the <th> itself. In a table with
- *  border-collapse: collapse the cell does not act as a containing block a
- *  browser will hit-test against: the handle painted in exactly the right place,
- *  the pointer went to the <th> underneath, and dragging did nothing at all
- *  while looking entirely correct. */
-function ColHead({
-  label,
-  onResize,
-  onReset,
-}: {
-  label: string;
-  onResize: (e: React.PointerEvent<HTMLSpanElement>) => void;
-  onReset: () => void;
-}) {
-  return (
-    <span className="th-inner">
-      {label}
-      <span
-        className="col-resize"
-        title={t('Drag to resize, double-click to fit the content')}
-        onPointerDown={onResize}
-        onDoubleClick={onReset}
-      />
-    </span>
-  );
-}
-
 /** The name column's key in colWidths — the title is not a property, so it has
  *  no id of its own. Nothing the interface generates can collide with it: prop
  *  ids are slugged to [a-z0-9-] (see SchemaEditor). An agent writing a schema
@@ -2305,6 +2319,8 @@ function TableView({
   subItemProp,
   colWidths,
   onSetColWidths,
+  onSetColumns,
+  onHideColumn,
   onNavigate,
   onOpenInNewTab,
   onSetProp,
@@ -2317,6 +2333,10 @@ function TableView({
   subItemProp?: string;
   colWidths?: Record<string, number>;
   onSetColWidths: (next: Record<string, number>) => void;
+  /** The visible columns in their new order, after a drag or a Move. Absent:
+   *  the columns do not move (a reader, a view that is not a table). */
+  onSetColumns?: (visible: string[]) => void;
+  onHideColumn?: (id: string) => void;
   onNavigate: (id: string) => void;
   onOpenInNewTab?: (id: string) => void;
   onSetProp: (rowId: string, propId: string, value: unknown) => void;
@@ -2329,6 +2349,43 @@ function TableView({
   // drag is local and instant: writing to the view on every pointermove would
   // put one request per pixel on the wire and re-render the whole table.
   const [drag, setDrag] = useState<{ key: string; px: number } | null>(null);
+
+  // Moving a column (spec 012, US2). The ids drawn, in order; the title is
+  // not among them and cannot move.
+  const ids = schema.map((p) => p.id);
+  const idsKey = ids.join('\u0000');
+  const theadRef = useRef<HTMLTableSectionElement>(null);
+  // After a Move, focus goes back to the header that moved (FR-005); after
+  // Hide in view, to its neighbour. The header is re-rendered in its new
+  // place once the order arrives, so this runs after that render.
+  const focusAfter = useRef<string | null>(null);
+  useEffect(() => {
+    const id = focusAfter.current;
+    if (!id) return;
+    focusAfter.current = null;
+    const el = theadRef.current?.querySelector<HTMLElement>(`[data-col-id="${CSS.escape(id)}"] .th-label`);
+    el?.focus();
+  }, [idsKey]);
+  const setColumns = (next: string[], focus: string) => {
+    if (!onSetColumns || next.join('\u0000') === idsKey) return;
+    focusAfter.current = focus;
+    onSetColumns(next);
+  };
+  const { drag: colDrag, startDrag: startColDrag, consumeClick: consumeColClick } = useColumnDrag((id, gap) =>
+    setColumns(moveToGap(ids, id, gap), id),
+  );
+  const dragFrom = colDrag ? ids.indexOf(colDrag.id) : -1;
+  // The marker sits on the gap the column would go to; the two gaps beside the
+  // column itself would change nothing, so they show none.
+  const markerGap = colDrag && colDrag.gap !== dragFrom && colDrag.gap !== dragFrom + 1 ? colDrag.gap : -1;
+  const headClass = (i: number, id: string) =>
+    [
+      colDrag?.id === id ? 'is-col-dragged' : '',
+      markerGap === i ? 'col-drop-before' : '',
+      markerGap === ids.length && i === ids.length - 1 ? 'col-drop-after' : '',
+    ]
+      .filter(Boolean)
+      .join(' ') || undefined;
 
   const widthOf = (key: string) =>
     drag?.key === key ? drag.px : colWidths?.[key];
@@ -2450,14 +2507,32 @@ function TableView({
   return (
     <div className="table-wrap">
       <table className="db-table">
-        <thead>
+        <thead ref={theadRef}>
           <tr>
             <th className="db-title-col" style={colStyle(TITLE_COL)}>
               <ColHead label={t('Name')} onResize={startResize(TITLE_COL)} onReset={resetCol(TITLE_COL)} />
             </th>
-            {schema.map((p) => (
-              <th key={p.id} style={colStyle(p.id)}>
-                <ColHead label={p.name} onResize={startResize(p.id)} onReset={resetCol(p.id)} />
+            {schema.map((p, i) => (
+              <th key={p.id} data-col-id={p.id} className={headClass(i, p.id)} style={colStyle(p.id)}>
+                <ColHead
+                  label={p.name}
+                  onResize={startResize(p.id)}
+                  onReset={resetCol(p.id)}
+                  moves={
+                    onSetColumns && onHideColumn
+                      ? {
+                          onStartDrag: (e) => startColDrag(e, p.id),
+                          consumeClick: () => consumeColClick(p.id),
+                          onMoveLeft: i > 0 ? () => setColumns(moveColumn(ids, p.id, -1), p.id) : undefined,
+                          onMoveRight: i < ids.length - 1 ? () => setColumns(moveColumn(ids, p.id, 1), p.id) : undefined,
+                          onHide: () => {
+                            focusAfter.current = ids[i + 1] ?? ids[i - 1] ?? null;
+                            onHideColumn(p.id);
+                          },
+                        }
+                      : undefined
+                  }
+                />
               </th>
             ))}
           </tr>

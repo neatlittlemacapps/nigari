@@ -7,6 +7,35 @@ entries are not edited away.
 
 ---
 
+## 2026-11-03 — An embedded database owns its views (spec 014, #371)
+
+**Decision** (owner, with Notion screenshots): a database embedded in a
+document has views of its own, kept with the embed: it starts with one
+table view, and **New view** offers the view types plus the database's own
+views to copy. Changing an embed's view never changes the database's views.
+Settings in an embed acts on the embed's views without asking; editing the
+database's properties from there is allowed to whoever may edit the
+database, and anything that changes the original (deleting a property or an
+option, changing a type) asks first, saying it changes every view. This is
+spec 014 (#371, under epic #426). Spec 012 ships Settings on a database's
+own page only, and spec 013 stays as planned.
+
+**Why:** the owner's model of a linked database. Spec 012's research R10
+had left Settings out of embeds for a reason that did not hold (it cited
+"#22", an upstream issue number); the owner's own #270 asked for them.
+Building Settings into embeds before embeds own their views would let a
+rename in a document rename the view everywhere.
+
+**Turned down:** Settings in embeds on the database's shared views now;
+showing all view settings except rename, move and remove (option B2, which
+the owner's model makes unnecessary); #371 inside spec 012 (doubles it) or
+spec 013 (already planned at 45 tasks).
+
+Also found while working this out: deleting a property asks no confirmation
+today (#524).
+
+---
+
 ## 2026-11-03 — A read-only token may call named POST routes that only read
 
 **Decision:** the read-only check in `auth` (`server/users.go`) lets a

@@ -62,6 +62,8 @@ take the colour you chose for that option. A form view can be shared publicly so
 people outside the workspace can submit entries into it. A row added in a
 filtered view starts with the values that view filters on, so it stays in sight. A view
 can open its rows in a peek, beside the view or over it, instead of as a full page.
+A table's columns move by dragging their headings, in that view only, and an
+agent can set the same order.
 
 ### Finding things
 

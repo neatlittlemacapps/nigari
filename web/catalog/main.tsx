@@ -307,6 +307,45 @@ function Catalog() {
         </Row>
       </Section>
 
+      <Section id="table-text" title="Table text (spec 012)">
+        <p className="cat-note">
+          Table cells on the type scale at 14px (--font-size-md), headers as the 12px uppercase label (--font-size-xs). Both
+          chosen by the owner, 2026-11-03 (research R1).
+        </p>
+        {(
+          [
+            ['14px cells', 'cat-table--md'],
+          ] as const
+        ).map(([label, cls]) => (
+          <Row key={cls} label={label}>
+            <table className={'cat-table ' + cls}>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Effort</th>
+                  <th>Due</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Write the quarterly review</td>
+                  <td>In progress</td>
+                  <td>3</td>
+                  <td>12 Nov 2026</td>
+                </tr>
+                <tr>
+                  <td>Plan the offsite</td>
+                  <td>Not started</td>
+                  <td>5</td>
+                  <td>3 Dec 2026</td>
+                </tr>
+              </tbody>
+            </table>
+          </Row>
+        ))}
+      </Section>
+
       <Section id="chart" title="Chart (ChartFigure)">
         <div className="cat-charts">
           {(['bar', 'hbar', 'line', 'donut', 'number'] as const).map((k) => (

@@ -37,6 +37,7 @@ import {
   CornerLeftUp,
   CornerUpRight,
   ExternalLink,
+  EyeOff,
   File,
   FileCode,
   FileDown,
@@ -163,6 +164,9 @@ export const MENU_ICONS = {
   rename: TextCursorInput,
   moveLeft: ArrowLeft,
   moveRight: ArrowRight,
+  // A table column's header menu (spec 012): the column leaves this view
+  // only; the property and every other view keep it.
+  hideInView: EyeOff,
   // Gone from here, not into the trash: Remove view, and the block menu's
   // Delete. Different from moveToTrash on purpose (Clarifications).
   delete: CircleMinus,

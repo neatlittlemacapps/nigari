@@ -2,6 +2,8 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -229,5 +231,257 @@ func TestCenterPeekRefusedWhileUnshipped(t *testing.T) {
 	view := map[string]any{"type": "table", "openIn": "center_peek"}
 	if err := checkViewOpenIn(view); err == nil || !strings.Contains(err.Error(), "not available yet") {
 		t.Errorf("unshipped centre peek: %v, want a refusal", err)
+	}
+}
+
+// checkViewColOrder is the one rule for a table's column order (spec 012),
+// called from normalizeViews (REST) and applyViewSpec (MCP set_view). Each
+// case is a line of data-model.md.
+func TestViewColOrderRule(t *testing.T) {
+	schema := []map[string]any{{"id": "status"}, {"id": "system"}, {"id": "due"}}
+	cases := []struct {
+		name    string
+		view    string
+		wantErr bool
+		want    string // the stored colOrder as JSON; "" = no key
+	}{
+		{"no order", `{"type":"table"}`, false, ""},
+		{"an order on a table", `{"type":"table","colOrder":["due","status"]}`, false, `["due","status"]`},
+		{"unknown ids and repeats are dropped", `{"type":"table","colOrder":["due","gone","due","status"]}`, false, `["due","status"]`},
+		{"the title is no property", `{"type":"table","colOrder":["title","due"]}`, false, `["due"]`},
+		{"an empty list removes the key", `{"type":"table","colOrder":[]}`, false, ""},
+		{"nothing left removes the key", `{"type":"table","colOrder":["gone"]}`, false, ""},
+		{"null is no order", `{"type":"table","colOrder":null}`, false, ""},
+		{"on a board", `{"type":"board","colOrder":["status"]}`, true, ""},
+		{"an empty list on a board", `{"type":"board","colOrder":[]}`, true, ""},
+		{"not an array", `{"type":"table","colOrder":"status"}`, true, ""},
+		{"not all strings", `{"type":"table","colOrder":["status",3]}`, true, ""},
+	}
+	for _, c := range cases {
+		var view map[string]any
+		if err := json.Unmarshal([]byte(c.view), &view); err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		err := checkViewColOrder(view, schema)
+		if c.wantErr {
+			var orderErr errViewColOrder
+			if err == nil || !errors.As(err, &orderErr) {
+				t.Errorf("%s: got %v, want an errViewColOrder", c.name, err)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("%s: refused: %v", c.name, err)
+			continue
+		}
+		got, has := view["colOrder"]
+		if c.want == "" {
+			if has {
+				t.Errorf("%s: stored %v, want no key", c.name, got)
+			}
+			continue
+		}
+		if b, _ := json.Marshal(got); string(b) != c.want {
+			t.Errorf("%s: stored %s, want %s", c.name, b, c.want)
+		}
+	}
+}
+
+// The interface's door: PUT /api/collections stores a table's order, cleans
+// it as set_view does, keeps the bytes of a view without one, and refuses a
+// board's order or a non-array with invalid_view_column_order, storing nothing.
+func TestPutCollectionChecksTheColumnOrder(t *testing.T) {
+	s := testServer(t)
+	uid, cookie := signedIn(t, s, "colorder@example.test")
+	ws := s.firstWorkspaceOf(t, uid)
+	col := tasksCollection(t, s, ws, uid)
+	put := func(body string) (int, string) {
+		rec := requestAs(t, s, cookie, "PUT", "/api/collections/"+col, body)
+		return rec.Code, rec.Body.String()
+	}
+
+	// A view without colOrder: stored exactly as sent.
+	plain := `[{"name":"T","id":"t","type":"table","colWidths":{"due":120}}]`
+	if code, body := put(`{"views":` + plain + `}`); code != 200 {
+		t.Fatalf("plain: %d %s", code, body)
+	}
+	var stored string
+	if err := s.db.QueryRow(`SELECT views FROM collections WHERE page_id = ?`, col).Scan(&stored); err != nil || stored != plain {
+		t.Errorf("a view without colOrder stored %q, want the bytes sent %q", stored, plain)
+	}
+
+	if code, body := put(`{"views":[{"id":"t","name":"T","type":"table","colOrder":["due","gone","due","status"]}]}`); code != 200 {
+		t.Fatalf("order: %d %s", code, body)
+	}
+	if v := viewByID(t, s, col, "t"); fmt.Sprint(v["colOrder"]) != "[due status]" {
+		t.Errorf("stored %v, want [due status]", v["colOrder"])
+	}
+
+	for _, bad := range []string{
+		`{"schema":[],"views":[{"id":"b","name":"Board","type":"board","groupBy":"status","colOrder":["status"]}]}`,
+		`{"schema":[],"views":[{"id":"t","name":"T","type":"table","colOrder":"due"}]}`,
+		`{"schema":[],"views":[{"id":"t","name":"T","type":"table","colOrder":[1]}]}`,
+	} {
+		code, body := put(bad)
+		if code != 400 || !strings.Contains(body, "invalid_view_column_order") {
+			t.Errorf("%s: %d %s, want 400 invalid_view_column_order", bad, code, body)
+		}
+	}
+	if v := viewByID(t, s, col, "t"); fmt.Sprint(v["colOrder"]) != "[due status]" {
+		t.Errorf("a refused save changed the view: %v", v)
+	}
+	if schema, _, _ := s.loadCollection(col); len(schema) == 0 {
+		t.Error("a refused save emptied the schema")
+	}
+
+	// [] clears it.
+	if code, body := put(`{"views":[{"id":"t","name":"T","type":"table","colOrder":[]}]}`); code != 200 {
+		t.Fatalf("clear: %d %s", code, body)
+	}
+	if v := viewByID(t, s, col, "t"); v["colOrder"] != nil {
+		t.Errorf("[] stored %v, want no key", v["colOrder"])
+	}
+}
+
+// The agent's door: set_view's column_order goes through the same rule on a
+// create and on an update, [] clears it, get_collection returns it, a board
+// is refused, and a read-only token may not set it.
+func TestSetViewColumnOrder(t *testing.T) {
+	s := testServer(t)
+	uid, _ := signedIn(t, s, "agentorder@example.test")
+	ws := s.firstWorkspaceOf(t, uid)
+	col := tasksCollection(t, s, ws, uid)
+	agent := &user{ID: uid, Name: "Agent", TokenKind: tokenKindAPI, TokenScope: "write"}
+	call := func(args string) error {
+		_, err := callTool(t, s, agent, "set_view", args)
+		return err
+	}
+
+	if err := call(`{"page_id":"` + col + `","name":"Ordered","type":"table","column_order":["due","due"]}`); err != nil {
+		t.Fatalf("create with column_order: %v", err)
+	}
+	if v := viewByID(t, s, col, "ordered"); fmt.Sprint(v["colOrder"]) != "[due]" {
+		t.Errorf("create stored %v, want [due]", v["colOrder"])
+	}
+	if err := call(`{"page_id":"` + col + `","view_id":"ordered","column_order":["status","due"]}`); err != nil {
+		t.Fatalf("update: %v", err)
+	}
+	if v := viewByID(t, s, col, "ordered"); fmt.Sprint(v["colOrder"]) != "[status due]" {
+		t.Errorf("update stored %v, want [status due]", v["colOrder"])
+	}
+	out, err := callTool(t, s, agent, "get_collection", `{"page_id":"`+col+`"}`)
+	if err != nil || !strings.Contains(out, `"colOrder":["status","due"]`) {
+		t.Errorf("get_collection does not show the order: %v %s", err, out)
+	}
+	// A rename keeps it.
+	if err := call(`{"page_id":"` + col + `","view_id":"ordered","name":"Renamed"}`); err != nil {
+		t.Fatal(err)
+	}
+	if v := viewByID(t, s, col, "ordered"); fmt.Sprint(v["colOrder"]) != "[status due]" {
+		t.Errorf("a rename lost the order: %v", v["colOrder"])
+	}
+
+	// An id that is not a property is refused over MCP, as hidden refuses
+	// one: an agent passing names ("Status") would otherwise hear success
+	// while nothing changed. Create and update alike; nothing changes.
+	_, beforeNames, _ := s.loadCollection(col)
+	for _, bad := range []string{
+		`{"page_id":"` + col + `","name":"Named","type":"table","column_order":["Status","Due"]}`,
+		`{"page_id":"` + col + `","view_id":"ordered","column_order":["status","gone"]}`,
+	} {
+		if err := call(bad); err == nil || !strings.Contains(err.Error(), "not a property") {
+			t.Errorf("%s: %v, want a refusal naming the id", bad, err)
+		}
+	}
+	if _, after, _ := s.loadCollection(col); len(after) != len(beforeNames) {
+		t.Error("a refused create added a view")
+	}
+	if v := viewByID(t, s, col, "ordered"); fmt.Sprint(v["colOrder"]) != "[status due]" {
+		t.Errorf("a refused update changed the order: %v", v["colOrder"])
+	}
+
+	// Refusals: a board, on create and on update; nothing changes.
+	_, before, _ := s.loadCollection(col)
+	if err := call(`{"page_id":"` + col + `","name":"B","type":"board","group_by":"status","column_order":["status"]}`); err == nil || !strings.Contains(err.Error(), "only for a table view") {
+		t.Errorf("a board with column_order: %v, want the rule's refusal", err)
+	}
+	if _, after, _ := s.loadCollection(col); len(after) != len(before) {
+		t.Error("a refused create added a view")
+	}
+	if err := call(`{"page_id":"` + col + `","name":"B2","type":"board","group_by":"status"}`); err != nil {
+		t.Fatal(err)
+	}
+	if err := call(`{"page_id":"` + col + `","view_id":"b2","column_order":["status"]}`); err == nil || !strings.Contains(err.Error(), "only for a table view") {
+		t.Errorf("a board update with column_order: %v, want the rule's refusal", err)
+	}
+	if v := viewByID(t, s, col, "b2"); v["colOrder"] != nil {
+		t.Errorf("a refused update stored %v", v["colOrder"])
+	}
+
+	// A read-only token may not set it (the existing gate).
+	reader := &user{ID: uid, TokenScope: "read"}
+	if _, err := s.mcpCall(reader, "set_view", json.RawMessage(`{"page_id":"`+col+`","view_id":"ordered","column_order":[]}`), ""); err == nil {
+		t.Error("a read-only token changed the column order")
+	}
+	if v := viewByID(t, s, col, "ordered"); fmt.Sprint(v["colOrder"]) != "[status due]" {
+		t.Errorf("a refused read-only call changed the order: %v", v["colOrder"])
+	}
+
+	// [] clears it.
+	if err := call(`{"page_id":"` + col + `","view_id":"ordered","column_order":[]}`); err != nil {
+		t.Fatal(err)
+	}
+	if v := viewByID(t, s, col, "ordered"); v["colOrder"] != nil {
+		t.Errorf("[] stored %v, want no key", v["colOrder"])
+	}
+}
+
+// Both doors store the same view for the same request: an order with a
+// repeat, and an order cleared with [], read back as the same bytes
+// whether a person or an agent saved it.
+func TestColumnOrderIsTheSameThroughBothDoors(t *testing.T) {
+	s := testServer(t)
+	uid, cookie := signedIn(t, s, "orderdoors@example.test")
+	ws := s.firstWorkspaceOf(t, uid)
+	agent := &user{ID: uid, Name: "Agent", TokenKind: tokenKindAPI, TokenScope: "write"}
+	viewJSON := func(col string) string {
+		var raw string
+		if err := s.db.QueryRow(`SELECT views FROM collections WHERE page_id = ?`, col).Scan(&raw); err != nil {
+			t.Fatal(err)
+		}
+		var views []map[string]any
+		if err := json.Unmarshal([]byte(raw), &views); err != nil {
+			t.Fatal(err)
+		}
+		b, _ := json.Marshal(views)
+		return string(b)
+	}
+	start := `{"views":[{"id":"t","name":"T","type":"table"}]}`
+	for _, c := range []struct{ name, rest, mcp string }{
+		{"an order with a repeat", `["due","due"]`, `["due","due"]`},
+		{"an order cleared", `[]`, `[]`},
+		// REST may send null; set_view's [] is its way to say the same.
+		{"an order sent as null", `null`, `[]`},
+	} {
+		a := tasksCollection(t, s, ws, uid)
+		b := tasksCollection(t, s, ws, uid)
+		for _, col := range []string{a, b} {
+			if rec := requestAs(t, s, cookie, "PUT", "/api/collections/"+col, start); rec.Code != 200 {
+				t.Fatalf("start: %d", rec.Code)
+			}
+		}
+		// First set an order, so clearing has something to clear.
+		requestAs(t, s, cookie, "PUT", "/api/collections/"+a, `{"views":[{"id":"t","name":"T","type":"table","colOrder":["status"]}]}`)
+		callTool(t, s, agent, "set_view", `{"page_id":"`+b+`","view_id":"t","column_order":["status"]}`)
+
+		if rec := requestAs(t, s, cookie, "PUT", "/api/collections/"+a, `{"views":[{"id":"t","name":"T","type":"table","colOrder":`+c.rest+`}]}`); rec.Code != 200 {
+			t.Fatalf("%s REST: %d %s", c.name, rec.Code, rec.Body.String())
+		}
+		if _, err := callTool(t, s, agent, "set_view", `{"page_id":"`+b+`","view_id":"t","column_order":`+c.mcp+`}`); err != nil {
+			t.Fatalf("%s MCP: %v", c.name, err)
+		}
+		if ra, rb := viewJSON(a), viewJSON(b); ra != rb {
+			t.Errorf("%s: REST stored %s, MCP stored %s", c.name, ra, rb)
+		}
 	}
 }

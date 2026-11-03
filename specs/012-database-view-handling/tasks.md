@@ -28,7 +28,7 @@ description: "Tasks for database views that read comfortably and handle the way 
 
 ## Phase 1: Setup (PR 1)
 
-- [ ] T001 [ui] `ViewDef.colOrder?: string[]` in `web/src/types.ts`, beside `colWidths`, with a comment: per view, missing means the schema's order (research R2). Optional, so none of `ViewDef`'s 38 callers changes
+- [x] T001 [ui] `ViewDef.colOrder?: string[]` in `web/src/types.ts`, beside `colWidths`, with a comment: per view, missing means the schema's order (research R2). Optional, so none of `ViewDef`'s 38 callers changes
 
 ---
 
@@ -38,9 +38,9 @@ description: "Tasks for database views that read comfortably and handle the way 
 
 **Independent Test**: quickstart §1, in light and dark at desktop and phone width, on a database page and an embed.
 
-- [ ] T002 [US1] [ui] `web/src/styles.css`: `.db-table td` takes `font-size: var(--font-size-md)` and `.db-table th` `var(--font-size-sm)`, replacing 13.5px and 12.5px (FR-001). Check row height, column widths and wrapping at the new size at desktop and phone width (FR-002); an embed draws the same size as the page (US1 scenario 3)
-- [ ] T003 [P] [US1] [ui] Catalogue section in `web/catalog/main.tsx`: the same table at 14px (`--font-size-md`) and at a one-off 15px preview, in light and dark, so the owner can choose (research R1). If 15px is chosen, it becomes a component token `table.cell-font-size`, not a literal
-- [ ] T004 [US1] [ui] `fontSize` in `web/tokens/budgets.json` lowered to the count `node web/scripts/check-tokens.mjs --measure` gives after T002 (374 before)
+- [x] T002 [US1] [ui] `web/src/styles.css`: `.db-table td` takes `font-size: var(--font-size-md)` and `.db-table th` `var(--font-size-sm)`, replacing 13.5px and 12.5px (FR-001). Check row height, column widths and wrapping at the new size at desktop and phone width (FR-002); an embed draws the same size as the page (US1 scenario 3)
+- [x] T003 [P] [US1] [ui] Catalogue section in `web/catalog/main.tsx`: the same table at 14px (`--font-size-md`) and at a one-off 15px preview, in light and dark, so the owner can choose (research R1). Owner chose 14px (2026-11-03); the 15px preview was removed
+- [x] T004 [US1] [ui] `fontSize` in `web/tokens/budgets.json` lowered to the count `node web/scripts/check-tokens.mjs --measure` gives after T002 (374 before)
 
 ---
 
@@ -52,22 +52,22 @@ description: "Tasks for database views that read comfortably and handle the way 
 
 ### Server and MCP first
 
-- [ ] T005 [US2] [backend] `checkViewColOrder(view, schema)` in `server/viewopen.go` with the rules in data-model.md, verbatim: "Only on a `table` view. On any other type the request is refused (`invalid_view_column_order`)"; "Must be an array of strings; anything else is refused with the same code"; "Ids that are not properties of the schema, and repeats, are dropped silently"; the title is never in the list. An empty list removes the key. Called from `normalizeViews` (which then marks the array changed whenever the view's JSON changed: an id dropped or an empty list removed, so REST stores what MCP stores) **and** from `applyViewSpec` in `server/mcp_schema.go` (reached by `set_view` both when it creates a view, `mcpCreateView`, and when it updates one, `mcpUpdateView`), so the rule is one function on both doors. Its own error type, answered by `handlePutCollection` (`server/collections.go`) as HTTP 400 with code `invalid_view_column_order` and the message in contracts/mcp.md
-- [ ] T006 [US2] [mcp] `set_view` gains `column_order` (array of strings) in `server/mcp.go`: the tool's input schema, the args struct, the `viewSpec` it builds, and the description sentence from contracts/mcp.md. `viewSpec.ColumnOrder` in `server/mcp_schema.go` is applied in `applyViewSpec` on create and on update (`[]` clears it) and checked by `checkViewColOrder` (depends on T005)
-- [ ] T007 [US2] [test] Go tests in `server/viewopen_test.go` and an MCP test via `callTool`: accepted on a table view through REST and MCP, on an MCP create and an MCP update; refused on a board view and as a non-array on both doors with the same code; unknown ids and repeats dropped; `[]` clears and REST and MCP store the same bytes for it; a view without `colOrder` stores the same bytes as before; `get_collection` returns `colOrder`; a read-scope token refused on `set_view`. Each new test mutation-checked (remove the call from one door, it fails)
-- [ ] T008 [US2] [mcp] A pair of acts "set a view's column order" in `server/parity_property_test.go` (REST `PUT /api/collections/{id}` with `colOrder`, MCP `set_view` with `column_order`) that must agree on access. `capabilities.json` and `gapBudget` unchanged
-- [ ] T009 [P] [US2] [i18n] `web/src/serverErrors.ts` entry for `invalid_view_column_order`, its sentence in `de.json`, `es.json`, `nl.json`
+- [x] T005 [US2] [backend] `checkViewColOrder(view, schema)` in `server/viewopen.go` with the rules in data-model.md, verbatim: "Only on a `table` view. On any other type the request is refused (`invalid_view_column_order`)"; "Must be an array of strings; anything else is refused with the same code"; "Ids that are not properties of the schema, and repeats, are dropped silently"; the title is never in the list. An empty list removes the key. Called from `normalizeViews` (which then marks the array changed whenever the view's JSON changed: an id dropped or an empty list removed, so REST stores what MCP stores) **and** from `applyViewSpec` in `server/mcp_schema.go` (reached by `set_view` both when it creates a view, `mcpCreateView`, and when it updates one, `mcpUpdateView`), so the rule is one function on both doors. Its own error type, answered by `handlePutCollection` (`server/collections.go`) as HTTP 400 with code `invalid_view_column_order` and the message in contracts/mcp.md
+- [x] T006 [US2] [mcp] `set_view` gains `column_order` (array of strings) in `server/mcp.go`: the tool's input schema, the args struct, the `viewSpec` it builds, and the description sentence from contracts/mcp.md. `viewSpec.ColumnOrder` in `server/mcp_schema.go` is applied in `applyViewSpec` on create and on update (`[]` clears it) and checked by `checkViewColOrder` (depends on T005)
+- [x] T007 [US2] [test] Go tests in `server/viewopen_test.go` and an MCP test via `callTool`: accepted on a table view through REST and MCP, on an MCP create and an MCP update; refused on a board view and as a non-array on both doors with the same code; unknown ids and repeats dropped; `[]` clears and REST and MCP store the same bytes for it; a view without `colOrder` stores the same bytes as before; `get_collection` returns `colOrder`; a read-scope token refused on `set_view`. Each new test mutation-checked (remove the call from one door, it fails)
+- [x] T008 [US2] [mcp] A pair of acts "set a view's column order" in `server/parity_property_test.go` (REST `PUT /api/collections/{id}` with `colOrder`, MCP `set_view` with `column_order`) that must agree on access. `capabilities.json` and `gapBudget` unchanged
+- [x] T009 [P] [US2] [i18n] `web/src/serverErrors.ts` entry for `invalid_view_column_order`, its sentence in `de.json`, `es.json`, `nl.json`
 
 ### Interface
 
-- [ ] T010 [US2] [ui] New `web/src/columnDrag.ts`: pure `orderedColumns(schemaIds, colOrder, hidden)` (data-model.md "Drawing": the ids of `colOrder` that exist and are not hidden, in that order, then every other visible property in schema order), `gapIndex(headerRects, x)`, `moveColumn(order, id, delta)`, and a `useColumnDrag` hook (pointer events, the 5px threshold `boardDrag.ts` uses, Escape or a release outside the header row cancels, auto-scroll at the table's sides) (research R5)
-- [ ] T011 [P] [US2] [test] New `web/scripts/check-columndrag.mjs` for the pure functions of T010 (a deleted id skipped, a new property at the end, a hidden one keeps its place, title never moved, moves at both ends), added to `npm run check` in `web/package.json`
-- [ ] T012 [US2] [ui] `TableView` in `web/src/components/CollectionView.tsx` draws its columns through `orderedColumns`; widths still follow each column
-- [ ] T013 [US2] [ui] `ColHead` (`CollectionView.tsx`): a drag from the label through `useColumnDrag` with a 2px token-coloured marker on the nearest gap and the dragged header dimmed; release saves `colOrder` through the view update that saves `colWidths`. `.col-resize` keeps its own pointerdown and resizes as today (FR-006); the title column neither drags nor has a menu
-- [ ] T014 [US2] [ui] `ColHead` header menu: `ui/Menu`, opened by a click on the label and by a right-click, with `moveLeft`, `moveRight` (left out at the ends) and a new function `hideInView` (`EyeOff`) added to `web/src/menuIcons.ts`. After a move, focus is back on that header (FR-005). A reader who cannot edit gets no menu
-- [ ] T015 [P] [US2] [i18n] "Hide in view" and the header menu's accessible name in `de.json`, `es.json`, `nl.json`
-- [ ] T016 [US2] [test] New `web/tests/column-order.mjs`, registered in `web/tests/package.json`: drag with the marker; reload keeps the order; a second table view and the Properties dialog unchanged; the header menu by keyboard with focus kept; an edge drag still resizes; the title stays first; an order set by `set_view` is drawn. Mutation-checked against the old `TableView`
-- [ ] T017 [P] [US2] [wiki] `wiki/views.md` (moving columns, per view), `wiki/mcp-tools.md` (`set_view` `column_order`), a line in `docs/what-it-does.md`
+- [x] T010 [US2] [ui] New `web/src/columnDrag.ts`: pure `orderedColumns(schemaIds, colOrder, hidden)` (data-model.md "Drawing": the ids of `colOrder` that exist and are not hidden, in that order, then every other visible property in schema order), `gapIndex(headerRects, x)`, `moveColumn(order, id, delta)`, and a `useColumnDrag` hook (pointer events, the 5px threshold `boardDrag.ts` uses, Escape or a release outside the header row cancels, auto-scroll at the table's sides) (research R5)
+- [x] T011 [P] [US2] [test] New `web/scripts/check-columndrag.mjs` for the pure functions of T010 (a deleted id skipped, a new property at the end, a hidden one keeps its place, title never moved, moves at both ends), added to `npm run check` in `web/package.json`
+- [x] T012 [US2] [ui] `TableView` in `web/src/components/CollectionView.tsx` draws its columns through `orderedColumns`; widths still follow each column
+- [x] T013 [US2] [ui] `ColHead` (`CollectionView.tsx`): a drag from the label through `useColumnDrag` with a 2px token-coloured marker on the nearest gap and the dragged header dimmed; release saves `colOrder` through the view update that saves `colWidths`. `.col-resize` keeps its own pointerdown and resizes as today (FR-006); the title column neither drags nor has a menu
+- [x] T014 [US2] [ui] `ColHead` header menu: `ui/Menu`, opened by a click on the label and by a right-click, with `moveLeft`, `moveRight` (left out at the ends) and a new function `hideInView` (`EyeOff`) added to `web/src/menuIcons.ts`. After a move, focus is back on that header (FR-005). A reader who cannot edit gets no menu
+- [x] T015 [P] [US2] [i18n] "Hide in view" and the header menu's accessible name in `de.json`, `es.json`, `nl.json`
+- [x] T016 [US2] [test] New `web/tests/column-order.mjs`, registered in `web/tests/package.json`: drag with the marker; reload keeps the order; a second table view and the Properties dialog unchanged; the header menu by keyboard with focus kept; an edge drag still resizes; the title stays first; an order set by `set_view` is drawn. Mutation-checked against the old `TableView`
+- [x] T017 [P] [US2] [wiki] `wiki/views.md` (moving columns, per view), `wiki/mcp-tools.md` (`set_view` `column_order`), a line in `docs/what-it-does.md`
 
 ---
 
@@ -77,15 +77,15 @@ description: "Tasks for database views that read comfortably and handle the way 
 
 **Independent Test**: quickstart §3.
 
-- [ ] T018 [US3] [ui] `dropIndex(cards, card, sort)` in `web/src/boardDrag.ts`: the column's cards in the view's sort order with the card inserted by the same comparator the view sorts with, by row order when there is no sort; over its own column, its own index (data-model.md "Board drop place", research R7)
-- [ ] T019 [P] [US3] [test] New `web/scripts/check-boarddrag.mjs`: sorted, unsorted, own column, ties, and a 500-card column timed; added to `npm run check` in `web/package.json`
-- [ ] T020 [US3] [ui] `BoardView` (`CollectionView.tsx`, the one caller of `useBoardDrag`): the column under the pointer gets the target style (`--color-hover` background, `--color-border-strong` outline) and a placeholder the card's height at `dropIndex(...)`; no transition under `prefers-reduced-motion`; nothing when the group property cannot be changed (no drag starts, as today)
-- [ ] T021 [US3] [test] New `web/tests/board-drop-marker.mjs`, registered in `web/tests/package.json`: ten drags across columns land where the placeholder was (SC-003); sorted and unsorted; own column changes nothing; a touch drag (`hasTouch`); reduced motion. Mutation-checked
-- [ ] T022 [P] [US3] [wiki] `wiki/views.md`: what the board shows while dragging
+- [x] T018 [US3] [ui] `dropIndex(cards, card, sort)` in `web/src/boardDrag.ts`: the column's cards in the view's sort order with the card inserted by the same comparator the view sorts with, by row order when there is no sort; over its own column, its own index (data-model.md "Board drop place", research R7)
+- [x] T019 [P] [US3] [test] New `web/scripts/check-boarddrag.mjs`: sorted, unsorted, own column, ties, and a 500-card column timed; added to `npm run check` in `web/package.json`
+- [x] T020 [US3] [ui] `BoardView` (`CollectionView.tsx`, the one caller of `useBoardDrag`): the column under the pointer gets the target style (`--color-hover` background, `--color-border-strong` outline) and a placeholder the card's height at `dropIndex(...)`; no transition under `prefers-reduced-motion`; nothing when the group property cannot be changed (no drag starts, as today)
+- [x] T021 [US3] [test] New `web/tests/board-drop-marker.mjs`, registered in `web/tests/package.json`: ten drags across columns land where the placeholder was (SC-003); sorted and unsorted; own column changes nothing; a touch drag (`hasTouch`); reduced motion. Mutation-checked
+- [x] T022 [P] [US3] [wiki] `wiki/views.md`: what the board shows while dragging
 
 ### Closing PR 1
 
-- [ ] T023 [test] Before PR 1 is offered: bundle gzip measured against `check-bundle.mjs`'s cap; stale shots retaken with `shoot-wiki.mjs`; `codegraph sync`, then `codegraph callers` on `checkViewColOrder`, `orderedColumns`, `useColumnDrag`, `dropIndex`; `/code-review` on the diff; `ux-ui-audit` on the table and board in light and dark at desktop and phone width; findings fixed or filed
+- [x] T023 [test] Before PR 1 is offered: bundle gzip measured against `check-bundle.mjs`'s cap; stale shots retaken with `shoot-wiki.mjs`; `codegraph sync`, then `codegraph callers` on `checkViewColOrder`, `orderedColumns`, `useColumnDrag`, `dropIndex`; `/code-review` on the diff; `ux-ui-audit` on the table and board in light and dark at desktop and phone width; findings fixed or filed
 
 ---
 

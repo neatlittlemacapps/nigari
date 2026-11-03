@@ -113,6 +113,20 @@ func normalizeViews(raw []byte, schema []map[string]any, stored []map[string]any
 		if _, has := view["openIn"]; had && !has {
 			changed = true
 		}
+		// The order is compared as JSON before and after, so a dropped id or
+		// an emptied list re-encodes the array and REST stores what set_view
+		// stores for the same request.
+		// Key presence counts too: a "colOrder": null is removed in memory and
+		// would otherwise be stored as sent, which set_view never stores.
+		orderBefore, _ := json.Marshal(view["colOrder"])
+		_, hadOrder := view["colOrder"]
+		if err := checkViewColOrder(view, schema); err != nil {
+			return nil, errViewColOrder{fmt.Sprintf("%s: %s", name, err.Error())}
+		}
+		orderAfter, _ := json.Marshal(view["colOrder"])
+		if _, hasOrder := view["colOrder"]; string(orderAfter) != string(orderBefore) || hadOrder != hasOrder {
+			changed = true
+		}
 		id, _ := view["id"].(string)
 		old, known := before[id]
 		if err := checkChartView(view, schema, !known || old != chartSignature(view)); err != nil {
@@ -123,4 +137,71 @@ func normalizeViews(raw []byte, schema []map[string]any, stored []map[string]any
 		return raw, nil
 	}
 	return json.Marshal(views)
+}
+
+// A table view's column order (spec 012): colOrder, a list of property ids
+// beside colWidths. Missing means the schema's order. Both doors call this one
+// function: normalizeViews for PUT /api/collections/{id} and applyViewSpec for
+// MCP set_view (create and update). set_view does not go through
+// normalizeViews, so a rule placed only there would have been REST-only.
+
+// errViewColOrder marks a refusal of checkViewColOrder, so REST can answer it
+// with its own code (invalid_view_column_order).
+type errViewColOrder struct{ msg string }
+
+func (e errViewColOrder) Error() string { return e.msg }
+
+const viewColOrderRule = "column order is only for a table view, as a list of property ids"
+
+// checkViewColOrder validates view["colOrder"] in place against the
+// database's properties:
+//   - only a table view has one; on any other type it is refused, because no
+//     other view draws columns and a stored order would mean nothing;
+//   - it must be an array of strings, or it is refused with the same code;
+//   - ids that are not properties of the schema, and repeats, are dropped
+//     without a word: a property deleted since the order was set is not the
+//     caller's mistake, and refusing it would make every later save of the
+//     view fail;
+//   - the title is not a property, so it is never in the list (it is always
+//     the first column);
+//   - an empty list, given or left after dropping, removes the key, so a view
+//     set back to the schema's order stores the same bytes as one never set.
+func checkViewColOrder(view map[string]any, schema []map[string]any) error {
+	raw, ok := view["colOrder"]
+	if !ok || raw == nil {
+		delete(view, "colOrder")
+		return nil
+	}
+	if t, _ := view["type"].(string); t != "table" {
+		return errViewColOrder{viewColOrderRule}
+	}
+	list, isList := raw.([]any)
+	if !isList {
+		return errViewColOrder{viewColOrderRule}
+	}
+	known := map[string]bool{}
+	for _, p := range schema {
+		if id, _ := p["id"].(string); id != "" {
+			known[id] = true
+		}
+	}
+	seen := map[string]bool{}
+	out := make([]any, 0, len(list))
+	for _, item := range list {
+		id, isString := item.(string)
+		if !isString {
+			return errViewColOrder{viewColOrderRule}
+		}
+		if !known[id] || seen[id] {
+			continue
+		}
+		seen[id] = true
+		out = append(out, id)
+	}
+	if len(out) == 0 {
+		delete(view, "colOrder")
+		return nil
+	}
+	view["colOrder"] = out
+	return nil
 }
