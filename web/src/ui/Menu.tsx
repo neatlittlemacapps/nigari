@@ -215,13 +215,29 @@ export function MenuCheckboxItem({
   );
 }
 
-/** An item that opens a submenu (→ on the keyboard). */
-export function MenuSubmenu({ fn, label, children, disabled }: { fn: MenuFunction; label: ReactNode; children: ReactNode; disabled?: boolean }) {
+/** An item that opens a submenu (→ on the keyboard). `value` is the setting's
+ *  current value, drawn muted on the right before the `›` (spec 012, the
+ *  Settings menu: "Open rows in  Side peek ›"), so a menu of settings says
+ *  what each one is without opening it. */
+export function MenuSubmenu({
+  fn,
+  label,
+  value,
+  children,
+  disabled,
+}: {
+  fn: MenuFunction;
+  label: ReactNode;
+  value?: ReactNode;
+  children: ReactNode;
+  disabled?: boolean;
+}) {
   return (
     <BaseMenu.SubmenuRoot>
       <BaseMenu.SubmenuTrigger className={itemClass()} disabled={disabled}>
         <MenuIcon fn={fn} />
         <span className="ui-menu-label">{label}</span>
+        {value != null && value !== '' && <span className="ui-menu-item-value">{value}</span>}
         <ChevronRight className="ui-menu-chevron" size={14} aria-hidden />
       </BaseMenu.SubmenuTrigger>
       <BaseMenu.Portal>

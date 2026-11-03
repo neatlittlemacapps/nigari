@@ -12,8 +12,8 @@ both sides.
 
 ## Adding, changing and removing a property
 
-1. Open the collection and click **Properties** in the bar above the rows. The
-   dialog is titled **Collection properties**.
+1. Open the collection, then **Settings** › **Edit properties** in the bar
+   above the rows. The dialog is titled **Collection properties**.
 2. Type a name into **New property name**, choose a type from the list beside
    it, and click **Add**. The property appears at the bottom of the list.
 3. Fill in whatever the type needs: a select needs options, a relation needs
@@ -544,9 +544,9 @@ columns.
   ignoring case and accents and treating digits inside text as numbers.
 - **Group** appears on a board and chooses the column property. Only select,
   multi-select and relation properties can be grouped by.
-- **Columns** shows every property under **Shown** or **Hidden** with its type
-  icon; clicking one moves it between the two, and **Hide all** / **Show all**
-  do the obvious. A hidden property is dropped from every renderer of that view
+- **Settings** › **Property visibility** lists every property with a tick for
+  the shown ones; clicking one shows or hides it, and **Show all** / **Hide
+  all** do the obvious. A hidden property is dropped from every renderer of that view
   (table columns, cards, list lines, the form) but keeps its values, and the
   row's own page still shows it.
 

@@ -278,6 +278,12 @@ function Catalog() {
                 <MenuValueItem onClick={() => setLast('Moved to Research')}>Research</MenuValueItem>
               </MenuValues>
             </MenuSubmenu>
+            <MenuSubmenu fn="openRowsIn" label="Open rows in" value={menuOpenIn === 'side_peek' ? 'Side peek' : 'Full page'}>
+              <MenuRadioGroup value={menuOpenIn} onValueChange={setMenuOpenIn}>
+                <MenuRadioItem value="full_page">Full page</MenuRadioItem>
+                <MenuRadioItem value="side_peek">Side peek</MenuRadioItem>
+              </MenuRadioGroup>
+            </MenuSubmenu>
             <MenuItem fn="exportMarkdown" disabled>Export Markdown</MenuItem>
             <MenuSeparator />
             <MenuLabel>Appearance</MenuLabel>

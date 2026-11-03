@@ -127,16 +127,23 @@ await withFixture(async ({ page, api, base, workspace, path }) => {
   await page.keyboard.press('Escape');
   await renameDialog.waitFor({ state: 'detached' });
   await eventually(() => isFocused(tab)).catch(async () => assert.fail('Rename view: focus did not return to the tab, it is on: ' + (await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 120)))));
-  const viewOptions = page.getByRole('button', { name: 'View options', exact: true });
+  // The view options (⋯) are the view's Settings menu since spec 012; how
+  // rows open is its "Open rows in" submenu, reached with → from the keyboard.
+  const viewOptions = page.locator('.collection-toolbar').getByRole('button', { name: 'Settings', exact: true });
   await viewOptions.focus();
   await page.keyboard.press('Enter');
-  const optionsMenu = page.getByRole('menu', { name: 'View options' });
+  const optionsMenu = page.getByRole('menu', { name: /view settings$/ });
   await optionsMenu.waitFor();
-  await eventually(async () => (await focused()) === 'Rename view').catch(() => assert.fail('view options: Enter did not land on Rename view'));
-  assert((await optionsMenu.getByRole('menuitemradio').count()) >= 2, 'view options: no "Open pages in" radio items');
-  await page.keyboard.press('Escape');
+  await eventually(async () => (await focused()) === 'Rename view').catch(() => assert.fail('view settings: Enter did not land on Rename view'));
+  for (let i = 0; i < 6 && !/^Open rows in/.test(await focused()); i++) await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowRight');
+  const openRows = page.getByRole('menu').filter({ has: page.getByRole('menuitemradio', { name: 'Side peek' }) });
+  await openRows.waitFor();
+  assert((await openRows.getByRole('menuitemradio').count()) >= 2, 'view settings: no "Open rows in" radio items');
+  await page.keyboard.press('Escape'); // the submenu
+  await page.keyboard.press('Escape'); // the menu
   await optionsMenu.waitFor({ state: 'hidden' });
-  await eventually(() => isFocused(viewOptions)).catch(() => assert.fail('view options: Escape did not give focus back'));
+  await eventually(() => isFocused(viewOptions)).catch(() => assert.fail('view settings: Escape did not give focus back'));
 
   // A board card's ⋯ from the keyboard, without hovering first: the plain
   // button is swapped for the menu's trigger on focus, and focus must stay on

@@ -5,10 +5,16 @@
 // drawn inside it. A menu placed under its button with position: absolute was
 // therefore cut off at the toolbar's lower edge: the backdrop dimmed the page,
 // and of the menu itself only a white rim showed. The templates menu beside
-// New and the view options menu (…) both did this; Columns did not, because it
-// was already drawn into <body> through a Portal and placed by this rule.
+// New and the view options menu (…) both did this; the filter popover did not,
+// because it was already drawn into <body> through a Portal and placed by this
+// rule. Spec 012 moved the menus to ui/Menu and removed the Columns popover;
+// FilterSortControls is the one caller left, and the breakpoint is shared, so
+// a popover and a menu cannot disagree about where a phone begins.
 //
-// So every toolbar menu is portaled, and this decides where it goes:
+// So every toolbar menu is portaled. The menus (templates, a view's Settings)
+// are ui/Menu with narrow="sheet", which reads SHEET_MAX_WIDTH below and draws
+// the sheet in CSS (Menu.css, [data-sheet]). The filter, sort and group
+// popovers are not menus and place themselves, through this function:
 //   - narrow screens: a sheet along the bottom edge, full width, which the
 //     thumb reaches and no toolbar can clip;
 //   - wider screens: under the button, its right edge on the button's right

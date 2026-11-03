@@ -61,7 +61,9 @@ await withFixture(async ({ page, api, workspace, path, read }) => {
   await page.locator('.relation-menu').waitFor({ state: 'hidden' });
 
   // And the setting itself, from the Properties dialog.
-  await page.getByRole('button', { name: 'Properties', exact: true }).click();
+  // From Settings › Edit properties since spec 012.
+  await page.locator('.collection-toolbar').getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Edit properties', exact: true }).click();
   await page.getByRole('checkbox', { name: 'Several people' }).check();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await eventually(async () => (await read()).schema.find((p) => p.id === 'team')?.personMultiple === true);

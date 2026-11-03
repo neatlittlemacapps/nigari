@@ -36,11 +36,12 @@ await withFixture(async ({ page, base, path }) => {
     // a class; at phone width it is a sheet along the bottom edge.
     await reachable('[role="menu"][aria-label="Templates"]', 'templates', size);
 
-    const options = page.getByRole('button', { name: 'View options', exact: true });
+    // The view options (⋯) became the view's Settings menu in spec 012.
+    const options = page.locator('.collection-toolbar').getByRole('button', { name: 'Settings', exact: true });
     await options.scrollIntoViewIfNeeded();
     await options.click();
-    await reachable('[role="menu"][aria-label="View options"]', 'view options', size);
+    await reachable('[role="menu"][aria-label$=" view settings"]', 'view settings', size);
   }
 
-  console.log('Toolbar menus: templates and view options open in full, on a phone and a desktop.');
+  console.log('Toolbar menus: templates and view settings open in full, on a phone and a desktop.');
 });

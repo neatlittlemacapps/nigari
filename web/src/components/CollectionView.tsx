@@ -26,7 +26,7 @@ import type {
 } from '../types';
 import PropertyValue, { PersonStack, idList, loadRelationOptions, type RelOption } from './PropertyValue';
 import { openCollectionRow, openPageAux, RowOpenContext, useOpenRow } from '../pageOpen';
-import ViewOpenMenu from './ViewOpenMenu';
+import ViewSettingsMenu from './ViewSettingsMenu';
 import { AddViewMenu, CardMenu, ViewActionItems } from './CollectionMenus';
 import { Menu, MenuItem, MenuLabel, MenuSeparator, MenuValueItem, MenuValues, MenuValueSubmenu, type MenuPoint } from '../ui/Menu';
 import { readViewId, readViewScroll, writeViewId, writeViewScroll } from '../pageUiState';
@@ -42,35 +42,7 @@ import { defaultChartView } from '../chartDefaults';
 const ChartPane = lazy(() => import('./ChartPane'));
 import { PageIcon } from '../pageIcon';
 import { toast } from '../toast';
-import { Table2, Columns3, LayoutGrid, CalendarDays, List, Settings2, Plus, Filter as FilterIcon, ArrowUpDown, Eye, EyeOff, AlignLeft, Calendar, Hash, CircleDot, Tags, SquareCheck, User, Link2, Sigma, ClipboardList, Check, Send, Share2, Globe, ChartPie, GanttChartSquare, MessageSquare, Mail, Phone, MapPin, MoreHorizontal, History, ChevronDown, LayoutTemplate, Copy } from 'lucide-react';
-
-// Small type glyph shown next to each property (Notion-style visibility panel).
-function propTypeIcon(t: PropDef['type']) {
-  const s = 14;
-  switch (t) {
-    case 'select':
-      return <CircleDot size={s} />;
-    case 'multiselect':
-      return <Tags size={s} />;
-    case 'date':
-      return <Calendar size={s} />;
-    case 'number':
-      return <Hash size={s} />;
-    case 'checkbox':
-      return <SquareCheck size={s} />;
-    case 'person':
-      return <User size={s} />;
-    case 'relation':
-      return <Link2 size={s} />;
-    case 'rollup':
-    case 'formula':
-      return <Sigma size={s} />;
-    case 'lastActivity':
-      return <History size={s} />;
-    default:
-      return <AlignLeft size={s} />;
-  }
-}
+import { Table2, Columns3, LayoutGrid, CalendarDays, List, Plus, Filter as FilterIcon, ArrowUpDown, Calendar, Link2, ClipboardList, Check, Send, Share2, Globe, ChartPie, GanttChartSquare, MessageSquare, Mail, Phone, MapPin, ChevronDown, LayoutTemplate, Copy } from 'lucide-react';
 
 /** A collection shown inside a document rather than as its own page.
  *
@@ -253,6 +225,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     embed?.onViewId(id);
   };
   const [schemaOpen, setSchemaOpen] = useState(false);
+  // A popover of the filter or sort controls is open: with the templates
+  // menu, what keeps an embed's folding toolbar shown (data-menu-open).
+  const [fsOpen, setFsOpen] = useState(false);
   // The arrow beside New: this database's own templates, loaded when it opens
   // so the list is never older than the click.
   const [tplOpen, setTplOpen] = useState(false);
@@ -779,6 +754,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // Date props — the timeline's Start/End pickers choose from these.
   const dateProps = schema.filter((p) => p.type === 'date');
 
+  // A filter that actually narrows the rows (an unfinished one does not).
+  const viewFiltered = (view.filters ?? []).some((f) => filterIsArmed(f, isDateProp(f.property)));
+
   const viewSwitcher = (
     <div className="collection-toolbar">
       <div className="view-tabs">
@@ -788,13 +766,15 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
               className={'view-tab view-tab--' + v.type + (v.id === view.id ? ' active' : '')}
               onClick={() => pickView(v.id)}
               onDoubleClick={() => {
-                if (!embed) void renameView(v);
+                if (!embed && canEdit) void renameView(v);
               }}
               onContextMenu={(e) => {
                 // Inside a document the views are the collection's business,
                 // reached through "Open as page" — not something a reader of
                 // the document should rename or remove by accident.
-                if (embed) return;
+                // A reader may not rename, move or remove a view: the server
+                // refuses it, so offering it only promises what it undoes.
+                if (embed || !canEdit) return;
                 e.preventDefault();
                 tabMenuReturn.current = e.currentTarget;
                 // Shift+F10 or the menu key report (0, 0): open under the tab.
@@ -808,7 +788,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             </button>
           </span>
         ))}
-        {!embed && (
+        {!embed && canEdit && (
           <AddViewMenu
             types={['table', 'board', 'gallery', 'calendar', 'timeline', 'list', 'form', 'chart']}
             icon={tabIcon}
@@ -830,87 +810,40 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           <ViewActionItems view={tabMenu.view} views={config.views} onRename={renameView} onMove={moveView} onRemove={removeView} />
         )}
       </Menu>
-      <div className="collection-actions">
-        {view.type === 'timeline' && (
-          <>
-            <select
-              className="subitems-select"
-              title={t('Start date for the bars')}
-              value={view.dateProp ?? ''}
-              onChange={(e) => updateView({ dateProp: e.target.value || undefined })}
-            >
-              <option value="">{t('Start: (none)')}</option>
-              {dateProps.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {t('Start:')} {p.name}
-                </option>
-              ))}
-            </select>
-            <select
-              className="subitems-select"
-              title={t('End date for the bars (blank = one-day bars)')}
-              value={view.endDateProp ?? ''}
-              onChange={(e) => updateView({ endDateProp: e.target.value || undefined })}
-            >
-              <option value="">{t('End: (none)')}</option>
-              {dateProps.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {t('End:')} {p.name}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
-        {view.type === 'table' && selfRelProps.length > 0 && (
-          <select
-            className="subitems-select"
-            title={t('Sub-item relation for the tree view')}
-            value={view.subItemProp ?? ''}
-            onChange={(e) => updateView({ subItemProp: e.target.value || undefined })}
-          >
-            <option value="">{t('No sub-items')}</option>
-            {selfRelProps.map((p) => (
-              <option key={p.id} value={p.id}>
-                ⿴ {p.name}
-              </option>
-            ))}
-          </select>
-        )}
-        {view.type !== 'form' && <FilterSortControls schema={schema} view={view} onChange={updateView} />}
-        {/* What the collection IS — its columns, its properties, its views —
-            is edited on its own page. An embed is a window onto the rows, and
-            carrying the whole toolbar into a document made it look like a
-            second copy of the collection (#22). */}
-        {!embed && <ColumnsControl schema={schema} view={view} onChange={updateView} />}
-        {!embed && (
-          <button className="btn-sm" onClick={() => setSchemaOpen(true)}>
-            <Settings2 size={14} /> {t('Properties')}
-          </button>
-        )}
-        {/* Renaming and removing the view you are on. It sat inside the tab as a
-            ⋯ first, which looked like a smudge in the pill and had to reserve
-            room in a row where nothing else does. This bar is already "settings
-            for the current view" — filter, sort, group, columns — so it is
-            where the last two belong. */}
-        {!embed && (
-        <div className="view-menu-wrap">
-          {/* narrow="sheet": the toolbar scrolls sideways on a phone, so the
-              menu is a sheet along the bottom there (anchoredMenu.ts' rule). */}
-          <Menu
-            label={t('View options')}
-            narrow="sheet"
+      {/* In a document the toolbar's buttons fold away until they are
+          reached for (spec 012, US5); a filter or a sort of the view must not
+          fold away with them (FR-021), so it is said here, beside the tabs,
+          and stays when the buttons are hidden. */}
+      {embed && (viewFiltered || view.sort) && (
+        <span className="embed-view-state">
+          {viewFiltered && <span className="embed-view-state-item">{t('Filtered')}</span>}
+          {view.sort && <span className="embed-view-state-item">{t('Sorted')}</span>}
+        </span>
+      )}
+      <div className="collection-actions" data-menu-open={fsOpen || tplOpen ? '' : undefined}>
+        {view.type !== 'form' && <FilterSortControls schema={schema} view={view} onChange={updateView} onOpenChange={setFsOpen} />}
+        {/* Everything that configures the view and the database, in one menu
+            (spec 012, US4): what the Columns popover, the Properties button,
+            the ⋯ and the timeline's and sub-items' <select>s did. Not in a
+            document: an embed shows the database's own views, so a setting
+            changed there would change them everywhere (research R10; embeds
+            get views of their own in spec 014). A reader is offered nothing
+            to change. */}
+        {!embed && canEdit && (
+          <ViewSettingsMenu
+            view={view}
+            views={config.views}
+            schema={schema}
+            selfRelProps={selfRelProps}
+            dateProps={dateProps}
             open={viewMenuFor === view.id}
             onOpenChange={(o) => setViewMenuFor(o ? view.id : null)}
-            trigger={
-              <button className="btn-sm" title={t('View options')} aria-label={t('View options')}>
-                <MoreHorizontal size={14} />
-              </button>
-            }
-          >
-            <ViewActionItems view={view} views={config.views} onRename={renameView} onMove={moveView} onRemove={removeView} />
-            <ViewOpenMenu view={view} onChange={(openIn) => updateView({ openIn })} />
-          </Menu>
-        </div>
+            onChange={updateView}
+            onRename={renameView}
+            onMove={moveView}
+            onRemove={removeView}
+            onEditProperties={() => setSchemaOpen(true)}
+          />
         )}
         {view.type !== 'form' && (
           <div className="view-menu-wrap split-btn">
@@ -984,8 +917,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       className={
         'collection-scroll' +
         (view.type === 'board' ? ' is-board' : '') +
-        (embed ? ' is-embed' : '') +
-        (embed && (view.filters ?? []).some((f) => filterIsArmed(f, isDateProp(f.property))) ? ' is-filtered' : '')
+        (embed ? ' is-embed' : '')
       }
     >
       {viewSwitcher}
@@ -1493,12 +1425,23 @@ function FilterSortControls({
   schema,
   view,
   onChange,
+  onOpenChange,
 }: {
   schema: PropDef[];
   view: ViewDef;
   onChange: (patch: Partial<ViewDef>) => void;
+  /** Whether one of its popovers is open: an embed's folding toolbar stays
+   *  shown while it is (spec 012, FR-020). */
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState<'filter' | 'sort' | 'group' | null>(null);
+  // The cleanup matters: unmounted with a popover open (the view switched to a
+  // form, which has no filter controls), it would otherwise leave the embed's
+  // toolbar held open and its "Filtered" marker hidden.
+  useEffect(() => {
+    onOpenChange?.(open !== null);
+    return () => onOpenChange?.(false);
+  }, [open, onOpenChange]);
   const controlsRef = useRef<HTMLDivElement>(null);
   // Titles for every relation in this schema, so a filter on one can offer
   // rows to pick instead of demanding an id. Keyed by property id; the
@@ -1527,19 +1470,13 @@ function FilterSortControls({
       setPos(null);
       return;
     }
-    const r = controlsRef.current.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    if (vw <= 640) {
-      setPos({ position: 'fixed', left: 8, right: 8, bottom: 8, maxHeight: vh * 0.72 });
-    } else {
-      // Wider than it was: a tick list of option names and a pair of date
-      // fields need the room, and the old 300 is what everything was being
-      // squeezed into.
-      const width = 340;
-      const left = Math.max(8, Math.min(r.right - width, vw - width - 8));
-      setPos({ position: 'fixed', left, width, top: r.bottom + 6, maxHeight: vh - r.bottom - 24 });
-    }
+    // The one rule for where a toolbar menu goes (anchoredMenu.ts), which the
+    // ui/Menu sheets read the breakpoint from too: a copy here drifted from it
+    // the moment the breakpoint moved. 340 wide, because a tick list of option
+    // names and a pair of date fields need the room.
+    setPos(
+      anchoredMenuStyle(controlsRef.current.getBoundingClientRect(), { width: window.innerWidth, height: window.innerHeight }, 340, true),
+    );
   }, [open]);
   const filters = view.filters ?? [];
   const sort = view.sort ?? null;
@@ -2069,7 +2006,7 @@ function BoardView({
   if (!prop || (prop.type !== 'select' && prop.type !== 'multiselect' && prop.type !== 'relation')) {
     return (
       <div className="board-empty">
-        {t('This board needs a {type} property to group by. Open ⚙ Properties to add one.', { type: t('Select') })}
+        {t('This board needs a {type} property to group by. Open Settings, then Edit properties, to add one.', { type: t('Select') })}
       </div>
     );
   }
@@ -2622,83 +2559,6 @@ function TableView({
   );
 }
 
-// ---- Column visibility control ----
-
-function ColumnsControl({
-  schema,
-  view,
-  onChange,
-}: {
-  schema: PropDef[];
-  view: ViewDef;
-  onChange: (patch: Partial<ViewDef>) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState<React.CSSProperties | null>(null);
-  useLayoutEffect(() => {
-    if (!open || !btnRef.current) {
-      setPos(null);
-      return;
-    }
-    const r = btnRef.current.getBoundingClientRect();
-    setPos(anchoredMenuStyle(r, { width: window.innerWidth, height: window.innerHeight }, 268, true));
-  }, [open]);
-
-  const hidden = new Set(view.hidden ?? []);
-  const shown = schema.filter((p) => !hidden.has(p.id));
-  const hiddenProps = schema.filter((p) => hidden.has(p.id));
-  const toggle = (id: string) => {
-    const next = new Set(hidden);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    onChange({ hidden: [...next] });
-  };
-  const propRow = (p: PropDef, isHidden: boolean) => (
-    <button key={p.id} className="col-row" onClick={() => toggle(p.id)}>
-      <span className="col-row-ic">{propTypeIcon(p.type)}</span>
-      <span className="col-row-name">{p.name}</span>
-      {isHidden ? <EyeOff className="col-row-eye off" size={16} /> : <Eye className="col-row-eye" size={16} />}
-    </button>
-  );
-
-  return (
-    <div className="fs-controls">
-      <button ref={btnRef} className={'btn-sm' + (hidden.size ? ' active' : '')} onClick={() => setOpen((o) => !o)}>
-        <Eye size={14} /> {t('Columns')}
-        {hidden.size ? ` (${shown.length}/${schema.length})` : ''}
-      </button>
-      {open && pos && (
-        <Portal>
-          <div className="fs-backdrop" onClick={() => setOpen(false)} />
-          <div className="fs-popover col-popover" style={pos}>
-            <div className="col-section-head">
-              <span>{t('Shown')}</span>
-              {shown.length > 0 && (
-                <button className="col-bulk" onClick={() => onChange({ hidden: schema.map((p) => p.id) })}>
-                  {t('Hide all')}
-                </button>
-              )}
-            </div>
-            {shown.map((p) => propRow(p, false))}
-            {shown.length === 0 && <div className="col-empty">{t('Nothing shown')}</div>}
-            <div className="col-section-head">
-              <span>{t('Hidden')}</span>
-              {hiddenProps.length > 0 && (
-                <button className="col-bulk" onClick={() => onChange({ hidden: [] })}>
-                  {t('Show all')}
-                </button>
-              )}
-            </div>
-            {hiddenProps.map((p) => propRow(p, true))}
-            {hiddenProps.length === 0 && <div className="col-empty">{t('Nothing hidden')}</div>}
-          </div>
-        </Portal>
-      )}
-    </div>
-  );
-}
-
 // ---- Calendar view ----
 
 const ymd = toDayString;
@@ -2728,7 +2588,7 @@ function TimelineView({
   if (!startProp || !schema.some((p) => p.id === startProp && p.type === 'date')) {
     return (
       <div className="board-empty">
-        {t('This timeline needs a {type} property as its start. Open ⚙ Properties to add one.', { type: t('Date') })}
+        {t('This timeline needs a {type} property as its start. Open Settings, then Edit properties, to add one.', { type: t('Date') })}
       </div>
     );
   }
@@ -2868,7 +2728,7 @@ function CalendarView({
   if (!dateProp || !schema.some((p) => p.id === dateProp && p.type === 'date')) {
     return (
       <div className="board-empty">
-        {t('This calendar needs a {type} property. Open ⚙ Properties to add one.', { type: t('Date') })}
+        {t('This calendar needs a {type} property. Open Settings, then Edit properties, to add one.', { type: t('Date') })}
       </div>
     );
   }

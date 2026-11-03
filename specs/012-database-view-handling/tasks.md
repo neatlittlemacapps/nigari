@@ -95,15 +95,15 @@ description: "Tasks for database views that read comfortably and handle the way 
 
 **Independent Test**: quickstart §4.
 
-- [ ] T024 [US4] [ui] `MenuSubmenu` gains `value?: ReactNode` in `web/src/ui/Menu.tsx`, drawn muted on the right before `›` (`Menu.css`, tokens only); documented in `web/src/ui/README.md`; a catalogue case in `web/catalog/main.tsx` in light and dark
-- [ ] T025 [US4] [ui] Five new functions in `web/src/menuIcons.ts`: `propertyVisibility` (`Eye`), `openRowsIn` (`PanelRight`), `timelineDates` (`CalendarRange`), `subItems` (`Network`), `editProperties` (`Rows3`); `check-menu-icons.mjs` decides if one is taken
-- [ ] T026 [US4] [ui] Settings in `CollectionView.tsx`: an `IconButton` with the sliders icon, tooltip and accessible name "Settings", `aria-haspopup="menu"`, just before **New**, opening a `ui/Menu` (`narrow="sheet"`, label "{name} view settings") with the items of research R8 except Layout (R9): **View settings** (rename with `opensDialog`; Property visibility with value "{n} of {total}" over `MenuCheckboxItem`s; Open rows in over `ViewOpenMenu`'s radio group, not for forms; timeline only Start date and End date; table only, with a self-relation, Sub-items), a separator, `moveLeft`, `moveRight`, `delete` (danger, last), a separator, **Database settings** (Edit properties, opening `SchemaEditor`). The view-type part is left out when a type has none. No Settings in an embed (FR-017, R10); a reader who cannot edit is offered no changes (depends on T024, T025)
-- [ ] T027 [US4] [ui] Remove from the toolbar: the **Properties** button, the **⋯ View options** menu, `ColumnsControl`, the timeline's two `<select>`s, the table's sub-items `<select>`. `ViewActionItems` stays for the view tab's right-click. Then `codegraph callers anchoredMenuStyle`: spec 010 kept it for `ColumnsControl`; if it has no caller left, remove it and say why in `check-anchoredmenu.mjs`, or keep it for its remaining caller (depends on T026)
-- [ ] T028 [US4] [ui] The three empty states in `CollectionView.tsx` (board, timeline, calendar) say "Open Settings, then Edit properties, to add one." in place of "Open ⚙ Properties to add one.", each keeping its own first sentence
-- [ ] T029 [P] [US4] [i18n] The strings in contracts/ui.md for Settings and the three new empty-state sentences in `de.json`, `es.json`, `nl.json`; strings only the removed controls used are removed from all three (check each with a search first)
-- [ ] T030 [US4] [test] New `web/tests/view-settings.mjs`, registered in `web/tests/package.json`: a list of every action the old ⋯, Properties and dropdowns offered, each found and done from Settings (SC-004); values on the right; Escape returns focus to Settings; Tab stays inside; a bottom sheet at phone width; no Settings in an embed; a reader is offered no changes; opened from a side peek it draws over it
-- [ ] T031 [US4] [test] Update `web/tests/database-toolbar-menus.mjs`, `embeds.mjs`, `menu-icons.mjs`, `menu-keyboard.mjs`, `people.mjs`, `side-peek.mjs` and the `fixture.mjs` helper from the old controls to Settings, keeping every assertion
-- [ ] T032 [P] [US4] [wiki] `wiki/views.md` and `wiki/collections.md`: the Settings menu replaces every mention of Properties, ⋯ and the dropdowns; where Edit properties is now
+- [x] T024 [US4] [ui] `MenuSubmenu` gains `value?: ReactNode` in `web/src/ui/Menu.tsx`, drawn muted on the right before `›` (`Menu.css`, tokens only); documented in `web/src/ui/README.md`; a catalogue case in `web/catalog/main.tsx` in light and dark
+- [x] T025 [US4] [ui] Five new functions in `web/src/menuIcons.ts`: `propertyVisibility` (`Eye`), `openRowsIn` (`PanelRight`), `timelineDates` (`CalendarRange`), `subItems` (`Network`), `editProperties` (`Rows3`); `check-menu-icons.mjs` decides if one is taken
+- [x] T026 [US4] [ui] Settings in `CollectionView.tsx`: an `IconButton` with the sliders icon, tooltip and accessible name "Settings", `aria-haspopup="menu"`, just before **New**, opening a `ui/Menu` (`narrow="sheet"`, label "{name} view settings") with the items of research R8 except Layout (R9): **View settings** (rename with `opensDialog`; Property visibility with value "{n} of {total}" over `MenuCheckboxItem`s; Open rows in over `ViewOpenMenu`'s radio group, not for forms; timeline only Start date and End date; table only, with a self-relation, Sub-items), a separator, `moveLeft`, `moveRight`, `delete` (danger, last), a separator, **Database settings** (Edit properties, opening `SchemaEditor`). The view-type part is left out when a type has none. No Settings in an embed (FR-017, R10); a reader who cannot edit is offered no changes (depends on T024, T025)
+- [x] T027 [US4] [ui] Remove from the toolbar: the **Properties** button, the **⋯ View options** menu, `ColumnsControl`, the timeline's two `<select>`s, the table's sub-items `<select>`. `ViewActionItems` stays for the view tab's right-click. Then `codegraph callers anchoredMenuStyle`: spec 010 kept it for `ColumnsControl`; if it has no caller left, remove it and say why in `check-anchoredmenu.mjs`, or keep it for its remaining caller (depends on T026)
+- [x] T028 [US4] [ui] The three empty states in `CollectionView.tsx` (board, timeline, calendar) say "Open Settings, then Edit properties, to add one." in place of "Open ⚙ Properties to add one.", each keeping its own first sentence
+- [x] T029 [P] [US4] [i18n] The strings in contracts/ui.md for Settings and the three new empty-state sentences in `de.json`, `es.json`, `nl.json`; strings only the removed controls used are removed from all three (check each with a search first)
+- [x] T030 [US4] [test] New `web/tests/view-settings.mjs`, registered in `web/tests/package.json`: a list of every action the old ⋯, Properties and dropdowns offered, each found and done from Settings (SC-004); values on the right; Escape returns focus to Settings; Tab stays inside; a bottom sheet at phone width; no Settings in an embed; a reader is offered no changes; opened from a side peek it draws over it
+- [x] T031 [US4] [test] Update `web/tests/database-toolbar-menus.mjs`, `embeds.mjs`, `menu-icons.mjs`, `menu-keyboard.mjs`, `people.mjs`, `side-peek.mjs` and the `fixture.mjs` helper from the old controls to Settings, keeping every assertion
+- [x] T032 [P] [US4] [wiki] `wiki/views.md` and `wiki/collections.md`: the Settings menu replaces every mention of Properties, ⋯ and the dropdowns; where Edit properties is now
 
 ---
 
@@ -113,19 +113,19 @@ description: "Tasks for database views that read comfortably and handle the way 
 
 **Independent Test**: quickstart §5.
 
-- [ ] T033 [US5] [ui] `web/src/styles.css`: inside `.collection--embed`, the toolbar's control group at `opacity: 0`, shown on `:hover`, `:focus-within` and `[data-menu-open]`; always shown under `@media (hover: none)`; the opacity transition dropped under reduced motion. `data-menu-open` set from the toolbar menus' `onOpenChange` in `CollectionView.tsx`. The buttons stay in the tab order and the accessibility tree (research R11)
-- [ ] T034 [US5] [ui] A "Filtered" / "Sorted" marker beside the view tabs of an embed that shows while the buttons are folded (FR-021)
-- [ ] T035 [P] [US5] [i18n] "Filtered" and "Sorted" in `de.json`, `es.json`, `nl.json`
-- [ ] T036 [US5] [test] New `web/tests/embed-toolbar-fold.mjs`, registered in `web/tests/package.json`: hidden at rest; shown on hover and one Tab; stays while a menu from it is open; always shown with `hasTouch`; "Filtered" at rest; the toolbar's box does not move; two embeds fold on their own; a page's own toolbar never folds. Mutation-checked
-- [ ] T037 [P] [US5] [wiki] `wiki/views.md`: the folding toolbar in documents
+- [x] T033 [US5] [ui] `web/src/styles.css`: inside `.collection--embed`, the toolbar's control group at `opacity: 0`, shown on `:hover`, `:focus-within` and `[data-menu-open]`; always shown under `@media (hover: none)`; the opacity transition dropped under reduced motion. `data-menu-open` set from the toolbar menus' `onOpenChange` in `CollectionView.tsx`. The buttons stay in the tab order and the accessibility tree (research R11)
+- [x] T034 [US5] [ui] A "Filtered" / "Sorted" marker beside the view tabs of an embed that shows while the buttons are folded (FR-021)
+- [x] T035 [P] [US5] [i18n] "Filtered" and "Sorted" in `de.json`, `es.json`, `nl.json`
+- [x] T036 [US5] [test] New `web/tests/embed-toolbar-fold.mjs`, registered in `web/tests/package.json`: hidden at rest; shown on hover and one Tab; stays while a menu from it is open; always shown with `hasTouch`; "Filtered" at rest; the toolbar's box does not move; two embeds fold on their own; a page's own toolbar never folds. Mutation-checked
+- [x] T037 [P] [US5] [wiki] `wiki/views.md`: the folding toolbar in documents
 
 ---
 
 ## Phase 7: Polish and cross-cutting (PR 2)
 
-- [ ] T038 [ui] `rawButtons` in `web/tokens/budgets.json` lowered to the count measured after PR 2 (271 before); bundle gzip measured against the cap
-- [ ] T039 [P] [wiki] Retake every shot `check-wiki.mjs` lists as stale with `node web/scripts/shoot-wiki.mjs <id>`
-- [ ] T040 [test] Before PR 2 is offered: `codegraph sync`, then `codegraph callers` on `MenuSubmenu`, `ViewActionItems`, `ViewOpenMenu`, `SchemaEditor` and the removed `ColumnsControl`; `/code-review` on the diff; `ux-ui-audit` on the toolbar, Settings and an embed in light and dark at desktop and phone width; findings fixed or filed
+- [x] T038 [ui] `rawButtons` in `web/tokens/budgets.json` lowered to the count measured after PR 2 (271 before); bundle gzip measured against the cap
+- [x] T039 [P] [wiki] Retake every shot `check-wiki.mjs` lists as stale with `node web/scripts/shoot-wiki.mjs <id>`
+- [x] T040 [test] Before PR 2 is offered: `codegraph sync`, then `codegraph callers` on `MenuSubmenu`, `ViewActionItems`, `ViewOpenMenu`, `SchemaEditor` and the removed `ColumnsControl`; `/code-review` on the diff; `ux-ui-audit` on the toolbar, Settings and an embed in light and dark at desktop and phone width; findings fixed or filed
 
 ---
 
