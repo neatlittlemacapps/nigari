@@ -1,6 +1,10 @@
 package server
 
-import "testing"
+import (
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
 
 // A read-only token may aggregate a database over REST, as it may over MCP
 // query_rows, and is still refused every route that writes, the same
@@ -31,5 +35,24 @@ func TestAReadOnlyTokenMayAggregateButNotWrite(t *testing.T) {
 	// A write token still aggregates, so the route is not open to readers only.
 	if rec := f.bearer(f.openTok, "POST", "/api/collections/"+col+"/aggregate", `{"groupBy":"st","aggregate":"count"}`); rec.Code != 200 {
 		t.Errorf("aggregate with a write token: %d", rec.Code)
+	}
+}
+
+// Every pattern in readOnlyPOSTRoutes is a route the server registers,
+// spelled as the mux spells it. The list is matched by string: a route renamed
+// or re-worded would leave a dead key, and read-only tokens would be refused
+// again while MCP still answers (#473).
+func TestReadOnlyPOSTRoutesAreRegisteredRoutes(t *testing.T) {
+	s := testServer(t)
+	for pattern := range readOnlyPOSTRoutes {
+		method, path, ok := strings.Cut(pattern, " ")
+		if !ok {
+			t.Errorf("%q is not METHOD PATH", pattern)
+			continue
+		}
+		req := httptest.NewRequest(method, strings.ReplaceAll(path, "{id}", "x"), nil)
+		if _, got := s.mux.Handler(req); got != pattern {
+			t.Errorf("%q matches no registered route (the mux answers %q)", pattern, got)
+		}
 	}
 }

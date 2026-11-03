@@ -248,7 +248,10 @@ func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
 		}
 		// A read-only API token may not perform mutating HTTP methods. Cookie
 		// sessions (TokenScope=="") are unaffected. This is the single REST
-		// choke point that mirrors the per-tool MCP check.
+		// choke point that mirrors the per-tool MCP check. The routes in
+		// readOnlyPOSTRoutes are let through: they use POST for a body and
+		// only read, so a write added to one of their handlers must gate
+		// itself.
 		if u.TokenScope == "read" && !readOnlyPOSTRoutes[r.Pattern] {
 			switch r.Method {
 			case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
