@@ -203,15 +203,24 @@ abilities are added.
 as it shows no **Properties** or **⋯** today. The spec's User Story 4
 scenario 6 and FR-017 are amended to say so.
 
-**Why**: #22 removed view settings from embeds on purpose: renaming or
-removing a view is the database's business, and in a document it was too easy
-to do by accident (comment at `CollectionView.tsx`'s tab `onContextMenu`).
-The embed keeps its own filter and sort in the toolbar (#26), which stay. A
-Settings button holding only "Open rows in" would be a second place for a
-rarely used setting.
+**Why** (corrected 2026-11-03, owner): the first version of this entry gave
+"#22" as the reason, read from a code comment written before the fork; in
+this repository #22 is about comments, so it explained nothing. The owner's
+own #270 asked for Settings in embeds, with view settings only. The real
+reason to leave them out of spec 012 is the owner's model of an embed
+(2026-11-03, with Notion screenshots): an embed **owns its own views**,
+separate from the database's, copied from them when wanted (#371). Settings
+in an embed acts on those views, with no confirmation since only the embed
+changes, and on the database's properties only with a confirmation that
+says the original changes everywhere. Today an embed shows the database's
+own views, so Settings there would rename or remove them everywhere. That
+model is **spec 014** (#371, under epic #426), and Settings in embeds is
+built there, on embed-owned views.
 
-**Turned down**: #270's "the panel shows only view settings there", which
-would bring rename and remove back into documents.
+**Turned down**: Settings in embeds now, on the database's shared views
+(a rename in a document would rename everywhere); pulling #371 into spec 012
+(it roughly doubles the spec and delays PR 1's fixes); folding it into spec
+013 (already planned at 45 tasks around per-person filters).
 
 ## R11 — Fold-away toolbar: CSS only, opacity not visibility
 

@@ -85,7 +85,7 @@ description: "Tasks for database views that read comfortably and handle the way 
 
 ### Closing PR 1
 
-- [ ] T023 [test] Before PR 1 is offered: bundle gzip measured against `check-bundle.mjs`'s cap; stale shots retaken with `shoot-wiki.mjs`; `codegraph sync`, then `codegraph callers` on `checkViewColOrder`, `orderedColumns`, `useColumnDrag`, `dropIndex`; `/code-review` on the diff; `ux-ui-audit` on the table and board in light and dark at desktop and phone width; findings fixed or filed
+- [x] T023 [test] Before PR 1 is offered: bundle gzip measured against `check-bundle.mjs`'s cap; stale shots retaken with `shoot-wiki.mjs`; `codegraph sync`, then `codegraph callers` on `checkViewColOrder`, `orderedColumns`, `useColumnDrag`, `dropIndex`; `/code-review` on the diff; `ux-ui-audit` on the table and board in light and dark at desktop and phone width; findings fixed or filed
 
 ---
 
