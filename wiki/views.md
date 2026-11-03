@@ -501,8 +501,11 @@ change a view's type (a board into a table); create a new view instead.
 
 Someone who can only read the database gets no **Settings**, and neither does a
 database shown inside a document: its views are the database's own, so a
-change made there would change them everywhere. Embedded databases are to get
-views of their own, with a Settings of their own; that is not built yet.
+change made there would change them everywhere. That includes a timeline's
+start and end dates and a table's sub-items, which a document used to offer:
+change them on the database's own page, under **Settings**, and every document
+that shows the view follows. Embedded databases are to get views of their own,
+with a Settings of their own; that is not built yet.
 
 ### In a document
 
