@@ -103,7 +103,7 @@ description: "Tasks for database views that read comfortably and handle the way 
 - [x] T029 [P] [US4] [i18n] The strings in contracts/ui.md for Settings and the three new empty-state sentences in `de.json`, `es.json`, `nl.json`; strings only the removed controls used are removed from all three (check each with a search first)
 - [x] T030 [US4] [test] New `web/tests/view-settings.mjs`, registered in `web/tests/package.json`: a list of every action the old ⋯, Properties and dropdowns offered, each found and done from Settings (SC-004); values on the right; Escape returns focus to Settings; Tab stays inside; a bottom sheet at phone width; no Settings in an embed; a reader is offered no changes; opened from a side peek it draws over it
 - [x] T031 [US4] [test] Update `web/tests/database-toolbar-menus.mjs`, `embeds.mjs`, `menu-icons.mjs`, `menu-keyboard.mjs`, `people.mjs`, `side-peek.mjs` and the `fixture.mjs` helper from the old controls to Settings, keeping every assertion
-- [ ] T032 [P] [US4] [wiki] `wiki/views.md` and `wiki/collections.md`: the Settings menu replaces every mention of Properties, ⋯ and the dropdowns; where Edit properties is now
+- [x] T032 [P] [US4] [wiki] `wiki/views.md` and `wiki/collections.md`: the Settings menu replaces every mention of Properties, ⋯ and the dropdowns; where Edit properties is now
 
 ---
 
@@ -117,7 +117,7 @@ description: "Tasks for database views that read comfortably and handle the way 
 - [x] T034 [US5] [ui] A "Filtered" / "Sorted" marker beside the view tabs of an embed that shows while the buttons are folded (FR-021)
 - [x] T035 [P] [US5] [i18n] "Filtered" and "Sorted" in `de.json`, `es.json`, `nl.json`
 - [x] T036 [US5] [test] New `web/tests/embed-toolbar-fold.mjs`, registered in `web/tests/package.json`: hidden at rest; shown on hover and one Tab; stays while a menu from it is open; always shown with `hasTouch`; "Filtered" at rest; the toolbar's box does not move; two embeds fold on their own; a page's own toolbar never folds. Mutation-checked
-- [ ] T037 [P] [US5] [wiki] `wiki/views.md`: the folding toolbar in documents
+- [x] T037 [P] [US5] [wiki] `wiki/views.md`: the folding toolbar in documents
 
 ---
 

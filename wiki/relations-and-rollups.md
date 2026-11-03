@@ -41,7 +41,8 @@ below.
 
 ### Adding one
 
-1. Open the collection and click **Properties** in the view bar. The dialog is
+1. Open the collection, then **Settings** › **Edit properties** in the view
+   bar. The dialog is
    titled **Collection properties**.
 2. Type a name into **New property name**, choose **Relation** from the type
    list, and click **Add**.
@@ -104,11 +105,11 @@ When a relation points at the collection it lives in, a table view can draw the
 rows as a tree. The value of the relation names the row's **sub-items**: a
 parent lists its children, not the other way round.
 
-Switch it on per view: on a table view, a drop-down appears in the view bar
-reading **No sub-items**, listing each self-relation the collection has. Pick
-one and the rows nest, with a `▾` / `▸` toggle in front of any row that has
+Switch it on per view: on a table view, **Settings** in the view bar has a
+**Sub-items** item, reading **None**, listing each self-relation the collection
+has. Pick one and the rows nest, with a `▾` / `▸` toggle in front of any row that has
 sub-items and a blank in front of any row that does not. It is a table-view
-setting only: a board or a gallery has no tree to draw, and the drop-down does
+setting only: a board or a gallery has no tree to draw, and the item does
 not appear there. Rows that are nobody's sub-item sit at the top level. A
 relation that accidentally forms a circle does not loop forever; the branch
 simply stops.
@@ -377,8 +378,8 @@ once loading is done rather than instantly. Over MCP, where a `limit` cuts the
 result short, the sort is the database's alone and a computed column has nothing
 for it to sort on.
 
-**Hiding is per view.** The **Columns** button lists every property under
-**Shown** and **Hidden**; click one to move it. That is the answer to "this
+**Hiding is per view.** **Settings** › **Property visibility** lists every
+property with a tick for the shown ones; click one to show or hide it. That is the answer to "this
 rollup belongs on the table, not on the board": nothing is deleted and no other
 view changes.
 

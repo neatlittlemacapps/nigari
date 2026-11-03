@@ -103,7 +103,9 @@ export default function ViewSettingsMenu({
       <MenuItem fn="rename" opensDialog onClick={() => onRename(view)}>
         {t('Rename view')}
       </MenuItem>
-      {schema.length > 0 && view.type !== 'form' && (
+      {/* On a form too: hiding a property there takes its field off the form,
+          as the Columns popover did. */}
+      {schema.length > 0 && (
         <MenuSubmenu
           fn="propertyVisibility"
           label={t('Property visibility')}

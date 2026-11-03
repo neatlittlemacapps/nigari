@@ -64,7 +64,7 @@ own language. On a table with no rows there is no foot at all, only the
 empty-state line.
 
 **Sub-items.** When the collection has a relation property pointing back at
-itself, the settings bar offers a picker: **No sub-items**, or that property.
+itself, **Settings** offers **Sub-items**: **None**, or that property.
 Choose it and the table becomes a tree: a row that points at other rows in the
 same collection gets a `▾` to fold them away and a `▸` to bring them back (the
 buttons are labelled **Collapse** and **Expand** for screen readers). Rows drawn
@@ -84,7 +84,8 @@ its left or right side; Escape, or letting go outside the heading row, puts it
 back. With a finger, hold the heading for about a third of a second first, as
 on a board. A click on a heading, or a right-click, opens its menu instead:
 **Move left**, **Move right** (left out at either end) and **Hide in view**,
-which hides the column in this view as the settings bar's column list does.
+which hides the column in this view as **Settings** › **Property visibility**
+does.
 After a move, focus stays on the heading, so the keyboard can keep going.
 
 The order belongs to **this view**, like the column widths: another table view
@@ -220,10 +221,10 @@ A date property is a calendar date and is never shifted by a time zone: a row
 dated the 18th sits on the 18th for everyone.
 
 One limit: the calendar's date property is chosen when the view is created (the
-first date property in the schema) and the settings bar has no control to change
-it afterwards. An agent can change it with `set_view` and `date_prop`. Without a
-usable one the view says *This calendar needs a Date property. Open ⚙ Properties
-to add one.*
+first date property in the schema) and **Settings** has no item to change it
+afterwards. An agent can change it with `set_view` and `date_prop`. Without a
+usable one the view says *This calendar needs a Date property. Open Settings,
+then Edit properties, to add one.*
 
 ### `timeline`
 
@@ -231,18 +232,20 @@ A horizontal day grid with a sticky title column on the left, one bar per row,
 month headings across the top and a line marking today. Clicking either the label
 or the bar opens the row.
 
-The settings bar carries two pickers for this view, and only for this view:
+**Settings** carries two items for this view, and only for this view, each
+showing its current choice on the right:
 
-| Picker | Options | Effect |
+| Item | Options | Effect |
 | --- | --- | --- |
-| **Start:** | **Start: (none)**, or any date property | Where the bar begins. Choosing (none) clears the choice, and the timeline falls back to the first date property in the schema. |
-| **End:** | **End: (none)**, or any date property | Where the bar ends. With none, every bar is one day wide. |
+| **Start date** | **None**, or any date property | Where the bar begins. Choosing None clears the choice, and the timeline falls back to the first date property in the schema. |
+| **End date** | **None**, or any date property | Where the bar ends. With none, every bar is one day wide. |
 
 When you create a timeline it takes the first date property as its start and the
 second as its end, if there is one. A row without a start date is left out. If no
 row has one, the view says *No entries with a date yet. Set a start date so they
 appear on the timeline.* With no start property at all it says *This timeline
-needs a Date property as its start. Open ⚙ Properties to add one.*
+needs a Date property as its start. Open Settings, then Edit properties, to add
+one.*
 
 The visible range always contains today: it runs from three days before the
 earlier of today and the first start, to four days after the later of today and
@@ -317,7 +320,8 @@ form on a collection that has been moved to the trash stops accepting anything.
 If the link has been revoked, the visitor gets *Form not found* and *This link is
 not valid or has been switched off.*
 
-Hiding a property under **Columns** hides it on the public form too. More on the
+Hiding a property under **Settings** › **Property visibility** hides it on the
+public form too. More on the
 published side in [Sharing](sharing.md#public-forms).
 
 ### `chart`
@@ -401,7 +405,7 @@ have no number in Effort and are left out.* Rows come highest value first. Up to
 50 rows are drawn (12 on a donut); the rest are added up into **Other**. All the
 bars of **Each row** share one colour, unless **Colours** is set to
 **Colourful**: then each bar gets its own. Selecting a row's bar opens that row the
-way the view's **Open pages in** says.
+way the view's **Open rows in** says.
 
 **When nothing groups.** A database with no select, multi-select, person,
 checkbox, date or relation property, and no number property, keeps the bars,
@@ -413,7 +417,7 @@ group by**. Nothing is saved until the database has something to draw with.
 **The rows behind a group.** Click a bar, a slice or a point, or one of the
 group buttons under the chart, and the rows behind it are listed underneath:
 the same rows a filter on that value would show in a table. A click on a row
-opens it the way the view's **Open pages in** says. **Close** puts the list
+opens it the way the view's **Open rows in** says. **Close** puts the list
 away. At most 200 rows are listed; the count above them is the full one.
 
 **Reading it without a mouse or without the picture.** Under the chart is one
@@ -452,28 +456,65 @@ and saving as SVG. Agents can set the chart's settings over MCP; see
 
 ## The settings bar
 
-The view tabs sit on the left of the collection's toolbar; everything that
-configures the current view sits on the right, in this order:
+The view tabs sit on the left of the collection's toolbar; the controls sit on
+the right, in this order:
 
 | Control | What it opens |
 | --- | --- |
-| **Start:** / **End:** | Timeline only: which date properties the bars use. |
-| **No sub-items** / a relation | Table only, and only when a relation points back at this collection. |
 | **Filter** | The conditions a row must meet. Shows the count: `Filter (2)`. |
 | **Sort** | One property, ascending or descending. |
 | **Group** | Board only: which property makes the columns. |
-| **Columns** | Which properties this view shows. Shows `Columns (4/7)` when anything is hidden. |
-| **Properties** | The schema editor: add a property, change a type, edit select options. It edits the collection, not the view, so it changes every view at once. This is the **⚙ Properties** the empty-state messages point at. |
-| **⋯** (*View options*) | Rename, move and remove this view. |
+| **Settings** (the sliders icon) | Everything else that configures the view, and the database's properties; see below. |
 | **＋ New** | Creates an *Untitled* row and keeps you in the view; a click opens it. Every view except a form has it. |
 
-**Filter**, **Sort**, **Group** and **Columns** light up in the accent colour as
-soon as anything is set, so you can see that a view is filtered without opening
-the popover.
+**Filter**, **Sort** and **Group** light up in the accent colour as soon as
+anything is set, so you can see that a view is filtered without opening the
+popover.
 
-On a narrow screen (about 640 px and below) those four popovers dock to the
-bottom of the window instead of hanging under their button, and take up to about
-three quarters of its height.
+On a narrow screen (about 640 px and below) those popovers dock to the bottom of
+the window instead of hanging under their button, and take up to about three
+quarters of its height. **Settings** does the same: on a phone it opens as a
+sheet along the bottom.
+
+### Settings
+
+One button holds what used to be spread over a **Properties** button, a `⋯`, a
+**Columns** button and the dropdowns some views had. It opens a menu in two
+sections, each item with its icon, and the ones that hold a value show it on the
+right, with `›` where a further list opens:
+
+| Item | What it does |
+| --- | --- |
+| *View settings* | |
+| **Rename view** | Asks for the new name. |
+| **Property visibility** `3 of 8` | Which properties this view shows: one tick per property, and **Show all** / **Hide all**. On a form it decides which fields the form asks. See [Which properties a view shows](#which-properties-a-view-shows). |
+| **Open rows in** `Side peek` | How a click on a row opens it: **Full page**, **Side peek** or **Center peek** ([Collections](collections.md#how-rows-open)). Not on a form. |
+| **Start date**, **End date** | Timeline only: which date properties the bars use. |
+| **Sub-items** | Table only, and only when a relation points back at this collection. |
+| **Move left**, **Move right** | Move this view's tab along the strip; greyed out at the ends. |
+| **Remove view** | In red, last: removes this view (not its rows). Not offered when it is the only view. |
+| *Database settings* | |
+| **Edit properties** | The schema editor: add a property, change a type, edit select options. It edits the database, not the view, so it changes every view at once. This is what the empty-state messages point at. |
+
+Escape closes the menu and puts focus back on **Settings**. There is no item to
+change a view's type (a board into a table); create a new view instead.
+
+Someone who can only read the database gets no **Settings**, and neither does a
+database shown inside a document: its views are the database's own, so a
+change made there would change them everywhere. Embedded databases are to get
+views of their own, with a Settings of their own; that is not built yet.
+
+### In a document
+
+A database embedded in a document keeps its toolbar out of the way of the text.
+Its buttons (**Filter**, **Sort**, **New**) are hidden until the pointer is over
+the database or keyboard focus is inside it, and stay while a popover or menu
+opened from them is open. They keep their place while hidden, so nothing moves
+when they appear, and the keyboard reaches them: one Tab from the view tabs
+shows them. On a touch screen, where there is no hover, they are always shown.
+When the view is filtered or sorted, **Filtered** or **Sorted** stands beside
+the view tabs while the buttons are hidden, so rows missing from the table are
+never a surprise. A database on its own page always shows its toolbar.
 
 ## Filters
 
@@ -577,10 +618,11 @@ it.
 
 ## Which properties a view shows
 
-The **Columns** button opens two lists, **Shown** and **Hidden**, each row with
-its type icon and an eye. Click a row to move it between the lists. **Hide all**
-and **Show all** do the obvious, and the popover says *Nothing shown* or
-*Nothing hidden* when a list is empty.
+**Settings** › **Property visibility** lists every property with a tick for the
+ones this view shows; the item itself says how many are shown, `3 of 8`. Click
+a property to show or hide it; the list stays open, so several can be changed
+in a row. **Show all** and **Hide all** do the obvious. A table column can also
+be hidden from its heading's menu, **Hide in view**.
 
 Hiding is per view and reaches every renderer, not just the table: hidden
 properties disappear from table columns, board cards, gallery cards, the three
@@ -589,7 +631,8 @@ published form.
 
 **Do not hide the property a view is built on.** A board that groups by Status
 and hides Status can no longer find it and falls back to the message *This board
-needs a Select property to group by. Open ⚙ Properties to add one.* The same
+needs a Select property to group by. Open Settings, then Edit properties, to
+add one.* The same
 applies to a calendar's date property and a timeline's start. There is no reason
 to hide it anyway: a board already leaves the grouping property off its own
 cards.
@@ -615,19 +658,20 @@ The two are worth telling apart before you go looking for lost data.
    menu offers **Table**, **Board**, **Gallery**, **Calendar**, **Timeline**,
    **List**, **Form**, **Chart**. The new view is named after its type, is appended at the
    end, and opens straight away.
-2. **Rename** by double-clicking the tab, or through `⋯` → **Rename view**. A
-   right-click on any tab offers renaming, moving and removing for that view,
-   without switching to it first; `⋯` acts on the view you are on.
-3. **Move** it along the strip with `⋯` → **Move left** / **Move right**. The
-   entries grey out at the ends. The order of the tabs is the order they are in;
-   the first tab is what opens when someone opens the collection.
-4. **Remove** with `⋯` → **Remove view**. It happens at once, without a
+2. **Rename** by double-clicking the tab, or through **Settings** →
+   **Rename view**. A right-click on any tab offers renaming, moving and
+   removing for that view, without switching to it first; **Settings** acts on
+   the view you are on.
+3. **Move** it along the strip with **Settings** → **Move left** / **Move
+   right**. The entries grey out at the ends. The order of the tabs is the order
+   they are in; the first tab is what opens when someone opens the collection.
+4. **Remove** with **Settings** → **Remove view**. It happens at once, without a
    confirmation, and takes the view's filters, sort and hidden columns with it.
    The rows are untouched. On a collection with one view the entry is not
    offered: a collection needs something to draw.
 
-The `⋯` carries the tooltip *View options* and sits in the settings bar on the
-right, not inside the tab.
+**Settings** sits in the settings bar on the right, just before **New**, not
+inside the tab.
 
 When a new view is created, sensible defaults are filled in so it draws something
 immediately: a board takes the first select or multi-select property, a calendar
@@ -692,7 +736,7 @@ A read-only token is refused by both writing tools.
 
 Three things are not reachable from MCP: a form view's heading and description,
 typed on the form itself; its submit label; and a table's sub-item relation,
-chosen in the settings bar.
+chosen under **Settings** › **Sub-items**.
 
 A new view's id is derived from its name, so a view created as "Open" gets the id
 `open`. Call `get_collection` if you need to be sure.

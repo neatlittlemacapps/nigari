@@ -17,8 +17,8 @@ thing, two audiences. See [Collections](collections.md).
 
 ## Adding a formula column
 
-1. Open the collection and click **Properties** in the view's toolbar. The
-   dialog is titled **Collection properties**.
+1. Open the collection, then **Settings** › **Edit properties** in the view's
+   toolbar. The dialog is titled **Collection properties**.
 2. At the bottom, type a name into **New property name**, pick **Formula** from
    the type list, and click **Add**.
 3. The new property gets an **Expression** field. Type the expression there. The
@@ -176,11 +176,10 @@ it, so a brand-new row shows an empty bar rather than an error message.
 
 ### Hiding a formula column in one view
 
-A formula column can be switched off per view like any other. Click **Columns**
-in the view's toolbar: the panel has a **Shown** and a **Hidden** section, one
-row per property, and a click moves a property between them. **Hide all** and
-**Show all** do the whole list at once, and the button counts what is left
-(`Columns (4/7)`) whenever anything is hidden.
+A formula column can be switched off per view like any other. Open **Settings**
+in the view's toolbar, then **Property visibility**: one tick per property, a
+click shows or hides it, and **Show all** and **Hide all** do the whole list at
+once. The item counts what is shown (`4 of 7`).
 
 This is a property of the *view*, not of the column: the same formula can be
 visible in the table and hidden on the board. More in [Views](views.md).
