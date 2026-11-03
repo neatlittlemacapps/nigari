@@ -49,9 +49,10 @@ set -euo pipefail
 : "${GH_TOKEN:?set GH_TOKEN to a token with the project scope}"
 : "${BOARD_PROJECT:?set BOARD_PROJECT to the number of the board}"
 field_name="${BOARD_FIELD:-Surface}"
-# The label a `labeled` event added (see the breaking rule in sync_one); empty
-# on every other run, including a run by hand without the variable.
-label_added="${LABEL_ADDED:-}"
+# The label a `labeled` event added, lowercased like the issue's labels (it is
+# "Breaking" on GitHub); see the breaking rule in sync_one. Empty on every
+# other run, including a run by hand. tr, not ${x,,}: macOS ships bash 3.2.
+label_added="$(tr '[:upper:]' '[:lower:]' <<<"${LABEL_ADDED:-}")"
 repo="${GITHUB_REPOSITORY:?set GITHUB_REPOSITORY to owner/repo}"
 owner="${repo%%/*}"
 name="${repo#*/}"
@@ -199,16 +200,15 @@ sync_one() {
   # bug labels it, because it can set a label but cannot reach the board, and
   # this run sets the field. Only while the issue is open (a
   # closed one's Priority orders no work), and only when one of the two labels
-  # has just been added (LABEL_ADDED, from the workflow's `labeled` event, lowercased
-  # like the labels above: the label is named "Breaking" on GitHub) or the issue
-  # has no Priority yet (the nightly run catches a missed event). So the owner
-  # can still lower a breaking bug's Priority by hand and the next run leaves
-  # it; a sync that forced P1 on every run would overwrite that silently.
+  # has just been added (label_added, from the workflow's `labeled` event) or
+  # the issue has no Priority yet (the nightly run catches a missed event).
+  # So the owner can still lower a breaking bug's Priority by hand and the
+  # next run leaves it (until one of the two labels is added again); a sync that forced P1 on every run would overwrite that silently.
   if jq -e '.state == "OPEN"' <<<"$issue" >/dev/null \
      && jq -e 'index("bug") != null and index("breaking") != null' <<<"$labels" >/dev/null \
-     && [[ "${label_added,,}" == "breaking" || "${label_added,,}" == "bug" || "$priority" == "—" ]]; then
+     && [[ "$label_added" == "breaking" || "$label_added" == "bug" || "$priority" == "—" ]]; then
     if [[ -z "$priority_one" ]]; then
-      echo "::warning::board-sync: #$number is labelled breaking, but the Priority field has no P1 option"
+      echo "::warning::board-sync: #$number is labelled bug and breaking, but the Priority field has no P1 option"
     elif [[ "$priority" != "$priority_one_name" ]]; then
       # A failed write is a warning, like the label calls below: one issue
       # must not stop an --all run for every issue after it.

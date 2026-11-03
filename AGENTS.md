@@ -165,8 +165,9 @@ added on the REST side and missing on the MCP side, found later one by one.
 - Small fixes can skip the spec: an issue, a branch, a pull request.
 - **A bug found while working gets an issue at once** (owner, 2026-10-30),
   and when its turn comes it is fixed in its own small pull request, not
-  folded into a feature. It goes first only when it is breaking (above); the
-  2026-10-30 "bugs before features" order was replaced on 2026-11-03.
+  folded into a feature. Its place in the queue is its Priority; it is raised
+  to P1 automatically only when it is breaking (above). The 2026-10-30 "bugs
+  before features" order was replaced on 2026-11-03.
 
 ## Commits
 
