@@ -113,10 +113,10 @@ description: "Tasks for database views that read comfortably and handle the way 
 
 **Independent Test**: quickstart §5.
 
-- [ ] T033 [US5] [ui] `web/src/styles.css`: inside `.collection--embed`, the toolbar's control group at `opacity: 0`, shown on `:hover`, `:focus-within` and `[data-menu-open]`; always shown under `@media (hover: none)`; the opacity transition dropped under reduced motion. `data-menu-open` set from the toolbar menus' `onOpenChange` in `CollectionView.tsx`. The buttons stay in the tab order and the accessibility tree (research R11)
-- [ ] T034 [US5] [ui] A "Filtered" / "Sorted" marker beside the view tabs of an embed that shows while the buttons are folded (FR-021)
-- [ ] T035 [P] [US5] [i18n] "Filtered" and "Sorted" in `de.json`, `es.json`, `nl.json`
-- [ ] T036 [US5] [test] New `web/tests/embed-toolbar-fold.mjs`, registered in `web/tests/package.json`: hidden at rest; shown on hover and one Tab; stays while a menu from it is open; always shown with `hasTouch`; "Filtered" at rest; the toolbar's box does not move; two embeds fold on their own; a page's own toolbar never folds. Mutation-checked
+- [x] T033 [US5] [ui] `web/src/styles.css`: inside `.collection--embed`, the toolbar's control group at `opacity: 0`, shown on `:hover`, `:focus-within` and `[data-menu-open]`; always shown under `@media (hover: none)`; the opacity transition dropped under reduced motion. `data-menu-open` set from the toolbar menus' `onOpenChange` in `CollectionView.tsx`. The buttons stay in the tab order and the accessibility tree (research R11)
+- [x] T034 [US5] [ui] A "Filtered" / "Sorted" marker beside the view tabs of an embed that shows while the buttons are folded (FR-021)
+- [x] T035 [P] [US5] [i18n] "Filtered" and "Sorted" in `de.json`, `es.json`, `nl.json`
+- [x] T036 [US5] [test] New `web/tests/embed-toolbar-fold.mjs`, registered in `web/tests/package.json`: hidden at rest; shown on hover and one Tab; stays while a menu from it is open; always shown with `hasTouch`; "Filtered" at rest; the toolbar's box does not move; two embeds fold on their own; a page's own toolbar never folds. Mutation-checked
 - [ ] T037 [P] [US5] [wiki] `wiki/views.md`: the folding toolbar in documents
 
 ---

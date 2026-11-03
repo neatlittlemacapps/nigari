@@ -410,6 +410,8 @@
   "{name} column": "Columna {name}",
   "Hide in view": "Ocultar en esta vista",
   "Settings": "Ajustes",
+  "Filtered": "Filtrada",
+  "Sorted": "Ordenada",
   "{name} view settings": "Ajustes de la vista {name}",
   "View settings": "Ajustes de la vista",
   "Database settings": "Ajustes de la base de datos",

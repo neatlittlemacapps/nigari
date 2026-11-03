@@ -398,6 +398,8 @@
   "{name} column": "Spalte {name}",
   "Hide in view": "In dieser Ansicht ausblenden",
   "Settings": "Einstellungen",
+  "Filtered": "Gefiltert",
+  "Sorted": "Sortiert",
   "{name} view settings": "Einstellungen der Ansicht {name}",
   "View settings": "Einstellungen der Ansicht",
   "Database settings": "Einstellungen der Datenbank",

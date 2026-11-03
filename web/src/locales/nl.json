@@ -398,6 +398,8 @@
   "{name} column": "Kolom {name}",
   "Hide in view": "Verbergen in deze weergave",
   "Settings": "Instellingen",
+  "Filtered": "Gefilterd",
+  "Sorted": "Gesorteerd",
   "{name} view settings": "Instellingen van weergave {name}",
   "View settings": "Instellingen van de weergave",
   "Database settings": "Instellingen van de database",

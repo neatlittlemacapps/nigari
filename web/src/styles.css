@@ -2127,20 +2127,64 @@ body:has(.icon-picker) .bn-side-menu {
   max-height: min(560px, 70vh);
 }
 
-/* An embed is a window onto the rows, not a second copy of the collection
-   (#22): its toolbar keeps to filter, sort and New, and steps back until the
-   pointer comes to the embed. Only where there IS a pointer (on a touch screen
-   nothing would ever bring it back), and never while a filter of the embed's
-   own is on: rows quietly missing from a table are worse than a toolbar. */
+/* An embed is a window onto the rows, not a second copy of the collection:
+   its toolbar keeps to filter, sort and New, and folds away until it is
+   reached for (spec 012, US5, research R11), so a document reads as text:
+   shown while the pointer is over the embed, while focus is inside it, and
+   while a menu or popover from it is open (data-menu-open; the menus are
+   portaled, so neither :hover nor :focus-within can see them). Opacity, not
+   visibility: the buttons keep their box, so nothing moves when they appear,
+   and stay in the tab order and the accessibility tree, so one Tab from the
+   view reveals them. Only where there IS a pointer: on a touch screen nothing
+   would ever bring them back. A filter or a sort of the embed's own is said
+   beside the tabs instead (.embed-view-state): rows quietly missing from a
+   table must not fold away with the button that explains them. */
 @media (hover: hover) {
-  .collection-scroll.is-embed:not(.is-filtered) .collection-actions {
+  .collection-scroll.is-embed .collection-actions {
     opacity: 0;
-    transition: opacity 0.15s;
+    transition: opacity var(--motion-duration-base) ease;
   }
   .bn-db-embed:hover .collection-scroll.is-embed .collection-actions,
-  .bn-db-embed:focus-within .collection-scroll.is-embed .collection-actions {
+  .bn-db-embed:focus-within .collection-scroll.is-embed .collection-actions,
+  .collection-scroll.is-embed .collection-actions[data-menu-open] {
     opacity: 1;
   }
+  /* The marker says it while the buttons are folded, and gives way once
+     they show it themselves. */
+  .bn-db-embed:hover .embed-view-state,
+  .bn-db-embed:focus-within .embed-view-state,
+  .collection-toolbar:has(.collection-actions[data-menu-open]) .embed-view-state {
+    visibility: hidden;
+  }
+}
+@media (hover: none) {
+  .embed-view-state {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .collection-scroll.is-embed .collection-actions {
+    transition: none;
+  }
+}
+
+/* Beside the view tabs: the toolbar spaces its children apart, and the auto
+   margin keeps this one against the tabs rather than in the middle. */
+.embed-view-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-150);
+  margin-right: auto;
+  flex: none;
+}
+
+.embed-view-state-item {
+  padding: 1px var(--space-200);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-scale-full);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  white-space: nowrap;
 }
 
 /* Widened from 272px. At that width a normal task title broke after three or

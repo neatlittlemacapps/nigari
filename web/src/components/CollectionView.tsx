@@ -224,6 +224,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     embed?.onViewId(id);
   };
   const [schemaOpen, setSchemaOpen] = useState(false);
+  // A popover of the filter or sort controls is open: with the templates
+  // menu, what keeps an embed's folding toolbar shown (data-menu-open).
+  const [fsOpen, setFsOpen] = useState(false);
   // The arrow beside New: this database's own templates, loaded when it opens
   // so the list is never older than the click.
   const [tplOpen, setTplOpen] = useState(false);
@@ -750,6 +753,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // Date props — the timeline's Start/End pickers choose from these.
   const dateProps = schema.filter((p) => p.type === 'date');
 
+  // A filter that actually narrows the rows (an unfinished one does not).
+  const viewFiltered = (view.filters ?? []).some((f) => filterIsArmed(f, isDateProp(f.property)));
+
   const viewSwitcher = (
     <div className="collection-toolbar">
       <div className="view-tabs">
@@ -801,8 +807,18 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           <ViewActionItems view={tabMenu.view} views={config.views} onRename={renameView} onMove={moveView} onRemove={removeView} />
         )}
       </Menu>
-      <div className="collection-actions">
-        {view.type !== 'form' && <FilterSortControls schema={schema} view={view} onChange={updateView} />}
+      {/* In a document the toolbar's buttons fold away until they are
+          reached for (spec 012, US5); a filter or a sort of the view must not
+          fold away with them (FR-021), so it is said here, beside the tabs,
+          and stays when the buttons are hidden. */}
+      {embed && (viewFiltered || view.sort) && (
+        <span className="embed-view-state">
+          {viewFiltered && <span className="embed-view-state-item">{t('Filtered')}</span>}
+          {view.sort && <span className="embed-view-state-item">{t('Sorted')}</span>}
+        </span>
+      )}
+      <div className="collection-actions" data-menu-open={fsOpen || tplOpen ? '' : undefined}>
+        {view.type !== 'form' && <FilterSortControls schema={schema} view={view} onChange={updateView} onOpenChange={setFsOpen} />}
         {/* Everything that configures the view and the database, in one menu
             (spec 012, US4): what the Columns popover, the Properties button,
             the ⋯ and the timeline's and sub-items' <select>s did. Not in a
@@ -899,7 +915,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         'collection-scroll' +
         (view.type === 'board' ? ' is-board' : '') +
         (embed ? ' is-embed' : '') +
-        (embed && (view.filters ?? []).some((f) => filterIsArmed(f, isDateProp(f.property))) ? ' is-filtered' : '')
+        (embed && viewFiltered ? ' is-filtered' : '')
       }
     >
       {viewSwitcher}
@@ -1407,12 +1423,17 @@ function FilterSortControls({
   schema,
   view,
   onChange,
+  onOpenChange,
 }: {
   schema: PropDef[];
   view: ViewDef;
   onChange: (patch: Partial<ViewDef>) => void;
+  /** Whether one of its popovers is open: an embed's folding toolbar stays
+   *  shown while it is (spec 012, FR-020). */
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState<'filter' | 'sort' | 'group' | null>(null);
+  useEffect(() => onOpenChange?.(open !== null), [open, onOpenChange]);
   const controlsRef = useRef<HTMLDivElement>(null);
   // Titles for every relation in this schema, so a filter on one can offer
   // rows to pick instead of demanding an id. Keyed by property id; the
