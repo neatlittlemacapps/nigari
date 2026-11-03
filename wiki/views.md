@@ -503,6 +503,8 @@ Someone who can only read the database gets no **Settings**, and neither does a
 database shown inside a document: its views are the database's own, so a
 change made there would change them everywhere. Embedded databases are to get
 views of their own, with a Settings of their own; that is not built yet.
+Until then, a timeline's start and end dates and a table's sub-items are set
+on the database's own page: open the database, then **Settings**.
 
 ### In a document
 

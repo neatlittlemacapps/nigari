@@ -316,7 +316,11 @@ menu from them is open, and are always shown on a touch screen.
   and Remove view (danger colour, last); and in a **Database settings**
   section: edit properties and templates.
 - **FR-014**: Every action the **⋯** menu, the **Properties** button and the
-  toolbar dropdowns offered before MUST be reachable from the panel.
+  toolbar dropdowns offered before MUST be reachable from the panel, on the
+  database's own page. In an embedded database the panel is not shown
+  (FR-017, research R10), so the timeline's date pickers and the sub-items
+  picker an embed had until now are reached on the database's page until
+  spec 014 gives embeds views of their own.
 - **FR-015**: Items MUST show their current value; items that open a further
   page MUST show `›`; every item MUST have its function's icon (spec 010).
 - **FR-016**: The panel MUST close on Escape with focus back on the button,
