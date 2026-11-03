@@ -123,9 +123,9 @@ description: "Tasks for database views that read comfortably and handle the way 
 
 ## Phase 7: Polish and cross-cutting (PR 2)
 
-- [ ] T038 [ui] `rawButtons` in `web/tokens/budgets.json` lowered to the count measured after PR 2 (271 before); bundle gzip measured against the cap
+- [x] T038 [ui] `rawButtons` in `web/tokens/budgets.json` lowered to the count measured after PR 2 (271 before); bundle gzip measured against the cap
 - [x] T039 [P] [wiki] Retake every shot `check-wiki.mjs` lists as stale with `node web/scripts/shoot-wiki.mjs <id>`
-- [ ] T040 [test] Before PR 2 is offered: `codegraph sync`, then `codegraph callers` on `MenuSubmenu`, `ViewActionItems`, `ViewOpenMenu`, `SchemaEditor` and the removed `ColumnsControl`; `/code-review` on the diff; `ux-ui-audit` on the toolbar, Settings and an embed in light and dark at desktop and phone width; findings fixed or filed
+- [x] T040 [test] Before PR 2 is offered: `codegraph sync`, then `codegraph callers` on `MenuSubmenu`, `ViewActionItems`, `ViewOpenMenu`, `SchemaEditor` and the removed `ColumnsControl`; `/code-review` on the diff; `ux-ui-audit` on the toolbar, Settings and an embed in light and dark at desktop and phone width; findings fixed or filed
 
 ---
 
