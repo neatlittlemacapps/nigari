@@ -74,6 +74,16 @@ explore` on the views, filters and audit code, 2026-11-03):
 - Q: Do agents get personal view changes? → A: No. An agent's view change is
   always "Save for everyone", as today.
 
+### Session 2026-11-03 (`/speckit-clarify`)
+
+- Q: While views are locked, are column widths, column order and hidden
+  columns locked too? → A: Yes. Locked means the whole view stays as set
+  up; FR-008 already lists them.
+- Q: Do personal changes work in a database embedded in a document? → A:
+  Yes. Filtering or sorting an embed is personal first; **Save for
+  everyone** writes it to the embed's own filters (#26), for everyone who
+  reads that document.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Change a view's filter for yourself, then save it for everyone or reset (Priority: P1)
@@ -275,8 +285,10 @@ changing a column's width, order or visibility leaves none.
 - Two people lock and unlock at the same moment: the last one wins, and both
   are in the activity log.
 - A database embedded in a document keeps its own filters on the embed
-  (#26): the bar and personal changes are on the database's own views, not
-  on an embed's filters, which already belong to that document.
+  (#26). A personal change there is kept per embed, so the same database in
+  two documents can be narrowed differently; **Save for everyone** writes to
+  that embed's filters and needs the right to edit the document. The views
+  lock does not cover an embed's filters: they belong to the document.
 - A board sub-grouped by a property with many values: lanes beyond what fits
   are reached by scrolling, and each lane can be folded.
 - A sub-group on the same property as the board's grouping is refused.
@@ -303,6 +315,10 @@ changing a column's width, order or visibility leaves none.
   rules.
 - **FR-006**: A personal change MUST NOT be visible to, or returned for,
   anyone else, and MUST NOT appear in the activity log.
+- **FR-006a**: In a database embedded in a document, a filter or sort change
+  MUST also be personal first, kept per person and per embed; **Save for
+  everyone** MUST write it to the embed's own filters (#26), offered only to
+  someone who can edit the document.
 
 **Lock (#281)**
 
@@ -362,8 +378,8 @@ changing a column's width, order or visibility leaves none.
 
 ### Key Entities
 
-- **Personal view state**: per person, per view: their own filters, sort
-  and quick filter picks. Missing means they see the shared view. Removed
+- **Personal view state**: per person, per view (and per embed, for a
+  database in a document): their own filters, sort and quick filter picks. Missing means they see the shared view. Removed
   with the view or the database.
 - **Views lock**: per database, on or off, with who set it and when.
 - **Quick filter**: on a view, an ordered list of property ids shown as
@@ -403,8 +419,8 @@ changing a column's width, order or visibility leaves none.
   screen (owner, 2026-11-03). Locking and unlocking are for people only
   (owner, 2026-11-03). Both are deliberate parity gaps, named in the manifest
   with the reason, and `gapBudget` is raised where a reviewer sees it.
-- **Embeds keep their own filters** (#26); the bar is on the database's own
-  views.
+- **Embeds keep their own filters** (#26), and personal changes work there
+  too (owner, 2026-11-03), kept per embed; saving writes to the embed.
 - **Lock is per database**, for all its views, as in Notion; not per view.
 - **Quick filter values** use the same filter operators as filters today
   ("is" for options and people, "contains" for text); no new operator.
