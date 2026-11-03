@@ -43,6 +43,8 @@ decides uniqueness, and the names below are proposals the build confirms.
 | `timelineDates` | Settings › Start date / End date (timeline) | `CalendarRange` |
 | `subItems` | Settings › Sub-items (table) | `ListTree` is taken (`tableOfContents`): `Network` |
 | `editProperties` | Settings › Edit properties | `Rows3` |
+| `showAllProperties` | Settings › Property visibility › Show all (added at build: the Columns popover's bulk action, FR-014) | `ScanEye` |
+| `hideAllProperties` | Settings › Property visibility › Hide all (added at build, as above) | `EyeClosed` |
 
 `moveLeft`, `moveRight`, `rename`, `delete` exist and are reused with their
 icons (the column header menu and the Settings menu both use them, as one
