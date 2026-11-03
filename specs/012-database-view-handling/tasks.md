@@ -38,9 +38,9 @@ description: "Tasks for database views that read comfortably and handle the way 
 
 **Independent Test**: quickstart §1, in light and dark at desktop and phone width, on a database page and an embed.
 
-- [ ] T002 [US1] [ui] `web/src/styles.css`: `.db-table td` takes `font-size: var(--font-size-md)` and `.db-table th` `var(--font-size-sm)`, replacing 13.5px and 12.5px (FR-001). Check row height, column widths and wrapping at the new size at desktop and phone width (FR-002); an embed draws the same size as the page (US1 scenario 3)
-- [ ] T003 [P] [US1] [ui] Catalogue section in `web/catalog/main.tsx`: the same table at 14px (`--font-size-md`) and at a one-off 15px preview, in light and dark, so the owner can choose (research R1). If 15px is chosen, it becomes a component token `table.cell-font-size`, not a literal
-- [ ] T004 [US1] [ui] `fontSize` in `web/tokens/budgets.json` lowered to the count `node web/scripts/check-tokens.mjs --measure` gives after T002 (374 before)
+- [x] T002 [US1] [ui] `web/src/styles.css`: `.db-table td` takes `font-size: var(--font-size-md)` and `.db-table th` `var(--font-size-sm)`, replacing 13.5px and 12.5px (FR-001). Check row height, column widths and wrapping at the new size at desktop and phone width (FR-002); an embed draws the same size as the page (US1 scenario 3)
+- [x] T003 [P] [US1] [ui] Catalogue section in `web/catalog/main.tsx`: the same table at 14px (`--font-size-md`) and at a one-off 15px preview, in light and dark, so the owner can choose (research R1). If 15px is chosen, it becomes a component token `table.cell-font-size`, not a literal
+- [x] T004 [US1] [ui] `fontSize` in `web/tokens/budgets.json` lowered to the count `node web/scripts/check-tokens.mjs --measure` gives after T002 (374 before)
 
 ---
 
@@ -60,13 +60,13 @@ description: "Tasks for database views that read comfortably and handle the way 
 
 ### Interface
 
-- [ ] T010 [US2] [ui] New `web/src/columnDrag.ts`: pure `orderedColumns(schemaIds, colOrder, hidden)` (data-model.md "Drawing": the ids of `colOrder` that exist and are not hidden, in that order, then every other visible property in schema order), `gapIndex(headerRects, x)`, `moveColumn(order, id, delta)`, and a `useColumnDrag` hook (pointer events, the 5px threshold `boardDrag.ts` uses, Escape or a release outside the header row cancels, auto-scroll at the table's sides) (research R5)
-- [ ] T011 [P] [US2] [test] New `web/scripts/check-columndrag.mjs` for the pure functions of T010 (a deleted id skipped, a new property at the end, a hidden one keeps its place, title never moved, moves at both ends), added to `npm run check` in `web/package.json`
-- [ ] T012 [US2] [ui] `TableView` in `web/src/components/CollectionView.tsx` draws its columns through `orderedColumns`; widths still follow each column
-- [ ] T013 [US2] [ui] `ColHead` (`CollectionView.tsx`): a drag from the label through `useColumnDrag` with a 2px token-coloured marker on the nearest gap and the dragged header dimmed; release saves `colOrder` through the view update that saves `colWidths`. `.col-resize` keeps its own pointerdown and resizes as today (FR-006); the title column neither drags nor has a menu
-- [ ] T014 [US2] [ui] `ColHead` header menu: `ui/Menu`, opened by a click on the label and by a right-click, with `moveLeft`, `moveRight` (left out at the ends) and a new function `hideInView` (`EyeOff`) added to `web/src/menuIcons.ts`. After a move, focus is back on that header (FR-005). A reader who cannot edit gets no menu
-- [ ] T015 [P] [US2] [i18n] "Hide in view" and the header menu's accessible name in `de.json`, `es.json`, `nl.json`
-- [ ] T016 [US2] [test] New `web/tests/column-order.mjs`, registered in `web/tests/package.json`: drag with the marker; reload keeps the order; a second table view and the Properties dialog unchanged; the header menu by keyboard with focus kept; an edge drag still resizes; the title stays first; an order set by `set_view` is drawn. Mutation-checked against the old `TableView`
+- [x] T010 [US2] [ui] New `web/src/columnDrag.ts`: pure `orderedColumns(schemaIds, colOrder, hidden)` (data-model.md "Drawing": the ids of `colOrder` that exist and are not hidden, in that order, then every other visible property in schema order), `gapIndex(headerRects, x)`, `moveColumn(order, id, delta)`, and a `useColumnDrag` hook (pointer events, the 5px threshold `boardDrag.ts` uses, Escape or a release outside the header row cancels, auto-scroll at the table's sides) (research R5)
+- [x] T011 [P] [US2] [test] New `web/scripts/check-columndrag.mjs` for the pure functions of T010 (a deleted id skipped, a new property at the end, a hidden one keeps its place, title never moved, moves at both ends), added to `npm run check` in `web/package.json`
+- [x] T012 [US2] [ui] `TableView` in `web/src/components/CollectionView.tsx` draws its columns through `orderedColumns`; widths still follow each column
+- [x] T013 [US2] [ui] `ColHead` (`CollectionView.tsx`): a drag from the label through `useColumnDrag` with a 2px token-coloured marker on the nearest gap and the dragged header dimmed; release saves `colOrder` through the view update that saves `colWidths`. `.col-resize` keeps its own pointerdown and resizes as today (FR-006); the title column neither drags nor has a menu
+- [x] T014 [US2] [ui] `ColHead` header menu: `ui/Menu`, opened by a click on the label and by a right-click, with `moveLeft`, `moveRight` (left out at the ends) and a new function `hideInView` (`EyeOff`) added to `web/src/menuIcons.ts`. After a move, focus is back on that header (FR-005). A reader who cannot edit gets no menu
+- [x] T015 [P] [US2] [i18n] "Hide in view" and the header menu's accessible name in `de.json`, `es.json`, `nl.json`
+- [x] T016 [US2] [test] New `web/tests/column-order.mjs`, registered in `web/tests/package.json`: drag with the marker; reload keeps the order; a second table view and the Properties dialog unchanged; the header menu by keyboard with focus kept; an edge drag still resizes; the title stays first; an order set by `set_view` is drawn. Mutation-checked against the old `TableView`
 - [ ] T017 [P] [US2] [wiki] `wiki/views.md` (moving columns, per view), `wiki/mcp-tools.md` (`set_view` `column_order`), a line in `docs/what-it-does.md`
 
 ---

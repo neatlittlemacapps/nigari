@@ -2483,10 +2483,13 @@ body:has(.icon-picker) .bn-side-menu {
   overscroll-behavior-x: contain;
 }
 
+/* Cells read at the type scale's body size (spec 012, #131): the 13.5px they
+   had made a table in a document look a size smaller than the paragraph
+   above it. Set on the table so the cells inherit it; headers step down. */
 .db-table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 13.5px;
+  font-size: var(--font-size-md);
 }
 
 .db-table th,
@@ -2583,7 +2586,7 @@ body:has(.icon-picker) .bn-side-menu {
   background: var(--sidebar-bg);
   font-weight: 600;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: var(--font-size-sm);
   position: relative;
 }
 
@@ -2592,6 +2595,56 @@ body:has(.icon-picker) .bn-side-menu {
 .th-inner {
   position: relative;
   display: block;
+}
+
+/* A property column's label is a button (spec 012): a click opens the
+   column's menu, a drag from it moves the column. It reads as the heading it
+   was, not as a button, so it takes the heading's type and no frame. */
+.db-table th .th-label {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  padding: 0;
+  height: auto;
+  min-height: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  white-space: normal;
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+body.is-col-moving,
+body.is-col-moving .db-table th .th-label {
+  cursor: grabbing;
+  user-select: none;
+}
+
+/* The header being dragged, dimmed, and the marker on the gap it would drop
+   into: a 2px line in the accent colour on the border between two headers. */
+.db-table th.is-col-dragged {
+  opacity: 0.5;
+}
+
+.db-table th.col-drop-before::before,
+.db-table th.col-drop-after::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-accent-default);
+  pointer-events: none;
+}
+
+.db-table th.col-drop-before::before {
+  left: -1px;
+}
+
+.db-table th.col-drop-after::after {
+  right: -1px;
 }
 
 /* The grip on a column's right edge. -10px is the cell's own horizontal padding,

@@ -307,6 +307,76 @@ function Catalog() {
         </Row>
       </Section>
 
+      <Section id="table-text" title="Table text (spec 012)">
+        <p className="cat-note">
+          For the owner to choose (research R1): table cells on the type scale at 14px (--font-size-md, built), against a one-off
+          15px preview. If 15px wins it becomes a component token, not a literal. The header rows show the header sizes on the
+          scale, in the uppercase label style tables draw today (11.5px in theme.css).
+        </p>
+        {(
+          [
+            ['14px cells (built)', 'cat-table--md'],
+            ['15px cells (preview)', 'cat-table--preview'],
+          ] as const
+        ).map(([label, cls]) => (
+          <Row key={cls} label={label}>
+            <table className={'cat-table ' + cls}>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Effort</th>
+                  <th>Due</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Write the quarterly review</td>
+                  <td>In progress</td>
+                  <td>3</td>
+                  <td>12 Nov 2026</td>
+                </tr>
+                <tr>
+                  <td>Plan the offsite</td>
+                  <td>Not started</td>
+                  <td>5</td>
+                  <td>3 Dec 2026</td>
+                </tr>
+              </tbody>
+            </table>
+          </Row>
+        ))}
+        {(
+          [
+            ['header 13px (sm)', 'cat-table-head--sm'],
+            ['header 12px (xs)', 'cat-table-head--xs'],
+            ['header 11px (2xs)', 'cat-table-head--2xs'],
+            ['header 13px plain', 'cat-table-head--plain'],
+          ] as const
+        ).map(([label, cls]) => (
+          <Row key={cls} label={label}>
+            <table className={'cat-table cat-table--md ' + cls}>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Effort</th>
+                  <th>Due</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Write the quarterly review</td>
+                  <td>In progress</td>
+                  <td>3</td>
+                  <td>12 Nov 2026</td>
+                </tr>
+              </tbody>
+            </table>
+          </Row>
+        ))}
+      </Section>
+
       <Section id="chart" title="Chart (ChartFigure)">
         <div className="cat-charts">
           {(['bar', 'hbar', 'line', 'donut', 'number'] as const).map((k) => (

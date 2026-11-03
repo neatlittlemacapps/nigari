@@ -398,6 +398,8 @@
   "Move block up": "Blok omhoog verplaatsen",
   "Move left": "Naar links",
   "Move right": "Naar rechts",
+  "{name} column": "Kolom {name}",
+  "Hide in view": "Verbergen in deze weergave",
   "Move to": "Verplaatsen naar",
   "Move to top level": "Naar het hoogste niveau",
   "Move to trash": "Naar de prullenbak verplaatsen",

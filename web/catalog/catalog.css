@@ -104,3 +104,62 @@ body {
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
 }
+
+/* Table text (spec 012, research R1): the cells and headers of a database
+   table, drawn here on tokens alone so the sizes can be compared side by side
+   in both themes. Mirrors .db-table in styles.css and theme.css. */
+.cat-note {
+  margin: 0 0 var(--space-300);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.cat-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.cat-table th,
+.cat-table td {
+  border: 1px solid var(--color-border-default);
+  padding: 7px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.cat-table th {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: var(--font-family-mono);
+}
+
+.cat-table--md {
+  font-size: var(--font-size-md);
+}
+
+.cat-table--preview {
+  font-size: 15px; /* token-ok: a one-off preview for the owner's choice (spec 012, R1); a token if chosen */
+}
+
+.cat-table-head--sm th {
+  font-size: var(--font-size-sm);
+}
+
+.cat-table-head--xs th {
+  font-size: var(--font-size-xs);
+}
+
+.cat-table-head--2xs th {
+  font-size: var(--font-size-2xs);
+}
+
+.cat-table-head--plain th {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  font-family: var(--font-family-sans);
+}

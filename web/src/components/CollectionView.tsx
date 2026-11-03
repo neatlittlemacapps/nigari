@@ -5,6 +5,8 @@ import { onRefresh } from '../pwa';
 import Portal from './Portal';
 import { anchoredMenuStyle } from '../anchoredMenu';
 import { useBoardDrag } from '../boardDrag';
+import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } from '../columnDrag';
+import { ColHead } from './TableColumnHead';
 import { tagColorClass } from '../tags';
 import { compare, firstWeekday, formatDay, formatMonth, isReadableDay, isUnfinishedRelativeDay, resolveSmartDate, toDayString, today, weekdayNames } from '../format';
 import { plural, t } from '../i18n';
@@ -771,6 +773,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // Columns hidden in this view are dropped from every renderer.
   const hidden = new Set(view.hidden ?? []);
   const visibleSchema = schema.filter((p) => !hidden.has(p.id));
+  // A table draws its columns in the view's own order (spec 012): colOrder
+  // first, the rest in schema order. Other views keep the schema's.
+  const propById = new Map(schema.map((p) => [p.id, p]));
+  const tableColumns = orderedColumns(schema.map((p) => p.id), view.colOrder, hidden).map((id) => propById.get(id)!);
   // Relation props that point back at this same collection — candidates for the
   // sub-item (task hierarchy) relation that the table can render as a tree.
   const selfRelProps = schema.filter((p) => p.type === 'relation' && p.relationCollection === collectionId);
@@ -1082,7 +1088,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       ) : (
         <TableView
           rows={viewRows}
-          schema={visibleSchema}
+          schema={tableColumns}
           emptyLabel={emptyLabel}
           tagColors={tagColors}
           subItemProp={
@@ -1090,6 +1096,14 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           }
           colWidths={view.colWidths}
           onSetColWidths={(colWidths) => updateView({ colWidths })}
+          // Moving and hiding a column are this view's own (spec 012): only a
+          // table stores an order, and a reader is offered neither.
+          onSetColumns={
+            canEdit && view.type === 'table'
+              ? (visible) => updateView({ colOrder: storedOrder(schema.map((p) => p.id), view.colOrder, visible) })
+              : undefined
+          }
+          onHideColumn={canEdit && view.type === 'table' ? (id) => updateView({ hidden: [...(view.hidden ?? []), id] }) : undefined}
           onNavigate={onNavigate}
           onOpenInNewTab={onOpenInNewTab}
           onSetProp={setRowProp}
@@ -2260,35 +2274,6 @@ function BoardView({
 
 // ---- Table ----
 
-/** A column heading with the grip that resizes it.
- *
- *  The grip hangs off an inner BLOCK, not off the <th> itself. In a table with
- *  border-collapse: collapse the cell does not act as a containing block a
- *  browser will hit-test against: the handle painted in exactly the right place,
- *  the pointer went to the <th> underneath, and dragging did nothing at all
- *  while looking entirely correct. */
-function ColHead({
-  label,
-  onResize,
-  onReset,
-}: {
-  label: string;
-  onResize: (e: React.PointerEvent<HTMLSpanElement>) => void;
-  onReset: () => void;
-}) {
-  return (
-    <span className="th-inner">
-      {label}
-      <span
-        className="col-resize"
-        title={t('Drag to resize, double-click to fit the content')}
-        onPointerDown={onResize}
-        onDoubleClick={onReset}
-      />
-    </span>
-  );
-}
-
 /** The name column's key in colWidths — the title is not a property, so it has
  *  no id of its own. Nothing the interface generates can collide with it: prop
  *  ids are slugged to [a-z0-9-] (see SchemaEditor). An agent writing a schema
@@ -2305,6 +2290,8 @@ function TableView({
   subItemProp,
   colWidths,
   onSetColWidths,
+  onSetColumns,
+  onHideColumn,
   onNavigate,
   onOpenInNewTab,
   onSetProp,
@@ -2317,6 +2304,10 @@ function TableView({
   subItemProp?: string;
   colWidths?: Record<string, number>;
   onSetColWidths: (next: Record<string, number>) => void;
+  /** The visible columns in their new order, after a drag or a Move. Absent:
+   *  the columns do not move (a reader, a view that is not a table). */
+  onSetColumns?: (visible: string[]) => void;
+  onHideColumn?: (id: string) => void;
   onNavigate: (id: string) => void;
   onOpenInNewTab?: (id: string) => void;
   onSetProp: (rowId: string, propId: string, value: unknown) => void;
@@ -2329,6 +2320,43 @@ function TableView({
   // drag is local and instant: writing to the view on every pointermove would
   // put one request per pixel on the wire and re-render the whole table.
   const [drag, setDrag] = useState<{ key: string; px: number } | null>(null);
+
+  // Moving a column (spec 012, US2). The ids drawn, in order; the title is
+  // not among them and cannot move.
+  const ids = schema.map((p) => p.id);
+  const idsKey = ids.join('\u0000');
+  const theadRef = useRef<HTMLTableSectionElement>(null);
+  // After a Move, focus goes back to the header that moved (FR-005); after
+  // Hide in view, to its neighbour. The header is re-rendered in its new
+  // place once the order arrives, so this runs after that render.
+  const focusAfter = useRef<string | null>(null);
+  useEffect(() => {
+    const id = focusAfter.current;
+    if (!id) return;
+    focusAfter.current = null;
+    const el = theadRef.current?.querySelector<HTMLElement>(`[data-col-id="${CSS.escape(id)}"] .th-label`);
+    el?.focus();
+  }, [idsKey]);
+  const setColumns = (next: string[], focus: string) => {
+    if (!onSetColumns || next.join('\u0000') === idsKey) return;
+    focusAfter.current = focus;
+    onSetColumns(next);
+  };
+  const { drag: colDrag, startDrag: startColDrag, consumeClick: consumeColClick } = useColumnDrag((id, gap) =>
+    setColumns(moveToGap(ids, id, gap), id),
+  );
+  const dragFrom = colDrag ? ids.indexOf(colDrag.id) : -1;
+  // The marker sits on the gap the column would go to; the two gaps beside the
+  // column itself would change nothing, so they show none.
+  const markerGap = colDrag && colDrag.gap !== dragFrom && colDrag.gap !== dragFrom + 1 ? colDrag.gap : -1;
+  const headClass = (i: number, id: string) =>
+    [
+      colDrag?.id === id ? 'is-col-dragged' : '',
+      markerGap === i ? 'col-drop-before' : '',
+      markerGap === ids.length && i === ids.length - 1 ? 'col-drop-after' : '',
+    ]
+      .filter(Boolean)
+      .join(' ') || undefined;
 
   const widthOf = (key: string) =>
     drag?.key === key ? drag.px : colWidths?.[key];
@@ -2450,14 +2478,32 @@ function TableView({
   return (
     <div className="table-wrap">
       <table className="db-table">
-        <thead>
+        <thead ref={theadRef}>
           <tr>
             <th className="db-title-col" style={colStyle(TITLE_COL)}>
               <ColHead label={t('Name')} onResize={startResize(TITLE_COL)} onReset={resetCol(TITLE_COL)} />
             </th>
-            {schema.map((p) => (
-              <th key={p.id} style={colStyle(p.id)}>
-                <ColHead label={p.name} onResize={startResize(p.id)} onReset={resetCol(p.id)} />
+            {schema.map((p, i) => (
+              <th key={p.id} data-col-id={p.id} className={headClass(i, p.id)} style={colStyle(p.id)}>
+                <ColHead
+                  label={p.name}
+                  onResize={startResize(p.id)}
+                  onReset={resetCol(p.id)}
+                  moves={
+                    onSetColumns && onHideColumn
+                      ? {
+                          onStartDrag: (e) => startColDrag(e, p.id),
+                          consumeClick: () => consumeColClick(p.id),
+                          onMoveLeft: i > 0 ? () => setColumns(moveColumn(ids, p.id, -1), p.id) : undefined,
+                          onMoveRight: i < ids.length - 1 ? () => setColumns(moveColumn(ids, p.id, 1), p.id) : undefined,
+                          onHide: () => {
+                            focusAfter.current = ids[i + 1] ?? ids[i - 1] ?? null;
+                            onHideColumn(p.id);
+                          },
+                        }
+                      : undefined
+                  }
+                />
               </th>
             ))}
           </tr>

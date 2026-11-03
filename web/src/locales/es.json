@@ -410,6 +410,8 @@
   "Move block up": "Mover bloque hacia arriba",
   "Move left": "Mover a la izquierda",
   "Move right": "Mover a la derecha",
+  "{name} column": "Columna {name}",
+  "Hide in view": "Ocultar en esta vista",
   "Move to": "Mover a",
   "Move to top level": "Mover al nivel superior",
   "Move to trash": "Mover a la papelera",

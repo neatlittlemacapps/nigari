@@ -398,6 +398,8 @@
   "Move block up": "Block nach oben verschieben",
   "Move left": "Nach links",
   "Move right": "Nach rechts",
+  "{name} column": "Spalte {name}",
+  "Hide in view": "In dieser Ansicht ausblenden",
   "Move to": "Verschieben nach",
   "Move to top level": "Auf oberste Ebene",
   "Move to trash": "In den Papierkorb",
