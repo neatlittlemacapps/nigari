@@ -62,6 +62,8 @@ await withFixture(async ({ page, api, base, path }) => {
   // The properties dialog, from Settings › Edit properties (spec 012, US4).
   await page.locator('.collection-toolbar').getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Edit properties', exact: true }).click();
+  // The dialog opens once the menu has finished closing (ui/Menu opensDialog).
+  await page.getByRole('heading', { name: 'Collection properties' }).waitFor();
   const names = await page.locator('.schema-item .schema-row > .prop-input').evaluateAll((inputs) => inputs.map((i) => i.value));
   assert.deepEqual(names, ['Status', 'Effort', 'Due', 'Owner'], 'the Properties dialog keeps the schema order');
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
