@@ -36,6 +36,46 @@ today (#524).
 
 ---
 
+## 2026-11-03 — Spec 013: Status is its own spec; personal view changes live on the account; agents neither lock nor keep personal views
+
+**Decision** (owner, at `/speckit-specify` for spec 013):
+
+1. The Status property (#18) leaves spec 013 and becomes spec 014. This
+   changes the 2026-11-02 split ("1 A"): 013 is now #279, #281, #19, #178.
+2. A person's own change to a view's filter or sort (#279), and their quick
+   filter picks (#19), are kept **on their account**, like the language and
+   time settings in `server/prefs.go`, so they follow the person to every
+   device.
+3. The activity log records **meaningful** view changes only: created,
+   deleted, renamed, shared filters, sort, grouping, sub-group, quick
+   filters, lock and unlock. Not widths, column order or hidden columns.
+4. Agents can see the views lock and are refused by it, but **cannot lock
+   or unlock**.
+5. Agents get **no personal view state**: an agent's view change is always
+   "Save for everyone", as today.
+
+**Why:**
+
+1. Status is a new property type. The code graph showed it reaching filters,
+   new rows in a filtered view (`viewpins.go`), charts, forms, CSV import,
+   the public table and rollups: a feature of its own, which would have held
+   back the four view changes.
+2. The owner's choice: a filter kept only in the browser would differ
+   between phone and laptop, the complaint `prefs.go` was written for.
+3. Widths and order change with every drag (spec 012); logging them would
+   bury the changes people look for.
+4. The lock is meant partly to stop agents changing views by accident; an
+   agent that can unlock defeats it.
+5. Agents see a database through queries with their own filters, not
+   through a screen. Points 4 and 5 are deliberate parity gaps, named in the
+   manifest when built.
+
+**Turned down:** Status in 013 (one long spec, nothing shipping for longer);
+personal changes only in the browser; every view save in the log; agents
+locking and unlocking; personal view state for agents.
+
+---
+
 ## 2026-11-03 — A read-only token may call named POST routes that only read
 
 **Decision:** the read-only check in `auth` (`server/users.go`) lets a
