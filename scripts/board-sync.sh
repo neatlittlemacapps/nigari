@@ -16,7 +16,7 @@
 #   GITHUB_REPOSITORY  owner/repo (set by Actions)
 #
 # It also copies the board's Priority field onto a priority:N label, and sets
-# Priority to P1 on an open issue labelled `breaking` (see the Priority block
+# Priority to P1 on an open issue labelled `bug` and `breaking` (see the Priority block
 # in sync_one).
 #
 # Why Surface: the surface lives on the issue as a label, because labels are
@@ -49,6 +49,10 @@ set -euo pipefail
 : "${GH_TOKEN:?set GH_TOKEN to a token with the project scope}"
 : "${BOARD_PROJECT:?set BOARD_PROJECT to the number of the board}"
 field_name="${BOARD_FIELD:-Surface}"
+# The label a `labeled` event added, lowercased like the issue's labels (it is
+# "Breaking" on GitHub); see the breaking rule in sync_one. Empty on every
+# other run, including a run by hand. tr, not ${x,,}: macOS ships bash 3.2.
+label_added="$(tr '[:upper:]' '[:lower:]' <<<"${LABEL_ADDED:-}")"
 repo="${GITHUB_REPOSITORY:?set GITHUB_REPOSITORY to owner/repo}"
 owner="${repo%%/*}"
 name="${repo#*/}"
@@ -190,19 +194,21 @@ sync_one() {
     | map(select(. != null)) | first // "—"' <<<"$issue")"
 
   # A breaking bug is P1 (owner, 2026-11-02: "If there is a breaking bug it is
-  # p1"). P1 is not only for bugs; the rule runs one way. The agent that files
-  # the bug labels it `breaking`, because it can set a label but cannot reach
-  # the board, and this run sets the field. Only while the issue is open (a
-  # closed one's Priority orders no work), and only when the label has just
-  # been added (LABEL_ADDED, from the workflow's `labeled` event) or the issue
-  # has no Priority yet (the nightly run catches a missed event). So the owner
-  # can still lower a breaking bug's Priority by hand and the next run leaves
-  # it; a sync that forced P1 on every run would overwrite that silently.
+  # p1"; 2026-11-03: "Only if it is a bug And it has breaking"). P1 is not
+  # only for bugs; the rule runs one way, and needs both labels: `breaking`
+  # on something that is not a bug raises nothing. The agent that files the
+  # bug labels it, because it can set a label but cannot reach the board, and
+  # this run sets the field. Only while the issue is open (a
+  # closed one's Priority orders no work), and only when one of the two labels
+  # has just been added (label_added, from the workflow's `labeled` event) or
+  # the issue has no Priority yet (the nightly run catches a missed event).
+  # So the owner can still lower a breaking bug's Priority by hand and the
+  # next run leaves it (until one of the two labels is added again); a sync that forced P1 on every run would overwrite that silently.
   if jq -e '.state == "OPEN"' <<<"$issue" >/dev/null \
-     && jq -e 'index("breaking") != null' <<<"$labels" >/dev/null \
-     && [[ "${LABEL_ADDED:-}" == "breaking" || "$priority" == "—" ]]; then
+     && jq -e 'index("bug") != null and index("breaking") != null' <<<"$labels" >/dev/null \
+     && [[ "$label_added" == "breaking" || "$label_added" == "bug" || "$priority" == "—" ]]; then
     if [[ -z "$priority_one" ]]; then
-      echo "::warning::board-sync: #$number is labelled breaking, but the Priority field has no P1 option"
+      echo "::warning::board-sync: #$number is labelled bug and breaking, but the Priority field has no P1 option"
     elif [[ "$priority" != "$priority_one_name" ]]; then
       # A failed write is a warning, like the label calls below: one issue
       # must not stop an --all run for every issue after it.

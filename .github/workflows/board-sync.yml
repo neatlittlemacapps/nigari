@@ -10,7 +10,7 @@ name: Board sync
 # Backfill: Actions → Board sync → Run workflow. A nightly run catches what no
 # event reports (sub-issues added or removed). Each issue's line in the log also
 # shows its board Priority, which agents read from here (they cannot read the
-# board itself). An open issue labelled `breaking` gets Priority P1.
+# board itself). An open issue labelled `bug` and `breaking` gets Priority P1.
 
 on:
   issues:
@@ -43,7 +43,7 @@ jobs:
        (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
        startsWith(github.event.label.name, 'surface:') ||
        github.event.label.name == 'in-progress' || github.event.label.name == 'spec' ||
-       github.event.label.name == 'breaking') &&
+       github.event.label.name == 'breaking' || github.event.label.name == 'bug') &&
       (github.event_name != 'pull_request' ||
        github.event.pull_request.head.repo.full_name == github.repository)
     steps:

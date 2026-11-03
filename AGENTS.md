@@ -156,14 +156,18 @@ added on the REST side and missing on the MCP side, found later one by one.
   the issue as `priority:1`/`2`/`3` by the same sync (nightly, or Run
   workflow); read priority from those labels, and never set one by hand —
   the next sync overwrites it.
-- **A breaking bug is P1** (owner, 2026-11-02). Label it `bug` and
-  `breaking` when you file it; the board sync sets its Priority to P1. P1 is
-  not only for bugs. Breaking: data is lost, nigari does not start, or a core
-  task (editing, saving, signing in) cannot be done.
+- **Work goes by Priority** (owner, 2026-11-03). Whatever the owner gives P1
+  goes first, feature or bug. A bug that is **breaking** is P1 too: label it
+  `bug` and `breaking` when you file it, and the board sync sets its Priority
+  to P1. Any other bug keeps the priority the owner gives it and waits its
+  turn. Breaking: data is lost, nigari does not start, or a core task
+  (editing, saving, signing in) cannot be done.
 - Small fixes can skip the spec: an issue, a branch, a pull request.
-- **Bugs before features** (owner, 2026-10-30). An open `bug` issue goes
-  before starting the next feature or spec. A bug found while working gets an
-  issue at once and is fixed in its own small pull request, not saved up.
+- **A bug found while working gets an issue at once** (owner, 2026-10-30),
+  and when its turn comes it is fixed in its own small pull request, not
+  folded into a feature. Its place in the queue is its Priority; it is raised
+  to P1 automatically only when it is breaking (above). The 2026-10-30 "bugs
+  before features" order was replaced on 2026-11-03.
 
 ## Commits
 

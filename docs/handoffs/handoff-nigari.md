@@ -24,7 +24,8 @@
 > `normalizeViews`; `colOrder` is checked by one rule, `checkViewColOrder`,
 > called from `normalizeViews` and `applyViewSpec`. New rule: a breaking bug is
 > labelled `bug` + `breaking`, and board-sync sets Priority P1 (`AGENTS.md`,
-> `docs/decisions.md`). Layout switching filed as #469. Templates stay beside
+> `docs/decisions.md`). Work goes by the board's Priority; "bugs before
+> features" (rule 19) is replaced: only a breaking bug jumps the queue. Layout switching filed as #469. Templates stay beside
 > New (Claude's default). Next: the helper stream builds spec 012; Claude
 > writes spec 013.
 
@@ -88,7 +89,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 16. Reviews before a PR is offered (`.claude/rules/claude-code.md`): `/code-review` on every branch diff; `ux-ui-audit` after visible changes (light/dark, desktop/phone); `/security-review` for sign-in, sessions, permissions, tokens or gates. The PR names which ran and what each found. When the review helper is unavailable (usage limit), review by hand and say so in the PR.
 17. Dutch (owner, 2026-10-29: "You should also include Dutch in your translation related actions from now on, not?"): every new string gets de, es and nl. `de.json` and `nl.json` are **required** by `check-i18n.mjs`; `es.json` reported.
 18. Protected files (deny rules): `LICENSE`, `CLA.md`, `THIRD-PARTY-NOTICES.md`, lockfiles (only via `npm install`), `go.sum`, `wiki/img/` (only via `web/scripts/shoot-wiki.mjs`), `.github/cla-signatures.json`, `.gitignore`. Never edit or work around them; ask the user.
-19. Bugs before features (owner chose option A, 2026-10-30; `AGENTS.md`): "An open `bug` issue goes before starting the next feature or spec. A bug found while working gets an issue at once and is fixed in its own small pull request, not saved up."
+19. **Replaced 2026-11-03** (owner: work goes by Priority; only a `bug` + `breaking` issue is raised to P1; `AGENTS.md`). Was: Bugs before features (owner chose option A, 2026-10-30; `AGENTS.md`): "An open `bug` issue goes before starting the next feature or spec. A bug found while working gets an issue at once and is fixed in its own small pull request, not saved up."
 20. Code word: every reply starts with "Yes Boss!" (never drop it).
 21. CodeGraph is a working tool (owner, 2026-11-01): before a change that reaches past one function, query the graph (`codegraph_explore` MCP tool or `codegraph explore "<…>"`); callers/impact over text search; then read the source; check `codegraph status` before trusting it. Rules in `.claude/rules/codegraph.md`.
 22. CodeGraph at every step (owner, 2026-11-02): "You should use codegraph also whilst speccing." / "Ensure any new session always uses codegraph" / "Are you using codegraph during task execution as well? If it makes sense ensure you do so moving forward". Plans have a **CodeGraph** section (`check-surfaces.mjs` enforces it, `CODEGRAPH_SINCE = '2026-11-03'`); before a PR: `codegraph sync`, then `codegraph callers` on every exported symbol added/moved/dropped.
