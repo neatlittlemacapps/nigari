@@ -1061,9 +1061,10 @@ A form shows no rows and refuses it. The interface's own save
 `column_order` sets a table view's column order: property ids in the order
 this view shows them. It changes this view only; the schema's order and every
 other view stay as they are. Properties you leave out follow in the schema's
-order, and the title column always stays first. Ids that are not properties,
-and repeats, are dropped without an error; `[]` goes back to the schema's
-order. `get_collection` returns it on the view as `colOrder`, absent when the
+order, and the title column always stays first. An id that is not a property
+is refused, so a name passed for an id says so instead of changing nothing;
+an id that was a property when the order was set and has been deleted since
+is simply skipped. `[]` goes back to the schema's order. `get_collection` returns it on the view as `colOrder`, absent when the
 view follows the schema. Only a table has one: on any other view it is
 refused, as a value that is not a list of ids is. The interface's own save
 checks the same rule, with the code `invalid_view_column_order`.
