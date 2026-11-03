@@ -29,6 +29,10 @@ await withFixture(async ({ page, api, base, workspace, path, read }) => {
   assert.equal(await embed.getByRole('button', { name: 'Properties', exact: true }).count(), 0);
   assert.equal(await embed.locator('.view-add').count(), 0);
   assert.equal(await embed.getByRole('button', { name: 'View options', exact: true }).count(), 0);
+  // Spec 012: a column neither moves nor hides from a document; its headings
+  // are plain text there, with no menu and no drag.
+  assert.equal(await embed.locator('.db-table th .th-label').count(), 0, 'an embed offers no column menu');
+  assert(await page.locator('.bn-db-embed .db-table thead th[data-col-id]').count() > 0);
 
   // #26: taking the filter away here shows both rows HERE...
   const before = (await read()).views;

@@ -44,7 +44,7 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
 
     // ---- a table's column order (spec 012) ----
     case 'invalid_view_column_order':
-      return t('Only a table view can have its own column order, so the view was not saved.');
+      return t('A column order is only for a table view, as a list of its properties, so the view was not saved.');
 
     // ---- charts (spec 004) ----
     case 'invalid_chart':

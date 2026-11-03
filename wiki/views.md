@@ -93,7 +93,9 @@ does not change. That dialog sets the order a view starts from. A property
 added later appears at the end, a hidden one keeps its place for when it is
 shown again, and **Name** always stays first: it has neither a menu nor a
 drag. Dragging the thin grip on a heading's right edge still resizes the
-column. Someone who can only read the database sees plain headings.
+column. Someone who can only read the database sees plain headings, and so
+does a database shown inside a document: its columns are the database's own,
+arranged on its own page.
 
 ### `board`
 

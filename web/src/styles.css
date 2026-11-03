@@ -2613,7 +2613,6 @@ body:has(.icon-picker) .bn-side-menu {
   text-align: left;
   white-space: normal;
   cursor: grab;
-  touch-action: pan-y;
 }
 
 body.is-col-moving,

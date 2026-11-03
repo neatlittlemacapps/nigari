@@ -116,11 +116,15 @@ func normalizeViews(raw []byte, schema []map[string]any, stored []map[string]any
 		// The order is compared as JSON before and after, so a dropped id or
 		// an emptied list re-encodes the array and REST stores what set_view
 		// stores for the same request.
+		// Key presence counts too: a "colOrder": null is removed in memory and
+		// would otherwise be stored as sent, which set_view never stores.
 		orderBefore, _ := json.Marshal(view["colOrder"])
+		_, hadOrder := view["colOrder"]
 		if err := checkViewColOrder(view, schema); err != nil {
 			return nil, errViewColOrder{fmt.Sprintf("%s: %s", name, err.Error())}
 		}
-		if orderAfter, _ := json.Marshal(view["colOrder"]); string(orderAfter) != string(orderBefore) {
+		orderAfter, _ := json.Marshal(view["colOrder"])
+		if _, hasOrder := view["colOrder"]; string(orderAfter) != string(orderBefore) || hadOrder != hasOrder {
 			changed = true
 		}
 		id, _ := view["id"].(string)

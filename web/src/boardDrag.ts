@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { compare } from './format';
 import type { Sort } from './types';
+import { sortComparator } from './viewSort';
 
 // Pointer-based dragging for the kanban board.
 //
@@ -19,22 +19,8 @@ import type { Sort } from './types';
 // A board has no order of its own: a card takes its place in a column from
 // the view's sort, or, without one, from the order of the rows. So the place
 // marker shows that place, not the pointer's: a line at the pointer promised a
-// position the card would not keep. The view sorts with sortComparator, and
-// so does dropIndex, so the two cannot disagree.
-
-/** The comparator a view's sort orders rows with (applyView uses it). Ties,
- *  and a view without a sort, keep the rows' own order: Array.sort is stable. */
-export function sortComparator<T extends { props: Record<string, unknown> }>(sort: Sort | null | undefined) {
-  return (a: T, b: T): number => {
-    if (!sort) return 0;
-    const av = a.props[sort.property];
-    const bv = b.props[sort.property];
-    const as = Array.isArray(av) ? av.join(',') : String(av ?? '');
-    const bs = Array.isArray(bv) ? bv.join(',') : String(bv ?? '');
-    const cmp = typeof av === 'number' && typeof bv === 'number' ? av - bv : compare(as, bs);
-    return sort.dir === 'desc' ? -cmp : cmp;
-  };
-}
+// position the card would not keep. The view sorts with sortComparator
+// (viewSort.ts), and so does dropIndex, so the two cannot disagree.
 
 /** The index the dragged card will take among a column's cards once dropped
  *  there. `cards` are the column's cards as drawn (the view's order); `card`

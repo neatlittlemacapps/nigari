@@ -82,6 +82,9 @@ export function ColHead({
         }}
         onContextMenu={(e) => {
           e.preventDefault();
+          // A long press on a phone fires contextmenu too, while the same
+          // press is arming a drag: the two fought. A tap opens the menu there.
+          if ((e.nativeEvent as PointerEvent).pointerType === 'touch') return;
           moves.consumeClick();
           setMenuAt({ x: e.clientX, y: e.clientY });
         }}

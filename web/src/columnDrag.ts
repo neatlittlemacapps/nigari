@@ -191,6 +191,9 @@ export function useColumnDrag(onDrop: (id: string, gap: number) => void) {
       if (e.key === 'Escape' && live.current) {
         e.preventDefault();
         e.stopPropagation();
+        // The release that follows lands on the label as a click; it belongs
+        // to the cancelled drag and must not open the menu.
+        if (live.current.started) draggedAt.current = { id: live.current.id, at: Date.now() };
         cancel();
       }
     };

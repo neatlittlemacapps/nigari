@@ -1,10 +1,11 @@
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { PeekMode } from '../peek';
 import { api } from '../api';
 import { onRefresh } from '../pwa';
 import Portal from './Portal';
 import { anchoredMenuStyle } from '../anchoredMenu';
-import { dropIndex, sortComparator, useBoardDrag } from '../boardDrag';
+import { dropIndex, useBoardDrag } from '../boardDrag';
+import { sortComparator } from '../viewSort';
 import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } from '../columnDrag';
 import { ColHead } from './TableColumnHead';
 import { tagColorClass } from '../tags';
@@ -736,7 +737,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const viewRows = applyView(rows, view, schema);
   // Each row's place before the view's sort: how a sort's ties, and a view
   // without one, order the rows. The board's drop marker reads it.
-  const rowOrder = new Map(rows.map((r, i) => [r.id, i]));
+  const rowOrder = view.type === 'board' ? new Map(rows.map((r, i) => [r.id, i])) : undefined;
   const emptyLabel =
     rows.length > 0 && viewRows.length === 0
       ? t('No rows match the current filter.')
@@ -1001,7 +1002,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         <BoardView
           rows={viewRows}
           sort={view.sort}
-          rowOrder={rowOrder}
+          rowOrder={rowOrder ?? new Map()}
           schema={visibleSchema}
           groupBy={view.groupBy || schema.find((p) => p.type === 'select')?.id || ''}
           tagColors={tagColors}
@@ -1094,13 +1095,16 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           colWidths={view.colWidths}
           onSetColWidths={(colWidths) => updateView({ colWidths })}
           // Moving and hiding a column are this view's own (spec 012): only a
-          // table stores an order, and a reader is offered neither.
+          // table stores an order, and a reader is offered neither. Nor is a
+          // database in a document: its columns are the database's, edited on
+          // its own page (#22, the reason it has no Columns control), and a
+          // column hidden there could not be shown again from there.
           onSetColumns={
-            canEdit && view.type === 'table'
+            canEdit && !embed && view.type === 'table'
               ? (visible) => updateView({ colOrder: storedOrder(schema.map((p) => p.id), view.colOrder, visible) })
               : undefined
           }
-          onHideColumn={canEdit && view.type === 'table' ? (id) => updateView({ hidden: [...(view.hidden ?? []), id] }) : undefined}
+          onHideColumn={canEdit && !embed && view.type === 'table' ? (id) => updateView({ hidden: [...(view.hidden ?? []), id] }) : undefined}
           onNavigate={onNavigate}
           onOpenInNewTab={onOpenInNewTab}
           onSetProp={setRowProp}
@@ -2104,12 +2108,15 @@ function BoardView({
   const dragged = drag ? rows.find((r) => r.id === drag.rowId) : undefined;
   const dropAt = (col: string, cards: Row[]): number => {
     if (!drag || !dragged || drag.over !== col || drag.fromCol === col) return -1;
+    // On a multi-select or relation board the card can already be in this
+    // column too; then it is its own place there, as in its own column.
+    if (cards.some((c) => c.id === dragged.id)) return -1;
     const value = col === UNSET ? (prop.type === 'select' ? '' : []) : prop.type === 'select' ? col : [col];
     const moved = { ...dragged, props: { ...dragged.props, [groupBy]: value } };
     return dropIndex(cards, moved, sort, (id) => rowOrder.get(id) ?? 0);
   };
   const placeholder = drag ? (
-    <div key="__drop" className="board-drop-place" style={{ height: drag.height }} aria-hidden="true" />
+    <div className="board-drop-place" style={{ height: drag.height }} aria-hidden="true" />
   ) : null;
 
   return (
@@ -2144,10 +2151,10 @@ function BoardView({
             </button>
           </div>
           <div className="board-cards">
-            {cards.map((r, i) => [
-              i === at ? placeholder : null,
+            {cards.map((r, i) => (
+              <Fragment key={r.id}>
+              {i === at && placeholder}
               <div
-                key={r.id}
                 className={
                   'board-card' +
                   (drag?.rowId === r.id && drag.fromCol === col.id ? ' is-dragging' : '') +
@@ -2270,8 +2277,9 @@ function BoardView({
                   onSetProp={onSetProp}
                   onSetOptions={onSetOptions}
                 />
-              </div>,
-            ])}
+              </div>
+              </Fragment>
+            ))}
             {at === cards.length && placeholder}
           </div>
         </div>

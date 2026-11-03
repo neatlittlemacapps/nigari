@@ -441,6 +441,8 @@ func TestColumnOrderIsTheSameThroughBothDoors(t *testing.T) {
 	for _, c := range []struct{ name, rest, mcp string }{
 		{"an order with an unknown id", `["due","gone"]`, `["due","gone"]`},
 		{"an order cleared", `[]`, `[]`},
+		// REST may send null; set_view's [] is its way to say the same.
+		{"an order sent as null", `null`, `[]`},
 	} {
 		a := tasksCollection(t, s, ws, uid)
 		b := tasksCollection(t, s, ws, uid)

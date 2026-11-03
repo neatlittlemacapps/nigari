@@ -11,7 +11,7 @@
 // check sorts each case the way the view does (Array.sort with the same
 // comparator, stable) and asserts the marker's index is the card's index there.
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,11 +20,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 const web = join(here, '..');
 const tmp = mkdtempSync(join(tmpdir(), 'nigari-boarddrag-'));
 const bundle = join(tmp, 'boardDrag.mjs');
+const entry = join(tmp, 'entry.ts');
+writeFileSync(entry, `export { dropIndex } from ${JSON.stringify(join(web, 'src/boardDrag.ts'))};\nexport { sortComparator } from ${JSON.stringify(join(web, 'src/viewSort.ts'))};\n`);
 try {
   try {
     execFileSync(
       join(web, 'node_modules/esbuild/bin/esbuild'),
-      [join(web, 'src/boardDrag.ts'), '--bundle', '--format=esm', '--outfile=' + bundle],
+      [entry, '--bundle', '--format=esm', '--outfile=' + bundle],
       { stdio: ['ignore', 'ignore', 'pipe'] },
     );
   } catch (e) {

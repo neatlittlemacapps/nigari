@@ -1155,7 +1155,7 @@
   "Center peek": "Vista centrada",
   "Open pages in": "Abrir páginas en",
   "This way of opening pages is not available for this view, so the view was not saved.": "Esta forma de abrir páginas no está disponible para esta vista, así que la vista no se guardó.",
-  "Only a table view can have its own column order, so the view was not saved.": "Solo una vista de tabla puede tener su propio orden de columnas, así que la vista no se guardó.",
+  "A column order is only for a table view, as a list of its properties, so the view was not saved.": "Un orden de columnas solo es para una vista de tabla, como una lista de sus propiedades, así que la vista no se guardó.",
   "(hidden)": "(oculto)",
   "A row with several values is counted under each of them.": "Una fila con varios valores se cuenta en cada uno de ellos.",
   "Average": "Promedio",
