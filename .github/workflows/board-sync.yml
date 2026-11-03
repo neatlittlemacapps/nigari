@@ -10,7 +10,7 @@ name: Board sync
 # Backfill: Actions → Board sync → Run workflow. A nightly run catches what no
 # event reports (sub-issues added or removed). Each issue's line in the log also
 # shows its board Priority, which agents read from here (they cannot read the
-# board itself).
+# board itself). An open issue labelled `breaking` gets Priority P1.
 
 on:
   issues:
@@ -42,7 +42,8 @@ jobs:
       (github.event_name != 'issues' ||
        (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
        startsWith(github.event.label.name, 'surface:') ||
-       github.event.label.name == 'in-progress' || github.event.label.name == 'spec') &&
+       github.event.label.name == 'in-progress' || github.event.label.name == 'spec' ||
+       github.event.label.name == 'breaking') &&
       (github.event_name != 'pull_request' ||
        github.event.pull_request.head.repo.full_name == github.repository)
     steps:
@@ -55,6 +56,7 @@ jobs:
           EVENT: ${{ github.event_name }}
           ISSUE: ${{ github.event.issue.number }}
           PR: ${{ github.event.pull_request.number }}
+          LABEL_ADDED: ${{ github.event.action == 'labeled' && github.event.label.name || '' }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
             echo "::warning::BOARD_TOKEN is not set; skipping board sync"

@@ -9,7 +9,8 @@ the collection) gains one optional key, beside `colWidths`:
 |---|---|---|
 | `colOrder` | `string[]` | Property ids in the order this view shows them. Missing or empty: the schema's order (today's behaviour). |
 
-Rules (`normalizeViews`, both doors, R4):
+Rules (`checkViewColOrder`, called by `normalizeViews` for REST and by
+`applyViewSpec` for MCP `set_view`, R4):
 
 - Only on a `table` view. On any other type the request is refused
   (`invalid_view_column_order`).

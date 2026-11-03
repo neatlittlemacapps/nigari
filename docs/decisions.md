@@ -7,6 +7,29 @@ entries are not edited away.
 
 ---
 
+## 2026-11-02 — A breaking bug is P1, set by the board sync from a `breaking` label
+
+**Decision** (owner: "If there is a breaking bug it is p1"; option A, "Yes"):
+a bug that breaks nigari gets Priority **P1 - High** on the board. The rule
+runs one way: P1 is not only for bugs. Whoever files a breaking bug labels it
+`bug` and `breaking`; `scripts/board-sync.sh` then sets the board's Priority
+to P1 while the issue is open, when the label is added or the issue has no
+Priority yet (so the owner can still lower it by hand afterwards), and the label mirror turns that into
+`priority:1`. "Breaking" means data is lost, nigari does not start, or a
+core task (editing, saving, signing in) cannot be done.
+
+**Why:** an agent in a cloud session can set labels but cannot reach the
+board's fields, and the owner asked that the Action, not an agent, keeps the
+board ("The GitHub action should tackle this, not you"). A label is also
+visible on the issue itself.
+
+**Turned down:** the agent labels `breaking` and the owner sets P1 by hand
+(option B: a step to remember every time); P1 reserved for breaking bugs
+only (not what the owner meant); the agent setting `priority:1` itself (the
+next sync overwrites labels from the board).
+
+---
+
 ## 2026-11-02 — The database views epic is two specs; column order is per view; anyone who can edit may lock
 
 **Decision** (owner: "1 A, 2 A, 3 A", for epic #426):

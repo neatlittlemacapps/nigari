@@ -1,6 +1,6 @@
 # active-memory handoff: nigari (formerly salt.md fork): agentic setup and feature roadmap
 
-**Handoff #14** · 2026-11-02 · Lineage:
+**Handoff #15** · 2026-11-02 · Lineage:
 - **#1 (2026-10-25):** agentic setup (rules, gate, Spec Kit, parity manifest); four feature branches merged; 25 issues; three specs.
 - **#2 (2026-10-26):** find-and-replace edits (#13, PR #48); specs 001/002 planned; #47 fixed; surfaces registry, board sync, ruleset (PR #49).
 - **#3 (2026-10-26):** board derives its columns (PR #74); spec 002 tasks (#50–#73); storage benchmarks; fixes #75, #76; Codespaces (PR #77).
@@ -15,6 +15,18 @@
 - **#12 (2026-10-30):** Dutch shipped and required (PR #366 → v2.0.3); spec 008 part 2 (T020–T026) shipped, spec 008 finished (PR #367 → v2.0.4); "bugs before features" rule (PR #369); bug #368 filed (chart replays its animation per row); session moved to `neatlittlemacapps/nigari`.
 - **#13 (2026-10-30 → 11-02):** every open bug fixed: #368+#319 chart builds once (PR #372 → v2.0.8); #317 Enter stays in its column + **CodeGraph** set up for cloud sessions (PR #373 → v2.0.9); #318 Colourful on Each row + #320 neutral wiki shots + CodeGraph prompt hook off (PR #374 → v2.0.10); #375 flaky catalogue test (PR #376); backlog features #370, #371 filed.
 - **#14 (2026-11-02):** README Download line (PR #377 → v2.0.12); CodeGraph during specifying, planning and tasks (PR #378 → v2.0.13); spec 010 planned + tasks + issues #380–#419 (PR #420 → v2.0.14); spec 010 built on Base UI menus (option B) in two PRs (#421 → v2.0.15, #422 → **v2.1.0**); board cleaned; #379 (fewer hand-built buttons) filed; #278 labelled `bug`.
+- **#15 (2026-11-02):** board Priority mirrored onto `priority:N` labels by the board-sync Action (PR #423 → v2.1.1); #269 empty values fixed (PR #424 → v2.1.2); #278 chart colours fixed (PR #425 → v2.1.3); epic #426 "database views" filed with 10 sub-issues; spec 012 spec + plan written; German-comment bug #427 found and fixed (PR #428, with spec 012 docs; release expected v2.1.4, not checked).
+
+> **Update after handoff #15 (2026-11-02, next session):** spec 012 tasks are
+> done (`specs/012-database-view-handling/tasks.md`, 40 tasks, issues #429–#468
+> under #426): do **not** run `/speckit-tasks` or `/speckit-github-taskstoissues`
+> for it again. The tasks corrected the plan: MCP `set_view` does not call
+> `normalizeViews`; `colOrder` is checked by one rule, `checkViewColOrder`,
+> called from `normalizeViews` and `applyViewSpec`. New rule: a breaking bug is
+> labelled `bug` + `breaking`, and board-sync sets Priority P1 (`AGENTS.md`,
+> `docs/decisions.md`). Layout switching filed as #469. Templates stay beside
+> New (Claude's default). Next: the helper stream builds spec 012; Claude
+> writes spec 013.
 
 ## 0. Instructions for Claude (read first)
 
@@ -35,7 +47,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - **Also:** "I want you to be able to do as much as possible yourself"; "ensure you have good board and issue hygiene".
 - **Why nigari exists (user, 2026-10-29/30):** "we are too far gone from the original salt to ever contribute back"; "mainly its me discovering how far I can get"; "I think the core is to pay extra attention to UX as well."
 - **CodeGraph (user, 2026-11-01):** "My goal is that Claude can use a continuously up-to-date code graph to understand the architecture, dependencies, function calls and relationships across the entire codebase before making coding changes." / "CodeGraph should be an active coding tool, not merely an installed MCP server."
-- **Order of work now** (2026-11-02, after v2.1.0): (1) open bugs: #269 (an empty date looks filled in), then #278 (chart colour clash); (2) 2 streams: helper session on Epic A (database views, spec 012) per the steward skill; (3) backlog #370, #371 (spec first, each multi-surface), #322, #323, #326, #379. A new `bug` issue always jumps the queue (rule 19).
+- **Order of work now** (2026-11-02, after PR #428): no open bugs. (1) Epic #426 (database views): spec 012 tasks → `/speckit-github-taskstoissues` → helper stream (stream B) builds spec 012 in 2 PRs per the steward skill, while Claude (conductor) writes spec 013; (2) backlog #370, #371 (spec first), #322, #323, #326, #379. A new `bug` issue always jumps the queue (rule 19). Priority comes from the board's Priority field (rule 24).
 
 ## 2. About the user (as relevant to this work)
 - GitHub `neatlittlemacapps` (id 60575307), display name "Frank De Graeve"; email neatlittlemacapps@gmail.com; owns `neatlittlemacapps/nigari` (renamed from `neatlittlemacapps/salt.md` on 2026-10-30), still a GitHub fork of `saltmd/salt.md` (AGPL-3.0); CLA signed upstream. Fork stays attached for now ("I'll leave it for now").
@@ -81,6 +93,8 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 21. CodeGraph is a working tool (owner, 2026-11-01): before a change that reaches past one function, query the graph (`codegraph_explore` MCP tool or `codegraph explore "<…>"`); callers/impact over text search; then read the source; check `codegraph status` before trusting it. Rules in `.claude/rules/codegraph.md`.
 22. CodeGraph at every step (owner, 2026-11-02): "You should use codegraph also whilst speccing." / "Ensure any new session always uses codegraph" / "Are you using codegraph during task execution as well? If it makes sense ensure you do so moving forward". Plans have a **CodeGraph** section (`check-surfaces.mjs` enforces it, `CODEGRAPH_SINCE = '2026-11-03'`); before a PR: `codegraph sync`, then `codegraph callers` on every exported symbol added/moved/dropped.
 23. Keep asking before each step (owner, 2026-11-02, asked "Why do I need to approve these steps?", then answered "No, continue" to the offer to stop asking): every step still ends with "Ready to continue with <next step>?".
+24. Priority (owner, 2026-11-02): "use the "Priority" field to assess priority" — the board's Priority field (options `P1 - High`, `P2 - Medium`, `P3 - Low`), mirrored onto `priority:1`/`2`/`3` labels; read priority from those labels, never set one by hand (`AGENTS.md`).
+25. Board sync (owner, 2026-11-02): "The GitHub action should tackle this, not you" — Claude does not run the board-sync workflow itself (no `workflow_dispatch` by Claude); the Action runs nightly 03:17 UTC, on issue events, or when the owner taps Actions → Board sync → Run workflow.
 
 ## 5. Corrections log
 | # | Claude did | The user wanted |
@@ -164,6 +178,14 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 94 | (self) Proposed to stop asking before each step | User: "No, continue" — keep asking (rule 23) |
 | 95 | (self) Hand-built menu triggered app shortcuts / stole ↓ / lost focus (found by tests) | `menuOwnsKey`, `data-nav-skip`, focus return in `DialogHost` + `AfterClose` |
 | 96 | (self) Main chunk 1.4 KB over the bundle cap | Lazy-load dialogs; never raise the cap to pass |
+| 97 | (self) Said npm was blocked by the environment's network policy | Environment is "full access" (user); `NO_PROXY`/`npm_config_noproxy` list `registry.npmjs.org` and `proxy.golang.org` for direct access, which has no DNS here. Override: `export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1` |
+| 98 | (self) Ran `board-sync.yml` by `workflow_dispatch` on the branch to read priorities | User: "The GitHub action should tackle this, not you" (rule 25) |
+| 99 | (self) Proposed reading priorities from the board-sync run log (option A) | User: "can't you find a job or something that mirrors project priority to a field tag?" → the Action mirrors them onto `priority:N` labels |
+| 100 | (self) First chart-colour fix compared tokens by `getComputedStyle` at render time (found by review) | One name per colour: options use the colourful palette's numbered tokens; compare names; `check-chartcolours.mjs` guards it |
+| 101 | (self) Empty date/number input swapped for the Empty button while editing a filled value (found by review) | Focus counts as editing; test reloads so the field starts filled (mutation-checked) |
+| 102 | (self) Started #278 without the `in-progress` label | Label when starting (rule 8) |
+| 103 | (self) Issue #427 said check-i18n does not read comments | It does; it needed 2 listed words. Check claims against the code before writing an issue |
+| 104 | (self) Took "Done" (setup script fixed) as the wording choice for #269 | Label own defaults as defaults and say so (did) |
 
 ## 6. Decisions
 | Decision | Why |
@@ -213,6 +235,14 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | #278 is a bug | User: "3. Yes" |
 | README Download line done (option A) | PR #377 |
 | #379: shared button components to bring hand-built buttons down, look kept | User: "Ok"; backlog |
+| Board Priority → `priority:N` labels in `scripts/board-sync.sh` (option C); retries on GitHub 5xx only | User: "can't you find a job…"; PR #423 |
+| #269: row page empty fields read muted "Empty"; list fields "Add person" / "Add link" / "Add sub-task"; table/board cells stay blank; empty date is a button until clicked; clearing stores null | User: "Can't we say "Add Person" etc"; Claude's default "Empty" for the rest; PR #424 |
+| #278: options map to the colourful palette's numbered tokens (blue→chart-1, orange→2, green→3, purple→4, pink→6, yellow→7, red→8, brown→11, gray→gray-3); a place-coloured group skips colours already shown | PR #425 |
+| Epic #426 database views = two specs: 012 (look/handle: #131, #132, #133, #270, #280), 013 (stored: #18, #19, #279, #281, #178) | User: "1 A" |
+| Column drag changes order in that view only (`colOrder` on the view) | User: "2 A" |
+| Anyone who can edit a database may lock its views (#281, spec 013) | User: "3 A" |
+| Spec 012 plan amendments: no Settings button in embeds (#22); no Layout item | Claude's plan (R9, R10); owner not asked separately — PR #428 merged by owner |
+| #427: one German word with no English homograph marks a line German; self-test cases in check-i18n | PR #428 |
 
 ## 7. Changed / rejected
 - Earlier chats: decisions page in workspace → `docs/decisions.md`; fixed surfaces list → registry; force-push rebase → merge `main`; hand-moved cards → derived Status; committed catalogue baselines → reference per run; hand-drawn SVG charts → Chart.js; owner as commit author → Claude.
@@ -233,6 +263,12 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - Spec 010 option A (icons only) → option B (menus rebuilt).
 - Stop asking before each step → keep asking (user: "No, continue").
 - Raise the bundle cap → lazy dialogs.
+- Priority read from the run log (option A) / screenshots (B) → labels mirrored by the Action (C).
+- Claude dispatching the board sync → the Action only (rule 25).
+- #269 "Empty" for person/link/sub-task → "Add person" / "Add link" / "Add sub-task".
+- #278 compare by computed style → compare token names (one name per colour).
+- One spec for epic #426 → two specs (012, 013). Schema-wide column order → per view. Lock for admins only → anyone who can edit.
+- #270 Settings in embeds and a Layout item → left out (spec 012 R9, R10).
 - ❌ Bugs-first option B. ❌ `nl.machine.json`. ❌ 3+ parallel streams.
 - ❌ Committing the CodeGraph index (25 MB, machine-specific). ❌ A repository `.mcp.json` for CodeGraph. ❌ An external database/R2/salt.md integration/custom graph engine (user's constraint).
 - ❌ Community Go/security/Flutter/mobile/AWS plugins. ❌ GitHub Pages docs site now (later as #326); own domain.
@@ -244,12 +280,14 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - Go 1.27.2 local, CI 1.27.3; Node 22.22.0. `modernc.org/sqlite` v1.60.1; Playwright 1.63.0; Chart.js 4.5.1; goose v3.29.0; BlockNote 0.51.4 (`@blocknote/core`, `/react`, `/mantine`); Base UI Select (`@base-ui/react/select`).
 - Go module `nigari`; `server.Version = "2.1.0"` in `server/backup.go` (the version line; patch = last + 1) (releases stamp the tag); DB `nigari.db`; newest upgrade step 1.
 - `nigari version` prints `<release> (upgrade step N)`; a `-ldflags "-X nigari/server.Version=dev"` build prints `dev (upgrade step 1)` and has no update check.
-- Locales: de 1225, es 1225, nl 1225 entries (measured 2026-10-30; no strings added since). German and Dutch use informal address.
+- Locales: de/es/nl 1233 entries each after #424 (measured 2026-11-02: +4 new "Empty", "Add person", "Add link", "Add sub-task"; −3 old "＋ Person", "＋ Link", "+ Sub-task"). German and Dutch use informal address.
 - Constitution 1.2.0. 34 MCP tools; `gapBudget` 10; 19 registry rows (new: "Menu icons", since 2026-11-03).
 - Budgets (`web/tokens/budgets.json`, after v2.1.0): rawButtons 271, zIndex 40, radius 252, fontSize 374. Component token `menu.icon-size` 16px. Bundle cap `check-bundle.mjs` 590,146 B gzip; main chunk ~17.2 KB under it.
 - Spec 010 tests: `web/tests/menu-icons.mjs`, `web/tests/menu-keyboard.mjs` (new); updated menus-and-arrows, dialog-escape, design-system-dialog, side-peek, trash-navigation, database-toolbar-menus, tabs, chart-*.mjs, catalog.mjs. gofmt-exempt: `server/server.go`, `server/audit.go`, `server/desktop_auth.go`, `server/tunnel_update_test.go`.
 - `check-names.mjs`: 382 old names in 49 allowlisted files. `check-upgrades.mjs` 7 cases. `check-storagemove.mjs` 14 cases. `check-columnenter.mjs` 17 cases (new). `scripts/test-install-move.sh` (bash) 4 cases.
-- New browser tests: `web/tests/chart-redraw.mjs` (#368/#319: 1 build for a new chart view on 20 rows; old code built 3), `web/tests/column-enter.mjs` (#317). `chart-each-row.mjs` checks swatches (#318). `catalog.mjs` waits for "Banana" highlighted (#375).
+- New this chat: `web/tests/empty-values.mjs` (#269), `web/tests/chart-colours.mjs` (#278), `web/scripts/check-chartcolours.mjs` (37 rules). check-i18n: `GERMAN_LINE_STRONG` + self-test cases (#427).
+- Container quirk (this cloud env): `NO_PROXY`/`no_proxy`/`npm_config_noproxy` list `registry.npmjs.org` and `proxy.golang.org`, which have no DNS here; prefix npm/go/test commands with `export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 npm_config_noproxy=localhost,127.0.0.1`. Setup-script line given to owner: `npm_config_noproxy=localhost,127.0.0.1 npm install -g @colbymchenry/codegraph@1.6.2 && codegraph telemetry off && codegraph install --target=claude --location=global --yes` (owner: "Done").
+- New browser tests (earlier): `web/tests/chart-redraw.mjs` (#368/#319: 1 build for a new chart view on 20 rows; old code built 3), `web/tests/column-enter.mjs` (#317). `chart-each-row.mjs` checks swatches (#318). `catalog.mjs` waits for "Banana" highlighted (#375).
 - Full gate ~10 min: `timeout 900 scripts/agent-gate.sh > <scratchpad>/gate.log 2>&1`.
 - Container setup per session (repo at `/home/user/nigari`): `git fetch origin main --depth=300`; `git remote set-head origin main`; branch tracks its remote; `cd web && npm ci && npx vite build`; `cd web/tests && npm ci`; Playwright browsers at `/opt/pw-browsers`.
 - Screenshot recipe: `CGO_ENABLED=0 go build -o <scratch>/nigari .`; start two instances as **separate background tasks** (`NIGARI_DATA=<scratch>/d1 NIGARI_ADDR=127.0.0.1:8421 exec <scratch>/nigari`, same with d2/8422), stop them with TaskStop; in `web/`: `npm i --no-save playwright@1.63.0` once; seed: `NIGARI_SEED_URL=http://127.0.0.1:8421 NIGARI_SEED_EMAIL=ada@example.com NIGARI_SEED_PASSWORD='WikiPruefung2026!' node scripts/seed-wiki-instance.mjs`; shoot: `NIGARI_SHOOT_URL=http://127.0.0.1:8421 NIGARI_SHOOT_FRESH_URL=http://127.0.0.1:8422 NIGARI_SHOOT_EMAIL=ada@example.com NIGARI_SHOOT_PASSWORD='WikiPruefung2026!' node scripts/shoot-wiki.mjs <ids>` (invented account). A new seed changes the share-dialog link id; that diff is expected.
@@ -279,10 +317,18 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | v2.0.14 | #420 (spec 010 plan/tasks) | 2026-11-02 |
 | v2.0.15 | #421 (spec 010 part 1) | 2026-11-02 |
 | v2.1.0 | #422 (spec 010 part 2) | 2026-11-02 12:16:44 |
+| v2.1.1 | #423 (board Priority → labels) | 2026-11-02 |
+| v2.1.2 | #424 (#269 empty values) | 2026-11-02 19:27:02 |
+| v2.1.3 | #425 (#278 chart colours) | 2026-11-02 20:05:48 |
+| (v2.1.4 expected) | #428 (#427 + spec 012 docs) | not checked |
 - v2.0.5–v2.0.7 (#369 and the user's two release-notes edits) not checked individually. #376's release (expected v2.0.11) not checked.
 - Releases page: https://github.com/neatlittlemacapps/nigari/releases. Assets `nigari-<os>-<arch>` + `SHA256SUMS.txt`. Image `ghcr.io/neatlittlemacapps/nigari`. No desktop app published (#323).
 
-**Specs**: 008, 010 (menu icons, 39 tasks, parent #380, tasks #381–#419 all closed), 011 done.
+**Specs**: 008, 010 (menu icons, 39 tasks, parent #380, tasks #381–#419 all closed), 011 done. **012** `specs/012-database-view-handling/` (spec + plan + research R1–R13 + data-model + contracts/mcp.md, contracts/ui.md + quickstart; no tasks yet), epic #426. **013** not written.
+
+**Board priorities read 2026-11-02** (from the board-sync log, #419 down to #274 only): P1 - High: #379, #371, #370, #323, #281, #279, #278 (closed), #277, #327/#315 (closed); P2 - Medium: #322, #282, #280; P3 - Low: #326. Others not read; labels follow on the nightly sync.
+
+**Spec 012 plan essentials**: PR 1 = US1 text (14px cells `--font-size-md`, 13px headers `--font-size-sm`, replacing 13.5/12.5px; catalogue shows 15px for owner's choice), US2 column order (`colOrder` on table view; `normalizeViews` in `server/viewopen.go`; MCP `set_view` `column_order`; error `invalid_view_column_order`; no upgrade step; header menu Move left/Move right/Hide in view; `columnDrag.ts`), US3 board marker (`dropIndex` in `boardDrag.ts`, sorted place). PR 2 = US4 Settings (`IconButton` + `ui/Menu` with submenus; `MenuSubmenu` gains `value`; replaces Properties, ⋯, Columns, timeline/sub-item selects; none in embeds), US5 fold-away toolbar in embeds (CSS opacity, `:hover`/`:focus-within`, always on `(hover: none)`). New menu functions proposed: hideInView, propertyVisibility, openRowsIn, timelineDates, subItems, editProperties. Board empty-state string "Open ⚙ Properties to add one" changes in PR 2.
 
 **Open issues**
 | # | Title |
@@ -293,17 +339,16 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 323 | The fork releases its desktop app (unsigned first) |
 | 326 | nigari has a docs site built from the wiki (GitHub Pages) |
 | 379 | Fewer hand-built buttons: shared button components, same look |
-| 269 | `bug`: an empty date looks filled in |
-| 278 | `bug`: chart colour clash |
-- Open bugs: #269, #278 (2026-11-02). #263 closed in the board cleanup.
-- Epic A (stream B): #131, #132, #133, #18, #19, #270, #269, #279, #281, #280, #178. Epic B charts: #278, #277, #282, #266. Epic C: #22, #26, #24, #23. Epic D editor: #267, #268. Epic E agent parity: #3–#12, #14, #16, #17.
+| 426 | Epic: database views (10 sub-issues: #131, #132, #133, #18, #19, #279, #281, #280, #178, #270) |
+- Open bugs: none (2026-11-02, after #428). Closed this chat: #269, #278, #427.
+- Epic A = #426 (stream B). Epic B charts: #277, #282, #266. Epic C: #22, #26, #24, #23. Epic D editor: #267, #268. Epic E agent parity: #3–#12, #14, #16, #17.
 - #370/#371 Notion reference screenshots were described in words; the owner attaches the images by hand (no API).
 
 ## 9. People, terms & names
 - **People:** the user (`neatlittlemacapps`, Frank De Graeve); upstream maintainer "Jeremia" (`jeremiaa`).
 - **Terms:** surface = registry row; gap = person can, agent can't; budget = count that only goes down; gate = `scripts/agent-gate.sh`; stream = a parallel work line; conductor = Claude; steward skill = `.claude/skills/steward/SKILL.md`; upgrade step = a numbered goose step; column head = a column's first block; Each row = chart grouping `__row`; code graph = CodeGraph index.
 - **Repo:** `neatlittlemacapps/nigari`.
-- **Branches:** this handoff on `claude/handoff-14` (from main `69647dc`, merge of #422). Old working branch `claude/wizardly-johnson-y7nazn`. GitHub deletes it on every merge; fast-forward recreates it.
+- **Branches:** work branch `claude/handoff-14`, fast-forwarded to main `a83d93b` (merge of #428) after each merge; this handoff is committed there. Old working branch `claude/wizardly-johnson-y7nazn`. GitHub deletes it on every merge; fast-forward recreates it.
 - **Key files:** `web/src/components/ChartFigure.tsx`, `ChartView.tsx`, `web/src/chartTheme.ts` (`groupColourTokens(drawn, palette, groupProp, series)`), `web/src/columnEnter.ts` (`columnEnterAction`, `columnEnter`), `web/src/blocks.tsx` (`columnsSpec`), `web/src/keys.ts`, `web/src/components/Editor.tsx` (`column.enter` shortcut), `web/scripts/shoot-wiki.mjs` (`text` step), `.claude/hooks/codegraph.sh`, `.claude/rules/codegraph.md`, `server/upgrade.go`, `server/backup.go`, `docs/decisions.md`, `web/src/menuIcons.ts`, `web/src/ui/Menu.tsx` (+ `Menu.css`), `web/scripts/check-menu-icons.mjs`, `web/src/components/SidebarMenus.tsx`, `CollectionMenus.tsx`, `UserMenu.tsx`, `web/src/keys.ts` (`menuOwnsKey`), `web/src/dialog.tsx`.
 - **Terms (new):** option B = menus rebuilt on Base UI; menu function = the verb an item does (one icon each); hand-built button = a raw `<button>` counted by the rawButtons budget.
 
@@ -318,26 +363,32 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | README "Download" line | merged, v2.0.12 | PR #377 | |
 | CodeGraph in spec/plan/tasks | merged, v2.0.13 | PR #378 | |
 | Spec 010 menu icons | merged, **v2.1.0** | PRs #420, #421, #422 | SC-004 by-hand check by owner open |
-| Bugs #269, #278 | open | issues | next |
+| Board Priority → labels | merged, v2.1.1 | PR #423 | mirrors on nightly/issue events |
+| #269 empty values | merged, v2.1.2 | PR #424 | Safari not tested (Chromium only) |
+| #278 chart colours | merged, v2.1.3 | PR #425 | |
+| #427 German comments | merged | PR #428 | release (v2.1.4?) not checked |
+| Epic #426 | filed | issue | 10 sub-issues |
+| Spec 012 | spec + plan on main | `specs/012-database-view-handling/` | next: tasks |
+| Spec 013 | not written | — | after 012 tasks, while helper builds |
 | #379 buttons | filed | issue | backlog |
-| Epic A | proposed | section 8 | helper stream, spec 012 |
 | #370, #371 | filed | issues | spec first |
 
 ## 11. Next steps
-1. **Next action:** fix bug #269 (an empty date looks filled in): label `in-progress`, `codegraph explore` the date cell, small PR.
-2. Fix bug #278 (chart colour clash), own small PR.
-3. Start stream B (Epic A, spec 012) per the steward skill.
-4. Then #370 and #371 (spec first), #322, #323, #326, #379.
+1. **Next action:** check main's CI and the release for the #428 merge (`a83d93b`), then run `/speckit-tasks` for spec 012 (follow `.claude/skills/speckit-tasks/SKILL.md` by hand; CodeGraph per rule 22), then `/speckit-github-taskstoissues` with parent #426.
+2. Start the helper stream (stream B) for spec 012 per `.claude/skills/steward/SKILL.md`: own branch, owns the files in the plan's Project Structure; Claude reviews its diffs.
+3. Meanwhile Claude writes spec 013 (#18, #19, #279, #281, #178) with `/speckit-specify` and asks its clarifications.
+4. Then backlog: #370, #371 (spec first), #322, #323, #326, #379.
 
 ## 12. Open questions ⚠️
-- Has the owner added the CodeGraph setup-script line to the environment settings? (Without it, the MCP tool may arrive only from a machine's second start.)
+- Spec 012 table text: 14px (default) or 15px? Owner chooses from the catalogue in PR 1.
+- Spec 012 plan amendments (no Settings in embeds; no Layout item): owner merged PR #428 but was not asked about them separately — confirm.
 - Has the owner attached the Notion screenshots to #370 and #371?
-- Did the owner paste the v2.1.0 release notes (Claude gave the text; no tool edits releases)?
+- Did the owner paste the v2.1.0 release notes?
 - Spec 010 SC-004 (by-hand keyboard check): done by the owner?
 - Delete the stray label `surface:performance`? (yes / leave)
 
 ## 13. Re-attach checklist
-Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on branch `claude/handoff-14` of `neatlittlemacapps/nigari`. Start the new Claude Code session on **`neatlittlemacapps/nigari`**, branch `claude/handoff-14`.
+Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on branch `claude/handoff-14` of `neatlittlemacapps/nigari` (pushed). Start the new Claude Code session on **`neatlittlemacapps/nigari`**, branch `claude/handoff-14`.
 
 ---
-<sub>Audit: 13/13 sections · 23 rules · 96 corrections · ~330 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
+<sub>Audit: 13/13 sections · 25 rules · 104 corrections · ~380 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
