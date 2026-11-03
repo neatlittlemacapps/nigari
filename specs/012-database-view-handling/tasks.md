@@ -39,7 +39,7 @@ description: "Tasks for database views that read comfortably and handle the way 
 **Independent Test**: quickstart §1, in light and dark at desktop and phone width, on a database page and an embed.
 
 - [x] T002 [US1] [ui] `web/src/styles.css`: `.db-table td` takes `font-size: var(--font-size-md)` and `.db-table th` `var(--font-size-sm)`, replacing 13.5px and 12.5px (FR-001). Check row height, column widths and wrapping at the new size at desktop and phone width (FR-002); an embed draws the same size as the page (US1 scenario 3)
-- [x] T003 [P] [US1] [ui] Catalogue section in `web/catalog/main.tsx`: the same table at 14px (`--font-size-md`) and at a one-off 15px preview, in light and dark, so the owner can choose (research R1). If 15px is chosen, it becomes a component token `table.cell-font-size`, not a literal
+- [x] T003 [P] [US1] [ui] Catalogue section in `web/catalog/main.tsx`: the same table at 14px (`--font-size-md`) and at a one-off 15px preview, in light and dark, so the owner can choose (research R1). Owner chose 14px (2026-11-03); the 15px preview was removed
 - [x] T004 [US1] [ui] `fontSize` in `web/tokens/budgets.json` lowered to the count `node web/scripts/check-tokens.mjs --measure` gives after T002 (374 before)
 
 ---

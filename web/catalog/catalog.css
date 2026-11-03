@@ -106,8 +106,7 @@ body {
 }
 
 /* Table text (spec 012, research R1): the cells and headers of a database
-   table, drawn here on tokens alone so the sizes can be compared side by side
-   in both themes. Mirrors .db-table in styles.css and theme.css. */
+   table, drawn here on tokens alone so they can be checked in both themes. Mirrors .db-table in styles.css and theme.css. */
 .cat-note {
   margin: 0 0 var(--space-300);
   color: var(--color-text-muted);
@@ -138,8 +137,4 @@ body {
 
 .cat-table--md {
   font-size: var(--font-size-md);
-}
-
-.cat-table--preview {
-  font-size: 15px; /* token-ok: a one-off preview for the owner's choice (spec 012, R1); a token if chosen */
 }

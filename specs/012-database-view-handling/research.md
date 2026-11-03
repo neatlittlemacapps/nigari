@@ -18,7 +18,10 @@ not styles.css, as a 11.5px uppercase label, which the first draft of this
 entry missed. Of four options shown side by side (13px, 12px and 11px
 uppercase, 13px plain) the owner chose **12px uppercase**: `--font-size-xs`
 in both theme.css and styles.css, keeping the label's letter-spacing, weight
-and brand mono. The catalogue keeps only the 14px against 15px cells.
+and brand mono.
+
+**Cells, decided** (owner, 2026-11-03: "go with 14"): 14px, `--font-size-md`.
+The 15px preview leaves the catalogue, which shows the table as built.
 
 **Why**: the type scale is the one source of sizes (spec 001). 14px is the
 scale's body step and the size the issue proposes first.

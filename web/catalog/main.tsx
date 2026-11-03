@@ -309,14 +309,12 @@ function Catalog() {
 
       <Section id="table-text" title="Table text (spec 012)">
         <p className="cat-note">
-          For the owner to choose (research R1): table cells on the type scale at 14px (--font-size-md, built), against a one-off
-          15px preview. If 15px wins it becomes a component token, not a literal. Headers are the chosen 12px uppercase label
-          (--font-size-xs, owner, 2026-11-03).
+          Table cells on the type scale at 14px (--font-size-md), headers as the 12px uppercase label (--font-size-xs). Both
+          chosen by the owner, 2026-11-03 (research R1).
         </p>
         {(
           [
-            ['14px cells (built)', 'cat-table--md'],
-            ['15px cells (preview)', 'cat-table--preview'],
+            ['14px cells', 'cat-table--md'],
           ] as const
         ).map(([label, cls]) => (
           <Row key={cls} label={label}>
