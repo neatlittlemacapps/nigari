@@ -27,6 +27,9 @@ await withFixture(async ({ page, api, base, workspace, path, read }) => {
   // #22: a window onto the rows, not a second copy of the collection.
   const embed = page.locator('.bn-db-embed');
   assert.equal(await embed.getByRole('button', { name: 'Properties', exact: true }).count(), 0);
+  // Spec 012: Settings took over Properties and ⋯, and stays out of documents
+  // too (research R10; embeds get views of their own in spec 014).
+  assert.equal(await embed.getByRole('button', { name: 'Settings', exact: true }).count(), 0);
   assert.equal(await embed.locator('.view-add').count(), 0);
   assert.equal(await embed.getByRole('button', { name: 'View options', exact: true }).count(), 0);
   // Spec 012: a column neither moves nor hides from a document; its headings

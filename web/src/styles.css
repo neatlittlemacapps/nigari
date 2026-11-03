@@ -2759,77 +2759,6 @@ body.is-col-resizing {
   color: var(--fg);
 }
 
-/* Property-visibility panel (Notion "Sichtbarkeit von Eigenschaften"): shown /
-   hidden sections, per-property eye toggle, type glyph, bulk show/hide. */
-.col-popover {
-  padding: 6px;
-  gap: 0;
-}
-.col-section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  padding: 9px 8px 4px;
-}
-.col-bulk {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--accent);
-  text-transform: none;
-  letter-spacing: 0;
-}
-.col-bulk:hover {
-  text-decoration: underline;
-}
-.col-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 7px;
-  font-size: 14px;
-  text-align: left;
-  width: 100%;
-}
-.col-row:hover {
-  background: var(--hover);
-}
-.col-row-grip {
-  color: var(--muted);
-  opacity: 0.35;
-  flex-shrink: 0;
-}
-.col-row-ic {
-  color: var(--muted);
-  display: inline-flex;
-  flex-shrink: 0;
-}
-.col-row-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.col-row-eye {
-  color: var(--muted);
-  flex-shrink: 0;
-}
-.col-row-eye.off {
-  opacity: 0.5;
-}
-.col-empty {
-  font-size: 12px;
-  color: var(--muted);
-  padding: 4px 8px 8px;
-  opacity: 0.7;
-}
-
 .prop-chip.toggle {
   border: 1px solid var(--border);
   background: transparent;
@@ -7071,18 +7000,6 @@ a.btn {
 }
 .db-tree-toggle:hover { background: var(--hover); color: var(--fg); }
 .db-tree-spacer { flex: none; width: 18px; display: inline-block; }
-.subitems-select {
-  padding: 5px 9px;
-  border-radius: 7px;
-  border: 1px solid var(--border);
-  font-size: 12.5px;
-  background: var(--card);
-  color: var(--fg);
-  font-family: inherit;
-  cursor: pointer;
-  max-width: 190px;
-}
-
 /* ---- Notes list (Bear-style middle column, W57) ---- */
 .notes-list {
   width: 292px;

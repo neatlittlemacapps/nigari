@@ -25,6 +25,7 @@ import {
   Bookmark,
   Bot,
   CalendarDays,
+  CalendarRange,
   ChartBar,
   ChartColumn,
   ChartLine,
@@ -37,6 +38,8 @@ import {
   CornerLeftUp,
   CornerUpRight,
   ExternalLink,
+  Eye,
+  EyeClosed,
   EyeOff,
   File,
   FileCode,
@@ -71,9 +74,11 @@ import {
   MessageSquare,
   MessagesSquare,
   MoveHorizontal,
+  Network,
   NotebookText,
   Palette,
   PanelLeft,
+  PanelRight,
   PanelTop,
   Paperclip,
   Pencil,
@@ -81,6 +86,8 @@ import {
   Plus,
   Printer,
   Quote,
+  Rows3,
+  ScanEye,
   ScissorsLineDashed,
   ScrollText,
   SeparatorHorizontal,
@@ -167,6 +174,16 @@ export const MENU_ICONS = {
   // A table column's header menu (spec 012): the column leaves this view
   // only; the property and every other view keep it.
   hideInView: EyeOff,
+  // A view's Settings menu (spec 012, research R8).
+  propertyVisibility: Eye,
+  openRowsIn: PanelRight,
+  timelineDates: CalendarRange,
+  subItems: Network,
+  editProperties: Rows3,
+  // Property visibility's two bulk actions, carried over from the Columns
+  // popover the Settings menu replaces.
+  showAllProperties: ScanEye,
+  hideAllProperties: EyeClosed,
   // Gone from here, not into the trash: Remove view, and the block menu's
   // Delete. Different from moveToTrash on purpose (Clarifications).
   delete: CircleMinus,

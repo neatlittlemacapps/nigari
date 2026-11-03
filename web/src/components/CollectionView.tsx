@@ -3,7 +3,6 @@ import type { PeekMode } from '../peek';
 import { api } from '../api';
 import { onRefresh } from '../pwa';
 import Portal from './Portal';
-import { anchoredMenuStyle } from '../anchoredMenu';
 import { dropIndex, useBoardDrag } from '../boardDrag';
 import { sortComparator } from '../viewSort';
 import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } from '../columnDrag';
@@ -26,7 +25,7 @@ import type {
 } from '../types';
 import PropertyValue, { PersonStack, idList, loadRelationOptions, type RelOption } from './PropertyValue';
 import { openCollectionRow, openPageAux, RowOpenContext, useOpenRow } from '../pageOpen';
-import ViewOpenMenu from './ViewOpenMenu';
+import ViewSettingsMenu from './ViewSettingsMenu';
 import { AddViewMenu, CardMenu, ViewActionItems } from './CollectionMenus';
 import { Menu, MenuItem, MenuLabel, MenuSeparator, MenuValueItem, MenuValues, MenuValueSubmenu, type MenuPoint } from '../ui/Menu';
 import { readViewId, readViewScroll, writeViewId, writeViewScroll } from '../pageUiState';
@@ -42,35 +41,7 @@ import { defaultChartView } from '../chartDefaults';
 const ChartPane = lazy(() => import('./ChartPane'));
 import { PageIcon } from '../pageIcon';
 import { toast } from '../toast';
-import { Table2, Columns3, LayoutGrid, CalendarDays, List, Settings2, Plus, Filter as FilterIcon, ArrowUpDown, Eye, EyeOff, AlignLeft, Calendar, Hash, CircleDot, Tags, SquareCheck, User, Link2, Sigma, ClipboardList, Check, Send, Share2, Globe, ChartPie, GanttChartSquare, MessageSquare, Mail, Phone, MapPin, MoreHorizontal, History, ChevronDown, LayoutTemplate, Copy } from 'lucide-react';
-
-// Small type glyph shown next to each property (Notion-style visibility panel).
-function propTypeIcon(t: PropDef['type']) {
-  const s = 14;
-  switch (t) {
-    case 'select':
-      return <CircleDot size={s} />;
-    case 'multiselect':
-      return <Tags size={s} />;
-    case 'date':
-      return <Calendar size={s} />;
-    case 'number':
-      return <Hash size={s} />;
-    case 'checkbox':
-      return <SquareCheck size={s} />;
-    case 'person':
-      return <User size={s} />;
-    case 'relation':
-      return <Link2 size={s} />;
-    case 'rollup':
-    case 'formula':
-      return <Sigma size={s} />;
-    case 'lastActivity':
-      return <History size={s} />;
-    default:
-      return <AlignLeft size={s} />;
-  }
-}
+import { Table2, Columns3, LayoutGrid, CalendarDays, List, Plus, Filter as FilterIcon, ArrowUpDown, Calendar, Link2, ClipboardList, Check, Send, Share2, Globe, ChartPie, GanttChartSquare, MessageSquare, Mail, Phone, MapPin, ChevronDown, LayoutTemplate, Copy } from 'lucide-react';
 
 /** A collection shown inside a document rather than as its own page.
  *
@@ -831,86 +802,29 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         )}
       </Menu>
       <div className="collection-actions">
-        {view.type === 'timeline' && (
-          <>
-            <select
-              className="subitems-select"
-              title={t('Start date for the bars')}
-              value={view.dateProp ?? ''}
-              onChange={(e) => updateView({ dateProp: e.target.value || undefined })}
-            >
-              <option value="">{t('Start: (none)')}</option>
-              {dateProps.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {t('Start:')} {p.name}
-                </option>
-              ))}
-            </select>
-            <select
-              className="subitems-select"
-              title={t('End date for the bars (blank = one-day bars)')}
-              value={view.endDateProp ?? ''}
-              onChange={(e) => updateView({ endDateProp: e.target.value || undefined })}
-            >
-              <option value="">{t('End: (none)')}</option>
-              {dateProps.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {t('End:')} {p.name}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
-        {view.type === 'table' && selfRelProps.length > 0 && (
-          <select
-            className="subitems-select"
-            title={t('Sub-item relation for the tree view')}
-            value={view.subItemProp ?? ''}
-            onChange={(e) => updateView({ subItemProp: e.target.value || undefined })}
-          >
-            <option value="">{t('No sub-items')}</option>
-            {selfRelProps.map((p) => (
-              <option key={p.id} value={p.id}>
-                ⿴ {p.name}
-              </option>
-            ))}
-          </select>
-        )}
         {view.type !== 'form' && <FilterSortControls schema={schema} view={view} onChange={updateView} />}
-        {/* What the collection IS — its columns, its properties, its views —
-            is edited on its own page. An embed is a window onto the rows, and
-            carrying the whole toolbar into a document made it look like a
-            second copy of the collection (#22). */}
-        {!embed && <ColumnsControl schema={schema} view={view} onChange={updateView} />}
-        {!embed && (
-          <button className="btn-sm" onClick={() => setSchemaOpen(true)}>
-            <Settings2 size={14} /> {t('Properties')}
-          </button>
-        )}
-        {/* Renaming and removing the view you are on. It sat inside the tab as a
-            ⋯ first, which looked like a smudge in the pill and had to reserve
-            room in a row where nothing else does. This bar is already "settings
-            for the current view" — filter, sort, group, columns — so it is
-            where the last two belong. */}
-        {!embed && (
-        <div className="view-menu-wrap">
-          {/* narrow="sheet": the toolbar scrolls sideways on a phone, so the
-              menu is a sheet along the bottom there (anchoredMenu.ts' rule). */}
-          <Menu
-            label={t('View options')}
-            narrow="sheet"
+        {/* Everything that configures the view and the database, in one menu
+            (spec 012, US4): what the Columns popover, the Properties button,
+            the ⋯ and the timeline's and sub-items' <select>s did. Not in a
+            document: an embed shows the database's own views, so a setting
+            changed there would change them everywhere (research R10; embeds
+            get views of their own in spec 014). A reader is offered nothing
+            to change. */}
+        {!embed && canEdit && (
+          <ViewSettingsMenu
+            view={view}
+            views={config.views}
+            schema={schema}
+            selfRelProps={selfRelProps}
+            dateProps={dateProps}
             open={viewMenuFor === view.id}
             onOpenChange={(o) => setViewMenuFor(o ? view.id : null)}
-            trigger={
-              <button className="btn-sm" title={t('View options')} aria-label={t('View options')}>
-                <MoreHorizontal size={14} />
-              </button>
-            }
-          >
-            <ViewActionItems view={view} views={config.views} onRename={renameView} onMove={moveView} onRemove={removeView} />
-            <ViewOpenMenu view={view} onChange={(openIn) => updateView({ openIn })} />
-          </Menu>
-        </div>
+            onChange={updateView}
+            onRename={renameView}
+            onMove={moveView}
+            onRemove={removeView}
+            onEditProperties={() => setSchemaOpen(true)}
+          />
         )}
         {view.type !== 'form' && (
           <div className="view-menu-wrap split-btn">
@@ -2069,7 +1983,7 @@ function BoardView({
   if (!prop || (prop.type !== 'select' && prop.type !== 'multiselect' && prop.type !== 'relation')) {
     return (
       <div className="board-empty">
-        {t('This board needs a {type} property to group by. Open ⚙ Properties to add one.', { type: t('Select') })}
+        {t('This board needs a {type} property to group by. Open Settings, then Edit properties, to add one.', { type: t('Select') })}
       </div>
     );
   }
@@ -2622,83 +2536,6 @@ function TableView({
   );
 }
 
-// ---- Column visibility control ----
-
-function ColumnsControl({
-  schema,
-  view,
-  onChange,
-}: {
-  schema: PropDef[];
-  view: ViewDef;
-  onChange: (patch: Partial<ViewDef>) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState<React.CSSProperties | null>(null);
-  useLayoutEffect(() => {
-    if (!open || !btnRef.current) {
-      setPos(null);
-      return;
-    }
-    const r = btnRef.current.getBoundingClientRect();
-    setPos(anchoredMenuStyle(r, { width: window.innerWidth, height: window.innerHeight }, 268, true));
-  }, [open]);
-
-  const hidden = new Set(view.hidden ?? []);
-  const shown = schema.filter((p) => !hidden.has(p.id));
-  const hiddenProps = schema.filter((p) => hidden.has(p.id));
-  const toggle = (id: string) => {
-    const next = new Set(hidden);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    onChange({ hidden: [...next] });
-  };
-  const propRow = (p: PropDef, isHidden: boolean) => (
-    <button key={p.id} className="col-row" onClick={() => toggle(p.id)}>
-      <span className="col-row-ic">{propTypeIcon(p.type)}</span>
-      <span className="col-row-name">{p.name}</span>
-      {isHidden ? <EyeOff className="col-row-eye off" size={16} /> : <Eye className="col-row-eye" size={16} />}
-    </button>
-  );
-
-  return (
-    <div className="fs-controls">
-      <button ref={btnRef} className={'btn-sm' + (hidden.size ? ' active' : '')} onClick={() => setOpen((o) => !o)}>
-        <Eye size={14} /> {t('Columns')}
-        {hidden.size ? ` (${shown.length}/${schema.length})` : ''}
-      </button>
-      {open && pos && (
-        <Portal>
-          <div className="fs-backdrop" onClick={() => setOpen(false)} />
-          <div className="fs-popover col-popover" style={pos}>
-            <div className="col-section-head">
-              <span>{t('Shown')}</span>
-              {shown.length > 0 && (
-                <button className="col-bulk" onClick={() => onChange({ hidden: schema.map((p) => p.id) })}>
-                  {t('Hide all')}
-                </button>
-              )}
-            </div>
-            {shown.map((p) => propRow(p, false))}
-            {shown.length === 0 && <div className="col-empty">{t('Nothing shown')}</div>}
-            <div className="col-section-head">
-              <span>{t('Hidden')}</span>
-              {hiddenProps.length > 0 && (
-                <button className="col-bulk" onClick={() => onChange({ hidden: [] })}>
-                  {t('Show all')}
-                </button>
-              )}
-            </div>
-            {hiddenProps.map((p) => propRow(p, true))}
-            {hiddenProps.length === 0 && <div className="col-empty">{t('Nothing hidden')}</div>}
-          </div>
-        </Portal>
-      )}
-    </div>
-  );
-}
-
 // ---- Calendar view ----
 
 const ymd = toDayString;
@@ -2728,7 +2565,7 @@ function TimelineView({
   if (!startProp || !schema.some((p) => p.id === startProp && p.type === 'date')) {
     return (
       <div className="board-empty">
-        {t('This timeline needs a {type} property as its start. Open ⚙ Properties to add one.', { type: t('Date') })}
+        {t('This timeline needs a {type} property as its start. Open Settings, then Edit properties, to add one.', { type: t('Date') })}
       </div>
     );
   }
@@ -2868,7 +2705,7 @@ function CalendarView({
   if (!dateProp || !schema.some((p) => p.id === dateProp && p.type === 'date')) {
     return (
       <div className="board-empty">
-        {t('This calendar needs a {type} property. Open ⚙ Properties to add one.', { type: t('Date') })}
+        {t('This calendar needs a {type} property. Open Settings, then Edit properties, to add one.', { type: t('Date') })}
       </div>
     );
   }

@@ -194,7 +194,9 @@ decoration (`aria-hidden`); the label is what a screen reader reads.
   focus comes back to the trigger when the dialog closes).
 - `MenuCheckboxItem`: `fn`, `checked`, `onCheckedChange`. Same icon on and off, a
   tick when on.
-- `MenuSubmenu`: `fn`, `label`. Opens with → or a hover.
+- `MenuSubmenu`: `fn`, `label`, `value?` (the setting's current value, muted on the
+  right before `›`: the Settings menu's "Open rows in  Side peek ›"). Opens with →
+  or a hover.
 - `MenuValues` (`reason`, required) with `MenuValueItem`s: a list of values (the
   workspaces under "Move to", a database's templates). Values carry no function
   icon; `icon?` on a value is content, such as a page's own icon.
