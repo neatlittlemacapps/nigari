@@ -149,7 +149,6 @@ server/mcp_schema.go, server/mcp.go # PR 1: lock + audit in view tools; PR 3: qu
 server/mcp_workspace.go             # PR 1, PR 2: closed list
 server/viewprefs.go (new)           # PR 2: personal state routes, cleanup
 server/viewpins.go                  # PR 2: rowPinsForView with the person's filters
-server/pages.go, server/users.go    # PR 2: cleanup on database delete and account delete
 server/viewopen.go                  # PR 3: checkViewQuickFilters, checkViewSubGroup
 server/server.go                    # PR 1, PR 2: routes
 server/*_test.go, server/parity_property_test.go, server/bench_world_test.go

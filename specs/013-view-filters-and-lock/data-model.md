@@ -4,8 +4,8 @@
 
 | Column | Type | Meaning |
 |---|---|---|
-| `user_id` | TEXT NOT NULL | the person |
-| `collection_id` | TEXT NOT NULL | the database page |
+| `user_id` | TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE | the person |
+| `collection_id` | TEXT NOT NULL REFERENCES pages(id) ON DELETE CASCADE | the database page |
 | `scope` | TEXT NOT NULL | a view id, or `embed:<pageId>:<blockId>:<viewId>` |
 | `state` | TEXT NOT NULL | JSON, below |
 | `updated_at` | TEXT NOT NULL | `now()` |
@@ -19,8 +19,10 @@ filters checked like a view's (`checkViewFilter`), unknown properties
 dropped. An empty state deletes the row.
 
 Removed: rows of a view id no longer in the database's views (on every views
-save); every row of a database when its page is deleted for good; every row
-of a person when the account is deleted. Never returned to anyone but its
+save, in Go); every row of a database when its page is deleted for good, and
+every row of a person when the account is deleted, by the foreign keys
+(`foreign_keys(1)` is on, as `collections` already relies on; found at
+`/speckit-tasks`, so no cleanup code in the delete paths). Never returned to anyone but its
 owner.
 
 ## collections (two new columns, upgrade step 2)
