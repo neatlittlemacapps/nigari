@@ -7,6 +7,25 @@ entries are not edited away.
 
 ---
 
+## 2026-11-03 — Work goes by Priority; only a breaking bug jumps the queue
+
+**Decision** (owner: "Things I give P1 have priority. Only if it is a bug And
+it has breaking does the bug become priority as well. Otherwise a bug remains
+just a bug and whatever priority I give it will be that."): the order of work
+is the board's Priority field. A bug labelled `bug` **and** `breaking` gets P1
+from the board sync; any other bug has the priority the owner gives it. This
+replaces "Bugs go before features" (2026-10-30), under which every open bug
+went before the next feature. The board sync now asks for both labels, not
+`breaking` alone (2026-11-02 entry).
+
+**Why:** the owner sets the order. A small non-breaking bug no longer stops a
+P1 feature, and "breaking" on something that is not a bug does not raise it.
+
+**Turned down:** keeping every bug first (the owner's correction); P1 for
+`breaking` alone (a feature labelled breaking would be raised).
+
+---
+
 ## 2026-11-02 — A breaking bug is P1, set by the board sync from a `breaking` label
 
 **Decision** (owner: "If there is a breaking bug it is p1"; option A, "Yes"):
