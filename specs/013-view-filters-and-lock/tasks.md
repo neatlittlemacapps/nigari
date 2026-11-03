@@ -9,7 +9,7 @@ description: "Tasks for a view's filters changed for oneself, quick filters, sub
 
 **Tests**: required. Go tests for every door and refusal, the upgrade step with its fixture, parity pairs, two benchmarks; two pure checks; five new browser specs.
 
-**Issues**: none yet
+**Issues**: parent #477 (itself under epic #426); T001–T045 are #478–#522, in order. A parent of its own, because tasks-sync matches task IDs among one parent's sub-issues and spec 012's T001–T040 sit under #426.
 
 **Delivery**: three pull requests (research R12), started after spec 012 PR 2 (the Settings menu) is merged. Phases 1–3 are **PR 1** (lock + log). Phases 4–5 are **PR 2** (personal changes). Phases 6–8 are **PR 3** (quick filters, lanes, polish).
 
