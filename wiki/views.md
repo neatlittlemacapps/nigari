@@ -45,7 +45,8 @@ property with the **Group** button, or with `set_view` and `group_by`.
 
 The plainest view, and the only one that shows every visible property including
 the ones that are empty. The first column is always **Name** and links to the
-row; after it comes one column per visible property, in schema order. Cells are
+row; after it comes one column per visible property, in this view's order
+(the schema's order until you move one, see below). Cells are
 editable where you stand: type into a number, tick a checkbox, pick a select
 option. Editing a select option's name or colour from a cell changes the schema,
 so it changes that option in every view and on every row.
@@ -75,6 +76,24 @@ Which branches are folded is yours alone and is not stored on the view. Leave
 the collection and come back and everything is open again.
 
 The table scrolls sideways when there are more columns than screen.
+
+**Moving a column.** Drag a column's heading sideways: after a few pixels the
+heading dims, a line marks the gap between two columns where it will go, and
+it lands there when you let go. The table scrolls along when you hold it near
+its left or right side; Escape, or letting go outside the heading row, puts it
+back. With a finger, hold the heading for about a third of a second first, as
+on a board. A click on a heading, or a right-click, opens its menu instead:
+**Move left**, **Move right** (left out at either end) and **Hide in view**,
+which hides the column in this view as the settings bar's column list does.
+After a move, focus stays on the heading, so the keyboard can keep going.
+
+The order belongs to **this view**, like the column widths: another table view
+of the same database keeps its own, and the order in the Properties dialog
+does not change. That dialog sets the order a view starts from. A property
+added later appears at the end, a hidden one keeps its place for when it is
+shown again, and **Name** always stays first: it has neither a menu nor a
+drag. Dragging the thin grip on a heading's right edge still resizes the
+column. Someone who can only read the database sees plain headings.
 
 ### `board`
 
@@ -107,8 +126,17 @@ lists every select, multi-select and relation property in the schema.
 a finger you hold the card for about a third of a second first (a short vibration
 where the device does one), because otherwise every attempt to scroll the board
 would pick a card up instead. A floating copy follows the pointer, the target
-column lights up, and a column scrolls by itself when you hold a card near its
+column is outlined, and a column scrolls by itself when you hold a card near its
 top or bottom edge.
+
+While you drag, a dashed gap the size of the card stands in the target column
+where the card **will** land, which is not necessarily where the pointer is: a
+board has no card order of its own. With a sort on the view the card takes the
+place the sort gives it; without one, its place in the database's own row
+order. Let go and the card is where the gap was. Over the card's own column no
+gap appears, and letting go there changes nothing. With reduced motion turned
+on, the gap appears without its fade. A manual card order (putting a card
+anywhere you like within a column) is not built.
 
 Note what a drag onto a multi-select or relation board does: it **replaces** the
 value with that one option. It does not add to what is there. And dragging a card

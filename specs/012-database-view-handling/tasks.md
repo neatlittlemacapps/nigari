@@ -67,7 +67,7 @@ description: "Tasks for database views that read comfortably and handle the way 
 - [x] T014 [US2] [ui] `ColHead` header menu: `ui/Menu`, opened by a click on the label and by a right-click, with `moveLeft`, `moveRight` (left out at the ends) and a new function `hideInView` (`EyeOff`) added to `web/src/menuIcons.ts`. After a move, focus is back on that header (FR-005). A reader who cannot edit gets no menu
 - [x] T015 [P] [US2] [i18n] "Hide in view" and the header menu's accessible name in `de.json`, `es.json`, `nl.json`
 - [x] T016 [US2] [test] New `web/tests/column-order.mjs`, registered in `web/tests/package.json`: drag with the marker; reload keeps the order; a second table view and the Properties dialog unchanged; the header menu by keyboard with focus kept; an edge drag still resizes; the title stays first; an order set by `set_view` is drawn. Mutation-checked against the old `TableView`
-- [ ] T017 [P] [US2] [wiki] `wiki/views.md` (moving columns, per view), `wiki/mcp-tools.md` (`set_view` `column_order`), a line in `docs/what-it-does.md`
+- [x] T017 [P] [US2] [wiki] `wiki/views.md` (moving columns, per view), `wiki/mcp-tools.md` (`set_view` `column_order`), a line in `docs/what-it-does.md`
 
 ---
 
@@ -81,7 +81,7 @@ description: "Tasks for database views that read comfortably and handle the way 
 - [x] T019 [P] [US3] [test] New `web/scripts/check-boarddrag.mjs`: sorted, unsorted, own column, ties, and a 500-card column timed; added to `npm run check` in `web/package.json`
 - [x] T020 [US3] [ui] `BoardView` (`CollectionView.tsx`, the one caller of `useBoardDrag`): the column under the pointer gets the target style (`--color-hover` background, `--color-border-strong` outline) and a placeholder the card's height at `dropIndex(...)`; no transition under `prefers-reduced-motion`; nothing when the group property cannot be changed (no drag starts, as today)
 - [x] T021 [US3] [test] New `web/tests/board-drop-marker.mjs`, registered in `web/tests/package.json`: ten drags across columns land where the placeholder was (SC-003); sorted and unsorted; own column changes nothing; a touch drag (`hasTouch`); reduced motion. Mutation-checked
-- [ ] T022 [P] [US3] [wiki] `wiki/views.md`: what the board shows while dragging
+- [x] T022 [P] [US3] [wiki] `wiki/views.md`: what the board shows while dragging
 
 ### Closing PR 1
 
