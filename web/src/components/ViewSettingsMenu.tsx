@@ -75,12 +75,18 @@ export default function ViewSettingsMenu({
     onChange({ hidden: [...next] });
   };
   const nameOf = (id: string | undefined, among: PropDef[]) => among.find((p) => p.id === id)?.name;
-  // A radio group over properties, with None first: the timeline's end date
+  // A timeline with no start property draws its bars from the first date
+  // property (CollectionView's TimelineView call), so None would be a value
+  // the view is not using: the item says which property that is.
+  const timelineStart = view.dateProp || dateProps[0]?.id;
+  // A radio group over properties, with "none" first: the timeline's end date
   // and the table's sub-items are optional, and the old <select>s offered
-  // "(none)" for the start date too.
-  const propRadio = (value: string | undefined, among: PropDef[], set: (id: string | undefined) => void) => (
+  // "(none)" for the start date too. Its label is passed in rather than one
+  // shared "None", which no language can decline for every noun it follows
+  // (es: Ninguna for a date, Ninguno for Sub-items).
+  const propRadio = (value: string | undefined, among: PropDef[], set: (id: string | undefined) => void, none: string) => (
     <MenuRadioGroup value={value ?? ''} onValueChange={(v) => set(v || undefined)}>
-      <MenuRadioItem value="">{t('None')}</MenuRadioItem>
+      <MenuRadioItem value="">{none}</MenuRadioItem>
       {among.map((p) => (
         <MenuRadioItem key={p.id} value={p.id}>
           {p.name}
@@ -144,17 +150,17 @@ export default function ViewSettingsMenu({
       )}
       {view.type === 'timeline' && (
         <>
-          <MenuSubmenu fn="timelineDates" label={t('Start date')} value={nameOf(view.dateProp, dateProps) ?? t('None')}>
-            {propRadio(view.dateProp, dateProps, (id) => onChange({ dateProp: id }))}
+          <MenuSubmenu fn="timelineDates" label={t('Start date')} value={nameOf(timelineStart, dateProps) ?? t('No start date')}>
+            {propRadio(timelineStart, dateProps, (id) => onChange({ dateProp: id }), t('No start date'))}
           </MenuSubmenu>
-          <MenuSubmenu fn="timelineDates" label={t('End date')} value={nameOf(view.endDateProp, dateProps) ?? t('None')}>
-            {propRadio(view.endDateProp, dateProps, (id) => onChange({ endDateProp: id }))}
+          <MenuSubmenu fn="timelineDates" label={t('End date')} value={nameOf(view.endDateProp, dateProps) ?? t('No end date')}>
+            {propRadio(view.endDateProp, dateProps, (id) => onChange({ endDateProp: id }), t('No end date'))}
           </MenuSubmenu>
         </>
       )}
       {view.type === 'table' && selfRelProps.length > 0 && (
-        <MenuSubmenu fn="subItems" label={t('Sub-items')} value={nameOf(view.subItemProp, selfRelProps) ?? t('None')}>
-          {propRadio(view.subItemProp, selfRelProps, (id) => onChange({ subItemProp: id }))}
+        <MenuSubmenu fn="subItems" label={t('Sub-items')} value={nameOf(view.subItemProp, selfRelProps) ?? t('No sub-items')}>
+          {propRadio(view.subItemProp, selfRelProps, (id) => onChange({ subItemProp: id }), t('No sub-items'))}
         </MenuSubmenu>
       )}
       {views.length > 1 && <MenuSeparator />}

@@ -3,6 +3,7 @@ import type { PeekMode } from '../peek';
 import { api } from '../api';
 import { onRefresh } from '../pwa';
 import Portal from './Portal';
+import { anchoredMenuStyle } from '../anchoredMenu';
 import { dropIndex, useBoardDrag } from '../boardDrag';
 import { sortComparator } from '../viewSort';
 import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } from '../columnDrag';
@@ -765,13 +766,15 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
               className={'view-tab view-tab--' + v.type + (v.id === view.id ? ' active' : '')}
               onClick={() => pickView(v.id)}
               onDoubleClick={() => {
-                if (!embed) void renameView(v);
+                if (!embed && canEdit) void renameView(v);
               }}
               onContextMenu={(e) => {
                 // Inside a document the views are the collection's business,
                 // reached through "Open as page" — not something a reader of
                 // the document should rename or remove by accident.
-                if (embed) return;
+                // A reader may not rename, move or remove a view: the server
+                // refuses it, so offering it only promises what it undoes.
+                if (embed || !canEdit) return;
                 e.preventDefault();
                 tabMenuReturn.current = e.currentTarget;
                 // Shift+F10 or the menu key report (0, 0): open under the tab.
@@ -785,7 +788,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             </button>
           </span>
         ))}
-        {!embed && (
+        {!embed && canEdit && (
           <AddViewMenu
             types={['table', 'board', 'gallery', 'calendar', 'timeline', 'list', 'form', 'chart']}
             icon={tabIcon}
@@ -914,8 +917,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       className={
         'collection-scroll' +
         (view.type === 'board' ? ' is-board' : '') +
-        (embed ? ' is-embed' : '') +
-        (embed && viewFiltered ? ' is-filtered' : '')
+        (embed ? ' is-embed' : '')
       }
     >
       {viewSwitcher}
@@ -1433,7 +1435,13 @@ function FilterSortControls({
   onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState<'filter' | 'sort' | 'group' | null>(null);
-  useEffect(() => onOpenChange?.(open !== null), [open, onOpenChange]);
+  // The cleanup matters: unmounted with a popover open (the view switched to a
+  // form, which has no filter controls), it would otherwise leave the embed's
+  // toolbar held open and its "Filtered" marker hidden.
+  useEffect(() => {
+    onOpenChange?.(open !== null);
+    return () => onOpenChange?.(false);
+  }, [open, onOpenChange]);
   const controlsRef = useRef<HTMLDivElement>(null);
   // Titles for every relation in this schema, so a filter on one can offer
   // rows to pick instead of demanding an id. Keyed by property id; the
@@ -1462,19 +1470,13 @@ function FilterSortControls({
       setPos(null);
       return;
     }
-    const r = controlsRef.current.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    if (vw <= 640) {
-      setPos({ position: 'fixed', left: 8, right: 8, bottom: 8, maxHeight: vh * 0.72 });
-    } else {
-      // Wider than it was: a tick list of option names and a pair of date
-      // fields need the room, and the old 300 is what everything was being
-      // squeezed into.
-      const width = 340;
-      const left = Math.max(8, Math.min(r.right - width, vw - width - 8));
-      setPos({ position: 'fixed', left, width, top: r.bottom + 6, maxHeight: vh - r.bottom - 24 });
-    }
+    // The one rule for where a toolbar menu goes (anchoredMenu.ts), which the
+    // ui/Menu sheets read the breakpoint from too: a copy here drifted from it
+    // the moment the breakpoint moved. 340 wide, because a tick list of option
+    // names and a pair of date fields need the room.
+    setPos(
+      anchoredMenuStyle(controlsRef.current.getBoundingClientRect(), { width: window.innerWidth, height: window.innerHeight }, 340, true),
+    );
   }, [open]);
   const filters = view.filters ?? [];
   const sort = view.sort ?? null;

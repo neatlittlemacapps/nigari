@@ -64,7 +64,7 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
   const rowText = (name) => menu.getByRole('menuitem', { name: new RegExp('^' + name) }).textContent();
   assert.match(await rowText('Property visibility'), /Property visibility\s*4 of 4/);
   assert.match(await rowText('Open rows in'), /Open rows in\s*Full page/);
-  assert.match(await rowText('Sub-items'), /Sub-items\s*None/);
+  assert.match(await rowText('Sub-items'), /Sub-items\s*No sub-items/);
   const items = await menu.locator('[role="menuitem"]').evaluateAll((els) => els.map((e) => e.textContent.trim()));
   assert(items.indexOf('Remove view') > items.indexOf('Move right') && items.indexOf('Edit properties') > items.indexOf('Remove view'), `order: ${items}`);
   assert(await menu.getByText('View settings', { exact: true }).isVisible());
@@ -143,7 +143,7 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
   await openSettings();
   assert.equal(await menu.getAttribute('aria-label'), 'Timeline view settings');
   assert.match(await rowText('Start date'), /Starts/);
-  assert.match(await rowText('End date'), /None/);
+  assert.match(await rowText('End date'), /No end date/);
   assert.equal(await menu.getByRole('menuitem', { name: /^Sub-items/ }).count(), 0, 'a timeline has no sub-items');
   sub = await submenu('End date');
   await sub.getByRole('menuitemradio', { name: 'Ends' }).click();
@@ -201,6 +201,12 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
   await reader.goto(`${base}/p/${collectionId}`);
   await reader.locator('.collection-toolbar').waitFor();
   assert.equal(await reader.locator('.collection-toolbar').getByRole('button', { name: 'Settings', exact: true }).count(), 0, 'a reader is offered Settings');
+  // The other ways to the same view actions are gated with it: the server
+  // refuses them, so offering them only promises what it undoes.
+  assert.equal(await reader.locator('.view-add').count(), 0, 'a reader is offered ＋ Add view');
+  await reader.locator('.view-tab').first().click({ button: 'right' });
+  await reader.waitForTimeout(300);
+  assert.equal(await reader.getByRole('menu', { name: 'View actions' }).count(), 0, "a reader's right-click offers the view actions");
   await other.close();
 });
 console.log('View settings: every old action from Settings, values, Escape and Tab, phone sheet, side peek and reader passed.');

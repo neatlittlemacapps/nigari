@@ -237,8 +237,8 @@ showing its current choice on the right:
 
 | Item | Options | Effect |
 | --- | --- | --- |
-| **Start date** | **None**, or any date property | Where the bar begins. Choosing None clears the choice, and the timeline falls back to the first date property in the schema. |
-| **End date** | **None**, or any date property | Where the bar ends. With none, every bar is one day wide. |
+| **Start date** | **No start date**, or any date property | Where the bar begins. Choosing *No start date* clears the choice, and the timeline falls back to the first date property in the schema, which the item then names. |
+| **End date** | **No end date**, or any date property | Where the bar ends. With none, every bar is one day wide. |
 
 When you create a timeline it takes the first date property as its start and the
 second as its end, if there is one. A row without a start date is left out. If no
@@ -490,7 +490,7 @@ right, with `›` where a further list opens:
 | **Property visibility** `3 of 8` | Which properties this view shows: one tick per property, and **Show all** / **Hide all**. On a form it decides which fields the form asks. See [Which properties a view shows](#which-properties-a-view-shows). |
 | **Open rows in** `Side peek` | How a click on a row opens it: **Full page**, **Side peek** or **Center peek** ([Collections](collections.md#how-rows-open)). Not on a form. |
 | **Start date**, **End date** | Timeline only: which date properties the bars use. |
-| **Sub-items** | Table only, and only when a relation points back at this collection. |
+| **Sub-items** | Table only, and only when a relation points back at this collection; **No sub-items** turns the tree off. |
 | **Move left**, **Move right** | Move this view's tab along the strip; greyed out at the ends. |
 | **Remove view** | In red, last: removes this view (not its rows). Not offered when it is the only view. |
 | *Database settings* | |

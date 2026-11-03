@@ -106,7 +106,7 @@ rows as a tree. The value of the relation names the row's **sub-items**: a
 parent lists its children, not the other way round.
 
 Switch it on per view: on a table view, **Settings** in the view bar has a
-**Sub-items** item, reading **None**, listing each self-relation the collection
+**Sub-items** item, reading **No sub-items**, listing each self-relation the collection
 has. Pick one and the rows nest, with a `▾` / `▸` toggle in front of any row that has
 sub-items and a blank in front of any row that does not. It is a table-view
 setting only: a board or a gallery has no tree to draw, and the item does
