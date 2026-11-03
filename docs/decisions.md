@@ -7,6 +7,34 @@ entries are not edited away.
 
 ---
 
+## 2026-11-03 — Embed views live in the document, old embeds are read in both shapes (spec 014 plan)
+
+**Decision**: an embed's views are stored in its `database` block's `local`
+prop, in a new shape (`{v: 2, viewId, views: [...]}`). An embed written
+before spec 014 is read as a copy of every database view it could switch
+to, with its own filters on top, and written in the new shape on its first
+change. No upgrade step rewrites documents. Agents reach embed views through
+`get_collection`, `set_view` and `delete_view` with an `embed_id`, not new
+tools. New rows in an embed view pin from the filters the browser sends.
+Spec 014's task issues go straight under epic #426, with no parent of their
+own (owner, "Straight under").
+
+**Why:** the server never reads the editor's live document (Yjs);
+`pages.content` is the browser's delayed copy. An upgrade step would have to
+reset the live state of every document with an embed and lose edits not yet
+saved. Storing views in the document carries them through history,
+duplicate, transfer and backup with no new code. One tool with an argument
+keeps the tool list small (`.claude/rules/mcp.md`). Full reasoning:
+`specs/014-embed-own-views/research.md` R1–R13.
+
+**Turned down:** a server table of embed views (copy, restore and cleanup
+rules of its own); an upgrade step (data loss risk); converting on open
+(writes a document nobody changed); four new MCP tools; reading the
+document on the server for the browser's new rows (lags the live
+document).
+
+---
+
 ## 2026-11-03 — An embedded database owns its views (spec 014, #371)
 
 **Decision** (owner, with Notion screenshots): a database embedded in a
