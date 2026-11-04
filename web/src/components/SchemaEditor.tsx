@@ -256,7 +256,14 @@ export default function SchemaEditor({
       if (v.hidden) next.hidden = v.hidden.filter((id) => propIds.has(id));
       return next;
     });
-    await onSave({ schema: colored, views: fixedViews });
+    // While the database's views are locked (spec 013) the views are sent
+    // back exactly as they were, so only the schema is saved: the lock covers
+    // the views, not the properties, and tidying the views here (a removed
+    // property's filter, a board's missing grouping) would be refused and
+    // take every property edit in the dialog down with it. A view that used a
+    // removed property keeps the setting, as it does when an agent removes
+    // one with update_schema.
+    await onSave({ schema: colored, views: config.viewsLocked ? config.views : fixedViews });
     onClose();
   };
 

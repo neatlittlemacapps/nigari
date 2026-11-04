@@ -221,3 +221,45 @@ func TestLockRoutesAreForPeopleWhoCanEdit(t *testing.T) {
 		t.Errorf("locking a plain page: %d", rec.Code)
 	}
 }
+
+// Code review findings, each a test so it cannot come back.
+//
+// A save over REST with a token is an agent's, in the log as in
+// edit_content: "Only what agents did" must find a script that re-filtered a
+// view. A chart's hidden groups are logged (set_view no longer writes its
+// generic entry, so a key left out would leave nothing). A lock that cannot
+// be read refuses rather than lets the save through.
+func TestViewLockReviewFindings(t *testing.T) {
+	f := newLockFixture(t)
+	rec := f.bearer("PUT", "/api/collections/"+f.col,
+		`{"views":[{"id":"t","name":"Table","type":"table","sort":{"property":"due","dir":"asc"}},{"id":"b","name":"Board","type":"board","groupBy":"status"}]}`)
+	if rec.Code != 200 {
+		t.Fatalf("token PUT: %d %s", rec.Code, rec.Body.String())
+	}
+	got := viewLog(t, f.s, f.col, 0)
+	if actionsOf(got) != "view.update/agent" {
+		t.Errorf("a token's view change logged as %q, want view.update/agent", actionsOf(got))
+	}
+
+	mark := lastAuditID(t, f.s)
+	if _, err := callTool(t, f.s, f.agent, "set_view", `{"page_id":"`+f.col+`","type":"chart","name":"Chart","group_by":"status"}`); err != nil {
+		t.Fatal(err)
+	}
+	_, views, _ := f.s.loadCollection(f.col)
+	chart, _ := views[len(views)-1]["id"].(string)
+	mark = lastAuditID(t, f.s)
+	if _, err := callTool(t, f.s, f.agent, "set_view", `{"page_id":"`+f.col+`","view_id":"`+chart+`","hidden_groups":["done"]}`); err != nil {
+		t.Fatal(err)
+	}
+	if got := viewLog(t, f.s, f.col, mark); actionsOf(got) != "view.update/agent" || !strings.Contains(got[0].changes, "hiddenGroups") {
+		t.Errorf("hiding a chart's group logged %q", actionsOf(got))
+	}
+
+	// The lock column gone: the read fails, and the save is refused.
+	if _, err := f.s.db.Exec(`ALTER TABLE collections RENAME COLUMN views_locked_by TO gone`); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.s.checkViewsUnlocked(f.col, []byte(`[]`), []byte(`[{"id":"x"}]`)); !errors.Is(err, errViewsLocked) {
+		t.Errorf("an unreadable lock let a change through: %v", err)
+	}
+}

@@ -82,7 +82,7 @@ func TestANarrowedTokenExportsAndRevertsOnlyItsWorkspaces(t *testing.T) {
 	col := f.s.makeCollection(t, f.other, f.owner, "Ledger", `[{"id":"note","name":"Note","type":"text"}]`)
 	row := f.s.makeRow(t, f.other, f.owner, col, "Entry", `{"note":"after"}`)
 	res, err := f.s.db.Exec(`INSERT INTO audit_log (created_at, actor_type, actor_id, actor_name, action, page_id, workspace_id, detail, changes)
-		VALUES (?, 'agent', ?, 'agent', 'page.props', ?, ?, '', '{"note":{"from":"before","to":"after"}}')`, now(), f.owner, row, f.other)
+		VALUES (?, 'agent', ?, 'agent', 'set_properties', ?, ?, '', '{"note":{"from":"before","to":"after"}}')`, now(), f.owner, row, f.other)
 	if err != nil {
 		t.Fatalf("audit entry: %v", err)
 	}

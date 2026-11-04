@@ -27,7 +27,7 @@ import type {
 import PropertyValue, { PersonStack, idList, loadRelationOptions, type RelOption } from './PropertyValue';
 import { openCollectionRow, openPageAux, RowOpenContext, useOpenRow } from '../pageOpen';
 import ViewSettingsMenu from './ViewSettingsMenu';
-import ViewsLockMarker from './ViewsLockMarker';
+import ViewsLockMarker, { setViewsLocked } from './ViewsLockMarker';
 import { AddViewMenu, CardMenu, ViewActionItems } from './CollectionMenus';
 import { Menu, MenuItem, MenuLabel, MenuSeparator, MenuValueItem, MenuValues, MenuValueSubmenu, type MenuPoint } from '../ui/Menu';
 import { readViewId, readViewScroll, writeViewId, writeViewScroll } from '../pageUiState';
@@ -642,14 +642,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // filters and sort, which belong to the document and not to the views.
   const viewsLock = config.viewsLocked ?? null;
   const mayChangeViews = canEdit && !viewsLock;
-  const setLock = async (lock: boolean) => {
-    try {
-      const r = lock ? await api.lockViews(collectionId) : await api.unlockViews(collectionId);
-      setConfig((c) => (c ? { ...c, viewsLocked: r.viewsLocked } : c));
-    } catch (e) {
-      toast((e as Error).message);
-    }
-  };
+  const setLock = (lock: boolean) =>
+    void setViewsLocked(collectionId, lock).then((viewsLocked) => {
+      if (viewsLocked !== undefined) setConfig((c) => (c ? { ...c, viewsLocked } : c));
+    });
 
   const updateView = (patch: Partial<ViewDef>) => {
     // An embed keeps its filters and sort to itself (#26): set inside a
@@ -870,8 +866,8 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             onRemove={removeView}
             onEditProperties={() => setSchemaOpen(true)}
             locked={!!viewsLock}
-            onLock={() => void setLock(true)}
-            onUnlock={() => void setLock(false)}
+            onLock={() => setLock(true)}
+            onUnlock={() => setLock(false)}
           />
         )}
         {view.type !== 'form' && (

@@ -20,29 +20,37 @@ import (
 // columns, how a row opens, a chart's style, a form's texts. A table resized
 // ten times would otherwise bury the one change somebody is looking for.
 
-// viewAuditKeys are the keys whose change makes a view.update entry, in the
-// order they are reported. groupBy is a board's columns and a chart's
-// grouping; groupPeriod, agg and aggProp are the rest of a chart's grouping
-// and aggregate. subGroupBy and quickFilters arrive with spec 013 PR 3 and are
-// listed now so the log covers them from the first save that writes them.
+// viewAuditKeys are the keys whose change makes a view.update entry: what
+// a view shows and how it groups it (research R6: filters, sort, grouping
+// and the view type's own settings that are not layout). groupBy is a
+// board's columns and a chart's grouping; groupPeriod, agg and aggProp the
+// rest of a chart's grouping and totals; chartKind, chartSort, hiddenGroups,
+// showEmpty and showZero which groups a chart draws and how; subItemProp a
+// table's tree. subGroupBy and quickFilters arrive with spec 013 PR 3 and
+// are listed now so the log covers them from the first save that writes
+// them.
+//
+// Since set_view no longer writes its generic entry, a setting left out
+// here leaves no trace when an agent changes it (code review: an agent
+// hiding the "Blocked" group of a chart was recorded before and would not
+// have been). What is left out is layout: colWidths, colOrder, hidden,
+// openIn, chartStyle, the form's texts.
 var viewAuditKeys = []string{
 	"filters", "sort", "groupBy", "subGroupBy", "quickFilters",
 	"dateProp", "endDateProp", "groupPeriod", "agg", "aggProp",
+	"chartKind", "chartSort", "hiddenGroups", "showEmpty", "showZero", "subItemProp",
 }
 
 // auditViewChanges writes the entries for one save. u is the person or the
-// agent's account; actorType is "human" or "agent", and an agent's name
-// carries " (MCP)" as every other agent entry does. ws is the database's
-// workspace, so the entry lands in that workspace's log.
+// agent's account, named as the entries should name it (the MCP door adds
+// " (MCP)", as every other MCP entry does); actorType is "human" or "agent".
+// ws is the database's workspace, so the entry lands in that workspace's log.
 //
 // detail names the view (both names for a rename); changes carries the
 // before and after: the name for a rename, each changed key for an update.
 // The database itself is the entry's page.
 func (s *Server) auditViewChanges(actorType string, u *user, colID, ws string, before, after []map[string]any) {
 	name := u.Name
-	if actorType == "agent" {
-		name += " (MCP)"
-	}
 	idOf := func(v map[string]any) string { id, _ := v["id"].(string); return id }
 	nameOf := func(v map[string]any) string { n, _ := v["name"].(string); return n }
 	old := map[string]map[string]any{}

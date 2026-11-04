@@ -390,16 +390,16 @@ func (s *Server) handleAuditRevert(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{"reverted": reverted, "skipped": skipped})
 }
 
-// revertibleAction says whether an entry can be taken back: one that
-// records a property change, with its before and after. View entries carry a
-// before and after too since spec 013 (view.update keeps the view's old and
-// new filters, view.rename its names), and taking one of those back here
-// would write "filters" and "sort" into the database page's own properties:
-// this handler only knows how to put row properties back. They are excluded
-// by name rather than property changes allowed by name, so an entry an older
-// release wrote under another action name stays revertible.
+// revertibleAction says whether an entry can be taken back: a property
+// change (set_properties, the only action any release has stored a before
+// and after for until spec 013), with its before and after. View entries
+// carry one too since spec 013 (view.update keeps the view's old and new
+// filters, view.rename its names), and taking one of those back here would
+// write "filters" and "sort" into the database page's own properties: this
+// handler only knows how to put row properties back. Allowed by name, so the
+// next action that stores a before and after is not revertible by accident.
 func revertibleAction(action, changes string) bool {
-	return changes != "" && !strings.HasPrefix(action, "view.")
+	return action == "set_properties" && changes != ""
 }
 
 // jsonEqual compares two JSON values by meaning rather than by bytes, so

@@ -83,6 +83,25 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
   await toolbar.getByRole('button', { name: 'New', exact: true }).click();
   await eventually(async () => (await api('GET', `${path}/rows`)).total === before + 1);
 
+  // ---- The schema is not locked: Edit properties saves, the views stay as
+  // they are. Status is the table's filter and the board's grouping; removing
+  // it used to rewrite both views, the server refused the whole save, and the
+  // dialog closed with every edit in it lost (code review). ----
+  const viewsBefore = JSON.stringify((await api('GET', path)).views);
+  await openSettings();
+  await menu.getByRole('menuitem', { name: 'Edit properties' }).click();
+  await page.getByRole('heading', { name: 'Collection properties' }).waitFor();
+  const propItems = page.locator('.schema-item');
+  const propNames = () => propItems.locator('.schema-row > .prop-input').evaluateAll((inputs) => inputs.map((i) => i.value));
+  await propItems.nth((await propNames()).indexOf('Status')).locator('button[title="Delete property"]').click();
+  await page.locator('.confirm-dialog').getByRole('button', { name: 'Delete property', exact: true }).click();
+  await page.getByPlaceholder('New property name', { exact: true }).fill('Notes');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('heading', { name: 'Collection properties' }).waitFor({ state: 'hidden' });
+  await eventually(async () => (await api('GET', path)).schema.map((p) => p.name).join() === 'Labels,Notes');
+  assert.equal(JSON.stringify((await api('GET', path)).views), viewsBefore, 'Edit properties changed the locked views');
+
   // ---- A second account who can edit: sees it, is refused by the server ----
   const password = randomUUID();
   await api('POST', '/api/users', { name: 'Mo Member', email: 'member@example.test', password, workspaces: [{ id: workspace.id, role: 'member' }] });

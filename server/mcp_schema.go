@@ -812,7 +812,9 @@ func (s *Server) saveViews(u *user, pageID string, schema []map[string]any, befo
 	if err := s.saveCollection(pageID, schema, after); err != nil {
 		return err
 	}
-	s.auditViewChanges("agent", u, pageID, s.pageWorkspace(pageID), old, after)
+	agent := *u
+	agent.Name += " (MCP)"
+	s.auditViewChanges("agent", &agent, pageID, s.pageWorkspace(pageID), old, after)
 	return nil
 }
 

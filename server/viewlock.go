@@ -48,19 +48,34 @@ type viewsLockInfo struct {
 	At     string `json:"at"`
 }
 
-// viewsLock reads the lock of a database. A missing collections row (a page
-// that is not a database) reads as unlocked: there are no views to protect.
-// One row by primary key; the name comes from users by primary key.
+// viewsLock reads the lock of a database, for showing it. A missing
+// collections row (a page that is not a database) reads as unlocked: there
+// are no views to protect. One row by primary key; the name comes from users
+// by primary key.
 func (s *Server) viewsLock(colID string) *viewsLockInfo {
+	l, _ := s.readViewsLock(colID)
+	return l
+}
+
+// readViewsLock is viewsLock with its error, for deciding: a failed read is
+// not "unlocked". checkViewsUnlocked refuses on it, so the lock fails closed
+// (code review): a busy database must not let a locked view be changed.
+func (s *Server) readViewsLock(colID string) (*viewsLockInfo, error) {
 	var by, at string
 	var name sql.NullString
 	err := s.db.QueryRow(`SELECT c.views_locked_by, c.views_locked_at, u.name
 		FROM collections c LEFT JOIN users u ON u.id = c.views_locked_by
 		WHERE c.page_id = ?`, colID).Scan(&by, &at, &name)
-	if err != nil || by == "" {
-		return nil
+	if err == sql.ErrNoRows {
+		return nil, nil
 	}
-	return &viewsLockInfo{By: by, ByName: name.String, At: at}
+	if err != nil {
+		return nil, err
+	}
+	if by == "" {
+		return nil, nil
+	}
+	return &viewsLockInfo{By: by, ByName: name.String, At: at}, nil
 }
 
 // checkViewsUnlocked refuses a views save while the database's views are
@@ -70,14 +85,24 @@ func (s *Server) viewsLock(colID string) *viewsLockInfo {
 // in sorted order, so the same views would otherwise read as a change, and a
 // browser that sends the views back unchanged beside a schema change would be
 // refused for nothing.
+//
+// The lock is read first: it is one row by primary key, and on an unlocked
+// database, nearly every save, it settles the question without decoding and
+// comparing two views lists.
+//
+// The read and the caller's write are two statements, so a lock taken in
+// between does not stop a save already past this check. That is the order
+// the two arrived in, as "the last one wins" for two people locking at once
+// (spec, Edge Cases); the next save is refused.
 func (s *Server) checkViewsUnlocked(colID string, before, after []byte) error {
-	if jsonEqual(string(before), string(after)) {
-		return nil
-	}
-	if s.viewsLock(colID) != nil {
+	lock, err := s.readViewsLock(colID)
+	if err != nil {
 		return errViewsLocked
 	}
-	return nil
+	if lock == nil || jsonEqual(string(before), string(after)) {
+		return nil
+	}
+	return errViewsLocked
 }
 
 // handleLockViews (PUT /api/collections/{id}/lock) and handleUnlockViews

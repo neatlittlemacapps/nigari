@@ -441,12 +441,17 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
     'view.rename': t('View renamed'),
     'view.update': t('View changed'),
   };
-  const lockLabel = (action: string, name: string): string | undefined =>
-    action === 'views.lock'
-      ? t('Views locked by {name}', { name })
-      : action === 'views.unlock'
-        ? t('Views unlocked by {name}', { name })
-        : undefined;
+  // The words before the page link. A view entry names its view itself (the
+  // detail), so the detail is not repeated after it when the database has
+  // no title left to link; a lock entry's detail is the database's title.
+  // The view phrases are sentences of their own, so a comma parts them from
+  // the database's name.
+  const phrase = (e: AuditEntry): { text: string; namesDetail: boolean; comma: boolean } => {
+    if (e.action === 'views.lock') return { text: t('Views locked by {name}', { name: e.actorName }), namesDetail: false, comma: true };
+    if (e.action === 'views.unlock') return { text: t('Views unlocked by {name}', { name: e.actorName }), namesDetail: false, comma: true };
+    if (viewLabel[e.action]) return { text: `${e.actorName}: ${viewLabel[e.action]} “${e.detail.slice(0, 60)}”`, namesDetail: true, comma: true };
+    return { text: `${e.actorName} ${label[e.action] ?? e.action}`, namesDetail: false, comma: false };
+  };
   return (
     <Portal>
     <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -481,10 +486,8 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
                 )}
               </span>
               <span className="user-row-name">
-                {(lockLabel(e.action, e.actorName) && `${lockLabel(e.action, e.actorName)},`) ??
-                  (viewLabel[e.action]
-                    ? `${e.actorName}: ${viewLabel[e.action]} “${e.detail.slice(0, 60)}”,`
-                    : `${e.actorName} ${label[e.action] ?? e.action}`)}
+                {phrase(e).text}
+                {phrase(e).comma && e.pageTitle ? ',' : ''}
                 {/* The page by NAME, and clickable. The detail used to trail
                     off in a raw id — the difference between a log you can act on
                     and one you can only read. */}
@@ -503,7 +506,7 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
                     </a>
                   </>
                 ) : (
-                  e.detail ? ` “${e.detail.slice(0, 60)}”` : ''
+                  e.detail && !phrase(e).namesDetail ? ` “${e.detail.slice(0, 60)}”` : ''
                 )}
               </span>
               {e.revertible && (

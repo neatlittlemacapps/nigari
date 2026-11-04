@@ -1121,7 +1121,7 @@ views exactly as they are still goes through.
 
 Each call is logged as the view entries it makes, as an agent: *View created*,
 *View renamed*, *View changed* (filters, sort, grouping, dates, a chart's
-grouping and totals). A call that changes only layout (hidden columns, column
+grouping, totals, kind and drawn groups, a table's sub-items). A call that changes only layout (hidden columns, column
 order, how rows open, a chart's style) leaves no entry.
 
 ### delete_view

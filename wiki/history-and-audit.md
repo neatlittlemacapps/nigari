@@ -191,7 +191,7 @@ tail. An instance where nothing has happened says *Nothing has happened yet.*
 | deleted the workspace: / took over the workspace: / adopted the ownerless workspace: | workspace lifecycle |
 | handed the instance to: | the owner role moved to another account |
 | took emergency access: / ended the emergency access: | see below |
-| View created / View deleted / View renamed / View changed | a database's view, by a person or an agent; the entry names the view (both names for a rename) and links the database. *View changed* is a change to its filters, sort, grouping, dates or a chart's grouping and totals. Column widths, column order, hidden columns, how rows open, a chart's style and a form's texts leave no entry. |
+| View created / View deleted / View renamed / View changed | a database's view, by a person or an agent; the entry names the view (both names for a rename) and links the database. *View changed* is a change to its filters, sort, grouping, dates, a chart's grouping, totals, kind or which groups it draws, or a table's sub-items. A change made over REST with an API token is filed as an agent's. Column widths, column order, hidden columns, how rows open, a chart's style and a form's texts leave no entry. |
 | Views locked by … / Views unlocked by … | somebody locked or unlocked a database's views ([Views](views.md#locking-a-databases-views)) |
 
 Note what *changed* does **not** cover: `update_page` over MCP touches metadata

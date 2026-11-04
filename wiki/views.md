@@ -693,8 +693,9 @@ collection changes.
 
 Every change to a view that matters is in the [activity
 log](history-and-audit.md#what-is-recorded): a view created, removed or
-renamed, and a change to its filters, sort, grouping, dates or a chart's
-grouping, one entry per view. Column widths, column order, hidden columns, how
+renamed, and a change to its filters, sort, grouping, dates, a chart's
+grouping, totals and drawn groups, or a table's sub-items, one entry per
+view. Column widths, column order, hidden columns, how
 rows open, a chart's style and a form's texts are left out, so a table resized
 ten times does not bury the change somebody is looking for.
 
@@ -729,9 +730,12 @@ While the views are locked:
   a filter just for yourself, while the views stay as they are for everyone
   else, is planned (spec 013) and not built yet.
 - Rows work as before: new rows, edits, moving a card between columns.
-- The schema is not locked: **Edit properties** still adds, renames and
-  changes properties. Removing a property that a view filters, sorts or groups
-  by is refused, because removing it would change that view; unlock first.
+- The schema is not locked: **Edit properties** still adds, renames, changes
+  and removes properties. The views are left exactly as they are: a view that
+  filtered, sorted or grouped by a removed property keeps that setting (the
+  values stay in the rows), as it does when an agent removes a property with
+  `update_schema`. Unlocked, saving **Edit properties** tidies such views as it
+  always has.
 - In a document, the database's own filter and sort controls stay: an
   embedded database's filters and sort belong to the document, not to the
   views, and the lock does not cover them.

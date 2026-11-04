@@ -142,8 +142,15 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if hasViews {
+		// A token's save is an agent's, as edit_content records it
+		// (cap_edits.go): "Only what agents did" must find a script or an
+		// agent that re-filtered a view over REST.
 		u := requestUser(r)
-		s.auditViewChanges("human", u, id, s.pageWorkspace(id), storedViews, savedViews)
+		actor := "human"
+		if u.TokenScope != "" {
+			actor = "agent"
+		}
+		s.auditViewChanges(actor, u, id, s.pageWorkspace(id), storedViews, savedViews)
 	}
 	s.pagesChanged()
 	// The schema and the views ARE the database: adding a column or removing a
