@@ -236,10 +236,13 @@ every case.
 
 **Decision**:
 - **Delete a property** asks on every surface through `dialog.tsx`'s
-  `confirm`: "Delete {property} from {database}? It will be removed from all
-  views." For a relation with a back-relation, a second sentence: "Its
-  column in {other} is removed too." Shipped first, on its own, as the fix
-  for #524.
+  `confirm`: "Delete “{property}” from “{database}”? It will be removed from
+  all views." For a relation, a second sentence: "Its links to rows of
+  “{database}” go with it." (nigari computes a back-relation from the
+  relation's links, `derived.go`, so the other database has no column to
+  remove; its back-relation just shows nothing.) A property added in the
+  same visit and never saved goes without asking. Shipped first, on its
+  own, as the fix for #524.
 - **Save in the Properties dialog opened from a document** asks before
   saving: "Change the properties of {database}? This changes the database
   and every view of it, everywhere." Cancel keeps the dialog open with the

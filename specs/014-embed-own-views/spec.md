@@ -196,7 +196,9 @@ confirmation; nothing changes. Confirm; the database's page shows the change.
    confirmation names the property and the database and says it leaves every
    view.
 3. **Given** a relation property, **When** it is deleted, **Then** the
-   confirmation also says the other database's column for it goes too.
+   confirmation also says its links to the other database's rows go too
+   (nigari computes the other side, so its back-relation shows nothing;
+   there is no column to delete, unlike Notion; #524).
 4. **Given** the database's own page, **When** a property is deleted,
    **Then** it asks too (#524), with the same sentence.
 
@@ -317,7 +319,7 @@ opening the document sees it; the database's views are unchanged.
   first, naming the database and saying the change applies everywhere.
 - **FR-013**: Deleting a property MUST be confirmed on every surface,
   naming the property and the database and saying it leaves every view; for
-  a relation, also that the other database's column goes.
+  a relation, also that its links to the other database's rows go with it.
 
 **Existing embeds**
 

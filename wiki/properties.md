@@ -31,8 +31,13 @@ or multi-select, the empty box reading **+ Option** adds an option when you
 press Enter, and clicking an option's chip opens the nine-colour palette
 (**Change colour**). That is where a board's column colours are decided.
 
-Remove a property with the ✕ at the end of its row (**Delete property**). **The
-values stay in the rows too.** Add a property with the same name again and the
+Remove a property with the ✕ at the end of its row (**Delete property**). It
+asks first, naming the property and the database: *Delete "Status" from
+"Tasks"? It will be removed from all views.* For a relation it adds that its
+links to the other database's rows go with it, so a back-relation there shows
+nothing. **Cancel** keeps the property; a property added in the same visit and
+never saved goes without asking. The deletion still waits for **Save**, like
+every change in the dialog. **The values stay in the rows too.** Add a property with the same name again and the
 old values are visible again, because the id is derived from the name. This is
 deliberate: an accidental deletion is curable.
 

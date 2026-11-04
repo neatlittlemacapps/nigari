@@ -47,9 +47,9 @@ Add view
 ## Delete a property (everywhere, #524)
 
 - The ✕ on a property asks (`confirm`, danger):
-  - "Delete {property} from {database}? It will be removed from all views."
-  - relation with a back-relation, added: "Its column in {other} is removed
-    too."
+  - "Delete “{property}” from “{database}”? It will be removed from all views."
+  - relation, added: "Its links to rows of “{database}” go with it." (the
+    other side is computed, so there is no column to remove; #524)
   - buttons: "Delete property" / "Cancel"
 - The deletion is still a draft until the dialog is saved, as today; the
   confirmation is at the ✕, where the person decides.
@@ -68,8 +68,8 @@ database the person may only read.
 | `Change the properties of {database}?` |
 | `This changes the database and every view of it, everywhere.` |
 | `Change properties` |
-| `Delete {property} from {database}? It will be removed from all views.` |
-| `Its column in {other} is removed too.` |
+| `Delete “{property}” from “{database}”? It will be removed from all views.` |
+| `Its links to rows of “{database}” go with it.` |
 | `An embed keeps at least one view.` |
 
 `Delete property`, `Cancel`, `Table`, `Add view`, `Settings`, `Edit

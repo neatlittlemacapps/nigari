@@ -202,6 +202,8 @@
   "Delete": "Eliminar",
   "Delete forever": "Eliminar permanentemente",
   "Delete option": "Eliminar opción",
+  "Delete “{property}” from “{database}”? It will be removed from all views.": "¿Eliminar «{property}» de «{database}»? Desaparecerá de todas las vistas.",
+  "Its links to rows of “{database}” go with it.": "Sus enlaces a filas de «{database}» también se eliminan.",
   "Delete option “{name}”?": "¿Eliminar la opción «{name}»?",
   "Delete permanently": "Eliminar permanentemente",
   "Delete property": "Eliminar propiedad",

@@ -1047,6 +1047,8 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       {schemaOpen && (
         <SchemaEditor
           config={config}
+          databaseName={pages.get(collectionId)?.title || t('Untitled')}
+          titleOf={(id) => pages.get(id)?.title}
           collections={[...pages.values()]
             // A template is a snapshot, not a database rows can point at.
             .filter((p) => p.type === 'collection' && !p.trashed && !p.isTemplate)
