@@ -2188,8 +2188,16 @@ body:has(.icon-picker) .bn-side-menu {
 }
 
 /* The views lock's marker, after the view tabs and the ＋ (spec 013). */
+/* Against the tabs like the Filtered/Sorted markers: the toolbar spreads its
+   children apart, and the auto margin keeps this one left. When those
+   markers follow, they take the auto margin and this one stays beside them. */
+.views-lock-marker:has(+ .embed-view-state) {
+  margin-right: 0;
+}
+
 .views-lock-marker {
   flex: none;
+  margin-right: auto;
   color: var(--color-text-muted);
   gap: var(--space-100);
 }
@@ -4826,6 +4834,13 @@ body.is-col-resizing {
 
   .collection-toolbar > * {
     flex-shrink: 0;
+  }
+
+  /* The views lock's marker first on a phone (spec 013): the toolbar scrolls
+     sideways there, and after the tabs it started off screen, so nobody saw
+     why the view controls were missing. */
+  .collection-toolbar > .views-lock-marker {
+    order: -1;
   }
 
   .board {

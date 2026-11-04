@@ -812,8 +812,11 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             onAdd={addView}
           />
         )}
-        {viewsLock && <ViewsLockMarker lock={viewsLock} />}
       </div>
+      {/* Beside the tabs, not inside them: on a phone the tab strip scrolls
+          and the marker sat off screen at its end (ux audit); there it is
+          drawn first instead (styles.css). */}
+      {viewsLock && <ViewsLockMarker lock={viewsLock} />}
       <Menu
         label={t('View actions')}
         open={tabMenuOpen}

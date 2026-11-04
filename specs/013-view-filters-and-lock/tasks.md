@@ -62,7 +62,7 @@ description: "Tasks for a view's filters changed for oneself, quick filters, sub
 - [x] T015 [US5] [test] New `web/tests/activity-views.mjs`, registered: rename, re-filter, delete, lock appear; a column resize does not
 - [x] T016 [P] [US2] [wiki] `wiki/views.md` and `wiki/collections.md` (the lock), the page describing the activity log (view entries), `wiki/mcp-tools.md` (refusals, `views_locked`), `docs/what-it-does.md`
 - [x] T017 [US2] [backend] `.specify/memory/surfaces.md`: the **View lock** row of research R11, Since the merge date
-- [ ] T018 [test] Before PR 1 is offered: gate green; `codegraph sync` and `codegraph callers` on `checkViewsUnlocked`, `auditViewChanges`; `/code-review`; `/security-review` (a new gate and session-only routes); `ux-ui-audit` on the lock in light and dark at desktop and phone width; findings fixed or filed
+- [x] T018 [test] Before PR 1 is offered: gate green; `codegraph sync` and `codegraph callers` on `checkViewsUnlocked`, `auditViewChanges`; `/code-review`; `/security-review` (a new gate and session-only routes); `ux-ui-audit` on the lock in light and dark at desktop and phone width; findings fixed or filed
 
 ---
 
