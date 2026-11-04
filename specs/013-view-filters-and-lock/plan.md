@@ -114,7 +114,7 @@ Re-checked after Phase 1 design: unchanged.
 | Outside names (env vars, cookies, storage keys, …) | No change to an outside name. The browser keeps no new storage key: personal state lives on the account (owner's choice); the first paint waits for one request (R2) | backend |
 | Menu icons (`ui/Menu`, `menuIcons.ts`, `check-menu-icons.mjs`) | New functions: `lockViews` (`Lock`), `unlockViews` (`LockOpen`), `quickFilters` (`Zap`), `subGroup` (`Rows2`), `foldLane` (`ChevronsDownUp`), `resetView` (`RotateCcw`), `saveViewForEveryone` (`Users`). Each with an icon no function has; the build's `check-menu-icons.mjs` decides | ui |
 
-**Parity statement**: everything a person does to a view's shared state, an agent can do with the same checks, except locking and unlocking. Personal state is a person's screen and has no agent counterpart. Both gaps are the owner's decision and are named in the manifest.
+**Parity statement**: everything a person does to a view's shared state, an agent can do with the same checks, except locking and unlocking. Personal state is a person's screen and has no agent counterpart. Both exclusions are the owner's decision and are named in the manifest as "closed".
 
 **Manifest**: new routes named; two capabilities closed to agents; `gapBudget` unchanged; three new parity pairs.
 
