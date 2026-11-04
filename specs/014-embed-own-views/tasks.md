@@ -15,14 +15,14 @@ description: "Tasks for a database in a document having views of its own"
 
 **CodeGraph** (before writing these tasks; `codegraph status`: "Index is up to date"):
 
-- `codegraph callers viewOf` → `rowPinsForView`, `rowMatchesView`, **`mcpCreateRows`** (`server/mcp_schema.go:792`) and **`viewMatchNote`** (`server/viewpins.go:241`). `mcpCreateRows` reads the view itself, not only through `propsInView`, and the agent's "matches the view" note has its own path. T014 and T015 cover both.
-- `codegraph callers rowMatchesView` → `handleCreatePage`, `handleRowFromTemplate`: the two REST doors that take `viewFilters` (T013).
-- `codegraph callers pinsFromFilters` → `rowPinsForView`, `mcpCreateRows`, its test: the one function every new path ends in (T012).
-- `codegraph callers propsInView` → `handleCreatePage`, `handleRowFromTemplate`, `mcpCreateFromTemplate`, `mcpCall` (create_page) (plan.md CodeGraph). T014 covers the two MCP ones.
-- `codegraph callers mcpCreateView` / `mcpUpdateView` → `mcpCall` and the tests in `server/mcp_views_test.go`; `mcpDeleteView`, `mcpGetCollection` → `mcpCall` only. The embed branch goes in `mcpCall`'s `set_view`, `delete_view` and `get_collection` cases (T009–T011); the database functions are unchanged.
+- `codegraph callers viewOf` → `rowPinsForView`, `rowMatchesView`, **`mcpCreateRows`** (`server/mcp_schema.go:792`) and **`viewMatchNote`** (`server/viewpins.go:241`). `mcpCreateRows` reads the view itself, not only through `propsInView`, and the agent's "matches the view" note has its own path. T016 and T018 cover both.
+- `codegraph callers rowMatchesView` → `handleCreatePage`, `handleRowFromTemplate`: the two REST doors that take `viewFilters` (T017).
+- `codegraph callers pinsFromFilters` → `rowPinsForView`, `mcpCreateRows`, its test: the one function every new path ends in (T016).
+- `codegraph callers propsInView` → `handleCreatePage`, `handleRowFromTemplate`, `mcpCreateFromTemplate`, `mcpCall` (create_page) (plan.md CodeGraph). T018 covers the two MCP ones.
+- `codegraph callers mcpCreateView` / `mcpUpdateView` → `mcpCall` and the tests in `server/mcp_views_test.go`; `mcpDeleteView`, `mcpGetCollection` → `mcpCall` only. The embed branch goes in `mcpCall`'s `set_view`, `delete_view` and `get_collection` cases (T010, T011); the database functions are unchanged.
 - `codegraph callers addChartView` → `pickForChart` (`blocks.tsx:374`) only, so after T030 it has no caller left in the app and is removed (T030).
 - `codegraph callers parseEmbedLocal` → the block's render only; replaced by `embedViews.ts` (T024).
-- `codegraph callers ViewSettingsMenu`, `AddViewMenu`, `SchemaEditor` → `CollectionView` only (T026–T029).
+- `codegraph callers ViewSettingsMenu`, `AddViewMenu`, `SchemaEditor` → `CollectionView` only (T026, T029, T001 and T031).
 
 ## Format: `[ID] [P?] [Story] [surface] Description`
 
