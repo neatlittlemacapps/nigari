@@ -9,7 +9,7 @@ description: "Tasks for a database in a document having views of its own"
 
 **Tests**: required. Go tests for every MCP door and refusal, the shared converter cases, a parity pair; one pure check; two new browser specs and one updated (`chart-builder.mjs`).
 
-**Issues**: none yet
+**Issues**: parent #371 (itself under epic #426); T001–T036 are #534–#569, in order. Under #371 rather than straight under #426, because tasks-sync matches task IDs among one parent's sub-issues and spec 012's T001–T040 sit under #426 (`docs/decisions.md`, 2026-11-04).
 
 **Delivery**: three pull requests (research R13). Phase 1 is **PR 1** (#524), which can go now. Phases 2–4 are **PR 2** (model, server, agents) and Phases 5–8 are **PR 3** (interface), both started after spec 013's PR 2 is merged.
 
