@@ -194,7 +194,7 @@ func (s *Server) handleAudit(w http.ResponseWriter, r *http.Request) {
 			var e auditEntry
 			var changes string
 			if rows.Scan(&e.ID, &e.CreatedAt, &e.ActorType, &e.ActorName, &e.Action, &e.PageID, &e.Detail, &changes, &e.PageTitle) == nil {
-				e.Revertible = changes != ""
+				e.Revertible = revertibleAction(e.Action, changes)
 				batch = append(batch, e)
 			}
 		}
@@ -312,9 +312,9 @@ func (s *Server) handleAuditRevert(w http.ResponseWriter, r *http.Request) {
 		httpErrorCode(w, 400, "bad_id", "That is not an audit entry id.")
 		return
 	}
-	var pageID, changes string
-	err = s.db.QueryRow(`SELECT COALESCE(page_id,''), COALESCE(changes,'') FROM audit_log WHERE id = ?`, id).
-		Scan(&pageID, &changes)
+	var pageID, changes, action string
+	err = s.db.QueryRow(`SELECT COALESCE(page_id,''), COALESCE(changes,''), action FROM audit_log WHERE id = ?`, id).
+		Scan(&pageID, &changes, &action)
 	if err == sql.ErrNoRows {
 		httpErrorCode(w, 404, "not_found", "No such audit entry.")
 		return
@@ -322,7 +322,7 @@ func (s *Server) handleAuditRevert(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 500, err.Error())
 		return
 	}
-	if changes == "" || pageID == "" {
+	if !revertibleAction(action, changes) || pageID == "" {
 		httpErrorCode(w, 400, "not_revertible", "This entry records no property change that could be taken back.")
 		return
 	}
@@ -388,6 +388,18 @@ func (s *Server) handleAuditRevert(w http.ResponseWriter, r *http.Request) {
 			fmt.Sprintf("%s: %s", s.pageTitle(pageID), strings.Join(reverted, ", ")))
 	}
 	writeJSON(w, map[string]any{"reverted": reverted, "skipped": skipped})
+}
+
+// revertibleAction says whether an entry can be taken back: one that
+// records a property change, with its before and after. View entries carry a
+// before and after too since spec 013 (view.update keeps the view's old and
+// new filters, view.rename its names), and taking one of those back here
+// would write "filters" and "sort" into the database page's own properties:
+// this handler only knows how to put row properties back. They are excluded
+// by name rather than property changes allowed by name, so an entry an older
+// release wrote under another action name stays revertible.
+func revertibleAction(action, changes string) bool {
+	return changes != "" && !strings.HasPrefix(action, "view.")
 }
 
 // jsonEqual compares two JSON values by meaning rather than by bytes, so

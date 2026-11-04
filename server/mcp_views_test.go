@@ -48,7 +48,7 @@ func TestCreateViewCarriesItsConfiguration(t *testing.T) {
 
 	// "Open" — the board people work in. Two filters, ANDed: neither done nor
 	// dropped. One condition could not express this; a view can.
-	if _, err := s.mcpCreateView(tasks, viewSpec{
+	if _, err := s.mcpCreateView(viewTestAgent, tasks, viewSpec{
 		Name: "Open", Type: "board", GroupBy: ptr("status"),
 		Filters: &[]map[string]any{
 			{"property": "status", "op": "is_not", "value": "done"},
@@ -68,7 +68,7 @@ func TestCreateViewCarriesItsConfiguration(t *testing.T) {
 	}
 
 	// "History" — only what is finished, newest first.
-	if _, err := s.mcpCreateView(tasks, viewSpec{
+	if _, err := s.mcpCreateView(viewTestAgent, tasks, viewSpec{
 		Name: "History", Type: "table",
 		Filters: &[]map[string]any{{"property": "status", "op": "is", "value": "done"}},
 		Sort:    ptr("due:desc"),
@@ -95,13 +95,13 @@ func TestViewsRefuseFilterGroups(t *testing.T) {
 		{{"property": "system", "op": "is_not_empty"}},
 	}
 
-	if _, err := s.mcpCreateView(tasks, viewSpec{Name: "Open", Type: "table", FilterGroups: groups}); err == nil {
+	if _, err := s.mcpCreateView(viewTestAgent, tasks, viewSpec{Name: "Open", Type: "table", FilterGroups: groups}); err == nil {
 		t.Error("creating a view with filter_groups should be refused")
 	}
-	if _, err := s.mcpCreateView(tasks, viewSpec{Name: "Plain", Type: "table"}); err != nil {
+	if _, err := s.mcpCreateView(viewTestAgent, tasks, viewSpec{Name: "Plain", Type: "table"}); err != nil {
 		t.Fatalf("create Plain: %v", err)
 	}
-	if _, err := s.mcpUpdateView(tasks, "plain", viewSpec{FilterGroups: groups}); err == nil {
+	if _, err := s.mcpUpdateView(viewTestAgent, tasks, "plain", viewSpec{FilterGroups: groups}); err == nil {
 		t.Error("updating a view with filter_groups should be refused")
 	}
 	if _, kept := viewByID(t, s, tasks, "plain")["filterGroups"]; kept {
@@ -117,7 +117,7 @@ func TestUpdateViewMergesAndCanClear(t *testing.T) {
 	ws := s.firstWorkspaceOf(t, uid)
 	tasks := tasksCollection(t, s, ws, uid)
 
-	if _, err := s.mcpCreateView(tasks, viewSpec{
+	if _, err := s.mcpCreateView(viewTestAgent, tasks, viewSpec{
 		Name: "Board", Type: "board", GroupBy: ptr("status"),
 		Filters: &[]map[string]any{{"property": "status", "op": "is_not", "value": "done"}},
 		Sort:    ptr("due:asc"),
@@ -126,7 +126,7 @@ func TestUpdateViewMergesAndCanClear(t *testing.T) {
 	}
 
 	// Rename only — the filter and the sort must survive untouched.
-	if _, err := s.mcpUpdateView(tasks, "board", viewSpec{Name: "Working board"}); err != nil {
+	if _, err := s.mcpUpdateView(viewTestAgent, tasks, "board", viewSpec{Name: "Working board"}); err != nil {
 		t.Fatalf("rename: %v", err)
 	}
 	v := viewByID(t, s, tasks, "board")
@@ -141,7 +141,7 @@ func TestUpdateViewMergesAndCanClear(t *testing.T) {
 	}
 
 	// An EMPTY list clears — otherwise a filter could never be removed again.
-	if _, err := s.mcpUpdateView(tasks, "board", viewSpec{
+	if _, err := s.mcpUpdateView(viewTestAgent, tasks, "board", viewSpec{
 		Filters: &[]map[string]any{}, Sort: ptr(""),
 	}); err != nil {
 		t.Fatalf("clear: %v", err)
@@ -184,7 +184,7 @@ func TestViewConfigurationIsValidated(t *testing.T) {
 		{"grouping by text", viewSpec{Name: "G", Type: "board", GroupBy: ptr("system")}, "is a text property"},
 		{"grouping by a date", viewSpec{Name: "H", Type: "board", GroupBy: ptr("due")}, "is a date property"},
 	} {
-		_, err := s.mcpCreateView(tasks, c.spec)
+		_, err := s.mcpCreateView(viewTestAgent, tasks, c.spec)
 		if err == nil {
 			t.Errorf("%s: should have been refused", c.name)
 			continue
@@ -203,13 +203,13 @@ func TestUpdateViewRefusesATypeChange(t *testing.T) {
 	ws := s.firstWorkspaceOf(t, uid)
 	tasks := tasksCollection(t, s, ws, uid)
 
-	if _, err := s.mcpCreateView(tasks, viewSpec{Name: "T", Type: "table"}); err != nil {
+	if _, err := s.mcpCreateView(viewTestAgent, tasks, viewSpec{Name: "T", Type: "table"}); err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	if _, err := s.mcpUpdateView(tasks, "t", viewSpec{Type: "board"}); err == nil {
+	if _, err := s.mcpUpdateView(viewTestAgent, tasks, "t", viewSpec{Type: "board"}); err == nil {
 		t.Error("changing the type should be refused")
 	}
-	if _, err := s.mcpUpdateView(tasks, "does-not-exist", viewSpec{Name: "X"}); err == nil {
+	if _, err := s.mcpUpdateView(viewTestAgent, tasks, "does-not-exist", viewSpec{Name: "X"}); err == nil {
 		t.Error("an unknown view id should be refused")
 	}
 }
@@ -248,7 +248,7 @@ func TestUpdateViewRefusesAReadOnlyToken(t *testing.T) {
 	uid, _ := signedIn(t, s, "ro@example.test")
 	ws := s.firstWorkspaceOf(t, uid)
 	tasks := tasksCollection(t, s, ws, uid)
-	if _, err := s.mcpCreateView(tasks, viewSpec{Name: "T", Type: "table"}); err != nil {
+	if _, err := s.mcpCreateView(viewTestAgent, tasks, viewSpec{Name: "T", Type: "table"}); err != nil {
 		t.Fatalf("create: %v", err)
 	}
 
@@ -276,7 +276,7 @@ func TestBoardOnADeletedPropertySaysWhatToPass(t *testing.T) {
 	uid, _ := signedIn(t, s, "gone@example.test")
 	ws := s.firstWorkspaceOf(t, uid)
 	tasks := tasksCollection(t, s, ws, uid)
-	out, err := s.mcpCreateView(tasks, viewSpec{Name: "Board", Type: "board", GroupBy: ptr("status")})
+	out, err := s.mcpCreateView(viewTestAgent, tasks, viewSpec{Name: "Board", Type: "board", GroupBy: ptr("status")})
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -296,7 +296,7 @@ func TestBoardOnADeletedPropertySaysWhatToPass(t *testing.T) {
 	if _, err := s.db.Exec(`UPDATE collections SET schema = ?, views = ? WHERE page_id = ?`, string(sb), string(vb), tasks); err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.mcpUpdateView(tasks, viewID, viewSpec{Name: "Renamed"})
+	_, err = s.mcpUpdateView(viewTestAgent, tasks, viewID, viewSpec{Name: "Renamed"})
 	if err == nil || !strings.Contains(err.Error(), "no longer a property") {
 		t.Fatalf("update on a board grouped by a deleted property: %v", err)
 	}

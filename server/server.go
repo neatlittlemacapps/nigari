@@ -307,6 +307,10 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 
 	m.HandleFunc("GET /api/collections/{id}", s.auth(s.handleGetCollection))
 	m.HandleFunc("PUT /api/collections/{id}", s.auth(s.handlePutCollection))
+	// The views lock (spec 013, viewlock.go). sessionOnly: locking and
+	// unlocking are a person's act; an agent sees the lock and is refused by it.
+	m.HandleFunc("PUT /api/collections/{id}/lock", s.auth(s.sessionOnly(s.handleLockViews)))
+	m.HandleFunc("DELETE /api/collections/{id}/lock", s.auth(s.sessionOnly(s.handleUnlockViews)))
 	m.HandleFunc("GET /api/collections/{id}/rows", s.auth(s.handleCollectionRows))
 	m.HandleFunc("POST /api/collections/{id}/aggregate", s.auth(s.handleAggregate))
 	m.HandleFunc("GET /api/collections/{id}/templates", s.auth(s.handleListDatabaseTemplates))

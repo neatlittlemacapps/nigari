@@ -335,6 +335,11 @@ a browser. An API token is not enough.":
   becomes the injection channel
 - personal language and time settings (`/api/me/prefs`); otherwise an admin's
   token could set another person's clock format
+- locking and unlocking a database's views (`/api/collections/{id}/lock`). An
+  agent sees the lock (`get_collection` returns `views_locked`), and while it
+  is on, `set_view` and `delete_view` refuse with "this database's views are
+  locked; a person can unlock them in the interface". A lock an agent could
+  lift would not protect views from agents, which is half of why it exists
 
 Three things that sound like they belong on that list and do not:
 

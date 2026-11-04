@@ -8,7 +8,7 @@
     "       infrastructure not a capability: sign-in flows, transport, public share pages, the SPA itself",
     "wiki: the page that documents it. The check verifies the file exists."
   ],
-  "gapBudget": 10,
+  "gapBudget": 11,
   "capabilities": {
     "pages.tree": {
       "summary": "See the page tree and the templates",
@@ -108,6 +108,13 @@
       "note": "A chart's numbers come from one function on both doors (POST …/aggregate, query_rows group_by). Saving a chart as a picture is drawn in the browser from those same numbers, so it has no route and no tool.",
       "rest": ["GET /api/collections/{id}", "PUT /api/collections/{id}", "GET /api/collections/{id}/rows", "POST /api/collections/{id}/aggregate"],
       "mcp": ["get_collection", "update_schema", "set_view", "delete_view", "query_rows", "create_rows"],
+      "wiki": "wiki/collections.md"
+    },
+    "collections.views-lock": {
+      "summary": "Lock or unlock a database's views, so nobody changes them by accident",
+      "agent": "gap",
+      "note": "Owner's decision (spec 013, 2026-11-03): locking and unlocking stay with people; an agent sees the lock in get_collection (views_locked) and set_view and delete_view are refused by it. Listed in not_available_via_mcp.",
+      "rest": ["PUT /api/collections/{id}/lock", "DELETE /api/collections/{id}/lock"],
       "wiki": "wiki/collections.md"
     },
     "collections.templates": {

@@ -72,10 +72,21 @@ var parityActs = []parityAct{
 	// A chart's numbers (spec 004): a read, so the database's read gate
 	// decides on both doors; a read-scoped credential may aggregate.
 	{"aggregate", "POST", "/api/collections/%s/aggregate", `{"groupBy":"status"}`, "query_rows", `{"page_id":"%s","group_by":"status"}`, true},
+	// A view change while the database's views are locked (spec 013): refused
+	// on both doors by one check, checkViewsUnlocked, whoever holds the
+	// credential. A door that forgot the check would let the credentials its
+	// write gate admits through, and the two verdicts would part.
+	{"change a view while locked", "PUT", "/api/collections/%s", `{"views":[{"id":"v-parity","name":"Renamed","type":"table","filters":[{"property":"status","op":"is","value":"todo"}]}]}`,
+		"set_view", `{"page_id":"%s","view_id":"v-parity","name":"Renamed"}`, true},
 	// A chart view: a view setting, the database's write gate on both doors.
 	{"chart view", "PUT", "/api/collections/%s", `{"views":[{"id":"v-parity","name":"To do","type":"table","filters":[{"property":"status","op":"is","value":"todo"}]},{"id":"v-chart","name":"Chart","type":"chart","chartKind":"donut","groupBy":"status"}]}`,
 		"set_view", `{"page_id":"%s","type":"chart","name":"Chart","chart_kind":"donut","group_by":"status"}`, true},
 }
+
+// parityLockedActs are the acts whose databases have their views locked
+// (spec 013) before both doors try them. A set, not a field of parityAct, so
+// the positional entries above need not change.
+var parityLockedActs = map[string]bool{"change a view while locked": true}
 
 // parityWorkspaceActs are acts on a workspace rather than a page: %s is the
 // workspace the case's pages live in, in the path, the body and the arguments.
@@ -250,6 +261,9 @@ func TestAgentParityHoldsForEveryCredentialShape(t *testing.T) {
 				w.s.db.Exec(`INSERT INTO collections (page_id, schema, views) VALUES (?, ?, ?)`, pages[j],
 					`[{"id":"status","name":"Status","type":"select","options":[{"id":"todo","name":"To do"}]}]`,
 					`[{"id":"v-parity","name":"To do","type":"table","filters":[{"property":"status","op":"is","value":"todo"}]}]`)
+				if parityLockedActs[act.name] {
+					w.s.db.Exec(`UPDATE collections SET views_locked_by = ?, views_locked_at = ? WHERE page_id = ?`, w.owner, now(), pages[j])
+				}
 			}
 			if private {
 				// Private to the colleague: the owner and outsider are not its owner.
