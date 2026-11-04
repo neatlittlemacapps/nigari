@@ -431,6 +431,22 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
     working_on: t('started working on:'),
     working_on_end: t('finished working on:'),
   };
+  // A database's views (spec 013, server/viewaudit.go): the entry's page is
+  // the database, its detail the view's name ("Old → New" for a rename). Said
+  // as a phrase of their own, because "Ada changed Tasks" would not say that
+  // it was a view and which one.
+  const viewLabel: Record<string, string> = {
+    'view.create': t('View created'),
+    'view.delete': t('View deleted'),
+    'view.rename': t('View renamed'),
+    'view.update': t('View changed'),
+  };
+  const lockLabel = (action: string, name: string): string | undefined =>
+    action === 'views.lock'
+      ? t('Views locked by {name}', { name })
+      : action === 'views.unlock'
+        ? t('Views unlocked by {name}', { name })
+        : undefined;
   return (
     <Portal>
     <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -465,7 +481,10 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
                 )}
               </span>
               <span className="user-row-name">
-                {e.actorName} {label[e.action] ?? e.action}
+                {(lockLabel(e.action, e.actorName) && `${lockLabel(e.action, e.actorName)},`) ??
+                  (viewLabel[e.action]
+                    ? `${e.actorName}: ${viewLabel[e.action]} “${e.detail.slice(0, 60)}”,`
+                    : `${e.actorName} ${label[e.action] ?? e.action}`)}
                 {/* The page by NAME, and clickable. The detail used to trail
                     off in a raw id — the difference between a log you can act on
                     and one you can only read. */}

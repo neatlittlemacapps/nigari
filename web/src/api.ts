@@ -5,6 +5,7 @@ import type {
   Backlink,
   BlueprintEntry,
   CollectionConfig,
+  ViewsLock,
   Me,
   OAuthGrant,
   Page,
@@ -423,6 +424,11 @@ export const api = {
 
   getCollection: (pageId: string) =>
     req<CollectionConfig>(`/api/collections/${pageId}`).then(normalizeCollectionConfig),
+  // The views lock (spec 013). Session-only on the server: a person's act.
+  lockViews: (pageId: string) =>
+    req<{ viewsLocked: ViewsLock | null }>(`/api/collections/${pageId}/lock`, { method: 'PUT' }),
+  unlockViews: (pageId: string) =>
+    req<{ viewsLocked: ViewsLock | null }>(`/api/collections/${pageId}/lock`, { method: 'DELETE' }),
   // Who says they are working on what. Filtered per page on the server — the
   // live signal that triggers this carries no content for exactly that reason.
   presence: () =>

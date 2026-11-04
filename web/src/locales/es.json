@@ -1299,5 +1299,18 @@
   "Empty": "Vacío",
   "Add person": "Añadir persona",
   "Add link": "Añadir enlace",
-  "Add sub-task": "Añadir subtarea"
+  "Add sub-task": "Añadir subtarea",
+  "Lock views": "Bloquear vistas",
+  "Locked by {name} on {date}": "Bloqueadas por {name} el {date}",
+  "Nobody can change, add or remove its views until they are unlocked. Rows can still be edited.": "Nadie puede cambiar, añadir ni eliminar sus vistas hasta que se desbloqueen. Puedes seguir editando las filas.",
+  "Someone": "Alguien",
+  "This database's views are locked. Unlock them to change a view.": "Las vistas de esta base de datos están bloqueadas. Desbloquéalas para cambiar una vista.",
+  "Unlock views": "Desbloquear vistas",
+  "View changed": "Vista cambiada",
+  "View created": "Vista creada",
+  "View deleted": "Vista eliminada",
+  "View renamed": "Vista renombrada",
+  "Views locked": "Vistas bloqueadas",
+  "Views locked by {name}": "Vistas bloqueadas por {name}",
+  "Views unlocked by {name}": "Vistas desbloqueadas por {name}"
 }

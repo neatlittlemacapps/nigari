@@ -35,7 +35,9 @@ export function ColHead({
   moves,
 }: {
   label: string;
-  onResize: (e: ReactPointerEvent<HTMLSpanElement>) => void;
+  /** Absent: no grip, the width cannot be changed (a reader, or the views
+   *  are locked, spec 013). */
+  onResize?: (e: ReactPointerEvent<HTMLSpanElement>) => void;
   onReset: () => void;
   /** Absent for the title column and for a reader who cannot edit: then the
    *  heading is a label and a grip, as before. */
@@ -44,7 +46,7 @@ export function ColHead({
   const labelRef = useRef<HTMLButtonElement>(null);
   const [menuAt, setMenuAt] = useState<MenuPoint | null>(null);
 
-  const grip = (
+  const grip = onResize && (
     <span
       className="col-resize"
       title={t('Drag to resize, double-click to fit the content')}

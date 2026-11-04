@@ -69,6 +69,8 @@ import {
   ListOrdered,
   ListTree,
   Lock,
+  LockKeyhole,
+  LockKeyholeOpen,
   LogOut,
   Maximize2,
   MessageSquare,
@@ -180,6 +182,10 @@ export const MENU_ICONS = {
   timelineDates: CalendarRange,
   subItems: Network,
   editProperties: Rows3,
+  // The views lock (spec 013), under Database settings. Not Lock and
+  // LockOpen: Lock is a page's visibility, and the two must not look alike.
+  lockViews: LockKeyhole,
+  unlockViews: LockKeyholeOpen,
   // Property visibility's two bulk actions, carried over from the Columns
   // popover the Settings menu replaces.
   showAllProperties: ScanEye,

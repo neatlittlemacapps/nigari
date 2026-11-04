@@ -20,7 +20,14 @@ import ViewOpenMenu from './ViewOpenMenu';
 //   View settings      rename, property visibility, how rows open, and the
 //                      view type's own options (timeline dates, sub-items)
 //   ─────              move left, move right, remove view (danger, last)
-//   Database settings  edit properties (the schema dialog)
+//   Database settings  edit properties (the schema dialog), lock or unlock
+//                      the views (spec 013)
+//
+// While the views are locked, the View settings part and the view actions are
+// not drawn at all: the server refuses each of them (views_locked), and an
+// item that is offered only to be refused is a promise the interface breaks.
+// Database settings stay: the schema is not covered by the lock, and Unlock
+// views is how the lock comes off.
 //
 // Each item that holds a value shows it on the right (MenuSubmenu value). There
 // is no Layout item: a view's type cannot be changed today (research R9). Not
@@ -45,6 +52,9 @@ export default function ViewSettingsMenu({
   onMove,
   onRemove,
   onEditProperties,
+  locked,
+  onLock,
+  onUnlock,
 }: {
   view: ViewDef;
   views: ViewDef[];
@@ -60,6 +70,10 @@ export default function ViewSettingsMenu({
   onMove: (v: ViewDef, delta: -1 | 1) => void;
   onRemove: (v: ViewDef) => void;
   onEditProperties: () => void;
+  /** The database's views are locked (spec 013). */
+  locked: boolean;
+  onLock: () => void;
+  onUnlock: () => void;
 }) {
   // Where focus goes when the menu closes, and so where a dialog it opened
   // (Rename view, Edit properties) gives it back. Without it, focus fell to
@@ -105,57 +119,59 @@ export default function ViewSettingsMenu({
       returnFocus={button}
       trigger={<IconButton ref={button} label={t('Settings')} icon={<SlidersHorizontal size={16} />} size="sm" className="view-settings-btn" />}
     >
-      <MenuLabel>{t('View settings')}</MenuLabel>
-      <MenuItem fn="rename" opensDialog onClick={() => onRename(view)}>
-        {t('Rename view')}
-      </MenuItem>
-      {/* On a form too: hiding a property there takes its field off the form,
-          as the Columns popover did. */}
-      {schema.length > 0 && (
-        <MenuSubmenu
-          fn="propertyVisibility"
-          label={t('Property visibility')}
-          value={t('{n} of {total}', { n: shown, total: schema.length })}
-        >
-          {schema.map((p) => (
-            <MenuCheckboxItem
-              key={p.id}
-              fn="propertyVisibility"
-              checked={!hidden.has(p.id)}
-              onCheckedChange={(c) => toggle(p.id, c)}
-              closeOnClick={false}
-            >
-              {p.name}
-            </MenuCheckboxItem>
-          ))}
-          <MenuSeparator />
-          {/* The old Columns popover's two bulk actions, so nothing is lost. */}
-          <MenuItem fn="showAllProperties" disabled={hidden.size === 0} closeOnClick={false} onClick={() => onChange({ hidden: [] })}>
-            {t('Show all')}
-          </MenuItem>
-          <MenuItem
-            fn="hideAllProperties"
-            disabled={shown === 0}
-            closeOnClick={false}
-            onClick={() => onChange({ hidden: schema.map((p) => p.id) })}
-          >
-            {t('Hide all')}
-          </MenuItem>
-        </MenuSubmenu>
-      )}
-      {view.type !== 'form' && (
-        <MenuSubmenu fn="openRowsIn" label={t('Open rows in')} value={openInLabel(view)}>
-          <ViewOpenMenu view={view} onChange={(openIn) => onChange({ openIn })} bare />
-        </MenuSubmenu>
-      )}
-      {view.type === 'timeline' && (
+      {!locked && (
         <>
-          <MenuSubmenu fn="timelineDates" label={t('Start date')} value={nameOf(timelineStart, dateProps) ?? t('No start date')}>
-            {propRadio(timelineStart, dateProps, (id) => onChange({ dateProp: id }), t('No start date'))}
-          </MenuSubmenu>
-          <MenuSubmenu fn="timelineDates" label={t('End date')} value={nameOf(view.endDateProp, dateProps) ?? t('No end date')}>
-            {propRadio(view.endDateProp, dateProps, (id) => onChange({ endDateProp: id }), t('No end date'))}
-          </MenuSubmenu>
+          <MenuLabel>{t('View settings')}</MenuLabel>
+          <MenuItem fn="rename" opensDialog onClick={() => onRename(view)}>
+            {t('Rename view')}
+          </MenuItem>
+          {/* On a form too: hiding a property there takes its field off the form,
+              as the Columns popover did. */}
+          {schema.length > 0 && (
+            <MenuSubmenu
+              fn="propertyVisibility"
+              label={t('Property visibility')}
+              value={t('{n} of {total}', { n: shown, total: schema.length })}
+            >
+              {schema.map((p) => (
+                <MenuCheckboxItem
+                  key={p.id}
+                  fn="propertyVisibility"
+                  checked={!hidden.has(p.id)}
+                  onCheckedChange={(c) => toggle(p.id, c)}
+                  closeOnClick={false}
+                >
+                  {p.name}
+                </MenuCheckboxItem>
+              ))}
+              <MenuSeparator />
+              {/* The old Columns popover's two bulk actions, so nothing is lost. */}
+              <MenuItem fn="showAllProperties" disabled={hidden.size === 0} closeOnClick={false} onClick={() => onChange({ hidden: [] })}>
+                {t('Show all')}
+              </MenuItem>
+              <MenuItem
+                fn="hideAllProperties"
+                disabled={shown === 0}
+                closeOnClick={false}
+                onClick={() => onChange({ hidden: schema.map((p) => p.id) })}
+              >
+                {t('Hide all')}
+              </MenuItem>
+            </MenuSubmenu>
+          )}
+          {view.type !== 'form' && (
+            <MenuSubmenu fn="openRowsIn" label={t('Open rows in')} value={openInLabel(view)}>
+              <ViewOpenMenu view={view} onChange={(openIn) => onChange({ openIn })} bare />
+            </MenuSubmenu>
+          )}
+          {view.type === 'timeline' && (
+            <>
+              <MenuSubmenu fn="timelineDates" label={t('Start date')} value={nameOf(timelineStart, dateProps) ?? t('No start date')}>
+                {propRadio(timelineStart, dateProps, (id) => onChange({ dateProp: id }), t('No start date'))}
+              </MenuSubmenu>
+              <MenuSubmenu fn="timelineDates" label={t('End date')} value={nameOf(view.endDateProp, dateProps) ?? t('No end date')}>
+                {propRadio(view.endDateProp, dateProps, (id) => onChange({ endDateProp: id }), t('No end date'))}
+              </MenuSubmenu>
         </>
       )}
       {view.type === 'table' && selfRelProps.length > 0 && (
@@ -166,10 +182,21 @@ export default function ViewSettingsMenu({
       {views.length > 1 && <MenuSeparator />}
       <ViewActionItems view={view} views={views} onRename={onRename} onMove={onMove} onRemove={onRemove} rename={false} />
       <MenuSeparator />
+        </>
+      )}
       <MenuLabel>{t('Database settings')}</MenuLabel>
       <MenuItem fn="editProperties" opensDialog onClick={onEditProperties}>
         {t('Edit properties')}
       </MenuItem>
+      {locked ? (
+        <MenuItem fn="unlockViews" onClick={onUnlock}>
+          {t('Unlock views')}
+        </MenuItem>
+      ) : (
+        <MenuItem fn="lockViews" onClick={onLock}>
+          {t('Lock views')}
+        </MenuItem>
+      )}
     </Menu>
   );
 }
