@@ -154,8 +154,9 @@ patch avoids a half-moved card.
 
 **Decision**: `get_collection` returns `views_locked: {by, at}` or null.
 `set_view`/`delete_view` refuse with the lock's sentence. No MCP tool for
-lock or personal state; both listed in `not_available_via_mcp` and as gaps
-in `capabilities.json` (owner, 2026-11-03).
+lock or personal state; both listed in `not_available_via_mcp` and as
+"closed" in `capabilities.json` (owner, 2026-11-03; "closed" rather than
+"gap", decisions.md 2026-11-04).
 
 ## R11 — A new registry row: View lock
 
