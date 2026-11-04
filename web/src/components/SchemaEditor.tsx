@@ -65,6 +65,7 @@ const slug = (name: string) =>
 export default function SchemaEditor({
   config,
   databaseName,
+  titleOf,
   collections,
   onSave,
   onClose,
@@ -72,6 +73,9 @@ export default function SchemaEditor({
   config: CollectionConfig;
   /** The database's name as the reader sees it, for the confirmations. */
   databaseName: string;
+  /** Any database's name by id, trashed ones included: a relation can point
+   *  at one that `collections` (the pickable ones) leaves out. */
+  titleOf?: (id: string) => string | undefined;
   collections?: { id: string; title: string }[];
   onSave: (c: CollectionConfig) => Promise<void>;
   onClose: () => void;
@@ -209,7 +213,8 @@ export default function SchemaEditor({
         database: databaseName,
       });
       if (p.type === 'relation' && p.relationCollection) {
-        const other = collections?.find((c) => c.id === p.relationCollection)?.title || t('Untitled');
+        const other =
+          titleOf?.(p.relationCollection) || collections?.find((c) => c.id === p.relationCollection)?.title || t('Untitled');
         message += '\n' + t('Its links to rows of “{database}” go with it.', { database: other });
       }
       const ok = await confirm(message, { confirmText: t('Delete property'), danger: true });

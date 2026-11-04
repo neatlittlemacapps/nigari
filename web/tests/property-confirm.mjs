@@ -58,5 +58,16 @@ await withFixture(async ({ page, api, workspace, path, open, read }) => {
   );
   await ask.getByRole('button', { name: 'Cancel', exact: true }).click();
   assert.deepEqual(await names(), ['Labels', 'Link']);
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+
+  // The other database in the trash is still named, not "Untitled": the
+  // relation pickers leave trashed databases out, the confirmation must not.
+  await api('DELETE', `/api/pages/${other.id}`);
+  await page.reload();
+  await open();
+  await (await cross('Link')).click();
+  await ask.waitFor();
+  assert.match(await ask.locator('.confirm-message').innerText(), /Its links to rows of “Other database” go with it\./);
+  await ask.getByRole('button', { name: 'Cancel', exact: true }).click();
 });
 console.log('Property confirm: delete asks, Cancel keeps, confirm removes, drafts and relations passed.');
