@@ -7,6 +7,24 @@ entries are not edited away.
 
 ---
 
+## 2026-11-04 — Spec 014's task issues go under #371, not straight under #426
+
+**Decision**: spec 014's task issues are sub-issues of #371 (the spec's own
+issue, itself under epic #426), replacing "straight under #426" from the
+entry below. Owner: "whatever makes it easiest for you".
+
+**Why:** `scripts/tasks-sync.sh` closes a task's issue by matching its ID
+(`T001`) among one parent's sub-issues, and reads only the first 100 of
+them. #426 already holds spec 012's T001–T040, all ticked, so spec 014's
+T001–T036 would be closed the moment they were created; and #426 has 52
+sub-issues, so it would soon pass 100.
+
+**Turned down:** straight under #426 with tasks numbered T101–T136 (works,
+but #426 reaches 88 sub-issues and the next spec hits the limit); a new
+parent issue like #477 (one more issue for what #371 already is).
+
+---
+
 ## 2026-11-03 — Embed views live in the document, old embeds are read in both shapes (spec 014 plan)
 
 **Decision**: an embed's views are stored in its `database` block's `local`
