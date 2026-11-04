@@ -46,7 +46,7 @@ description: "Tasks for a view's filters changed for oneself, quick filters, sub
 - [x] T008 [US2] [test] Go tests: every view-writing door refused while locked (REST PUT with changed views; MCP create, update, delete), each mutation-checked; byte-equal views and schema-only saves pass; a reader and a token refused on the lock routes; parity pair "change a view while locked" in `server/parity_property_test.go`
 - [x] T009 [P] [US2] [i18n] `views_locked` in `web/src/serverErrors.ts`; the lock strings of contracts/ui.md in `de.json`, `es.json`, `nl.json`
 - [x] T010 [US2] [ui] Interface: Lock views / Unlock views (functions `lockViews` `Lock`, `unlockViews` `LockOpen` in `web/src/menuIcons.ts`) in Settings › Database settings; the lock marker beside the view tabs with its tooltip; while locked, nothing that changes a view is offered (Settings' view items, add view, the tab menu, header Move/Hide, column drag and resize, board grouping); a `views_locked` answer shows its sentence and reloads the views (`web/src/components/CollectionView.tsx`, `TableColumnHead.tsx`)
-- [ ] T011 [US2] [test] New `web/tests/view-lock.mjs`, registered: lock, every control gone, a second account refused, an agent refused, rows still editable, unlock. Mutation-checked
+- [x] T011 [US2] [test] New `web/tests/view-lock.mjs`, registered: lock, every control gone, a second account refused, an agent refused, rows still editable, unlock. Mutation-checked
 
 ---
 
@@ -59,7 +59,7 @@ description: "Tasks for a view's filters changed for oneself, quick filters, sub
 - [x] T012 [US5] [backend] New `server/viewaudit.go`: `auditViewChanges(actorType, u, colID, ws, before, after)`, diffing by view id into `view.create`, `view.delete`, `view.rename`, `view.update`, with the keys and exclusions of data-model.md "Audit actions" and before/after in `changes`. Called by `handlePutCollection` ("user") and the three MCP view tools ("agent"); the lock routes log `views.lock`/`views.unlock`
 - [x] T013 [US5] [test] Go tests: each kind once, by REST and MCP with the right actor type; one save changing two views makes two entries; widths, order, hidden, open-in and chart style make none. Mutation-checked
 - [x] T014 [US5] [ui] `ActivityModal` (`web/src/components/UserMenu.tsx`): labels for the five actions, naming the view, and their de/es/nl strings
-- [ ] T015 [US5] [test] New `web/tests/activity-views.mjs`, registered: rename, re-filter, delete, lock appear; a column resize does not
+- [x] T015 [US5] [test] New `web/tests/activity-views.mjs`, registered: rename, re-filter, delete, lock appear; a column resize does not
 - [ ] T016 [P] [US2] [wiki] `wiki/views.md` and `wiki/collections.md` (the lock), the page describing the activity log (view entries), `wiki/mcp-tools.md` (refusals, `views_locked`), `docs/what-it-does.md`
 - [ ] T017 [US2] [backend] `.specify/memory/surfaces.md`: the **View lock** row of research R11, Since the merge date
 - [ ] T018 [test] Before PR 1 is offered: gate green; `codegraph sync` and `codegraph callers` on `checkViewsUnlocked`, `auditViewChanges`; `/code-review`; `/security-review` (a new gate and session-only routes); `ux-ui-audit` on the lock in light and dark at desktop and phone width; findings fixed or filed
