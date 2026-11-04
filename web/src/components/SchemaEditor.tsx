@@ -64,11 +64,14 @@ const slug = (name: string) =>
 
 export default function SchemaEditor({
   config,
+  databaseName,
   collections,
   onSave,
   onClose,
 }: {
   config: CollectionConfig;
+  /** The database's name as the reader sees it, for the confirmations. */
+  databaseName: string;
   collections?: { id: string; title: string }[];
   onSave: (c: CollectionConfig) => Promise<void>;
   onClose: () => void;
@@ -190,7 +193,30 @@ export default function SchemaEditor({
     setDropProperty(null);
   };
 
-  const removeProp = (id: string) => setSchema((prev) => prev.filter((p) => p.id !== id));
+  // Deleting a property asks first (#524): saved, it leaves every view of the
+  // database, and save() drops the filters, sorts and hidden entries that
+  // named it. A select option already asked; the whole property did not.
+  // One added in this same visit is not stored yet, so nothing is lost and
+  // there is nothing to ask. A relation's links go with it, on both sides:
+  // the other database's back-relation is computed from them (derived.go),
+  // so it shows nothing once they are gone.
+  const removeProp = async (id: string) => {
+    const p = schema.find((x) => x.id === id);
+    if (!p) return;
+    if (config.schema.some((x) => x.id === id)) {
+      let message = t('Delete “{property}” from “{database}”? It will be removed from all views.', {
+        property: p.name || t('Untitled'),
+        database: databaseName,
+      });
+      if (p.type === 'relation' && p.relationCollection) {
+        const other = collections?.find((c) => c.id === p.relationCollection)?.title || t('Untitled');
+        message += '\n' + t('Its links to rows of “{database}” go with it.', { database: other });
+      }
+      const ok = await confirm(message, { confirmText: t('Delete property'), danger: true });
+      if (!ok) return;
+    }
+    setSchema((prev) => prev.filter((x) => x.id !== id));
+  };
 
   const save = async () => {
     // Every option WITHOUT a colour gets the fallback written in on save.
@@ -533,7 +559,7 @@ export default function SchemaEditor({
                     </option>
                   ))}
                 </select>
-                <button className="icon-btn danger" title={t('Delete property')} onClick={() => removeProp(p.id)}>
+                <button className="icon-btn danger" title={t('Delete property')} onClick={() => void removeProp(p.id)}>
                   ✕
                 </button>
               </div>

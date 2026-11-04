@@ -337,7 +337,7 @@ the public link, even when the view shows it everywhere else.
 **Settings** › **Edit properties** in the toolbar opens the **Collection
 properties** dialog. It
 lists every property with its name (editable in place), a type dropdown, and a
-`✕` to remove it. At the bottom, **New property name** plus a type, then
+`✕` to remove it, which asks first (see [Properties](properties.md#adding-changing-and-removing-a-property)). At the bottom, **New property name** plus a type, then
 **Add**. Nothing is written until you press **Save**; **Cancel** throws the
 whole session away.
 

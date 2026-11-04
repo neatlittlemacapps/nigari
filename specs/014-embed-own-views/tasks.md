@@ -34,10 +34,10 @@ description: "Tasks for a database in a document having views of its own"
 
 **Independent Test**: on a database's own page, open Properties, click ✕ on a property: the confirmation names it and the database; Cancel keeps it; confirm, Save: it is gone.
 
-- [ ] T001 [US4] [ui] `removeProp` in `web/src/components/SchemaEditor.tsx` asks through `confirm` (danger): "Delete {property} from {database}? It will be removed from all views.", confirm button "Delete property"; for a relation with a back-relation, the second sentence "Its column in {other} is removed too." (contracts/ui.md). `SchemaEditor` takes the database's title from its caller in `CollectionView.tsx`
-- [ ] T002 [P] [US4] [i18n] The two new sentences in `web/src/locales/de.json`, `es.json`, `nl.json`, informal
-- [ ] T003 [US4] [test] New `web/tests/property-confirm.mjs`, registered in `web/tests/package.json`: delete asks, Cancel keeps the property, confirm removes it after Save, the relation sentence shows for a relation. Mutation-checked (the test fails with the `confirm` removed)
-- [ ] T004 [US4] [wiki] `wiki/collections.md` (or the page describing the Properties dialog): deleting a property asks first. Stale shots listed by `check-wiki.mjs` retaken
+- [x] T001 [US4] [ui] `removeProp` in `web/src/components/SchemaEditor.tsx` asks through `confirm` (danger): "Delete {property} from {database}? It will be removed from all views.", confirm button "Delete property"; for a relation with a back-relation, the second sentence "Its column in {other} is removed too." (contracts/ui.md). `SchemaEditor` takes the database's title from its caller in `CollectionView.tsx`
+- [x] T002 [P] [US4] [i18n] The two new sentences in `web/src/locales/de.json`, `es.json`, `nl.json`, informal
+- [x] T003 [US4] [test] New `web/tests/property-confirm.mjs`, registered in `web/tests/package.json`: delete asks, Cancel keeps the property, confirm removes it after Save, the relation sentence shows for a relation. Mutation-checked (the test fails with the `confirm` removed)
+- [x] T004 [US4] [wiki] `wiki/collections.md` (or the page describing the Properties dialog): deleting a property asks first. Stale shots listed by `check-wiki.mjs` retaken
 
 ---
 

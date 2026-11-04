@@ -1088,6 +1088,8 @@
   "✓ Resolved": "✓ Opgelost",
   "Drag to reorder property": "Sleep om de eigenschap te verplaatsen",
   "Click to edit; drag to reorder. Keyboard: Alt + Left/Right.": "Klik om te bewerken; sleep om te herschikken. Toetsenbord: Alt + Links/Rechts.",
+  "Delete “{property}” from “{database}”? It will be removed from all views.": "“{property}” uit “{database}” verwijderen? Deze eigenschap verdwijnt uit alle weergaven.",
+  "Its links to rows of “{database}” go with it.": "De koppelingen naar rijen van “{database}” worden mee verwijderd.",
   "Delete option “{name}”?": "Optie “{name}” verwijderen?",
   "Enter a unique, non-empty name.": "Voer een unieke, niet-lege naam in.",
   "Existing selections are not cleared.": "Bestaande selecties worden niet gewist.",
