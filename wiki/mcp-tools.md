@@ -761,14 +761,16 @@ name`; `options on "Name" must be a list`.
 | --- | --- | --- |
 | `page_id` | string | yes |
 
-Returns `{page_id, schema, views}`: the full property schema **and** every view
+Returns `{page_id, schema, views, views_locked}`: the full property schema **and** every view
 with its id. A chart view carries `chartKind`, `groupBy`, `groupPeriod`, `agg`,
 `aggProp`, `showEmpty`, `showZero`, `chartSort`, `hiddenGroups` and
 `chartStyle` (see `set_view`). A view that opens its rows in a peek carries
 `"openIn": "side_peek"` or `"center_peek"`; no key means a full page (see
-`set_view`). Call this before any other database tool: property ids, select
-option ids and view ids all come from here. Errors: `page "…" is not a
-database`.
+`set_view`). `views_locked` is `{"by": "<user id>", "at": "<time>"}` when a
+person has locked the database's views, or `null`; while it is set, `set_view`
+and `delete_view` are refused. Call this before any other database tool:
+property ids, select option ids and view ids all come from here. Errors:
+`page "…" is not a database`.
 
 ### update_schema
 
@@ -1111,6 +1113,17 @@ database`; `filter N: unknown op "x". Use is, is_not, contains, gt, lt, between,
 is_empty or is_not_empty`; `view "…" not found — call get_collection for the
 ids`.
 
+**Refused while the database's views are locked** (`get_collection`'s
+`views_locked`): `this database's views are locked; a person can unlock them in
+the interface`. Nothing is changed. Locking and unlocking are for people in the
+browser only ([Agent access](agent-access.md)); a call that would leave the
+views exactly as they are still goes through.
+
+Each call is logged as the view entries it makes, as an agent: *View created*,
+*View renamed*, *View changed* (filters, sort, grouping, dates, a chart's
+grouping and totals). A call that changes only layout (hidden columns, column
+order, how rows open, a chart's style) leaves no entry.
+
 ### delete_view
 
 | Parameter | Type | Required |
@@ -1124,6 +1137,9 @@ deliberate choice and not a value an agent lands on by mistake.
 
 Errors: `cannot delete the last view — a database needs at least one`;
 `view "…" not found — call get_collection for the ids`.
+
+Refused while the database's views are locked (see `set_view`). Each deleted
+view is one *View deleted* entry in the activity log.
 
 ## History, comments and notes
 

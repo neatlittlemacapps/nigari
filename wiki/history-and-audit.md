@@ -191,6 +191,8 @@ tail. An instance where nothing has happened says *Nothing has happened yet.*
 | deleted the workspace: / took over the workspace: / adopted the ownerless workspace: | workspace lifecycle |
 | handed the instance to: | the owner role moved to another account |
 | took emergency access: / ended the emergency access: | see below |
+| View created / View deleted / View renamed / View changed | a database's view, by a person or an agent; the entry names the view (both names for a rename) and links the database. *View changed* is a change to its filters, sort, grouping, dates or a chart's grouping and totals. Column widths, column order, hidden columns, how rows open, a chart's style and a form's texts leave no entry. |
+| Views locked by … / Views unlocked by … | somebody locked or unlocked a database's views ([Views](views.md#locking-a-databases-views)) |
 
 Note what *changed* does **not** cover: `update_page` over MCP touches metadata
 only, and refuses a call that names none of those six fields. It never writes a
@@ -209,9 +211,14 @@ it any more.
 
 **Every mutating call an agent makes is one entry**, filed under the tool's own
 name, with the account's name and *(MCP)* after it, and the tool's reply as the
-detail. Two tools are deliberately not double-recorded: an agent's check-in
-writes its own entry with the note as the detail, and `note` writes nothing here
-because the raw trail on the page already is the record.
+detail. Four tools are deliberately not double-recorded: an agent's check-in
+writes its own entry with the note as the detail, `note` writes nothing here
+because the raw trail on the page already is the record, and `set_view` and
+`delete_view` write the view entries above instead, one per changed view, and
+none for a change of layout only.
+
+**Take back** is offered only for property changes. A view entry keeps the
+view's filters (or name) before and after, but taking it back is not built.
 
 A [form](forms.md) submitted by somebody with no account appears as *public
 form* creating a page: the form is the actor.

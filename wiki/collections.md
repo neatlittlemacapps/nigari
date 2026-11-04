@@ -332,6 +332,10 @@ multi-select, date, checkbox and person. A relation, backrelation, rollup,
 formula, checklist or URL property never appears on a form, in the app or on
 the public link, even when the view shows it everywhere else.
 
+A database's views can be locked against accidental changes, under
+**Settings** → **Lock views**; rows stay editable. See [Locking a database's
+views](views.md#locking-a-databases-views).
+
 ## Editing the schema
 
 **Settings** › **Edit properties** in the toolbar opens the **Collection

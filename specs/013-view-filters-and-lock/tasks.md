@@ -60,8 +60,8 @@ description: "Tasks for a view's filters changed for oneself, quick filters, sub
 - [x] T013 [US5] [test] Go tests: each kind once, by REST and MCP with the right actor type; one save changing two views makes two entries; widths, order, hidden, open-in and chart style make none. Mutation-checked
 - [x] T014 [US5] [ui] `ActivityModal` (`web/src/components/UserMenu.tsx`): labels for the five actions, naming the view, and their de/es/nl strings
 - [x] T015 [US5] [test] New `web/tests/activity-views.mjs`, registered: rename, re-filter, delete, lock appear; a column resize does not
-- [ ] T016 [P] [US2] [wiki] `wiki/views.md` and `wiki/collections.md` (the lock), the page describing the activity log (view entries), `wiki/mcp-tools.md` (refusals, `views_locked`), `docs/what-it-does.md`
-- [ ] T017 [US2] [backend] `.specify/memory/surfaces.md`: the **View lock** row of research R11, Since the merge date
+- [x] T016 [P] [US2] [wiki] `wiki/views.md` and `wiki/collections.md` (the lock), the page describing the activity log (view entries), `wiki/mcp-tools.md` (refusals, `views_locked`), `docs/what-it-does.md`
+- [x] T017 [US2] [backend] `.specify/memory/surfaces.md`: the **View lock** row of research R11, Since the merge date
 - [ ] T018 [test] Before PR 1 is offered: gate green; `codegraph sync` and `codegraph callers` on `checkViewsUnlocked`, `auditViewChanges`; `/code-review`; `/security-review` (a new gate and session-only routes); `ux-ui-audit` on the lock in light and dark at desktop and phone width; findings fixed or filed
 
 ---
