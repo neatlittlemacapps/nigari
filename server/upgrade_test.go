@@ -117,7 +117,10 @@ func stepOf(t *testing.T, path string) int64 {
 func TestUpgradeFromNoStep(t *testing.T) {
 	old := copyFixture(t, "step-0.db")
 	before := dbShape(t, old)
-	if _, err := upgradeDB(old); err != nil {
+	// Step 1 alone: this is about what step 1 does to such a database. The
+	// later steps have tests of their own (TestUpgradeStepTwoAddsViewPrefsAndLock).
+	stepOne := upgradeSteps()[:1]
+	if _, err := upgradeWith(old, stepOne); err != nil {
 		t.Fatalf("upgrade step-0.db: %v", err)
 	}
 	if got := stepOf(t, old); got != 1 {
@@ -128,7 +131,7 @@ func TestUpgradeFromNoStep(t *testing.T) {
 	}
 
 	fresh := filepath.Join(t.TempDir(), DBFile)
-	if _, err := upgradeDB(fresh); err != nil {
+	if _, err := upgradeWith(fresh, stepOne); err != nil {
 		t.Fatalf("upgrade a new file: %v", err)
 	}
 	if a, b := dbShape(t, old), dbShape(t, fresh); a != b {
@@ -266,10 +269,16 @@ func TestUpgradeFixtures(t *testing.T) {
 	}
 }
 
-// testSteps is the real step list plus made-up later steps, each adding a
-// table t<n>, for tests that need more than one step to have something to do.
+// testSteps is step 1, the real base schema, plus made-up later steps, each
+// adding a table t<n>, for tests that need more than one step to have
+// something to do. Step 1 only, not the whole real list: these tests are about
+// how steps run (copies, failures, locks, numbering), and numbered their
+// made-up steps from 2 when step 1 was the only one. With the whole list, the
+// first real step 2 (spec 013) collided with the made-up one and every test
+// here failed for a reason that had nothing to do with what it checks. Tests
+// about the real steps use upgradeSteps() itself.
 func testSteps(extra ...int64) []*goose.Migration {
-	steps := upgradeSteps()
+	steps := upgradeSteps()[:1]
 	for _, n := range extra {
 		n := n
 		steps = append(steps, goose.NewGoMigration(n, &goose.GoFunc{RunTx: func(ctx context.Context, tx *sql.Tx) error {
@@ -554,7 +563,14 @@ func dirState(t *testing.T, dir string) map[string]string {
 func TestUpgradeRefusesNewerDatabase(t *testing.T) {
 	path := copyFixture(t, "step-0.db")
 	dir := filepath.Dir(path)
-	if _, err := upgradeWith(path, testSteps(2)); err != nil {
+	// One step past every real one, so this release meets a database a newer
+	// release upgraded, however many steps this one has.
+	known := int64(len(upgradeSteps()))
+	newer := goose.NewGoMigration(known+1, &goose.GoFunc{RunTx: func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.Exec(`CREATE TABLE t_newer (n INTEGER)`)
+		return err
+	}}, nil)
+	if _, err := upgradeWith(path, append(upgradeSteps(), newer)); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.MkdirAll(filepath.Join(dir, "files"), 0o755); err != nil {
@@ -569,7 +585,11 @@ func TestUpgradeRefusesNewerDatabase(t *testing.T) {
 	// The copy to put back is the newest one this release can open: here the
 	// one before step 1, the only copy, since one start takes one copy, before
 	// its first pending step.
-	for _, want := range []string{"at upgrade step 2", "only knows steps up to 1", Version, "has not been changed", ".before-step-1"} {
+	for _, want := range []string{
+		"at upgrade step " + strconv.FormatInt(known+1, 10),
+		"only knows steps up to " + strconv.FormatInt(known, 10),
+		Version, "has not been changed", ".before-step-1",
+	} {
 		if !strings.Contains(r.Sentence, want) {
 			t.Errorf("the sentence lacks %q: %s", want, r.Sentence)
 		}

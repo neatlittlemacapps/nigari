@@ -27,8 +27,8 @@ description: "Tasks for a view's filters changed for oneself, quick filters, sub
 
 ## Phase 1: Setup (PR 1)
 
-- [ ] T001 [backend] Upgrade step 2 in `server/upgrade_steps.go`: `CREATE TABLE view_prefs` exactly as data-model.md ("primary key `(user_id, collection_id, scope)`", `user_id` "REFERENCES users(id) ON DELETE CASCADE", `collection_id` "REFERENCES pages(id) ON DELETE CASCADE", index `view_prefs_collection`), and `collections.views_locked_by`/`views_locked_at` "TEXT NOT NULL DEFAULT ''". Fixture `server/testdata/upgrade/step-1.db` written before the step; step 1 untouched (`TestUpgradeStepOneIsFrozen`, `check-upgrades.mjs`)
-- [ ] T002 [test] Upgrade test: a step-1 database gains the table and columns, keeps its data, and a second start changes nothing
+- [x] T001 [backend] Upgrade step 2 in `server/upgrade_steps.go`: `CREATE TABLE view_prefs` exactly as data-model.md ("primary key `(user_id, collection_id, scope)`", `user_id` "REFERENCES users(id) ON DELETE CASCADE", `collection_id` "REFERENCES pages(id) ON DELETE CASCADE", index `view_prefs_collection`), and `collections.views_locked_by`/`views_locked_at` "TEXT NOT NULL DEFAULT ''". Fixture `server/testdata/upgrade/step-1.db` written before the step; step 1 untouched (`TestUpgradeStepOneIsFrozen`, `check-upgrades.mjs`)
+- [x] T002 [test] Upgrade test: a step-1 database gains the table and columns, keeps its data, and a second start changes nothing
 
 ---
 

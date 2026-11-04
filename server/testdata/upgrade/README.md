@@ -10,6 +10,7 @@ is the newest one.
 | File | Written by | Before |
 | --- | --- | --- |
 | `step-0.db` | `main` at `f9e35b9` (v1.6.10; the server code was unchanged since), before any step existed | step 1 |
+| `step-1.db` | `main` at `f3fbaba`, the last commit with step 1 as the newest step | step 2 |
 
 ## Adding one
 
