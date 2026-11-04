@@ -7,6 +7,26 @@ entries are not edited away.
 
 ---
 
+## 2026-11-04 — Spec 013's lock and personal-state routes are "closed" to agents, not "gap"
+
+**Decision**: in `capabilities.json` the views-lock routes (spec 013 PR 1) and
+the personal view state routes (PR 2) are `"agent": "closed"` with a reason,
+and `gapBudget` stays 10. This replaces spec 013's plan, which named them gaps
+and raised the budget 10 → 11 → 12. The owner's decision (2026-11-03) stands:
+agents see the lock through `get_collection` and are refused by it, only a
+person locks or unlocks, and agents have no personal view state.
+
+**Why:** the manifest's own legend defines a gap as "a person can do it, an
+agent cannot **yet**": something waiting to be built. Both of these are
+deliberate and permanent, listed in `not_available_via_mcp` with
+session-only routes, which is what "closed" means; `workspaces.rules` is the
+precedent. A gap would tell a reader the work is pending.
+
+**Turned down:** (a) as planned, "gap" with the budget raised: it raises a
+budget that may only go down, for something that will never close.
+
+---
+
 ## 2026-11-04 — Spec 014's task issues go under #371, not straight under #426
 
 **Decision**: spec 014's task issues are sub-issues of #371 (the spec's own
