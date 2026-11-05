@@ -12,6 +12,7 @@ umbrel-app-store.yml                     the store: id and name
 yokogaki-nigari/
   umbrel-app.yml                         the app as the store lists it
   docker-compose.yml                     what Umbrel runs
+  icon.svg                               the app's icon in Umbrel
   data/.gitkeep                          see "The data folder" below
 ```
 
@@ -30,8 +31,9 @@ How to install it, and why it is set up the way it is, is in the wiki:
 
   The `Digest:` line at the top (the index, covering amd64 and arm64) is the one
   to pin, as `ghcr.io/neatlittlemacapps/nigari:<version>@sha256:<digest>`.
-- **Icon and screenshots are missing**, marked `TODO` in `umbrel-app.yml`.
-  nigari has no icon yet (#322), and no screenshots were made up.
+- **Screenshots are missing**, marked `TODO` in `umbrel-app.yml`; none were made up.
+  The icon (`yokogaki-nigari/icon.svg`, the owner's artwork, 2026-11-05) is served
+  from the store repository; nigari's own logo in the app is #322.
 - **The store id** is `yokogaki` (the owner's choice, 2026-11-05). It names the
   app folder, the app id (`yokogaki-nigari`) and the container `APP_HOST`
   points at, together. Changing it means changing all three together.
