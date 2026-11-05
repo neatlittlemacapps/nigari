@@ -336,8 +336,8 @@ changing a column's width, order or visibility leaves none.
   can edit the database.
 - **FR-011**: Agents MUST be able to see whether a database's views are
   locked, and MUST be refused by the same check. Agents MUST NOT be able to
-  lock or unlock: that stays with people, a deliberate gap named in the
-  manifest.
+  lock or unlock: that stays with people, closed to agents in the manifest
+  (`"agent": "closed"`, decisions.md 2026-11-04).
 
 **Quick filters (#19)**
 
@@ -417,8 +417,9 @@ changing a column's width, order or visibility leaves none.
   everyone", as today. Agents have no personal view state: they see a
   database through queries that take their own filters, not through a
   screen (owner, 2026-11-03). Locking and unlocking are for people only
-  (owner, 2026-11-03). Both are deliberate parity gaps, named in the manifest
-  with the reason, and `gapBudget` is raised where a reviewer sees it.
+  (owner, 2026-11-03). Both are closed to agents on purpose: named in the
+  manifest as "closed" with the reason, and `gapBudget` is unchanged, since a
+  gap means "not yet" (decisions.md, 2026-11-04).
 - **Embeds keep their own filters** (#26), and personal changes work there
   too (owner, 2026-11-03), kept per embed; saving writes to the embed.
 - **Lock is per database**, for all its views, as in Notion; not per view.

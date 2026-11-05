@@ -29,4 +29,4 @@ Refused while locked, same sentence; logged as `view.delete`.
 ## Not available
 
 Locking and unlocking, and personal view state: listed in
-`not_available_via_mcp`, gaps in `capabilities.json`.
+`not_available_via_mcp`, "closed" in `capabilities.json`.

@@ -27,8 +27,8 @@ description: "Tasks for a view's filters changed for oneself, quick filters, sub
 
 ## Phase 1: Setup (PR 1)
 
-- [ ] T001 [backend] Upgrade step 2 in `server/upgrade_steps.go`: `CREATE TABLE view_prefs` exactly as data-model.md ("primary key `(user_id, collection_id, scope)`", `user_id` "REFERENCES users(id) ON DELETE CASCADE", `collection_id` "REFERENCES pages(id) ON DELETE CASCADE", index `view_prefs_collection`), and `collections.views_locked_by`/`views_locked_at` "TEXT NOT NULL DEFAULT ''". Fixture `server/testdata/upgrade/step-1.db` written before the step; step 1 untouched (`TestUpgradeStepOneIsFrozen`, `check-upgrades.mjs`)
-- [ ] T002 [test] Upgrade test: a step-1 database gains the table and columns, keeps its data, and a second start changes nothing
+- [x] T001 [backend] Upgrade step 2 in `server/upgrade_steps.go`: `CREATE TABLE view_prefs` exactly as data-model.md ("primary key `(user_id, collection_id, scope)`", `user_id` "REFERENCES users(id) ON DELETE CASCADE", `collection_id` "REFERENCES pages(id) ON DELETE CASCADE", index `view_prefs_collection`), and `collections.views_locked_by`/`views_locked_at` "TEXT NOT NULL DEFAULT ''". Fixture `server/testdata/upgrade/step-1.db` written before the step; step 1 untouched (`TestUpgradeStepOneIsFrozen`, `check-upgrades.mjs`)
+- [x] T002 [test] Upgrade test: a step-1 database gains the table and columns, keeps its data, and a second start changes nothing
 
 ---
 
@@ -38,15 +38,15 @@ description: "Tasks for a view's filters changed for oneself, quick filters, sub
 
 **Independent Test**: quickstart §1.
 
-- [ ] T003 [US2] [backend] New `server/viewlock.go`: `viewsLock(colID)`, `errViewsLocked`, and `checkViewsUnlocked(colID, before, after []byte)`: refused when locked and the views JSON differs, byte-equal passes (research R3). The sentence and code `views_locked` come from contracts/rest.md
-- [ ] T004 [US2] [backend] `handlePutCollection` (`server/collections.go`) calls `checkViewsUnlocked` when the views half is sent and answers 409 `views_locked`. `GET /api/collections/{id}` returns `viewsLocked` (`{by, byName, at}` or null)
-- [ ] T005 [US2] [mcp] `mcpCreateView`, `mcpUpdateView`, `mcpDeleteView` (`server/mcp_schema.go`) call `checkViewsUnlocked` before saving. `get_collection` returns `views_locked`. The descriptions of `set_view` and `delete_view` add the sentence from contracts/mcp.md
-- [ ] T006 [US2] [backend] Routes `PUT` and `DELETE /api/collections/{id}/lock` in `server/server.go` behind `auth` + `sessionOnly`, handlers in `server/viewlock.go` with `canWriteReq`
-- [ ] T007 [US2] [mcp] Closed list (`server/mcp_workspace.go` `not_available_via_mcp`): "locking and unlocking a database's views (an agent sees the lock and is refused by it)". `capabilities.json`: the lock routes named, a gap with its note, `gapBudget` 10 → 11. `wiki/agent-access.md` lists it
-- [ ] T008 [US2] [test] Go tests: every view-writing door refused while locked (REST PUT with changed views; MCP create, update, delete), each mutation-checked; byte-equal views and schema-only saves pass; a reader and a token refused on the lock routes; parity pair "change a view while locked" in `server/parity_property_test.go`
-- [ ] T009 [P] [US2] [i18n] `views_locked` in `web/src/serverErrors.ts`; the lock strings of contracts/ui.md in `de.json`, `es.json`, `nl.json`
-- [ ] T010 [US2] [ui] Interface: Lock views / Unlock views (functions `lockViews` `Lock`, `unlockViews` `LockOpen` in `web/src/menuIcons.ts`) in Settings › Database settings; the lock marker beside the view tabs with its tooltip; while locked, nothing that changes a view is offered (Settings' view items, add view, the tab menu, header Move/Hide, column drag and resize, board grouping); a `views_locked` answer shows its sentence and reloads the views (`web/src/components/CollectionView.tsx`, `TableColumnHead.tsx`)
-- [ ] T011 [US2] [test] New `web/tests/view-lock.mjs`, registered: lock, every control gone, a second account refused, an agent refused, rows still editable, unlock. Mutation-checked
+- [x] T003 [US2] [backend] New `server/viewlock.go`: `viewsLock(colID)`, `errViewsLocked`, and `checkViewsUnlocked(colID, before, after []byte)`: refused when locked and the views JSON differs, byte-equal passes (research R3). The sentence and code `views_locked` come from contracts/rest.md
+- [x] T004 [US2] [backend] `handlePutCollection` (`server/collections.go`) calls `checkViewsUnlocked` when the views half is sent and answers 409 `views_locked`. `GET /api/collections/{id}` returns `viewsLocked` (`{by, byName, at}` or null)
+- [x] T005 [US2] [mcp] `mcpCreateView`, `mcpUpdateView`, `mcpDeleteView` (`server/mcp_schema.go`) call `checkViewsUnlocked` before saving. `get_collection` returns `views_locked`. The descriptions of `set_view` and `delete_view` add the sentence from contracts/mcp.md
+- [x] T006 [US2] [backend] Routes `PUT` and `DELETE /api/collections/{id}/lock` in `server/server.go` behind `auth` + `sessionOnly`, handlers in `server/viewlock.go` with `canWriteReq`
+- [x] T007 [US2] [mcp] Closed list (`server/mcp_workspace.go` `not_available_via_mcp`): "locking and unlocking a database's views (an agent sees the lock and is refused by it)". `capabilities.json`: the lock routes named, "closed" with its reason, `gapBudget` unchanged (decisions.md, 2026-11-04; was "a gap, 10 → 11"). `wiki/agent-access.md` lists it
+- [x] T008 [US2] [test] Go tests: every view-writing door refused while locked (REST PUT with changed views; MCP create, update, delete), each mutation-checked; byte-equal views and schema-only saves pass; a reader and a token refused on the lock routes; parity pair "change a view while locked" in `server/parity_property_test.go`
+- [x] T009 [P] [US2] [i18n] `views_locked` in `web/src/serverErrors.ts`; the lock strings of contracts/ui.md in `de.json`, `es.json`, `nl.json`
+- [x] T010 [US2] [ui] Interface: Lock views / Unlock views (functions `lockViews` `Lock`, `unlockViews` `LockOpen` in `web/src/menuIcons.ts`) in Settings › Database settings; the lock marker beside the view tabs with its tooltip; while locked, nothing that changes a view is offered (Settings' view items, add view, the tab menu, header Move/Hide, column drag and resize, board grouping); a `views_locked` answer shows its sentence and reloads the views (`web/src/components/CollectionView.tsx`, `TableColumnHead.tsx`)
+- [x] T011 [US2] [test] New `web/tests/view-lock.mjs`, registered: lock, every control gone, a second account refused, an agent refused, rows still editable, unlock. Mutation-checked
 
 ---
 
@@ -56,13 +56,13 @@ description: "Tasks for a view's filters changed for oneself, quick filters, sub
 
 **Independent Test**: quickstart §2.
 
-- [ ] T012 [US5] [backend] New `server/viewaudit.go`: `auditViewChanges(actorType, u, colID, ws, before, after)`, diffing by view id into `view.create`, `view.delete`, `view.rename`, `view.update`, with the keys and exclusions of data-model.md "Audit actions" and before/after in `changes`. Called by `handlePutCollection` ("user") and the three MCP view tools ("agent"); the lock routes log `views.lock`/`views.unlock`
-- [ ] T013 [US5] [test] Go tests: each kind once, by REST and MCP with the right actor type; one save changing two views makes two entries; widths, order, hidden, open-in and chart style make none. Mutation-checked
-- [ ] T014 [US5] [ui] `ActivityModal` (`web/src/components/UserMenu.tsx`): labels for the five actions, naming the view, and their de/es/nl strings
-- [ ] T015 [US5] [test] New `web/tests/activity-views.mjs`, registered: rename, re-filter, delete, lock appear; a column resize does not
-- [ ] T016 [P] [US2] [wiki] `wiki/views.md` and `wiki/collections.md` (the lock), the page describing the activity log (view entries), `wiki/mcp-tools.md` (refusals, `views_locked`), `docs/what-it-does.md`
-- [ ] T017 [US2] [backend] `.specify/memory/surfaces.md`: the **View lock** row of research R11, Since the merge date
-- [ ] T018 [test] Before PR 1 is offered: gate green; `codegraph sync` and `codegraph callers` on `checkViewsUnlocked`, `auditViewChanges`; `/code-review`; `/security-review` (a new gate and session-only routes); `ux-ui-audit` on the lock in light and dark at desktop and phone width; findings fixed or filed
+- [x] T012 [US5] [backend] New `server/viewaudit.go`: `auditViewChanges(actorType, u, colID, ws, before, after)`, diffing by view id into `view.create`, `view.delete`, `view.rename`, `view.update`, with the keys and exclusions of data-model.md "Audit actions" and before/after in `changes`. Called by `handlePutCollection` ("user") and the three MCP view tools ("agent"); the lock routes log `views.lock`/`views.unlock`
+- [x] T013 [US5] [test] Go tests: each kind once, by REST and MCP with the right actor type; one save changing two views makes two entries; widths, order, hidden, open-in and chart style make none. Mutation-checked
+- [x] T014 [US5] [ui] `ActivityModal` (`web/src/components/UserMenu.tsx`): labels for the five actions, naming the view, and their de/es/nl strings
+- [x] T015 [US5] [test] New `web/tests/activity-views.mjs`, registered: rename, re-filter, delete, lock appear; a column resize does not
+- [x] T016 [P] [US2] [wiki] `wiki/views.md` and `wiki/collections.md` (the lock), the page describing the activity log (view entries), `wiki/mcp-tools.md` (refusals, `views_locked`), `docs/what-it-does.md`
+- [x] T017 [US2] [backend] `.specify/memory/surfaces.md`: the **View lock** row of research R11, Since the merge date
+- [x] T018 [test] Before PR 1 is offered: gate green; `codegraph sync` and `codegraph callers` on `checkViewsUnlocked`, `auditViewChanges`; `/code-review`; `/security-review` (a new gate and session-only routes); `ux-ui-audit` on the lock in light and dark at desktop and phone width; findings fixed or filed
 
 ---
 
@@ -76,7 +76,7 @@ description: "Tasks for a view's filters changed for oneself, quick filters, sub
 - [ ] T020 [US1] [backend] On every views save (REST and MCP), delete `view_prefs` rows whose view id is gone
 - [ ] T021 [US1] [backend] `mergeViewState(shared, personal)` in Go, research R5 (personal filters replace shared, quick picks added, personal sort replaces)
 - [ ] T022 [US1] [backend] `rowPinsForView(colID, viewID, userID)` and `propsInView` (`server/viewpins.go`) use the merged filters for the person; all four callers pass the person (`handleCreatePage`, `handleRowFromTemplate`) or none (`mcpCall`, `mcpCreateFromTemplate`: agents have no personal state)
-- [ ] T023 [US1] [mcp] Closed list entry "personal view changes (an agent's view change is always for everyone)"; `capabilities.json`: personal routes named, a gap with its note, `gapBudget` 11 → 12; `wiki/agent-access.md`
+- [ ] T023 [US1] [mcp] Closed list entry "personal view changes (an agent's view change is always for everyone)"; `capabilities.json`: personal routes named, "closed" with its reason, `gapBudget` unchanged (decisions.md, 2026-11-04; was "a gap, 11 → 12"); `wiki/agent-access.md`
 - [ ] T024 [US1] [test] Go tests: owner-only reads and writes (another account gets nothing); a reader may write their own; a token refused; cleanup on view delete, and by cascade on database delete and account delete; pins with personal filters; a parity check that `mergeViewState` and the browser's merge agree (shared fixture with `check-viewstate.mjs`)
 - [ ] T025 [P] [US1] [perf] Benchmarks in `server/bench_world_test.go`: the personal-state lookup and `rowPinsForView` with personal filters, within spec 002's read budget
 - [ ] T026 [US1] [ui] New `web/src/viewState.ts` (pure merge, research R5) and `web/scripts/check-viewstate.mjs`, in `npm run check`

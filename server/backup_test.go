@@ -257,7 +257,9 @@ func restoreArchiveOf(t *testing.T, path string) string {
 // knows step 2 (testSteps adds it).
 func TestRestoreReportsAnOlderStepAndTheNextStartUpgrades(t *testing.T) {
 	path := copyFixture(t, "step-0.db")
-	if _, err := upgradeDB(path); err != nil {
+	// To step 1 only (testSteps, not upgradeDB): the backup must be older than
+	// the release that restores it, which knows steps up to 2 here.
+	if _, err := upgradeWith(path, testSteps()); err != nil {
 		t.Fatal(err)
 	}
 	archive := restoreArchiveOf(t, path)
@@ -335,8 +337,14 @@ func TestRestoreOfAPreStepArchiveSaysNoStepYet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(ran) != 1 || ran[0] != 1 {
-		t.Fatalf("the next start ran %v, want [1]", ran)
+	// Every real step, from 1 to the newest: written as [1] while step 1 was
+	// the only one, which said "the newest" only by coincidence.
+	var want []int64
+	for _, st := range upgradeSteps() {
+		want = append(want, st.Version)
+	}
+	if fmt.Sprint(ran) != fmt.Sprint(want) {
+		t.Fatalf("the next start ran %v, want %v", ran, want)
 	}
 }
 

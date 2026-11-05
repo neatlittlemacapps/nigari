@@ -226,7 +226,14 @@ func (s *Server) mcpGetCollection(pageID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	b, err := json.Marshal(map[string]any{"page_id": pageID, "schema": schema, "views": views})
+	// views_locked (spec 013): an agent sees the lock before set_view or
+	// delete_view refuses it. by and at only: the interface's byName is a
+	// person's name, which an agent does not need to know the lock is there.
+	var lock any
+	if l := s.viewsLock(pageID); l != nil {
+		lock = map[string]string{"by": l.By, "at": l.At}
+	}
+	b, err := json.Marshal(map[string]any{"page_id": pageID, "schema": schema, "views": views, "views_locked": lock})
 	if err != nil {
 		return "", err
 	}
@@ -298,6 +305,7 @@ func (s *Server) mcpUpdateSchema(pageID string, props json.RawMessage, remove []
 	}
 
 	removed := []string{}
+	removedNames := map[string]string{}
 	if len(remove) > 0 {
 		keep := schema[:0]
 		for _, p := range schema {
@@ -310,11 +318,17 @@ func (s *Server) mcpUpdateSchema(pageID string, props json.RawMessage, remove []
 			}
 			if drop {
 				removed = append(removed, str(p, "id"))
+				removedNames[str(p, "id")] = str(p, "name")
 			} else {
 				keep = append(keep, p)
 			}
 		}
 		schema = keep
+	}
+	// The rule PUT /api/collections applies: a property a locked view uses
+	// stays (spec 013, checkLockedViewsKeepProperties).
+	if err := s.checkLockedViewsKeepProperties(pageID, removedNames, views); err != nil {
+		return "", err
 	}
 	if len(added)+len(changed)+len(removed) == 0 {
 		return "", fmt.Errorf("nothing to do: pass properties to add/change or remove_properties")
@@ -697,7 +711,9 @@ func applyChartSpec(view map[string]any, spec viewSpec) error {
 
 // mcpCreateView creates a view — board, calendar, timeline, gallery, list,
 // form or table. "Views are what makes a database different from a table."
-func (s *Server) mcpCreateView(pageID string, spec viewSpec) (string, error) {
+//
+// u is the agent's account, for the activity log (auditViewChanges).
+func (s *Server) mcpCreateView(u *user, pageID string, spec viewSpec) (string, error) {
 	if !validViewTypes[spec.Type] {
 		return "", fmt.Errorf("unknown view type %q — use table, board, gallery, calendar, timeline, list, form or chart", spec.Type)
 	}
@@ -720,8 +736,9 @@ func (s *Server) mcpCreateView(pageID string, spec viewSpec) (string, error) {
 	if err := applyViewSpec(view, spec, schema); err != nil {
 		return "", err
 	}
-	views = append(views, view)
-	if err := s.saveCollection(pageID, schema, views); err != nil {
+	before := marshalViews(views)
+	after := append(append([]map[string]any{}, views...), view)
+	if err := s.saveViews(u, pageID, schema, before, views, after); err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("Created %s view %q (id %s)", spec.Type, name, view["id"]), nil
@@ -732,7 +749,7 @@ func (s *Server) mcpCreateView(pageID string, spec viewSpec) (string, error) {
 // over MCP could never be given a filter, a sort or a hidden column — the
 // interface could do all three, which made "create a working board" an
 // instruction to a human rather than something an agent could finish.
-func (s *Server) mcpUpdateView(pageID, viewID string, spec viewSpec) (string, error) {
+func (s *Server) mcpUpdateView(u *user, pageID, viewID string, spec viewSpec) (string, error) {
 	if spec.Type != "" {
 		return "", fmt.Errorf("a view's type cannot be changed — delete it and create the new one")
 	}
@@ -740,6 +757,11 @@ func (s *Server) mcpUpdateView(pageID, viewID string, spec viewSpec) (string, er
 	if err != nil {
 		return "", err
 	}
+	// applyViewSpec changes the view in place, so the before (for the lock
+	// and the log) is taken first, as JSON and as a decoded copy.
+	before := marshalViews(views)
+	var old []map[string]any
+	_ = json.Unmarshal(before, &old)
 	for _, v := range views {
 		if id, _ := v["id"].(string); id != viewID {
 			continue
@@ -747,7 +769,7 @@ func (s *Server) mcpUpdateView(pageID, viewID string, spec viewSpec) (string, er
 		if err := applyViewSpec(v, spec, schema); err != nil {
 			return "", err
 		}
-		if err := s.saveCollection(pageID, schema, views); err != nil {
+		if err := s.saveViews(u, pageID, schema, before, old, views); err != nil {
 			return "", err
 		}
 		name, _ := v["name"].(string)
@@ -758,7 +780,7 @@ func (s *Server) mcpUpdateView(pageID, viewID string, spec viewSpec) (string, er
 
 // mcpDeleteView removes a view; the last one stays, or the database would have
 // nothing left to show in the interface.
-func (s *Server) mcpDeleteView(pageID, viewID string) (string, error) {
+func (s *Server) mcpDeleteView(u *user, pageID, viewID string) (string, error) {
 	schema, views, err := s.loadCollection(pageID)
 	if err != nil {
 		return "", err
@@ -766,7 +788,8 @@ func (s *Server) mcpDeleteView(pageID, viewID string) (string, error) {
 	if len(views) <= 1 {
 		return "", fmt.Errorf("cannot delete the last view — a database needs at least one")
 	}
-	keep := views[:0]
+	before := marshalViews(views)
+	keep := []map[string]any{}
 	found := false
 	for _, v := range views {
 		if id, _ := v["id"].(string); id == viewID {
@@ -778,10 +801,28 @@ func (s *Server) mcpDeleteView(pageID, viewID string) (string, error) {
 	if !found {
 		return "", fmt.Errorf("view %q not found — call get_collection for the ids", viewID)
 	}
-	if err := s.saveCollection(pageID, schema, keep); err != nil {
+	if err := s.saveViews(u, pageID, schema, before, views, keep); err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("Deleted view %s", viewID), nil
+}
+
+// saveViews is how the MCP view tools write a database's views: the views
+// lock first (checkViewsUnlocked, the rule REST applies), then the save, then
+// one activity entry per changed view, as an agent. One function, so set_view
+// and delete_view cannot differ in what they check or record. before is the
+// stored views as JSON, old the same decoded; after is what to store.
+func (s *Server) saveViews(u *user, pageID string, schema []map[string]any, before []byte, old, after []map[string]any) error {
+	if err := s.checkViewsUnlocked(pageID, before, marshalViews(after)); err != nil {
+		return errViewsLockedForAgents
+	}
+	if err := s.saveCollection(pageID, schema, after); err != nil {
+		return err
+	}
+	agent := *u
+	agent.Name += " (MCP)"
+	s.auditViewChanges("agent", &agent, pageID, s.pageWorkspace(pageID), old, after)
+	return nil
 }
 
 // --- Massenoperationen ------------------------------------------------------

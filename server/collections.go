@@ -42,9 +42,13 @@ func (s *Server) handleGetCollection(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 500, err.Error())
 		return
 	}
-	writeJSON(w, map[string]json.RawMessage{
-		"schema": json.RawMessage(schema),
-		"views":  json.RawMessage(views),
+	// viewsLocked (spec 013): who locked the views and when, or null. Read
+	// here so the interface knows before it offers a change the server would
+	// refuse.
+	writeJSON(w, map[string]any{
+		"schema":      json.RawMessage(schema),
+		"views":       json.RawMessage(views),
+		"viewsLocked": s.viewsLock(r.PathValue("id")),
 	})
 }
 
@@ -76,8 +80,10 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 	// a view apply here too: its open mode (spec 007), a table's column order
 	// (spec 012) and a chart's settings (spec 004). A value the interface cannot honour would otherwise be stored
 	// by any script that can PUT.
+	var storedViews, savedViews []map[string]any
 	if hasViews {
 		schema, stored, _ := s.loadCollection(id)
+		storedViews = stored
 		if hasSchema {
 			var sent []map[string]any
 			if json.Unmarshal(body.Schema, &sent) == nil {
@@ -98,7 +104,37 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 			httpErrorCode(w, 400, "invalid_view_open_in", err.Error())
 			return
 		}
+		// The views lock (spec 013): refused while locked unless the views come
+		// out as they are, so a schema save that sends the views back unchanged
+		// still goes through. After normalizeViews, so what is compared is what
+		// would be stored.
+		if err := s.checkViewsUnlocked(id, marshalViews(stored), views); err != nil {
+			httpErrorCode(w, 409, "views_locked", err.Error())
+			return
+		}
 		body.Views = views
+		_ = json.Unmarshal(views, &savedViews)
+	}
+	// A property a locked view uses cannot be removed (spec 013, conductor
+	// review): the views it would leave are the stored ones, since a locked
+	// save cannot change them.
+	if hasSchema {
+		storedSchema, views, _ := s.loadCollection(id)
+		if hasViews {
+			views = savedViews
+		}
+		var next []map[string]any
+		if json.Unmarshal(body.Schema, &next) == nil {
+			var used errPropertyInLockedView
+			switch err := s.checkLockedViewsKeepProperties(id, removedProperties(storedSchema, next), views); {
+			case errors.As(err, &used):
+				httpErrorData(w, 409, "property_in_locked_view", err.Error(), map[string]any{"property": used.Property, "view": used.View})
+				return
+			case err != nil:
+				httpErrorCode(w, 409, "views_locked", err.Error())
+				return
+			}
+		}
 	}
 	var exists int
 	if err := s.db.QueryRow(`SELECT COUNT(*) FROM pages WHERE id = ?`, id).Scan(&exists); err != nil || exists == 0 {
@@ -126,6 +162,17 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 500, err.Error())
 		return
 	}
+	if hasViews {
+		// A token's save is an agent's, as edit_content records it
+		// (cap_edits.go): "Only what agents did" must find a script or an
+		// agent that re-filtered a view over REST.
+		u := requestUser(r)
+		actor := "human"
+		if u.TokenScope != "" {
+			actor = "agent"
+		}
+		s.auditViewChanges(actor, u, id, s.pageWorkspace(id), storedViews, savedViews)
+	}
 	s.pagesChanged()
 	// The schema and the views ARE the database: adding a column or removing a
 	// view changes it for everyone, and an open view on a second screen kept
@@ -133,7 +180,10 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 	s.rowsChanged(id)
 	var stored struct{ schema, views string }
 	s.db.QueryRow(`SELECT schema, views FROM collections WHERE page_id = ?`, id).Scan(&stored.schema, &stored.views)
-	writeJSON(w, map[string]json.RawMessage{"schema": json.RawMessage(stored.schema), "views": json.RawMessage(stored.views)})
+	// viewsLocked as GET answers it: a browser that replaces its copy of the
+	// collection with this answer keeps knowing about the lock.
+	writeJSON(w, map[string]any{"schema": json.RawMessage(stored.schema), "views": json.RawMessage(stored.views),
+		"viewsLocked": s.viewsLock(id)})
 }
 
 // handleCollectionRows returns a collection's child rows filtered, sorted and

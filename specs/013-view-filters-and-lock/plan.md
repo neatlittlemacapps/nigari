@@ -47,9 +47,9 @@ Five changes to what a database's views store, in three pull requests (R12).
 **Constraints**:
 - English source; design system (tokens, `ui/` components, budgets only go down); menu icons (one per function).
 - Upgrade steps are append-only (spec 008).
-- Agent gaps (no lock/unlock, no personal state) named in `capabilities.json` with `gapBudget` raised by 2.
+- Agents closed out of lock/unlock and personal state: named in `not_available_via_mcp` and as "closed" in `capabilities.json`; `gapBudget` unchanged (decisions.md, 2026-11-04).
 
-**Scale/Scope**: 4 issues, 3 PRs, 1 table, 2 columns, 2 view keys, 5 routes, 2 MCP arguments, 2 deliberate gaps, about 25 strings.
+**Scale/Scope**: 4 issues, 3 PRs, 1 table, 2 columns, 2 view keys, 5 routes, 2 MCP arguments, 2 deliberate exclusions (closed to agents), about 25 strings.
 
 ## CodeGraph
 
@@ -78,7 +78,7 @@ Index checked with `codegraph status` before planning (synced: 392 files, 7,181 
 ## Constitution Check
 
 - I. One binary, no external services: ✅ one table and two columns in the same SQLite file.
-- II. Agent parity: ⚠️ two deliberate gaps, owner's decision (2026-11-03): agents cannot lock or unlock views, and agents have no personal view state. Both are named in `not_available_via_mcp` and `capabilities.json`, with `gapBudget` 10 → 12 in PR 1 and PR 2. Everything else is open to agents: the lock is readable (`get_collection`) and refuses them; quick filters and sub-groups are set by `set_view`; the log records agents as agents.
+- II. Agent parity: ⚠️ two deliberate exclusions, owner's decision (2026-11-03): agents cannot lock or unlock views, and agents have no personal view state. Both are named in `not_available_via_mcp` and as "closed" in `capabilities.json`, with a reason; `gapBudget` stays 10 (a gap means "not yet"; decisions.md, 2026-11-04). Everything else is open to agents: the lock is readable (`get_collection`) and refuses them; quick filters and sub-groups are set by `set_view`; the log records agents as agents.
 - III. Gates are one function:
   - ✅ `checkViewsUnlocked` for the lock;
   - ✅ `auditViewChanges` for the log;
@@ -105,7 +105,7 @@ Re-checked after Phase 1 design: unchanged.
 | Wiki (`wiki/*.md`, `mcp-tools.md`, stale screenshots, `docs/what-it-does.md`) | `wiki/views.md`: personal changes, the bar, quick filters, lanes, the lock. `wiki/collections.md`: Lock views. `wiki/mcp-tools.md`: `set_view` refusals and new arguments, `get_collection`'s `views_locked`. `wiki/agent-access.md`: two closed items. `wiki/activity-log.md` (or the page that describes the log): view entries. `docs/what-it-does.md`: a line each. Stale shots retaken | wiki |
 | Tests (Go incl. refusal paths, Playwright spec, check scripts) | See Technical Context. Each new test is mutation-checked. A test that walks every MCP tool and REST route which writes views, with the lock on, expects `views_locked` from each (SC-003) | test |
 | Performance (query plans, payload size, per-request work) | `view_prefs` read by primary key, once per database open, and once per new row in a view. Lock read with the collection, in the same row. Audit diff in Go over the two views lists already in memory. Lanes from loaded rows | perf |
-| Manifest (`capabilities.json`, `gapBudget`, `parity_property_test.go`) | New routes named: lock (session only, closed to agents) and personal (session only, closed to agents). Two gaps with notes; `gapBudget` 10 → 11 in PR 1 and 11 → 12 in PR 2. Parity pairs: "change a view while locked" (REST PUT vs MCP `set_view`, both refused); "set quick filters" and "set a sub-group" (REST PUT vs `set_view`) | mcp |
+| Manifest (`capabilities.json`, `gapBudget`, `parity_property_test.go`) | New routes named: lock (session only, closed to agents) and personal (session only, closed to agents). Both "closed" with a reason, `gapBudget` unchanged (decisions.md, 2026-11-04). Parity pairs: "change a view while locked" (REST PUT vs MCP `set_view`, both refused); "set quick filters" and "set a sub-group" (REST PUT vs `set_view`) | mcp |
 | Design system (`web/src/ui/`, tokens, `check-tokens.mjs` budgets) | A chip component for quick filters, if `ui/` has none (catalogue section, README entry, light and dark). The bar uses `ui/` buttons and tokens. Lanes use existing board tokens. Budgets only go down | ui |
 | Storage budgets (`bench_world_test.go`, p95 in spec 002 research) | Two benchmarks: `view_prefs` lookup and `rowPinsForView` with personal filters, on the seeded workspace, within the read budget | perf |
 | Page containers (full page, side peek, centre peek) | A database shown in a peek is a full collection view: lock marker, bar, chips and lanes work there. The bar sits inside the view, so no container changes | ui |
@@ -114,9 +114,9 @@ Re-checked after Phase 1 design: unchanged.
 | Outside names (env vars, cookies, storage keys, …) | No change to an outside name. The browser keeps no new storage key: personal state lives on the account (owner's choice); the first paint waits for one request (R2) | backend |
 | Menu icons (`ui/Menu`, `menuIcons.ts`, `check-menu-icons.mjs`) | New functions: `lockViews` (`Lock`), `unlockViews` (`LockOpen`), `quickFilters` (`Zap`), `subGroup` (`Rows2`), `foldLane` (`ChevronsDownUp`), `resetView` (`RotateCcw`), `saveViewForEveryone` (`Users`). Each with an icon no function has; the build's `check-menu-icons.mjs` decides | ui |
 
-**Parity statement**: everything a person does to a view's shared state, an agent can do with the same checks, except locking and unlocking. Personal state is a person's screen and has no agent counterpart. Both gaps are the owner's decision and are named in the manifest.
+**Parity statement**: everything a person does to a view's shared state, an agent can do with the same checks, except locking and unlocking. Personal state is a person's screen and has no agent counterpart. Both exclusions are the owner's decision and are named in the manifest as "closed".
 
-**Manifest**: new routes named; two gaps; `gapBudget` 10 → 12 over PR 1 and PR 2; three new parity pairs.
+**Manifest**: new routes named; two capabilities closed to agents; `gapBudget` unchanged; three new parity pairs.
 
 **Registry**: a new row, **View lock** (R11): any new path that writes a database's views calls `checkViewsUnlocked` and `auditViewChanges`, and a test with the lock on proves it is refused.
 
@@ -178,4 +178,4 @@ wiki/views.md, collections.md, mcp-tools.md, agent-access.md, the activity log p
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| Two parity gaps (constitution II) | Owner's decision: the lock exists partly to stop agents changing views; personal state is a person's screen | Agents locking: defeats the lock. Agent personal state: no screen to keep it for |
+| Two capabilities closed to agents (constitution II) | Owner's decision: the lock exists partly to stop agents changing views; personal state is a person's screen | Agents locking: defeats the lock. Agent personal state: no screen to keep it for |

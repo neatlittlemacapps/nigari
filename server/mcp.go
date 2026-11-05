@@ -283,7 +283,7 @@ var mcpTools = []map[string]any{
 	},
 	{
 		"name":        "get_collection",
-		"description": "Return a database's full configuration: its property schema AND its views (table, board, gallery, calendar, timeline, list, form, chart) with their ids. A chart view carries chartKind, groupBy, groupPeriod, agg, aggProp, showEmpty, showZero, chartSort, hiddenGroups and chartStyle; query_rows with its view_id returns the numbers it shows. A view's openIn says how a click on its rows opens them for people (side_peek or center_peek; no key means full_page). Read-only.",
+		"description": "Return a database's full configuration: its property schema AND its views (table, board, gallery, calendar, timeline, list, form, chart) with their ids. A chart view carries chartKind, groupBy, groupPeriod, agg, aggProp, showEmpty, showZero, chartSort, hiddenGroups and chartStyle; query_rows with its view_id returns the numbers it shows. A view's openIn says how a click on its rows opens them for people (side_peek or center_peek; no key means full_page). views_locked is {by, at} when a person has locked the database's views (set_view and delete_view are then refused), or null. Read-only.",
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{"page_id": map[string]any{"type": "string"}},
 			"required":   []string{"page_id"}},
@@ -302,7 +302,7 @@ var mcpTools = []map[string]any{
 	},
 	{
 		"name":        "delete_view",
-		"description": "Delete a view from a database. The last remaining view cannot be deleted.",
+		"description": "Delete a view from a database. The last remaining view cannot be deleted. Refused while the database's views are locked (get_collection's views_locked); only a person can unlock.",
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{
 				"page_id": map[string]any{"type": "string"},
@@ -423,7 +423,7 @@ var mcpTools = []map[string]any{
 	},
 	{
 		"name":        "set_view",
-		"description": "Create a view on a database, or change one. Without view_id it creates (type is then required); with view_id it MERGES into the existing view — what you do not pass stays as it is. A board needs group_by (a select, a multiselect or a relation property; a row with several tags appears under each of them); a calendar and a timeline need date_prop; a chart needs group_by unless chart_kind is number (group_by \"__row\" draws one bar per row, with aggregate sum and aggregate_property). To put a chart into a document, embed_database with its view_id. A view's type cannot be changed: delete it and create the new one. table: column_order sets this view's column order without changing other views or the schema; get_collection returns it on the view as colOrder. Call get_collection for the ids.",
+		"description": "Create a view on a database, or change one. Without view_id it creates (type is then required); with view_id it MERGES into the existing view — what you do not pass stays as it is. A board needs group_by (a select, a multiselect or a relation property; a row with several tags appears under each of them); a calendar and a timeline need date_prop; a chart needs group_by unless chart_kind is number (group_by \"__row\" draws one bar per row, with aggregate sum and aggregate_property). To put a chart into a document, embed_database with its view_id. A view's type cannot be changed: delete it and create the new one. table: column_order sets this view's column order without changing other views or the schema; get_collection returns it on the view as colOrder. Call get_collection for the ids. Refused while the database's views are locked (get_collection's views_locked); only a person can unlock.",
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{
 				"page_id":            map[string]any{"type": "string"},
@@ -1197,15 +1197,15 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 				AggregateProperty: args.AggregateProperty, ShowEmpty: args.ShowEmpty, ShowZero: args.ShowZero,
 				ChartSort: args.ChartSort, HiddenGroups: args.HiddenGroups, ChartStyle: args.ChartStyle}
 			if args.ViewID == "" {
-				return s.mcpCreateView(args.PageID, spec)
+				return s.mcpCreateView(u, args.PageID, spec)
 			}
 			spec.Type = "" // an update may not change the type; say so plainly
 			if args.Type != "" {
 				return "", fmt.Errorf("a view's type cannot be changed — delete it and create the new one")
 			}
-			return s.mcpUpdateView(args.PageID, args.ViewID, spec)
+			return s.mcpUpdateView(u, args.PageID, args.ViewID, spec)
 		case "delete_view":
-			return s.mcpDeleteView(args.PageID, args.ViewID)
+			return s.mcpDeleteView(u, args.PageID, args.ViewID)
 		case "create_rows":
 			return s.mcpCreateRows(userID, args.PageID, args.Rows, args.ViewID)
 		case "embed_database":
@@ -1372,7 +1372,11 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		// property — the generic one here has no way to know what changed, and
 		// two entries for one call would make the log lie about how much
 		// happened.
-		if name != "working_on" && name != "note" && name != "set_properties" {
+		//
+		// set_view and delete_view write their own too (auditViewChanges, spec
+		// 013): one entry per changed view, saying what changed, and none for a
+		// change of layout only.
+		if name != "working_on" && name != "note" && name != "set_properties" && name != "set_view" && name != "delete_view" {
 			ws := s.pageWorkspace(args.PageID)
 			if ws == "" {
 				ws = s.mcpAuditWorkspace(u, name, parentID, args.DatabaseID, args.TemplateID, args.WorkspaceID, result)

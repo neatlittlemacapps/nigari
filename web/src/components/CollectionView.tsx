@@ -1,6 +1,6 @@
 import { Fragment, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { PeekMode } from '../peek';
-import { api } from '../api';
+import { api, ApiError } from '../api';
 import { onRefresh } from '../pwa';
 import Portal from './Portal';
 import { anchoredMenuStyle } from '../anchoredMenu';
@@ -27,6 +27,7 @@ import type {
 import PropertyValue, { PersonStack, idList, loadRelationOptions, type RelOption } from './PropertyValue';
 import { openCollectionRow, openPageAux, RowOpenContext, useOpenRow } from '../pageOpen';
 import ViewSettingsMenu from './ViewSettingsMenu';
+import ViewsLockMarker, { setViewsLocked } from './ViewsLockMarker';
 import { AddViewMenu, CardMenu, ViewActionItems } from './CollectionMenus';
 import { Menu, MenuItem, MenuLabel, MenuSeparator, MenuValueItem, MenuValues, MenuValueSubmenu, type MenuPoint } from '../ui/Menu';
 import { readViewId, readViewScroll, writeViewId, writeViewScroll } from '../pageUiState';
@@ -525,15 +526,18 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // copy of the schema back on every view change, and that copy is as old as
   // the tab: a property an agent or a colleague added meanwhile vanished again
   // the moment somebody here resized a column.
-  const saveConfig = async (next: CollectionConfig) => {
+  // Answers whether the save went through, so a dialog that saves (the schema
+  // editor) can stay open with its edits when it did not.
+  const saveConfig = async (next: CollectionConfig): Promise<boolean> => {
     const patch: Partial<CollectionConfig> = {};
     if (!config || next.schema !== config.schema) patch.schema = next.schema;
     if (!config || next.views !== config.views) patch.views = next.views;
     const before = config;
     setConfig(next);
-    if (!patch.schema && !patch.views) return;
+    if (!patch.schema && !patch.views) return true;
     try {
       await api.putCollection(collectionId, patch);
+      return true;
     } catch (e) {
       // A refused change (a reader's, or a chart setting the server cannot
       // draw) used to stay on screen as if saved, until the next reload
@@ -542,6 +546,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       // refusal ends here.
       if (before) setConfig(before);
       toast((e as Error).message);
+      // Somebody locked the views since this tab loaded them (spec 013): the
+      // config is reloaded, so the lock shows and its controls go.
+      if (e instanceof ApiError && e.code === 'views_locked') loadConfig();
+      return false;
     }
   };
 
@@ -630,6 +638,18 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   };
 
   if (!config || !view) return <div className="editor-loading" />;
+
+  // The views lock (spec 013, viewlock.go on the server). While it is on,
+  // nothing that changes the database's views is offered: the server would
+  // refuse each with views_locked, and an offer that is refused breaks a
+  // promise. What stays: rows, the schema, and in a document the embed's own
+  // filters and sort, which belong to the document and not to the views.
+  const viewsLock = config.viewsLocked ?? null;
+  const mayChangeViews = canEdit && !viewsLock;
+  const setLock = (lock: boolean) =>
+    void setViewsLocked(collectionId, lock).then((viewsLocked) => {
+      if (viewsLocked !== undefined) setConfig((c) => (c ? { ...c, viewsLocked } : c));
+    });
 
   const updateView = (patch: Partial<ViewDef>) => {
     // An embed keeps its filters and sort to itself (#26): set inside a
@@ -766,7 +786,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
               className={'view-tab view-tab--' + v.type + (v.id === view.id ? ' active' : '')}
               onClick={() => pickView(v.id)}
               onDoubleClick={() => {
-                if (!embed && canEdit) void renameView(v);
+                if (!embed && mayChangeViews) void renameView(v);
               }}
               onContextMenu={(e) => {
                 // Inside a document the views are the collection's business,
@@ -774,7 +794,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
                 // the document should rename or remove by accident.
                 // A reader may not rename, move or remove a view: the server
                 // refuses it, so offering it only promises what it undoes.
-                if (embed || !canEdit) return;
+                if (embed || !mayChangeViews) return;
                 e.preventDefault();
                 tabMenuReturn.current = e.currentTarget;
                 // Shift+F10 or the menu key report (0, 0): open under the tab.
@@ -788,7 +808,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             </button>
           </span>
         ))}
-        {!embed && canEdit && (
+        {!embed && mayChangeViews && (
           <AddViewMenu
             types={['table', 'board', 'gallery', 'calendar', 'timeline', 'list', 'form', 'chart']}
             icon={tabIcon}
@@ -797,6 +817,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           />
         )}
       </div>
+      {/* Beside the tabs, not inside them: on a phone the tab strip scrolls
+          and the marker sat off screen at its end (ux audit); there it is
+          drawn first instead (styles.css). */}
+      {viewsLock && <ViewsLockMarker lock={viewsLock} />}
       <Menu
         label={t('View actions')}
         open={tabMenuOpen}
@@ -814,14 +838,19 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           reached for (spec 012, US5); a filter or a sort of the view must not
           fold away with them (FR-021), so it is said here, beside the tabs,
           and stays when the buttons are hidden. */}
-      {embed && (viewFiltered || view.sort) && (
-        <span className="embed-view-state">
+      {/* On a database page with its views locked the filter and sort
+          controls are gone (spec 013, PR 1: a person's own filter arrives
+          with PR 2), so the same words say what the view does. */}
+      {(embed || viewsLock) && (viewFiltered || view.sort) && (
+        <span className={'embed-view-state' + (embed ? '' : ' is-page')}>
           {viewFiltered && <span className="embed-view-state-item">{t('Filtered')}</span>}
           {view.sort && <span className="embed-view-state-item">{t('Sorted')}</span>}
         </span>
       )}
       <div className="collection-actions" data-menu-open={fsOpen || tplOpen ? '' : undefined}>
-        {view.type !== 'form' && <FilterSortControls schema={schema} view={view} onChange={updateView} onOpenChange={setFsOpen} />}
+        {view.type !== 'form' && (embed || !viewsLock) && (
+          <FilterSortControls schema={schema} view={view} onChange={updateView} onOpenChange={setFsOpen} canGroup={!viewsLock} />
+        )}
         {/* Everything that configures the view and the database, in one menu
             (spec 012, US4): what the Columns popover, the Properties button,
             the ⋯ and the timeline's and sub-items' <select>s did. Not in a
@@ -843,6 +872,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             onMove={moveView}
             onRemove={removeView}
             onEditProperties={() => setSchemaOpen(true)}
+            locked={!!viewsLock}
+            onLock={() => setLock(true)}
+            onUnlock={() => setLock(false)}
           />
         )}
         {view.type !== 'form' && (
@@ -927,7 +959,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           collectionId={collectionId}
           schema={visibleSchema}
           view={view}
-          onUpdateView={updateView}
+          onUpdateView={mayChangeViews ? updateView : undefined}
           onSubmitted={onPagesChanged}
         />
       ) : view.type === 'board' ? (
@@ -978,7 +1010,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
               beside them. */}
           <ChartPane
             onChange={updateView}
-            canEdit={canEdit}
+            canEdit={mayChangeViews}
             onOpenRow={(id) => openCollectionRow({}, id, { onNavigate, onOpenInNewTab }, { openIn: view.openIn, onPeek })}
             collectionId={collectionId}
             view={view}
@@ -986,7 +1018,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             filters={serverFilters}
             today={todayStr}
             reloadKey={chartEpoch}
-            onUpdateView={updateView}
+            onUpdateView={mayChangeViews ? updateView : undefined}
             tagColors={tagColors}
             onNavigate={onNavigate}
             onOpenInNewTab={onOpenInNewTab}
@@ -1025,18 +1057,20 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             view.subItemProp && selfRelProps.some((p) => p.id === view.subItemProp) ? view.subItemProp : undefined
           }
           colWidths={view.colWidths}
-          onSetColWidths={(colWidths) => updateView({ colWidths })}
+          // Widths are the view's too: not offered to a reader, whom the
+          // server refuses, nor while the views are locked (spec 013).
+          onSetColWidths={mayChangeViews ? (colWidths) => updateView({ colWidths }) : undefined}
           // Moving and hiding a column are this view's own (spec 012): only a
           // table stores an order, and a reader is offered neither. Nor is a
           // database in a document: its columns are the database's, edited on
           // its own page (#22, the reason it has no Columns control), and a
           // column hidden there could not be shown again from there.
           onSetColumns={
-            canEdit && !embed && view.type === 'table'
+            mayChangeViews && !embed && view.type === 'table'
               ? (visible) => updateView({ colOrder: storedOrder(schema.map((p) => p.id), view.colOrder, visible) })
               : undefined
           }
-          onHideColumn={canEdit && !embed && view.type === 'table' ? (id) => updateView({ hidden: [...(view.hidden ?? []), id] }) : undefined}
+          onHideColumn={mayChangeViews && !embed && view.type === 'table' ? (id) => updateView({ hidden: [...(view.hidden ?? []), id] }) : undefined}
           onNavigate={onNavigate}
           onOpenInNewTab={onOpenInNewTab}
           onSetProp={setRowProp}
@@ -1077,7 +1111,9 @@ function FormView({
   collectionId: string;
   schema: PropDef[];
   view: ViewDef;
-  onUpdateView: (patch: Partial<ViewDef>) => void;
+  /** Absent while the views are locked (spec 013): the form's heading and
+   *  description are the view's, so they show but cannot be edited. */
+  onUpdateView?: (patch: Partial<ViewDef>) => void;
   onSubmitted: () => void;
 }) {
   const fields = schema.filter((p) => FORM_TYPES.includes(p.type));
@@ -1208,14 +1244,16 @@ function FormView({
           className="form-heading"
           value={view.formTitle ?? ''}
           placeholder={t('Form')}
-          onChange={(e) => onUpdateView({ formTitle: e.target.value })}
+          readOnly={!onUpdateView}
+          onChange={(e) => onUpdateView?.({ formTitle: e.target.value })}
         />
         <textarea
           className="form-desc"
           value={view.formDesc ?? ''}
           placeholder={t('Description (optional): explains what the form is for.')}
           rows={2}
-          onChange={(e) => onUpdateView({ formDesc: e.target.value })}
+          readOnly={!onUpdateView}
+          onChange={(e) => onUpdateView?.({ formDesc: e.target.value })}
         />
         <div className="form-fields">
           <label className="form-field">
@@ -1428,10 +1466,14 @@ function FilterSortControls({
   view,
   onChange,
   onOpenChange,
+  canGroup = true,
 }: {
   schema: PropDef[];
   view: ViewDef;
   onChange: (patch: Partial<ViewDef>) => void;
+  /** A board's grouping is the database's view setting even in a document,
+   *  so the views lock takes it away there too (spec 013). */
+  canGroup?: boolean;
   /** Whether one of its popovers is open: an embed's folding toolbar stays
    *  shown while it is (spec 012, FR-020). */
   onOpenChange?: (open: boolean) => void;
@@ -1570,7 +1612,7 @@ function FilterSortControls({
           this button did — it just took whatever select property came first,
           which is why nobody could put their tasks into one column per
           project. */}
-      {view.type === 'board' && (
+      {view.type === 'board' && canGroup && (
         <button
           className={'btn-sm' + (view.groupBy ? ' active' : '')}
           onClick={() => setOpen(open === 'group' ? null : 'group')}
@@ -2271,7 +2313,8 @@ function TableView({
   tagColors: Record<string, string>;
   subItemProp?: string;
   colWidths?: Record<string, number>;
-  onSetColWidths: (next: Record<string, number>) => void;
+  /** Absent: the columns cannot be resized (a reader, a locked view). */
+  onSetColWidths?: (next: Record<string, number>) => void;
   /** The visible columns in their new order, after a drag or a Move. Absent:
    *  the columns do not move (a reader, a view that is not a table). */
   onSetColumns?: (visible: string[]) => void;
@@ -2362,7 +2405,7 @@ function TableView({
       // of a double-click each stored the unchanged width first, and the reset
       // behind them had to undo two writes nobody asked for.
       if (px !== colWidths?.[key] && !(px === Math.round(from) && !colWidths?.[key])) {
-        onSetColWidths({ ...(colWidths ?? {}), [key]: px });
+        onSetColWidths?.({ ...(colWidths ?? {}), [key]: px });
       }
     };
     document.addEventListener('pointermove', move);
@@ -2380,7 +2423,7 @@ function TableView({
     if (!colWidths?.[key]) return;
     const next = { ...colWidths };
     delete next[key];
-    onSetColWidths(next);
+    onSetColWidths?.(next);
   };
   const toggleTree = (id: string) =>
     setCollapsed((prev) => {
@@ -2449,13 +2492,17 @@ function TableView({
         <thead ref={theadRef}>
           <tr>
             <th className="db-title-col" style={colStyle(TITLE_COL)}>
-              <ColHead label={t('Name')} onResize={startResize(TITLE_COL)} onReset={resetCol(TITLE_COL)} />
+              <ColHead
+                label={t('Name')}
+                onResize={onSetColWidths ? startResize(TITLE_COL) : undefined}
+                onReset={resetCol(TITLE_COL)}
+              />
             </th>
             {schema.map((p, i) => (
               <th key={p.id} data-col-id={p.id} className={headClass(i, p.id)} style={colStyle(p.id)}>
                 <ColHead
                   label={p.name}
-                  onResize={startResize(p.id)}
+                  onResize={onSetColWidths ? startResize(p.id) : undefined}
                   onReset={resetCol(p.id)}
                   moves={
                     onSetColumns && onHideColumn

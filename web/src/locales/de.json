@@ -1299,5 +1299,19 @@
   "Empty": "Leer",
   "Add person": "Person hinzufügen",
   "Add link": "Link hinzufügen",
-  "Add sub-task": "Teilaufgabe hinzufügen"
+  "Add sub-task": "Teilaufgabe hinzufügen",
+  "Lock views": "Ansichten sperren",
+  "Locked by {name} on {date}": "Gesperrt von {name} am {date}",
+  "Nobody can change, add or remove its views until they are unlocked. Rows can still be edited.": "Niemand kann ihre Ansichten ändern, hinzufügen oder entfernen, bis sie entsperrt sind. Zeilen kannst du weiter bearbeiten.",
+  "Someone": "Jemand",
+  "This database's views are locked. Unlock them to change a view.": "Die Ansichten dieser Datenbank sind gesperrt. Entsperre sie, um eine Ansicht zu ändern.",
+  "Unlock views": "Ansichten entsperren",
+  "View changed": "Ansicht geändert",
+  "View created": "Ansicht erstellt",
+  "View deleted": "Ansicht gelöscht",
+  "View renamed": "Ansicht umbenannt",
+  "Views locked": "Ansichten gesperrt",
+  "Views locked by {name}": "Ansichten gesperrt von {name}",
+  "Views unlocked by {name}": "Ansichten entsperrt von {name}",
+  "The view “{view}” uses “{property}”, and the views are locked. Unlock them to remove the property.": "Die Ansicht „{view}“ verwendet „{property}“, und die Ansichten sind gesperrt. Entsperre sie, um die Eigenschaft zu entfernen."
 }

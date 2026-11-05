@@ -495,6 +495,7 @@ right, with `›` where a further list opens:
 | **Remove view** | In red, last: removes this view (not its rows). Not offered when it is the only view. |
 | *Database settings* | |
 | **Edit properties** | The schema editor: add a property, change a type, edit select options. It edits the database, not the view, so it changes every view at once. This is what the empty-state messages point at. |
+| **Lock views** / **Unlock views** | Locks every view of this database against changes, or lifts the lock. See [Locking a database's views](#locking-a-databases-views). |
 
 Escape closes the menu and puts focus back on **Settings**. There is no item to
 change a view's type (a board into a table); create a new view instead.
@@ -685,9 +686,18 @@ missing.
 Changes save as you make them, and are what everybody gets the next time they
 open the collection. Row changes travel live: a card someone else moves moves on
 your screen too, in this collection and in the same collection embedded in a
-document. A change to the view itself (a filter, the sort, hidden columns, a new
-tab) does not. A second browser that already had the collection open keeps the
-configuration it fetched when it opened, and picks the new one up on a reload.
+document. A change to the views (a filter, the sort, hidden columns, a new tab,
+the lock) reaches a browser that already has the collection open too, within
+a second or so: it fetches the schema and the views again whenever the
+collection changes.
+
+Every change to a view that matters is in the [activity
+log](history-and-audit.md#what-is-recorded): a view created, removed or
+renamed, and a change to its filters, sort, grouping, dates, a chart's
+grouping, totals and drawn groups, or a table's sub-items, one entry per
+view. Column widths, column order, hidden columns, how
+rows open, a chart's style and a form's texts are left out, so a table resized
+ten times does not bury the change somebody is looking for.
 
 An embedded collection is the same collection, with the same views: changing a
 filter there changes it everywhere.
@@ -698,6 +708,53 @@ do. What it can do is copy a whole workspace's structure:
 take the databases with their schemas *and* their views, without rows and without
 documents. Filters on a relation are dropped on the way, since the rows they name
 are not copied.
+
+## Locking a database's views
+
+When a database's views are set up the way the team wants them, **Settings** →
+**Lock views** protects them from accidental changes. Anyone who can edit the
+database can lock and unlock; the lock is for everybody, on every view of that
+database, until somebody unlocks it. Locking views that are already
+locked keeps the first lock, its person and time; neither that nor unlocking
+unlocked views adds anything to the activity log.
+
+While the views are locked:
+
+- **Views locked** stands after the view tabs. Click it to see who locked them
+  and when. Readers see it too.
+- Nothing that changes a view is offered: **Settings** shows only **Edit
+  properties** and **Unlock views**; there is no `+` to add a view, no
+  right-click menu or double-click rename on the tabs, no moving, hiding or
+  resizing of columns, no **Group** on a board, no chart settings, and a form's
+  heading and description cannot be edited.
+- **Filter** and **Sort** are not offered on the database's own page either.
+  **Filtered** and **Sorted** beside the tabs say what the view does. Changing
+  a filter just for yourself, while the views stay as they are for everyone
+  else, is planned (spec 013) and not built yet.
+- Rows work as before: new rows, edits, moving a card between columns.
+- The schema is not locked: **Edit properties** still adds, renames, changes
+  and removes properties, and the views are left exactly as they are. The one
+  exception is removing a property a view filters, sorts or groups by (or a
+  calendar, timeline or chart is built on): that would change the view, so it
+  is refused with *The view “Board” uses “Status”, and the views are locked*,
+  and the dialog stays open with your edits. Unlock first, or remove the
+  property from that view. The same rule holds for an agent's
+  `update_schema`.
+- In a document, the database's own filter and sort controls stay: an
+  embedded database's filters and sort belong to the document, not to the
+  views, and the lock does not cover them.
+
+The server enforces it, not just the interface: a save that would change a
+locked view is refused with *This database's views are locked. Unlock them to
+change a view.*, from the browser, from a script and from an agent alike. A
+browser that still showed the controls when somebody else locked the views
+gets that message once, and the controls go.
+
+Agents see the lock but cannot lift it: `get_collection` returns
+`views_locked`, and `set_view` and `delete_view` refuse while it is on. Locking
+and unlocking need a browser sign-in (`PUT` and `DELETE
+/api/collections/{id}/lock`); an API token gets *This action requires signing
+in through a browser*. Both are recorded in the activity log.
 
 ## Views over MCP
 

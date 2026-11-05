@@ -24,6 +24,7 @@ import (
 func upgradeSteps() []*goose.Migration {
 	return []*goose.Migration{
 		goose.NewGoMigration(1, &goose.GoFunc{RunTx: baseSchema}, nil),
+		goose.NewGoMigration(2, &goose.GoFunc{RunTx: viewPrefsAndLock}, nil),
 	}
 }
 
@@ -253,6 +254,44 @@ func baseSchema(ctx context.Context, tx *sql.Tx) error {
 		if err := ensureColumn(tx, "users", c[0], c[1]); err != nil {
 			return fmt.Errorf("migrate users.%s: %w", c[0], err)
 		}
+	}
+	return nil
+}
+
+// viewPrefsAndLock is step 2 (spec 013): a person's own changes to a view,
+// and the views lock on a database.
+//
+// view_prefs holds one row per person, database and scope (a view id, or
+// embed:<pageId>:<blockId>:<viewId> for a database shown in a document), read
+// by its primary key when a database opens. A table and not a JSON column on
+// users: a person has state for many views, and one blob rewritten by every
+// tab on every filter click would race itself. The foreign keys remove a
+// person's rows with their account and a database's rows with its page
+// (foreign_keys is on, as collections already relies on), so no delete path
+// needs cleanup code; the index on collection_id serves the cleanup of a
+// deleted view's rows when the views are saved.
+//
+// The lock sits on the collections row, outside the views JSON: a save of
+// the views list cannot clear a flag it does not carry. ” is unlocked.
+func viewPrefsAndLock(ctx context.Context, tx *sql.Tx) error {
+	if _, err := tx.Exec(`CREATE TABLE view_prefs (
+		user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		collection_id TEXT NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+		scope TEXT NOT NULL,
+		state TEXT NOT NULL,
+		updated_at TEXT NOT NULL,
+		PRIMARY KEY (user_id, collection_id, scope)
+	)`); err != nil {
+		return fmt.Errorf("create view_prefs: %w", err)
+	}
+	if _, err := tx.Exec(`CREATE INDEX view_prefs_collection ON view_prefs(collection_id)`); err != nil {
+		return fmt.Errorf("create view_prefs_collection: %w", err)
+	}
+	if _, err := tx.Exec(`ALTER TABLE collections ADD COLUMN views_locked_by TEXT NOT NULL DEFAULT ''`); err != nil {
+		return fmt.Errorf("add collections.views_locked_by: %w", err)
+	}
+	if _, err := tx.Exec(`ALTER TABLE collections ADD COLUMN views_locked_at TEXT NOT NULL DEFAULT ''`); err != nil {
+		return fmt.Errorf("add collections.views_locked_at: %w", err)
 	}
 	return nil
 }

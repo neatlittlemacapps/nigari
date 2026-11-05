@@ -63,7 +63,11 @@ people outside the workspace can submit entries into it. A row added in a
 filtered view starts with the values that view filters on, so it stays in sight. A view
 can open its rows in a peek, beside the view or over it, instead of as a full page.
 A table's columns move by dragging their headings, in that view only, and an
-agent can set the same order.
+agent can set the same order. A database's views can be locked so nobody changes
+them by accident, people and agents alike, while its rows stay editable; only a
+person can unlock them. Every change to a view (created, renamed, re-filtered,
+removed, locked) is in the activity log, saying whether a person or an agent
+made it.
 
 ### Finding things
 

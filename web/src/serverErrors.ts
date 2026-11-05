@@ -42,6 +42,15 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
     case 'invalid_view_open_in':
       return t('This way of opening pages is not available for this view, so the view was not saved.');
 
+    // ---- the views lock (spec 013) ----
+    case 'views_locked':
+      return t("This database's views are locked. Unlock them to change a view.");
+    case 'property_in_locked_view':
+      return t('The view “{view}” uses “{property}”, and the views are locked. Unlock them to remove the property.', {
+        view: String(data?.view ?? ''),
+        property: String(data?.property ?? ''),
+      });
+
     // ---- a table's column order (spec 012) ----
     case 'invalid_view_column_order':
       return t('A column order is only for a table view, as a list of its properties, so the view was not saved.');

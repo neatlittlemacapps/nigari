@@ -1299,5 +1299,19 @@
   "Empty": "Leeg",
   "Add person": "Persoon toevoegen",
   "Add link": "Link toevoegen",
-  "Add sub-task": "Subtaak toevoegen"
+  "Add sub-task": "Subtaak toevoegen",
+  "Lock views": "Weergaven vergrendelen",
+  "Locked by {name} on {date}": "Vergrendeld door {name} op {date}",
+  "Nobody can change, add or remove its views until they are unlocked. Rows can still be edited.": "Niemand kan de weergaven wijzigen, toevoegen of verwijderen tot ze ontgrendeld zijn. Rijen kun je nog steeds bewerken.",
+  "Someone": "Iemand",
+  "This database's views are locked. Unlock them to change a view.": "De weergaven van deze database zijn vergrendeld. Ontgrendel ze om een weergave te wijzigen.",
+  "Unlock views": "Weergaven ontgrendelen",
+  "View changed": "Weergave gewijzigd",
+  "View created": "Weergave gemaakt",
+  "View deleted": "Weergave verwijderd",
+  "View renamed": "Naam van weergave gewijzigd",
+  "Views locked": "Weergaven vergrendeld",
+  "Views locked by {name}": "Weergaven vergrendeld door {name}",
+  "Views unlocked by {name}": "Weergaven ontgrendeld door {name}",
+  "The view “{view}” uses “{property}”, and the views are locked. Unlock them to remove the property.": "De weergave “{view}” gebruikt “{property}” en de weergaven zijn vergrendeld. Ontgrendel ze om de eigenschap te verwijderen."
 }

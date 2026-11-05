@@ -342,6 +342,16 @@ export interface ChartStyle {
 export interface CollectionConfig {
   schema: PropDef[];
   views: ViewDef[];
+  /** The views lock (spec 013): who locked this database's views and when,
+   *  or null. Not part of the views list on purpose: a save of the views
+   *  cannot clear it. Absent in a config built in the browser. */
+  viewsLocked?: ViewsLock | null;
+}
+
+export interface ViewsLock {
+  by: string;
+  byName: string;
+  at: string;
 }
 
 // Public form config served (unauthenticated) at /api/public/form/{token} —

@@ -110,6 +110,13 @@
       "mcp": ["get_collection", "update_schema", "set_view", "delete_view", "query_rows", "create_rows"],
       "wiki": "wiki/collections.md"
     },
+    "collections.views-lock": {
+      "summary": "Lock or unlock a database's views, so nobody changes them by accident",
+      "agent": "closed",
+      "reason": "Listed in not_available_via_mcp (owner, spec 013, 2026-11-03): agents see the lock through get_collection (views_locked) and set_view and delete_view are refused by it; only a person locks or unlocks.",
+      "rest": ["PUT /api/collections/{id}/lock", "DELETE /api/collections/{id}/lock"],
+      "wiki": "wiki/collections.md"
+    },
     "collections.templates": {
       "summary": "A database's own templates: list, add, rename, remove, and create a row from one",
       "agent": "allowed",

@@ -30,11 +30,11 @@ func blueprintSource(t *testing.T, s *Server, ws, uid string) (systems, tasks st
 		t.Fatalf("schema: %v", err)
 	}
 	// Two views: one filtered on a select, one on the relation.
-	if _, err := s.mcpCreateView(tasks, viewSpec{Name: "Open", Type: "board", GroupBy: ptr("status"),
+	if _, err := s.mcpCreateView(viewTestAgent, tasks, viewSpec{Name: "Open", Type: "board", GroupBy: ptr("status"),
 		Filters: &[]map[string]any{{"property": "status", "op": "is_not", "value": "done"}}}); err != nil {
 		t.Fatalf("view: %v", err)
 	}
-	if _, err := s.mcpCreateView(tasks, viewSpec{Name: "One system", Type: "table",
+	if _, err := s.mcpCreateView(viewTestAgent, tasks, viewSpec{Name: "One system", Type: "table",
 		Filters: &[]map[string]any{{"property": "system", "op": "is", "value": "some-row-id"}}}); err != nil {
 		t.Fatalf("view: %v", err)
 	}

@@ -431,6 +431,27 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
     working_on: t('started working on:'),
     working_on_end: t('finished working on:'),
   };
+  // A database's views (spec 013, server/viewaudit.go): the entry's page is
+  // the database, its detail the view's name ("Old → New" for a rename). Said
+  // as a phrase of their own, because "Ada changed Tasks" would not say that
+  // it was a view and which one.
+  const viewLabel: Record<string, string> = {
+    'view.create': t('View created'),
+    'view.delete': t('View deleted'),
+    'view.rename': t('View renamed'),
+    'view.update': t('View changed'),
+  };
+  // The words before the page link. A view entry names its view itself (the
+  // detail), so the detail is not repeated after it when the database has
+  // no title left to link; a lock entry's detail is the database's title.
+  // The view phrases are sentences of their own, so a comma parts them from
+  // the database's name.
+  const phrase = (e: AuditEntry): { text: string; namesDetail: boolean; comma: boolean } => {
+    if (e.action === 'views.lock') return { text: t('Views locked by {name}', { name: e.actorName }), namesDetail: false, comma: true };
+    if (e.action === 'views.unlock') return { text: t('Views unlocked by {name}', { name: e.actorName }), namesDetail: false, comma: true };
+    if (viewLabel[e.action]) return { text: `${e.actorName}: ${viewLabel[e.action]} “${e.detail.slice(0, 60)}”`, namesDetail: true, comma: true };
+    return { text: `${e.actorName} ${label[e.action] ?? e.action}`, namesDetail: false, comma: false };
+  };
   return (
     <Portal>
     <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -452,7 +473,10 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
         <div className="user-list">
           {entries
             .filter((e) => !onlyAgents || e.actorType === 'agent')
-            .map((e) => (
+            .map((e) => {
+            // Worked out once per row, not at each of its three uses.
+            const said = phrase(e);
+            return (
             <div key={e.id} className="user-row">
               <span className={'badge ' + (e.actorType === 'agent' ? 'agent-badge' : '')}>
                 {e.actorType === 'agent' ? (
@@ -465,7 +489,8 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
                 )}
               </span>
               <span className="user-row-name">
-                {e.actorName} {label[e.action] ?? e.action}
+                {said.text}
+                {said.comma && e.pageTitle ? ',' : ''}
                 {/* The page by NAME, and clickable. The detail used to trail
                     off in a raw id — the difference between a log you can act on
                     and one you can only read. */}
@@ -484,7 +509,7 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
                     </a>
                   </>
                 ) : (
-                  e.detail ? ` “${e.detail.slice(0, 60)}”` : ''
+                  e.detail && !said.namesDetail ? ` “${e.detail.slice(0, 60)}”` : ''
                 )}
               </span>
               {e.revertible && (
@@ -502,7 +527,8 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
                   further for anyone else. */}
               <span className="user-row-email">{formatMoment(e.createdAt, 'datetime')}</span>
             </div>
-          ))}
+            );
+          })}
           {entries.length === 0 && <div className="dialog-hint">{t('Nothing has happened yet.')}</div>}
           {!done && entries.length > 0 && (
             <button className="btn-sm" onClick={() => void loadMore()}>
