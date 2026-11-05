@@ -555,8 +555,12 @@ Two full-screen messages you may meet:
 - **Cannot reach the server**: "nigari could not load your workspace", with a
   **Retry** button. See [Troubleshooting](troubleshooting.md).
 - **No pages yet**: the first-run state, with **New page** and
-  **Import (.md / .zip)**. If your account is in no workspace at all it says
-  **No workspace** instead, and offers to create one if the instance allows it.
+  **Import (.md / .zip)**. It is also what a workspace shows once its last
+  page is in the trash, even when your other workspaces have pages: when the
+  open page goes, nigari picks another page of the workspace chosen in the
+  sidebar, or shows this screen. If your account is in no workspace at all it
+  says **No workspace** instead, and offers to create one if the instance
+  allows it.
 
 After the server is updated under you, a message says **A new version is
 available: reload the page**. It comes both from the first request after load
