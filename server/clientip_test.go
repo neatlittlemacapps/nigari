@@ -98,3 +98,53 @@ func TestWrongTokensCannotBeChargedToSomebodyElse(t *testing.T) {
 		t.Fatal("the agent's valid token was refused after somebody else guessed in its name")
 	}
 }
+
+// NIGARI_TRUST_PROXY switches proxy headers on for an install that always sits
+// behind its own proxy (an Umbrel app, a compose file with Caddy in front).
+// The admin's choice still wins in both directions, and an explicit off in the
+// dialog is stored so that it does.
+func TestTrustProxyFromTheEnvironmentYieldsToTheAdmin(t *testing.T) {
+	s := testServer(t)
+	_, cookie := signedIn(t, s, "proxy@example.test")
+	ip := func() string {
+		r := httptest.NewRequest("GET", "/api/health", nil)
+		r.RemoteAddr = "172.18.0.5:41000"
+		r.Header.Set("X-Forwarded-For", "192.168.1.23")
+		return s.clientIP(r)
+	}
+
+	if got := ip(); got != "172.18.0.5" {
+		t.Fatalf("no variable, no setting: %q, want the proxy's own address", got)
+	}
+	t.Setenv("NIGARI_TRUST_PROXY", "true")
+	if got := ip(); got != "192.168.1.23" {
+		t.Fatalf("variable on: %q, want the visitor's address", got)
+	}
+
+	// The admin unticks the box: the dialog sends its whole state.
+	save := func(on bool) {
+		body := `{"trustProxy":false}`
+		if on {
+			body = `{"trustProxy":true}`
+		}
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest("PUT", "/api/settings", strings.NewReader(body))
+		req.Header.Set("Cookie", cookie)
+		req.Header.Set("Content-Type", "application/json")
+		s.ServeHTTP(rec, req)
+		// The app answers any unknown path with its page and a 200, so a 200
+		// alone does not prove the settings route was reached.
+		if rec.Code != 200 || !strings.HasPrefix(rec.Header().Get("Content-Type"), "application/json") {
+			t.Fatalf("save settings: %d %s", rec.Code, rec.Body)
+		}
+	}
+	save(false)
+	if got := ip(); got != "172.18.0.5" {
+		t.Fatalf("admin off, variable on: %q, want the admin's off to win", got)
+	}
+	save(true)
+	t.Setenv("NIGARI_TRUST_PROXY", "")
+	if got := ip(); got != "192.168.1.23" {
+		t.Fatalf("admin on, no variable: %q, want the admin's on to win", got)
+	}
+}

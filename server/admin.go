@@ -165,7 +165,7 @@ func (s *Server) loadSettings() appSettings {
 		SMTPFrom:            s.setting("smtp_from", ""),
 		SMTPPassSet:         s.setting("smtp_pass", "") != "",
 		PublicBaseURL:       s.setting("public_base_url", ""),
-		TrustProxy:          s.boolSetting("trust_proxy"),
+		TrustProxy:          s.trustProxy(),
 		MaxUploadMB:         s.intSetting("max_upload_mb", 50, 1, 2048),
 		TrashDays:           s.trashRetentionDays(),
 		AuditDays:           s.auditRetentionDays(),
@@ -279,7 +279,9 @@ func (s *Server) handlePutSettings(w http.ResponseWriter, r *http.Request) {
 	set("smtp_from", body.SMTPFrom)
 	set("public_base_url", body.PublicBaseURL)
 	if body.TrustProxy != nil {
-		v := ""
+		// "0", not "": an explicit off has to outrank NIGARI_TRUST_PROXY
+		// (trustProxy), and "" means "never chosen".
+		v := "0"
 		if *body.TrustProxy {
 			v = "1"
 		}

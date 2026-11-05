@@ -253,6 +253,7 @@ Every variable carries the `NIGARI_` prefix. The prefix is not optional: a bare
 | `NIGARI_RESTORE_FORCE` | empty | any value lets `nigari restore` overwrite an existing database |
 | `NIGARI_IMPORT_ALLOW_PRIVATE` | empty | must be exactly `1`; lets the URL importer reach private addresses |
 | `NIGARI_UPDATE_CHECK` | empty | set to `0` to stop the daily check for a newer release |
+| `NIGARI_TRUST_PROXY` | empty | `1` or `true`: believe the proxy's `X-Forwarded-For`, as the admin checkbox does |
 
 Notes worth having before you hit them:
 
@@ -265,6 +266,15 @@ Notes worth having before you hit them:
   dialog shows the effective number in *Empty the trash automatically after
   (days, 0 = never)* and writes it as a setting when you press **Save**, after
   which the variable no longer has any effect.
+- **`NIGARI_TRUST_PROXY` is for an install that always has a proxy in front**:
+  a compose file with Caddy or Traefik, or an app store such as Umbrel's. It does
+  what **Run behind a reverse proxy (trust X-Forwarded-For)** does in the
+  Instance settings ([Reaching it from outside](domain.md#route-3-your-own-reverse-proxy)),
+  without anybody having to tick it after the install. Like the trash days it
+  loses to the admin setting: once the dialog is saved, the checkbox decides, on
+  or off. **Never set it without a proxy in front**: the headers are then written
+  by whoever is calling, and they could name a new address for every password
+  guess.
 - **`NIGARI_IMPORT_ALLOW_PRIVATE` opens a door that is shut on purpose.**
   Importing a page from a URL refuses every address that is not publicly
   routable: loopback, private ranges, link-local (which is where the cloud
