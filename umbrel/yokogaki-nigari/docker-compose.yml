@@ -18,7 +18,7 @@ services:
   server:
     # Pinned by digest: the tag can be moved, the digest cannot. Both chips
     # Umbrel runs on are in this image index (linux/amd64, linux/arm64).
-    image: ghcr.io/neatlittlemacapps/nigari:2.1.14@sha256:30f51db57a3f3e08520b67297fad914940cc7095ea07a7528d0aa9374154ce47
+    image: ghcr.io/neatlittlemacapps/nigari:2.1.15@sha256:73eff6999e35d9437d2b13684ab12908520906b082ecf38e95092186f0b1bc73
     # The image's own user, and the owner Umbrel gives the app's data folder.
     user: "1000:1000"
     restart: on-failure
@@ -30,8 +30,8 @@ services:
       NIGARI_DATA: "/data"
       # Umbrel's proxy is always in front and writes X-Forwarded-For itself,
       # one address, never passing on the caller's. Without this, every
-      # visitor shares the proxy's address and one login rate limit. Read from
-      # the release after 2.1.14; older images ignore it (see README.md).
+      # visitor shares the proxy's address and one login rate limit. Read
+      # from 2.1.15 on.
       NIGARI_TRUST_PROXY: "1"
       # Updates come from the app store here, not from a download: the
       # in-app "a new release is out" banner would point the wrong way.

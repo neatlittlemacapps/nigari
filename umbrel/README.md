@@ -18,14 +18,11 @@ yokogaki-nigari/
 How to install it, and why it is set up the way it is, is in the wiki:
 [Self-hosting, Run on Umbrel](../wiki/self-hosting.md#run-on-umbrel).
 
-## Before it is published
+## Releases and what is still missing
 
-- **The pinned image is 2.1.14, and it predates two changes the store relies
-  on.** Pages of other apps on the same Umbrel are refused only from the
-  release that carries `server/crossorigin.go`, and `NIGARI_TRUST_PROXY` is
-  read only from that release on (2.1.14 ignores it, and every visitor then
-  shares the proxy's address). Once that release is out, put its version in
-  `umbrel-app.yml` and its digest in `docker-compose.yml`:
+- **Updating to a new release.** Put the version in `umbrel-app.yml` (`version`
+  and the release-notes link) and the pinned image in `docker-compose.yml`, in
+  nigari's `umbrel/` and in the store repository alike. To find the digest:
 
   ```sh
   docker buildx imagetools inspect ghcr.io/neatlittlemacapps/nigari:<version>
@@ -60,10 +57,9 @@ umbrelOS runs an app:
 - Chromium (Playwright) at two addresses, `http://172.17.0.1:18420` and
   `http://127.0.0.1:18420`, and an MCP client with an API token.
 
-Results, for the pinned 2.1.14 image and for a build of the branch that adds
-the two changes above (same image, binary replaced):
+Results for 2.1.14, the release before the fixes, and for 2.1.15 as the store pins it (the 2.1.15 column was first measured on a build of the branch and then again on the released image).
 
-| Check | 2.1.14 | branch |
+| Check | 2.1.14 | 2.1.15 |
 | --- | --- | --- |
 | First-run screen, first account created | pass | pass |
 | A page edited; the edit appears live in a second tab (WebSocket through the proxy) | pass | pass |
@@ -72,7 +68,7 @@ the two changes above (same image, binary replaced):
 | `/mcp` with a token: initialize, tools/list (34 tools) | pass | pass |
 | `/mcp/{token}`: `get_page` reads the edit | pass | pass |
 | `/mcp` without a token: 401, and the OAuth metadata names the address used | pass | pass |
-| Data kept across a container restart | not run | pass |
+| Data kept across a container restart | not run | pass (branch build) |
 | Visitor's address as nigari sees it | the proxy's | the visitor's |
 | A page on another port of the same host creates a page with the sign-in | **went through** | refused |
 | The same page opens the live-editing socket and reads the document | **read 32 messages** | refused |
