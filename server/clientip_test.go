@@ -148,3 +148,22 @@ func TestTrustProxyFromTheEnvironmentYieldsToTheAdmin(t *testing.T) {
 		t.Fatalf("admin on, no variable: %q, want the admin's on to win", got)
 	}
 }
+
+// Saving the dialog for some other reason must not write the proxy setting:
+// it shows the variable's value, and writing it back would freeze it.
+func TestSavingOtherSettingsLeavesTheProxyVariableInCharge(t *testing.T) {
+	s := testServer(t)
+	_, cookie := signedIn(t, s, "proxy-save@example.test")
+	t.Setenv("NIGARI_TRUST_PROXY", "1")
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("PUT", "/api/settings", strings.NewReader(`{"trustProxy":true,"instanceName":"Home"}`))
+	req.Header.Set("Cookie", cookie)
+	req.Header.Set("Content-Type", "application/json")
+	s.ServeHTTP(rec, req)
+	if rec.Code != 200 || !strings.HasPrefix(rec.Header().Get("Content-Type"), "application/json") {
+		t.Fatalf("save settings: %d %s", rec.Code, rec.Body)
+	}
+	if v := s.setting("trust_proxy", ""); v != "" {
+		t.Fatalf("an unchanged checkbox was stored as %q; the variable no longer counts", v)
+	}
+}

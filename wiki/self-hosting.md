@@ -323,9 +323,9 @@ Notes worth having before you hit them:
   a compose file with Caddy or Traefik, or an app store such as Umbrel's. It does
   what **Run behind a reverse proxy (trust X-Forwarded-For)** does in the
   Instance settings ([Reaching it from outside](domain.md#route-3-your-own-reverse-proxy)),
-  without anybody having to tick it after the install. Like the trash days it
-  loses to the admin setting: once the dialog is saved, the checkbox decides, on
-  or off. **Never set it without a proxy in front**: the headers are then written
+  without anybody having to tick it after the install. It loses to the admin
+  setting: once somebody changes the checkbox and saves, the checkbox decides,
+  on or off. Saving the dialog for anything else leaves it to the variable. **Never set it without a proxy in front**: the headers are then written
   by whoever is calling, and they could name a new address for every password
   guess.
 - **`NIGARI_IMPORT_ALLOW_PRIVATE` opens a door that is shut on purpose.**

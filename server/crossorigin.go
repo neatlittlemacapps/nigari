@@ -2,6 +2,8 @@ package server
 
 import (
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 // Cross-site requests made with somebody's sign-in are refused.
@@ -18,14 +20,20 @@ import (
 // covered) and read the page as it arrived, because that socket took every
 // origin (InsecureSkipVerify, "origins vary").
 //
-// net/http's CrossOriginProtection makes the browser's own judgement the rule:
-// Sec-Fetch-Site, sent by every browser since 2023, says whether the page that
-// made the request has nigari's exact origin (scheme, host AND port). Without
-// it the Origin header is compared with Host. A request carrying neither is
-// not from a browser page (curl, agents, MCP clients, the desktop app's own
-// calls) and has no ambient cookie to abuse, so it passes untouched. That is
-// also why this does not depend on which address nigari is reached by: an IP,
-// a LAN name, a tunnel domain and a reverse proxy all look the same to it.
+// net/http's CrossOriginProtection makes the browser's own judgement the rule.
+// Over HTTPS, and to localhost, browsers send Sec-Fetch-Site, which says
+// whether the page that made the request has nigari's exact origin (scheme,
+// host AND port). Over plain HTTP they do not (fetch metadata goes only to
+// trustworthy origins), and the Origin header is compared with Host instead.
+// A request carrying neither is not from a browser page (curl, agents, MCP
+// clients) and has no ambient cookie to abuse, so it passes untouched.
+//
+// Plain HTTP behind a proxy that rewrites Host (nginx's proxy_pass without
+// proxy_set_header Host sends the upstream's address) would then refuse every
+// write from nigari's own pages, sign-in included. So an Origin that names
+// the address the proxy says the browser used (X-Forwarded-Host), or the
+// public address set in Instance settings, counts as nigari's own (see
+// originIsThisInstance).
 var crossOrigin = newCrossOriginGuard()
 
 func newCrossOriginGuard() *http.CrossOriginProtection {
@@ -40,6 +48,11 @@ func newCrossOriginGuard() *http.CrossOriginProtection {
 		"POST /oauth/token",    // client credentials and code in the body
 		"POST /oauth/register", // open registration, signs nobody in
 		"POST /oauth/revoke",   // the token to revoke is the credential
+		// Anonymous: a shared page's password and a public form's answers.
+		// Neither reads anybody's sign-in, and the shared page is served with
+		// Referrer-Policy: no-referrer, so its own form posts "Origin: null".
+		"POST /public/{token}",
+		"POST /api/public/form/{token}/submit",
 	} {
 		c.AddInsecureBypassPattern(p)
 	}
@@ -58,11 +71,54 @@ func refuseCrossOrigin(w http.ResponseWriter) {
 // browser cannot attach an Authorization header to a cross-site request
 // without a CORS preflight, which nigari never grants, so such a request is
 // never a forgery riding on somebody's cookie.
-func crossOriginRefused(r *http.Request) bool {
+func (s *Server) crossOriginRefused(r *http.Request) bool {
 	if hasBearer(r) {
 		return false
 	}
-	return crossOrigin.Check(r) != nil
+	if crossOrigin.Check(r) == nil {
+		return false
+	}
+	// The browser said so itself: Sec-Fetch-Site is never second-guessed.
+	if r.Header.Get("Sec-Fetch-Site") != "" {
+		return true
+	}
+	origin := r.Header.Get("Origin")
+	// The desktop app trades its sign-in code from Electron's main process,
+	// which belongs to no page: no Origin, or "null". A page on another
+	// address sends its own origin and stays refused. (The code and its
+	// verifier are the credential, as at /oauth/token.)
+	if r.URL.Path == "/api/desktop/exchange" && (origin == "" || origin == "null") {
+		return false
+	}
+	return !s.originIsThisInstance(r, origin)
+}
+
+// originIsThisInstance reports whether an Origin names nigari's own address
+// as the browser saw it, when Host does not: behind a proxy that rewrote Host,
+// that address is in X-Forwarded-Host, or it is the public address an admin
+// set. X-Forwarded-Host is believed here without trust_proxy, because the only
+// caller that matters cannot set it: a page on another address cannot add the
+// header to a request without a CORS preflight, which nigari never grants. A
+// caller that can set it is not a browser and has no cookie of anybody's.
+func (s *Server) originIsThisInstance(r *http.Request, origin string) bool {
+	o, err := url.Parse(origin)
+	if err != nil || o.Host == "" {
+		return false
+	}
+	for _, v := range r.Header.Values("X-Forwarded-Host") {
+		for _, h := range strings.Split(v, ",") {
+			if strings.EqualFold(strings.TrimSpace(h), o.Host) {
+				return true
+			}
+		}
+	}
+	if base := s.setting("public_base_url", ""); base != "" {
+		if b, err := url.Parse(strings.TrimSpace(base)); err == nil && b.Host != "" &&
+			strings.EqualFold(b.Host, o.Host) && strings.EqualFold(b.Scheme, o.Scheme) {
+			return true
+		}
+	}
+	return false
 }
 
 // crossOriginSocket is the same rule for a WebSocket handshake. The handshake
@@ -70,8 +126,8 @@ func crossOriginRefused(r *http.Request) bool {
 // changes nothing), but this GET opens a channel that reads and writes the
 // document. So it is judged as if it were a write: the same headers, the same
 // answer.
-func crossOriginSocket(r *http.Request) bool {
+func (s *Server) crossOriginSocket(r *http.Request) bool {
 	asWrite := *r
 	asWrite.Method = http.MethodPost
-	return crossOriginRefused(&asWrite)
+	return s.crossOriginRefused(&asWrite)
 }

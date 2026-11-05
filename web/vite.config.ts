@@ -30,8 +30,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': backend,
-      '/files': backend,
+      // xfwd: vite rewrites Host to the backend's (changeOrigin), and over
+      // plain HTTP from a LAN address the browser sends no Sec-Fetch-Site, so
+      // the server compares Origin with X-Forwarded-Host to know its own pages
+      // (server/crossorigin.go). Without it, every write from the dev server
+      // opened at e.g. 192.168.1.10:5173 is refused.
+      '/api': { target: backend, changeOrigin: true, xfwd: true },
+      '/files': { target: backend, changeOrigin: true, xfwd: true },
       // The Yjs relay lives outside /api; without ws:true the dev editor
       // never leaves its loading state (the socket dies at the vite server).
       '/collab': { target: backend, ws: true },

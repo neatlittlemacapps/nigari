@@ -33,6 +33,10 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
       return t('Wrong email or wrong password.');
     case 'account_disabled':
       return t('This account has been deactivated. Talk to an admin.');
+    // Seen only when a proxy hides the address nigari was opened by
+    // (server/crossorigin.go); a page on another address never shows it.
+    case 'cross_origin':
+      return t("This request did not come from nigari's own page, so it was refused. Behind a proxy, pass on the address you opened nigari by (Host or X-Forwarded-Host).");
 
     // ---- a row made in a view (spec 005) ----
     case 'view_not_in_database':

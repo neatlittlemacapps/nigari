@@ -96,7 +96,7 @@ func TestRequestsWithTheirOwnCredentialAreNotJudgedByOrigin(t *testing.T) {
 
 	req := originRequest("POST", "/mcp", `{}`, "", foreign)
 	req.Header.Set("Authorization", "Bearer not-a-real-token")
-	if crossOriginRefused(req) {
+	if s.crossOriginRefused(req) {
 		t.Fatal("a request with an agent key was judged by origin")
 	}
 	for _, target := range []string{"/mcp/sometoken", "/oauth/token", "/oauth/register", "/oauth/revoke"} {
@@ -112,5 +112,65 @@ func TestRequestsWithTheirOwnCredentialAreNotJudgedByOrigin(t *testing.T) {
 	s.ServeHTTP(rec, originRequest("POST", "/mcp", `{}`, "", foreign))
 	if rec.Code != http.StatusForbidden || !strings.Contains(rec.Body.String(), `"cross_origin"`) {
 		t.Fatalf("POST /mcp without a key from another address: %d %s", rec.Code, rec.Body)
+	}
+}
+
+// Over plain HTTP browsers send no Sec-Fetch-Site, and the Origin is compared
+// with Host. Behind a proxy that rewrites Host, nigari's own pages must still
+// get through, and a page on another address must still not.
+func TestPlainHTTPBehindAProxyThatRewritesHost(t *testing.T) {
+	s := testServer(t)
+	_, cookie := signedIn(t, s, "proxy-origin@example.test")
+	send := func(origin string, headers map[string]string) bool {
+		req := originRequest("POST", "/api/pages", `{"title":"x"}`, cookie, headers)
+		req.Host = "127.0.0.1:8420" // what nginx sends upstream without proxy_set_header Host
+		if origin != "" {
+			req.Header.Set("Origin", origin)
+		}
+		return s.crossOriginRefused(req)
+	}
+	if send("http://nas.example.com", map[string]string{"X-Forwarded-Host": "nas.example.com"}) {
+		t.Error("own page through a Host-rewriting proxy that sets X-Forwarded-Host was refused")
+	}
+	if !send("http://nas.example.com", nil) {
+		t.Error("an Origin matching nothing this instance knows was let through")
+	}
+	if !send("http://other.example.com:3000", map[string]string{"X-Forwarded-Host": "nas.example.com"}) {
+		t.Error("another app's page was let through because a proxy named this instance")
+	}
+	// The browser's own word is never second-guessed.
+	if !send("http://nas.example.com", map[string]string{"X-Forwarded-Host": "nas.example.com", "Sec-Fetch-Site": "same-site"}) {
+		t.Error("Sec-Fetch-Site: same-site was overruled by X-Forwarded-Host")
+	}
+
+	s.setSetting("public_base_url", "https://nigari.example.com/")
+	if send("https://nigari.example.com", nil) {
+		t.Error("the configured public address was refused")
+	}
+	if !send("http://nigari.example.com", nil) {
+		t.Error("the public address over the other scheme was let through")
+	}
+}
+
+// Routes that act with nobody's sign-in pass whatever the origin: a shared
+// page's password form posts "Origin: null" (the page sets no-referrer), and
+// the desktop app trades its code from a process that belongs to no page.
+func TestAnonymousAndDesktopRoutesAreNotRefusedByOrigin(t *testing.T) {
+	s := testServer(t)
+	refused := func(target, origin string) bool {
+		rec := httptest.NewRecorder()
+		s.ServeHTTP(rec, originRequest("POST", target, `{}`, "", map[string]string{"Origin": origin}))
+		return strings.Contains(rec.Body.String(), `"cross_origin"`)
+	}
+	for _, target := range []string{"/public/sometoken", "/api/public/form/sometoken/submit"} {
+		if refused(target, "null") || refused(target, "http://elsewhere.example.com") {
+			t.Errorf("POST %s was refused by origin", target)
+		}
+	}
+	if refused("/api/desktop/exchange", "null") {
+		t.Error("the desktop app's exchange (Origin: null) was refused")
+	}
+	if !refused("/api/desktop/exchange", "http://elsewhere.example.com") {
+		t.Error("the desktop exchange posted from another page was let through")
 	}
 }

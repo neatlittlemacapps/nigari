@@ -426,7 +426,7 @@ func (s *Server) handleCollab(w http.ResponseWriter, r *http.Request) {
 	// (crossorigin.go), and not by the library: its own check compares Origin
 	// with Host only, which a reverse proxy that rewrites Host would break,
 	// and which ignores Sec-Fetch-Site. Before this, every origin was let in.
-	if crossOriginSocket(r) {
+	if s.crossOriginSocket(r) {
 		refuseCrossOrigin(w)
 		return
 	}
@@ -442,7 +442,7 @@ func (s *Server) handleCollab(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ws, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		InsecureSkipVerify: true, // judged at the top, by crossOriginSocket
+		InsecureSkipVerify: true, // judged at the top, by s.crossOriginSocket
 	})
 	if err != nil {
 		return

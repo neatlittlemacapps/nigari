@@ -14,9 +14,19 @@ Found while auditing nigari for Umbrel (owner's brief, 2026-11-05).
 **Decision 1**: every non-GET request carrying a sign-in cookie, and the
 live-editing WebSocket, must come from one of nigari's own pages
 (`server/crossorigin.go`, Go's `http.CrossOriginProtection`: `Sec-Fetch-Site`,
-else `Origin` against `Host`). Requests with an agent key, and the machine
-endpoints that carry their own credential (`/mcp/{token}`, `/oauth/token`,
-`/oauth/register`, `/oauth/revoke`), are not judged by origin.
+else `Origin` against `Host`, and then against `X-Forwarded-Host` or the
+configured public address, for proxies that rewrite `Host`). Requests with an
+agent key, the machine endpoints that carry their own credential
+(`/mcp/{token}`, `/oauth/token`, `/oauth/register`, `/oauth/revoke`), the two
+anonymous public routes (a shared page's password, a public form), and the
+desktop app's code exchange arriving with no Origin or `null` are not judged
+by origin.
+
+Browsers send `Sec-Fetch-Site` only over HTTPS and to localhost (found by
+`/code-review`), so on a plain-HTTP LAN install, Umbrel's included, the
+`Origin` comparison does the work. That is why `X-Forwarded-Host` counts: a
+page on another address cannot add that header without a CORS preflight,
+which nigari never grants.
 
 **Why:** the session cookie is SameSite=Lax, and "same site" ignores ports and
 subdomains. On a home server with several apps (Umbrel serves each on its own
@@ -27,15 +37,18 @@ the page, because the socket took every origin. Measured: before the change, a
 `PUT /api/me/prefs` with `Sec-Fetch-Site: same-site` answered 200.
 
 **Turned down:** (a) the WebSocket library's own origin check: it compares
-`Origin` with `Host` only, which a proxy that rewrites `Host` breaks, so live
-editing would stop for such setups; (b) a CSRF token in every form and fetch:
+`Origin` with `Host` only, so the socket would not get the
+`X-Forwarded-Host` fallback the writes get; (b) a CSRF token in every form and fetch:
 far more code for what the browser already says; (c) a list of allowed origins
 the admin keeps: nothing to configure is better, and the browser knows the
 page's origin exactly; (d) waiting: the hole is real on every multi-app host.
 
 **Decision 2**: `NIGARI_TRUST_PROXY=1` does what the admin checkbox "Run behind
 a reverse proxy" does, for installs that always have a proxy in front. The
-admin's choice wins both ways; unticking now stores `"0"` so that it can.
+admin's choice wins both ways; unticking now stores `"0"` so that it can, the
+dialog writes the setting only when the checkbox changed (it shows the
+variable's value, and saving the mail settings must not freeze it), and the
+tunnel switches it on only when nobody has chosen.
 
 **Why:** behind Umbrel's proxy every visitor otherwise arrives with the
 proxy's address and shares one login rate limit until somebody ticks a box

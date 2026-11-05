@@ -278,7 +278,11 @@ func (s *Server) handlePutSettings(w http.ResponseWriter, r *http.Request) {
 	set("smtp_user", body.SMTPUser)
 	set("smtp_from", body.SMTPFrom)
 	set("public_base_url", body.PublicBaseURL)
-	if body.TrustProxy != nil {
+	// Written only when it changes: the dialog sends every field on every
+	// save, showing trustProxy() (the variable included), so writing it back
+	// regardless would freeze whatever the variable said on the day somebody
+	// saved the mail settings, and the variable would never count again.
+	if body.TrustProxy != nil && *body.TrustProxy != s.trustProxy() {
 		// "0", not "": an explicit off has to outrank NIGARI_TRUST_PROXY
 		// (trustProxy), and "" means "never chosen".
 		v := "0"
