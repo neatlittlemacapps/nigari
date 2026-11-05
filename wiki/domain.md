@@ -294,7 +294,8 @@ for nothing unusual, but four things have to be right.
    proxy before nigari ever sees them.
 
 Then tick **`Run behind a reverse proxy (trust X-Forwarded-For)`** on the
-`Domain & proxy` tab **and press `Save`**. The tunnel buttons on that tab act the
+`Domain & proxy` tab **and press `Save`** (or start nigari with
+`NIGARI_TRUST_PROXY=1`; see [Self-hosting](self-hosting.md#configuration)). The tunnel buttons on that tab act the
 moment you press them; this checkbox does not. It is part of the dialog and
 reaches the server only when the dialog is saved: tick it, close the dialog, and
 nothing has changed.
@@ -318,6 +319,18 @@ the real IP module, told which addresses belong to the outer proxy), or every
 visitor arrives as the outer proxy. The hint under
 the checkbox also mentions the audit log; that is the one place an address never
 goes. The activity log records who did what, never from where.
+
+**Other apps beside nigari.** Browsers treat every app on one host as the same
+site, whatever its port (`umbrel.local:8420` and `umbrel.local:3000`), and every
+app under one domain the same way (`nigari.example.com` and
+`blog.example.com`). So a page of another app is allowed to send nigari's
+sign-in cookie along. nigari therefore accepts a change, and the live-editing
+connection, only from its own pages: the browser says where a request comes
+from (`Sec-Fetch-Site`, or `Origin` in an older browser), and anything from
+another address is refused with `"code": "cross_origin"`. Agents, scripts and
+MCP clients are not browsers and are not affected. A proxy that rewrites the
+`Host` header is not either, with any browser from 2023 on: those send
+`Sec-Fetch-Site`, and the browser's own word is what counts.
 
 **Bind the instance to loopback while you are at it.** With a proxy in front,
 nothing needs to reach the port from outside: `NIGARI_ADDR=127.0.0.1:8420` makes
