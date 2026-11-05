@@ -78,6 +78,16 @@ func (s *Server) auditViewChanges(actorType string, u *user, colID, ws string, b
 		diff := map[string]propChange{}
 		for _, k := range viewAuditKeys {
 			from, to := rawJSON(prev[k]), rawJSON(v[k])
+			if k == "filters" {
+				// Compared in the shape checkViewFilter stores: the browser
+				// writes value: "" on a filter an older view stored without
+				// one (normalizeCollectionConfig), and that respelling is
+				// not a change anybody made (conductor review).
+				if !jsonEqual(string(filtersForAudit(prev[k])), string(filtersForAudit(v[k]))) {
+					diff[k] = propChange{From: from, To: to}
+				}
+				continue
+			}
 			if !jsonEqual(string(from), string(to)) {
 				diff[k] = propChange{From: from, To: to}
 			}
@@ -112,6 +122,23 @@ func rawJSON(v any) json.RawMessage {
 		return json.RawMessage("null")
 	}
 	return b
+}
+
+// filtersForAudit is a view's filters with each condition's value written
+// even when empty, the shape checkViewFilter stores and the browser sends,
+// so a filter with no value key and one with value "" compare equal.
+func filtersForAudit(v any) json.RawMessage {
+	b := rawJSON(v)
+	var fs []map[string]any
+	if json.Unmarshal(b, &fs) != nil {
+		return b
+	}
+	for _, f := range fs {
+		if _, ok := f["value"]; !ok {
+			f["value"] = ""
+		}
+	}
+	return rawJSON(fs)
 }
 
 func changesJSON(diff map[string]propChange) string {

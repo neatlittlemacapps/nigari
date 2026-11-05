@@ -1312,5 +1312,6 @@
   "View renamed": "Ansicht umbenannt",
   "Views locked": "Ansichten gesperrt",
   "Views locked by {name}": "Ansichten gesperrt von {name}",
-  "Views unlocked by {name}": "Ansichten entsperrt von {name}"
+  "Views unlocked by {name}": "Ansichten entsperrt von {name}",
+  "The view “{view}” uses “{property}”, and the views are locked. Unlock them to remove the property.": "Die Ansicht „{view}“ verwendet „{property}“, und die Ansichten sind gesperrt. Entsperre sie, um die Eigenschaft zu entfernen."
 }

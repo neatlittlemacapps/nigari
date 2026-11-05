@@ -154,3 +154,31 @@ func TestViewChangesAreLoggedForAgents(t *testing.T) {
 	call("set_view", `{`+p+`,"view_id":"t","hidden":["system"],"column_order":["due"],"open_in":"side_peek"}`, "")
 	call("delete_view", `{`+p+`,"view_id":"b"}`, "view.delete/agent")
 }
+
+// Conductor review, item 3: a filter an older view stored without a value
+// and the same filter with value "" (the browser's normalizeCollectionConfig
+// writes it) are the same filter. A save that only adds the empty value,
+// beside a column width, logs nothing.
+func TestAFilterGainingAnEmptyValueIsNotAChange(t *testing.T) {
+	f := newLockFixture(t)
+	if _, err := f.s.db.Exec(`UPDATE collections SET views = ? WHERE page_id = ?`,
+		`[{"id":"t","name":"Table","type":"table","filters":[{"property":"due","op":"is_empty"}]}]`, f.col); err != nil {
+		t.Fatal(err)
+	}
+	mark := lastAuditID(t, f.s)
+	if rec := requestAs(t, f.s, f.cookie, "PUT", "/api/collections/"+f.col,
+		`{"views":[{"id":"t","name":"Table","type":"table","filters":[{"property":"due","op":"is_empty","value":""}],"colWidths":{"__title":300}}]}`); rec.Code != 200 {
+		t.Fatalf("%d %s", rec.Code, rec.Body.String())
+	}
+	if got := viewLog(t, f.s, f.col, mark); len(got) != 0 {
+		t.Errorf("respelling an empty filter value logged %q", actionsOf(got))
+	}
+	// A real change to the same filter is still logged.
+	if rec := requestAs(t, f.s, f.cookie, "PUT", "/api/collections/"+f.col,
+		`{"views":[{"id":"t","name":"Table","type":"table","filters":[{"property":"due","op":"is_not_empty","value":""}]}]}`); rec.Code != 200 {
+		t.Fatal(rec.Code)
+	}
+	if got := viewLog(t, f.s, f.col, mark); actionsOf(got) != "view.update/human" {
+		t.Errorf("a changed filter op logged %q", actionsOf(got))
+	}
+}

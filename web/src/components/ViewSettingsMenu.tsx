@@ -172,16 +172,16 @@ export default function ViewSettingsMenu({
               <MenuSubmenu fn="timelineDates" label={t('End date')} value={nameOf(view.endDateProp, dateProps) ?? t('No end date')}>
                 {propRadio(view.endDateProp, dateProps, (id) => onChange({ endDateProp: id }), t('No end date'))}
               </MenuSubmenu>
-        </>
-      )}
-      {view.type === 'table' && selfRelProps.length > 0 && (
-        <MenuSubmenu fn="subItems" label={t('Sub-items')} value={nameOf(view.subItemProp, selfRelProps) ?? t('No sub-items')}>
-          {propRadio(view.subItemProp, selfRelProps, (id) => onChange({ subItemProp: id }), t('No sub-items'))}
-        </MenuSubmenu>
-      )}
-      {views.length > 1 && <MenuSeparator />}
-      <ViewActionItems view={view} views={views} onRename={onRename} onMove={onMove} onRemove={onRemove} rename={false} />
-      <MenuSeparator />
+            </>
+          )}
+          {view.type === 'table' && selfRelProps.length > 0 && (
+            <MenuSubmenu fn="subItems" label={t('Sub-items')} value={nameOf(view.subItemProp, selfRelProps) ?? t('No sub-items')}>
+              {propRadio(view.subItemProp, selfRelProps, (id) => onChange({ subItemProp: id }), t('No sub-items'))}
+            </MenuSubmenu>
+          )}
+          {views.length > 1 && <MenuSeparator />}
+          <ViewActionItems view={view} views={views} onRename={onRename} onMove={onMove} onRemove={onRemove} rename={false} />
+          <MenuSeparator />
         </>
       )}
       <MenuLabel>{t('Database settings')}</MenuLabel>

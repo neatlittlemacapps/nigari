@@ -714,7 +714,9 @@ are not copied.
 When a database's views are set up the way the team wants them, **Settings** →
 **Lock views** protects them from accidental changes. Anyone who can edit the
 database can lock and unlock; the lock is for everybody, on every view of that
-database, until somebody unlocks it.
+database, until somebody unlocks it. Locking views that are already
+locked keeps the first lock, its person and time; neither that nor unlocking
+unlocked views adds anything to the activity log.
 
 While the views are locked:
 
@@ -731,11 +733,13 @@ While the views are locked:
   else, is planned (spec 013) and not built yet.
 - Rows work as before: new rows, edits, moving a card between columns.
 - The schema is not locked: **Edit properties** still adds, renames, changes
-  and removes properties. The views are left exactly as they are: a view that
-  filtered, sorted or grouped by a removed property keeps that setting (the
-  values stay in the rows), as it does when an agent removes a property with
-  `update_schema`. Unlocked, saving **Edit properties** tidies such views as it
-  always has.
+  and removes properties, and the views are left exactly as they are. The one
+  exception is removing a property a view filters, sorts or groups by (or a
+  calendar, timeline or chart is built on): that would change the view, so it
+  is refused with *The view “Board” uses “Status”, and the views are locked*,
+  and the dialog stays open with your edits. Unlock first, or remove the
+  property from that view. The same rule holds for an agent's
+  `update_schema`.
 - In a document, the database's own filter and sort controls stay: an
   embedded database's filters and sort belong to the document, not to the
   views, and the lock does not cover them.

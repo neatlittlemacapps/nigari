@@ -305,6 +305,7 @@ func (s *Server) mcpUpdateSchema(pageID string, props json.RawMessage, remove []
 	}
 
 	removed := []string{}
+	removedNames := map[string]string{}
 	if len(remove) > 0 {
 		keep := schema[:0]
 		for _, p := range schema {
@@ -317,11 +318,17 @@ func (s *Server) mcpUpdateSchema(pageID string, props json.RawMessage, remove []
 			}
 			if drop {
 				removed = append(removed, str(p, "id"))
+				removedNames[str(p, "id")] = str(p, "name")
 			} else {
 				keep = append(keep, p)
 			}
 		}
 		schema = keep
+	}
+	// The rule PUT /api/collections applies: a property a locked view uses
+	// stays (spec 013, checkLockedViewsKeepProperties).
+	if err := s.checkLockedViewsKeepProperties(pageID, removedNames, views); err != nil {
+		return "", err
 	}
 	if len(added)+len(changed)+len(removed) == 0 {
 		return "", fmt.Errorf("nothing to do: pass properties to add/change or remove_properties")

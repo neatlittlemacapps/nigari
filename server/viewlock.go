@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -112,8 +113,13 @@ func (s *Server) checkViewsUnlocked(colID string, before, after []byte) error {
 // people who may change the views may lock them; a reader may not.
 //
 // Both answer the lock as it now stands, so the interface shows the stored
-// state. Locking an already locked database records the new person and time
-// (the last one wins, spec edge case); both are in the activity log.
+// state. Locking a locked database or unlocking an unlocked one changes
+// nothing and logs nothing (conductor review): the first lock keeps its
+// person and time, and the log does not say "Views unlocked" twice in a row.
+// The spec's edge case, two people locking and unlocking at the same moment,
+// still ends with the last one winning and both in the log, since each of
+// those changes the state. The condition sits in the UPDATE itself, so two
+// such requests cannot both pass a read and both write.
 func (s *Server) handleLockViews(w http.ResponseWriter, r *http.Request) {
 	s.setViewsLock(w, r, true)
 }
@@ -133,20 +139,148 @@ func (s *Server) setViewsLock(w http.ResponseWriter, r *http.Request, lock bool)
 	if lock {
 		by, at, action = u.ID, now(), "views.lock"
 	}
-	res, err := s.db.Exec(`UPDATE collections SET views_locked_by = ?, views_locked_at = ? WHERE page_id = ?`, by, at, id)
+	// Only from the other state: unlocked to locked, or locked to unlocked.
+	from := `views_locked_by = ''`
+	if !lock {
+		from = `views_locked_by <> ''`
+	}
+	res, err := s.db.Exec(`UPDATE collections SET views_locked_by = ?, views_locked_at = ? WHERE page_id = ? AND `+from, by, at, id)
 	if err != nil {
 		httpError(w, 500, err.Error())
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
-		httpError(w, 404, "not a collection")
+		var exists int
+		if s.db.QueryRow(`SELECT COUNT(*) FROM collections WHERE page_id = ?`, id).Scan(&exists); exists == 0 {
+			httpError(w, 404, "not a collection")
+			return
+		}
+		// Already in the asked state: nothing to write, nothing to log.
+		writeJSON(w, map[string]any{"viewsLocked": s.viewsLock(id)})
 		return
 	}
 	s.audit("human", u.ID, u.Name, action, id, s.pageWorkspace(id), s.pageTitle(id))
 	// Open views of this database redraw with the lock (or without it): the
-	// same signal a views save sends.
+	// same signal a views save sends. It reloads their rows as well, which a
+	// lock does not need; a config-only signal would be a new event type and
+	// a change to the browser's event handling (App.tsx), left for its own
+	// change (conductor review).
 	s.rowsChanged(id)
 	writeJSON(w, map[string]any{"viewsLocked": s.viewsLock(id)})
+}
+
+// errPropertyInLockedView refuses removing a property that a locked view
+// uses (conductor review, option b). The lock covers the views and not the
+// schema, but removing a property a view filters, sorts or groups by
+// changes what that view does: it used to leave the view pointing at
+// nothing, an agent's set_view on that board then failed "no longer a
+// property", and nothing tidied it after unlocking. REST answers 409
+// property_in_locked_view with the property and the view, so the browser
+// can say which.
+//
+// Turned down (option a): letting a views change through the lock when it
+// only removes references to properties the same request deletes. It would
+// be a hole in the lock that one function must judge right forever; a
+// refusal with a sentence costs a person one unlock.
+type errPropertyInLockedView struct{ Property, View string }
+
+func (e errPropertyInLockedView) Error() string {
+	return fmt.Sprintf("%q is used by the view %q, and this database's views are locked; unlock them to remove it", e.Property, e.View)
+}
+
+// viewPropertyRefs are the properties a view uses for what it shows: its
+// filters, sort, grouping, dates, a chart's totals, a table's sub-items.
+// Layout (hidden, colOrder, colWidths) is left out: a stale id there changes
+// nothing, and the server already drops one from colOrder.
+func viewPropertyRefs(v map[string]any) []string {
+	var out []string
+	str := func(k string) {
+		if s, _ := v[k].(string); s != "" {
+			out = append(out, s)
+		}
+	}
+	for _, k := range []string{"groupBy", "subGroupBy", "dateProp", "endDateProp", "aggProp", "subItemProp"} {
+		str(k)
+	}
+	if fs, ok := v["filters"].([]any); ok {
+		for _, f := range fs {
+			if m, ok := f.(map[string]any); ok {
+				if p, _ := m["property"].(string); p != "" {
+					out = append(out, p)
+				}
+			}
+		}
+	}
+	if fs, ok := v["filters"].([]map[string]any); ok {
+		for _, m := range fs {
+			if p, _ := m["property"].(string); p != "" {
+				out = append(out, p)
+			}
+		}
+	}
+	if srt, ok := v["sort"].(map[string]any); ok {
+		if p, _ := srt["property"].(string); p != "" {
+			out = append(out, p)
+		}
+	}
+	if qs, ok := v["quickFilters"].([]any); ok {
+		for _, q := range qs {
+			if p, _ := q.(string); p != "" {
+				out = append(out, p)
+			}
+		}
+	}
+	return out
+}
+
+// checkLockedViewsKeepProperties refuses removing a property a locked view
+// uses: removed maps each removed property id to its name, views are the
+// views as they will be stored. Called by both doors that remove properties,
+// PUT /api/collections (a schema half) and MCP update_schema. A lock that
+// cannot be read refuses, as checkViewsUnlocked does.
+func (s *Server) checkLockedViewsKeepProperties(colID string, removed map[string]string, views []map[string]any) error {
+	if len(removed) == 0 {
+		return nil
+	}
+	lock, err := s.readViewsLock(colID)
+	if err != nil {
+		return errViewsLocked
+	}
+	if lock == nil {
+		return nil
+	}
+	for _, v := range views {
+		for _, p := range viewPropertyRefs(v) {
+			if name, gone := removed[p]; gone {
+				if name == "" {
+					name = p
+				}
+				view, _ := v["name"].(string)
+				return errPropertyInLockedView{Property: name, View: view}
+			}
+		}
+	}
+	return nil
+}
+
+// removedProperties is the properties in before that after no longer has,
+// by id, with their names.
+func removedProperties(before, after []map[string]any) map[string]string {
+	keep := map[string]bool{}
+	for _, p := range after {
+		if id, _ := p["id"].(string); id != "" {
+			keep[id] = true
+		}
+	}
+	out := map[string]string{}
+	for _, p := range before {
+		id, _ := p["id"].(string)
+		if id != "" && !keep[id] {
+			name, _ := p["name"].(string)
+			out[id] = name
+		}
+	}
+	return out
 }
 
 // marshalViews is views as JSON for checkViewsUnlocked, from the parsed form

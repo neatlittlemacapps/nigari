@@ -1312,5 +1312,6 @@
   "View renamed": "Vista renombrada",
   "Views locked": "Vistas bloqueadas",
   "Views locked by {name}": "Vistas bloqueadas por {name}",
-  "Views unlocked by {name}": "Vistas desbloqueadas por {name}"
+  "Views unlocked by {name}": "Vistas desbloqueadas por {name}",
+  "The view “{view}” uses “{property}”, and the views are locked. Unlock them to remove the property.": "La vista «{view}» usa «{property}» y las vistas están bloqueadas. Desbloquéalas para eliminar la propiedad."
 }

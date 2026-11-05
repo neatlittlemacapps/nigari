@@ -115,6 +115,27 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 		body.Views = views
 		_ = json.Unmarshal(views, &savedViews)
 	}
+	// A property a locked view uses cannot be removed (spec 013, conductor
+	// review): the views it would leave are the stored ones, since a locked
+	// save cannot change them.
+	if hasSchema {
+		storedSchema, views, _ := s.loadCollection(id)
+		if hasViews {
+			views = savedViews
+		}
+		var next []map[string]any
+		if json.Unmarshal(body.Schema, &next) == nil {
+			var used errPropertyInLockedView
+			switch err := s.checkLockedViewsKeepProperties(id, removedProperties(storedSchema, next), views); {
+			case errors.As(err, &used):
+				httpErrorData(w, 409, "property_in_locked_view", err.Error(), map[string]any{"property": used.Property, "view": used.View})
+				return
+			case err != nil:
+				httpErrorCode(w, 409, "views_locked", err.Error())
+				return
+			}
+		}
+	}
 	var exists int
 	if err := s.db.QueryRow(`SELECT COUNT(*) FROM pages WHERE id = ?`, id).Scan(&exists); err != nil || exists == 0 {
 		httpError(w, 404, "page not found")

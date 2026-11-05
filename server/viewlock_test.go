@@ -263,3 +263,85 @@ func TestViewLockReviewFindings(t *testing.T) {
 		t.Errorf("an unreadable lock let a change through: %v", err)
 	}
 }
+
+// Conductor review, item 1 (option b): while the views are locked, a
+// property a view uses for what it shows cannot be removed, through either
+// door; the refusal names the property and the view. It used to be removed
+// and leave the view pointing at nothing, and an agent's set_view on that
+// board then failed. A property no view uses still goes, and unlocked the
+// same removal goes through.
+func TestALockedViewKeepsItsProperties(t *testing.T) {
+	f := newLockFixture(t)
+	f.lock(t)
+	// The board groups by status; "system" is used by no view.
+	rec := requestAs(t, f.s, f.cookie, "PUT", "/api/collections/"+f.col,
+		`{"schema":[{"id":"system","name":"System","type":"text"},{"id":"due","name":"Due","type":"date"}]}`)
+	if rec.Code != 409 || !strings.Contains(rec.Body.String(), `"code":"property_in_locked_view"`) ||
+		!strings.Contains(rec.Body.String(), `"property":"Status"`) || !strings.Contains(rec.Body.String(), `"view":"Board"`) {
+		t.Errorf("REST removing a property the board groups by: %d %s", rec.Code, rec.Body.String())
+	}
+	if _, err := callTool(t, f.s, f.agent, "update_schema", `{"page_id":"`+f.col+`","remove_properties":["status"]}`); err == nil ||
+		!strings.Contains(err.Error(), `"Status" is used by the view "Board"`) {
+		t.Errorf("update_schema removing a property the board groups by: %v", err)
+	}
+	if schema, _, _ := f.s.loadCollection(f.col); len(schema) != 3 {
+		t.Errorf("a refused removal changed the schema: %v", schema)
+	}
+	// A filter counts, as a grouping does: a table filtered on due.
+	if _, err := f.s.db.Exec(`UPDATE collections SET views = ? WHERE page_id = ?`,
+		`[{"id":"t","name":"Table","type":"table","filters":[{"property":"due","op":"is_empty","value":""}]},{"id":"b","name":"Board","type":"board","groupBy":"status"}]`, f.col); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := callTool(t, f.s, f.agent, "update_schema", `{"page_id":"`+f.col+`","remove_properties":["due"]}`); err == nil ||
+		!strings.Contains(err.Error(), `"Due" is used by the view "Table"`) {
+		t.Errorf("update_schema removing a property a filter uses: %v", err)
+	}
+	// Unused: goes, on both doors.
+	if rec := requestAs(t, f.s, f.cookie, "PUT", "/api/collections/"+f.col,
+		`{"schema":[{"id":"status","name":"Status","type":"select"},{"id":"due","name":"Due","type":"date"}]}`); rec.Code != 200 {
+		t.Errorf("REST removing an unused property while locked: %d %s", rec.Code, rec.Body.String())
+	}
+	// Unlocked: the same removal goes.
+	if rec := requestAs(t, f.s, f.cookie, "DELETE", "/api/collections/"+f.col+"/lock", ""); rec.Code != 200 {
+		t.Fatal(rec.Code)
+	}
+	if _, err := callTool(t, f.s, f.agent, "update_schema", `{"page_id":"`+f.col+`","remove_properties":["status"]}`); err != nil {
+		t.Errorf("update_schema unlocked: %v", err)
+	}
+}
+
+// Conductor review, item 4: locking a locked database and unlocking an
+// unlocked one change nothing and log nothing; the first lock keeps its
+// person and time.
+func TestLockingTwiceLogsOnce(t *testing.T) {
+	f := newLockFixture(t)
+	f.lock(t)
+	first := f.s.viewsLock(f.col)
+	_, otherCookie := signedIn(t, f.s, "second-locker@example.test")
+	if _, err := f.s.db.Exec(`INSERT INTO workspace_members (workspace_id, user_id, role) SELECT ?, id, 'member' FROM users WHERE email = 'second-locker@example.test'`, f.ws); err != nil {
+		t.Fatal(err)
+	}
+	path := "/api/collections/" + f.col + "/lock"
+	if rec := requestAs(t, f.s, otherCookie, "PUT", path, ""); rec.Code != 200 {
+		t.Fatalf("second lock: %d %s", rec.Code, rec.Body.String())
+	}
+	if l := f.s.viewsLock(f.col); l == nil || l.By != first.By || l.At != first.At {
+		t.Errorf("a second lock replaced the first: %+v, was %+v", l, first)
+	}
+	for i := 0; i < 2; i++ {
+		if rec := requestAs(t, f.s, f.cookie, "DELETE", path, ""); rec.Code != 200 || !strings.Contains(rec.Body.String(), `"viewsLocked":null`) {
+			t.Fatalf("unlock %d: %d %s", i, rec.Code, rec.Body.String())
+		}
+	}
+	var log []string
+	rows, _ := f.s.db.Query(`SELECT action FROM audit_log WHERE action LIKE 'views.%' ORDER BY id`)
+	for rows.Next() {
+		var a string
+		rows.Scan(&a)
+		log = append(log, a)
+	}
+	rows.Close()
+	if strings.Join(log, " ") != "views.lock views.unlock" {
+		t.Errorf("activity log %v, want one lock and one unlock", log)
+	}
+}

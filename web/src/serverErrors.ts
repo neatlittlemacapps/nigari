@@ -45,6 +45,11 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
     // ---- the views lock (spec 013) ----
     case 'views_locked':
       return t("This database's views are locked. Unlock them to change a view.");
+    case 'property_in_locked_view':
+      return t('The view “{view}” uses “{property}”, and the views are locked. Unlock them to remove the property.', {
+        view: String(data?.view ?? ''),
+        property: String(data?.property ?? ''),
+      });
 
     // ---- a table's column order (spec 012) ----
     case 'invalid_view_column_order':

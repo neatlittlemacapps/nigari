@@ -809,6 +809,13 @@ re-adding the property brings them back)`. Errors: `nothing to do: pass
 properties to add/change or remove_properties`; `unknown property type "x"`;
 `each property needs at least a name`.
 
+While a person has locked the database's views (`get_collection`'s
+`views_locked`), a property a view uses for what it shows (a filter, the sort,
+a grouping, a calendar's or timeline's dates, a chart's totals) cannot be
+removed: `"Status" is used by the view "Board", and this database's views are
+locked; unlock them to remove it`. Nothing is changed. Adding and changing
+properties, and removing ones no view uses, work as always.
+
 ### query_rows
 
 | Parameter | Type | Required |

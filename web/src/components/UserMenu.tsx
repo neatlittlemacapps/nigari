@@ -473,7 +473,10 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
         <div className="user-list">
           {entries
             .filter((e) => !onlyAgents || e.actorType === 'agent')
-            .map((e) => (
+            .map((e) => {
+            // Worked out once per row, not at each of its three uses.
+            const said = phrase(e);
+            return (
             <div key={e.id} className="user-row">
               <span className={'badge ' + (e.actorType === 'agent' ? 'agent-badge' : '')}>
                 {e.actorType === 'agent' ? (
@@ -486,8 +489,8 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
                 )}
               </span>
               <span className="user-row-name">
-                {phrase(e).text}
-                {phrase(e).comma && e.pageTitle ? ',' : ''}
+                {said.text}
+                {said.comma && e.pageTitle ? ',' : ''}
                 {/* The page by NAME, and clickable. The detail used to trail
                     off in a raw id — the difference between a log you can act on
                     and one you can only read. */}
@@ -506,7 +509,7 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
                     </a>
                   </>
                 ) : (
-                  e.detail && !phrase(e).namesDetail ? ` “${e.detail.slice(0, 60)}”` : ''
+                  e.detail && !said.namesDetail ? ` “${e.detail.slice(0, 60)}”` : ''
                 )}
               </span>
               {e.revertible && (
@@ -524,7 +527,8 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
                   further for anyone else. */}
               <span className="user-row-email">{formatMoment(e.createdAt, 'datetime')}</span>
             </div>
-          ))}
+            );
+          })}
           {entries.length === 0 && <div className="dialog-hint">{t('Nothing has happened yet.')}</div>}
           {!done && entries.length > 0 && (
             <button className="btn-sm" onClick={() => void loadMore()}>

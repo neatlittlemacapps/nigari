@@ -1312,5 +1312,6 @@
   "View renamed": "Naam van weergave gewijzigd",
   "Views locked": "Weergaven vergrendeld",
   "Views locked by {name}": "Weergaven vergrendeld door {name}",
-  "Views unlocked by {name}": "Weergaven ontgrendeld door {name}"
+  "Views unlocked by {name}": "Weergaven ontgrendeld door {name}",
+  "The view “{view}” uses “{property}”, and the views are locked. Unlock them to remove the property.": "De weergave “{view}” gebruikt “{property}” en de weergaven zijn vergrendeld. Ontgrendel ze om de eigenschap te verwijderen."
 }

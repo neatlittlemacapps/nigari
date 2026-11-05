@@ -84,23 +84,43 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
   await eventually(async () => (await api('GET', `${path}/rows`)).total === before + 1);
 
   // ---- The schema is not locked: Edit properties saves, the views stay as
-  // they are. Status is the table's filter and the board's grouping; removing
-  // it used to rewrite both views, the server refused the whole save, and the
-  // dialog closed with every edit in it lost (code review). ----
+  // they are. Labels is used by no view: it goes, and Notes comes. Status is
+  // the table's filter and the board's grouping: removing it while locked is
+  // refused with a sentence naming the view, and the dialog stays open with
+  // its edits (conductor review: it closed and lost them, and a removal that
+  // did go through left the views pointing at nothing). ----
   const viewsBefore = JSON.stringify((await api('GET', path)).views);
-  await openSettings();
-  await menu.getByRole('menuitem', { name: 'Edit properties' }).click();
-  await page.getByRole('heading', { name: 'Collection properties' }).waitFor();
   const propItems = page.locator('.schema-item');
   const propNames = () => propItems.locator('.schema-row > .prop-input').evaluateAll((inputs) => inputs.map((i) => i.value));
-  await propItems.nth((await propNames()).indexOf('Status')).locator('button[title="Delete property"]').click();
-  await page.locator('.confirm-dialog').getByRole('button', { name: 'Delete property', exact: true }).click();
+  const removeProp = async (name) => {
+    await propItems.nth((await propNames()).indexOf(name)).locator('button[title="Delete property"]').click();
+    await page.locator('.confirm-dialog').getByRole('button', { name: 'Delete property', exact: true }).click();
+  };
+  const heading = page.getByRole('heading', { name: 'Collection properties' });
+  await openSettings();
+  await menu.getByRole('menuitem', { name: 'Edit properties' }).click();
+  await heading.waitFor();
+  await removeProp('Labels');
   await page.getByPlaceholder('New property name', { exact: true }).fill('Notes');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await page.getByRole('heading', { name: 'Collection properties' }).waitFor({ state: 'hidden' });
-  await eventually(async () => (await api('GET', path)).schema.map((p) => p.name).join() === 'Labels,Notes');
+  await heading.waitFor({ state: 'hidden' });
+  await eventually(async () => (await api('GET', path)).schema.map((p) => p.name).join() === 'Status,Notes');
   assert.equal(JSON.stringify((await api('GET', path)).views), viewsBefore, 'Edit properties changed the locked views');
+
+  await openSettings();
+  await menu.getByRole('menuitem', { name: 'Edit properties' }).click();
+  await heading.waitFor();
+  await removeProp('Status');
+  await page.getByPlaceholder('New property name', { exact: true }).fill('Owner');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.locator('.toast', { hasText: 'The view “Table” uses “Status”, and the views are locked' }).waitFor();
+  assert(await heading.isVisible(), 'the dialog closed on a refused save');
+  assert.deepEqual(await propNames(), ['Notes', 'Owner'], 'the dialog lost its edits');
+  assert.equal((await api('GET', path)).schema.map((p) => p.name).join(), 'Status,Notes', 'a refused save changed the schema');
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await heading.waitFor({ state: 'hidden' });
 
   // ---- A second account who can edit: sees it, is refused by the server ----
   const password = randomUUID();
@@ -151,8 +171,12 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
 
   // ---- Unlock from Settings ----
   await openSettings();
+  // The unlock's own change event reloads the views about 400 ms later; a
+  // menu opened before that reload was left open by Escape (flaky here).
+  const reloaded = page.waitForResponse((r) => r.url().endsWith(path) && r.request().method() === 'GET');
   await menu.getByRole('menuitem', { name: 'Unlock views' }).click();
   await marker.waitFor({ state: 'detached' });
+  await reloaded;
   assert.equal((await api('GET', path)).viewsLocked, null);
   items = await menuItems();
   assert(items.includes('Rename view') && items.includes('Lock views'), `after unlocking: ${items}`);

@@ -77,7 +77,9 @@ export default function SchemaEditor({
    *  at one that `collections` (the pickable ones) leaves out. */
   titleOf?: (id: string) => string | undefined;
   collections?: { id: string; title: string }[];
-  onSave: (c: CollectionConfig) => Promise<void>;
+  /** Answers false when the save was refused: the dialog then stays open with
+   *  its edits (the refusal is said by the caller). */
+  onSave: (c: CollectionConfig) => Promise<boolean | void>;
   onClose: () => void;
 }) {
   const [schema, setSchema] = useState<PropDef[]>(config.schema);
@@ -263,7 +265,13 @@ export default function SchemaEditor({
     // take every property edit in the dialog down with it. A view that used a
     // removed property keeps the setting, as it does when an agent removes
     // one with update_schema.
-    await onSave({ schema: colored, views: config.viewsLocked ? config.views : fixedViews });
+    // A refused save keeps the dialog and every edit in it (conductor
+    // review): when the views were locked from elsewhere after this dialog
+    // opened, the save with tidied views is refused 409, the caller reloads
+    // the config, and Save again sends the schema alone (above). Closing here
+    // threw all of it away. The same for a property a locked view uses
+    // (property_in_locked_view): the sentence names the view.
+    if ((await onSave({ schema: colored, views: config.viewsLocked ? config.views : fixedViews })) === false) return;
     onClose();
   };
 

@@ -526,15 +526,18 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // copy of the schema back on every view change, and that copy is as old as
   // the tab: a property an agent or a colleague added meanwhile vanished again
   // the moment somebody here resized a column.
-  const saveConfig = async (next: CollectionConfig) => {
+  // Answers whether the save went through, so a dialog that saves (the schema
+  // editor) can stay open with its edits when it did not.
+  const saveConfig = async (next: CollectionConfig): Promise<boolean> => {
     const patch: Partial<CollectionConfig> = {};
     if (!config || next.schema !== config.schema) patch.schema = next.schema;
     if (!config || next.views !== config.views) patch.views = next.views;
     const before = config;
     setConfig(next);
-    if (!patch.schema && !patch.views) return;
+    if (!patch.schema && !patch.views) return true;
     try {
       await api.putCollection(collectionId, patch);
+      return true;
     } catch (e) {
       // A refused change (a reader's, or a chart setting the server cannot
       // draw) used to stay on screen as if saved, until the next reload
@@ -546,6 +549,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       // Somebody locked the views since this tab loaded them (spec 013): the
       // config is reloaded, so the lock shows and its controls go.
       if (e instanceof ApiError && e.code === 'views_locked') loadConfig();
+      return false;
     }
   };
 
