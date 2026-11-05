@@ -1,0 +1,6 @@
+# Umbrel community app store. Umbrel reads this file at the root of a Git
+# repository added under Settings → App Store → Community App Stores. This
+# folder is a draft of that repository: copy its contents to the root of a
+# repository of its own (README.md explains why).
+id: neatlittlemacapps
+name: neatlittlemacapps

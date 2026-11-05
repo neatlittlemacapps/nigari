@@ -1,0 +1,45 @@
+manifestVersion: 1
+id: neatlittlemacapps-nigari
+name: nigari
+tagline: Documents and databases, for people and their agents
+category: files
+version: "2.1.14"
+port: 8420
+description: >-
+  nigari is a workspace for documents and databases that you run yourself: pages
+  you write together in real time, databases with tables, boards, calendars,
+  timelines and charts, and an MCP endpoint so that AI agents can read and work
+  in the same workspace, with the same permissions as a person.
+
+
+  It is one program with one SQLite file. Everything it stores stays in this
+  app's data folder on your Umbrel.
+
+
+  First start: open nigari right after installing it and create your account.
+  The first account becomes the administrator, and until it exists, anyone on
+  your network who opens nigari first could create it. nigari has its own
+  accounts, so Umbrel's sign-in is not put in front of it: agents, the desktop
+  app, public share links and calendar feeds have to reach it without one.
+
+
+  To connect an agent, create an API token or use the MCP address shown in
+  nigari's settings. Both work over your local network, or over Tailscale when
+  you are away.
+developer: neatlittlemacapps
+website: https://github.com/neatlittlemacapps/nigari
+repo: https://github.com/neatlittlemacapps/nigari
+support: https://github.com/neatlittlemacapps/nigari/issues
+# TODO: nigari has no icon yet (issue #322). Umbrel shows a placeholder until
+# a square image URL is added here, for example:
+# icon: https://raw.githubusercontent.com/<store-repo>/main/neatlittlemacapps-nigari/icon.svg
+# TODO: real screenshots of nigari, taken from a running instance (1440x900).
+# None are invented here; Umbrel shows the app without a gallery until then.
+gallery: []
+releaseNotes: >-
+  See https://github.com/neatlittlemacapps/nigari/releases/tag/v2.1.14
+dependencies: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+submitter: neatlittlemacapps
