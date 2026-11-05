@@ -53,7 +53,7 @@ func (s *Server) handleAdminInfo(w http.ResponseWriter, r *http.Request) {
 		"uploadsSize": uploadsSize,
 		"dataDir":     s.dataDir,
 		"yourIp":      s.clientIP(r),
-		"trustProxy":  s.boolSetting("trust_proxy"),
+		"trustProxy":  s.trustProxy(),
 		"upgrade":     upgradeState(s.db, filepath.Join(s.dataDir, DBFile)),
 	})
 }

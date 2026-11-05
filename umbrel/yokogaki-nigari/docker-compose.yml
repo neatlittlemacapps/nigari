@@ -1,0 +1,38 @@
+version: "3.7"
+
+services:
+  # Umbrel's own proxy. It puts the app on the Umbrel host at the port in
+  # umbrel-app.yml and passes the browser's Host through unchanged, so links
+  # and the MCP sign-in addresses nigari builds name the address people use.
+  app_proxy:
+    environment:
+      APP_HOST: yokogaki-nigari_server_1
+      APP_PORT: 8420
+      # Off: nigari signs people in itself (accounts, 2FA, a rate limit), and
+      # MCP clients, the desktop app, public share links and calendar feeds
+      # reach it without an Umbrel session. With Umbrel's sign-in on, every one
+      # of those would be sent to Umbrel's login page. The cost is named in
+      # umbrel-app.yml: the first account is open until somebody creates it.
+      PROXY_AUTH_ADD: "false"
+
+  server:
+    # Pinned by digest: the tag can be moved, the digest cannot. Both chips
+    # Umbrel runs on are in this image index (linux/amd64, linux/arm64).
+    image: ghcr.io/neatlittlemacapps/nigari:2.1.14@sha256:30f51db57a3f3e08520b67297fad914940cc7095ea07a7528d0aa9374154ce47
+    # The image's own user, and the owner Umbrel gives the app's data folder.
+    user: "1000:1000"
+    restart: on-failure
+    stop_grace_period: 30s
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+    environment:
+      NIGARI_ADDR: ":8420"
+      NIGARI_DATA: "/data"
+      # Umbrel's proxy is always in front and writes X-Forwarded-For itself,
+      # one address, never passing on the caller's. Without this, every
+      # visitor shares the proxy's address and one login rate limit. Read from
+      # the release after 2.1.14; older images ignore it (see README.md).
+      NIGARI_TRUST_PROXY: "1"
+      # Updates come from the app store here, not from a download: the
+      # in-app "a new release is out" banner would point the wrong way.
+      NIGARI_UPDATE_CHECK: "0"

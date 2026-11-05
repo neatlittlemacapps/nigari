@@ -19,8 +19,9 @@ const (
 )
 
 // clientIP extracts the caller's IP. Proxy headers (X-Forwarded-For /
-// X-Real-Ip) are only honored when the admin enabled "trust_proxy" (running
-// behind Caddy/nginx/Cloudflare) — without a proxy those headers are
+// X-Real-Ip) are only honored when the admin enabled "trust_proxy" or set
+// NIGARI_TRUST_PROXY (see trustProxy), for running behind
+// Caddy/nginx/Cloudflare — without a proxy those headers are
 // client-controlled and would let an attacker rotate fake IPs past the login
 // rate limit.
 //
@@ -32,7 +33,7 @@ const (
 // password guess, or somebody else's, to use up that address's budget of wrong
 // tokens and lock its agents out.
 func (s *Server) clientIP(r *http.Request) string {
-	if s.boolSetting("trust_proxy") {
+	if s.trustProxy() {
 		if xff := r.Header.Values("X-Forwarded-For"); len(xff) > 0 {
 			last := xff[len(xff)-1]
 			if i := strings.LastIndexByte(last, ','); i >= 0 {
@@ -51,6 +52,30 @@ func (s *Server) clientIP(r *http.Request) string {
 		return r.RemoteAddr
 	}
 	return host
+}
+
+// trustProxy reports whether proxy headers are believed. The house order: the
+// admin's choice, then NIGARI_TRUST_PROXY, then off.
+//
+// The variable exists for installs that always sit behind a proxy they set up
+// themselves (a compose file with Caddy or Traefik in front, an app store such
+// as Umbrel's). Until the box was ticked by hand there, every visitor arrived
+// with the proxy's address, so everybody shared one login rate limit, and one
+// person guessing passwords throttled the rest. Off by default, and it must
+// stay so: without a proxy in front, the headers are the caller's own and
+// would let them pick a new address for every guess.
+//
+// Unticking the box stores "0", not "", so the admin's off outranks the
+// variable instead of falling through to it.
+func (s *Server) trustProxy() bool {
+	if v := s.setting("trust_proxy", ""); v != "" {
+		return v == "1"
+	}
+	switch strings.ToLower(Env("TRUST_PROXY")) {
+	case "1", "true", "on", "yes":
+		return true
+	}
+	return false
 }
 
 // proxiedIP reads one address as a proxy writes it: bare, or with a port, as

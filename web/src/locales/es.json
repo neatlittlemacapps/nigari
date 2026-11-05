@@ -795,6 +795,7 @@
   "These are workspaces nobody can look after any more. With no members left at all you can adopt or delete them. Where members remain, only someone in charge is missing. Appoint one of them in user management.": "Estos son espacios de trabajo que nadie puede administrar. Sin ningún miembro restante, puedes adoptarlos o eliminarlos. Donde aún quedan miembros, solo falta un responsable. Nombra a uno de ellos en la gestión de usuarios.",
   "This Google address is not verified.": "Esta dirección de Google no está verificada.",
   "This account has been deactivated. Talk to an admin.": "Esta cuenta ha sido desactivada. Contacta con un administrador.",
+  "This request did not come from nigari's own page, so it was refused. Behind a proxy, pass on the address you opened nigari by (Host or X-Forwarded-Host).": "Esta solicitud no vino de una página del propio nigari y se rechazó. Detrás de un proxy, este tiene que transmitir la dirección con la que abriste nigari (Host o X-Forwarded-Host).",
   "This action requires signing in through a browser. An API token is not enough.": "Esta acción requiere iniciar sesión mediante un navegador. Un token de API no es suficiente.",
   "This address belongs to an account that has not confirmed it. Please sign in with a password or contact your administrator.": "Esta dirección pertenece a una cuenta que no la ha confirmado. Por favor, inicia sesión con contraseña o contacta con el administrador.",
   "This address cannot create an account here.": "Esta dirección no puede crear una cuenta aquí.",

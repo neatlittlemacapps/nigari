@@ -1,0 +1,5 @@
+# Umbrel community app store. Umbrel reads this file at the root of the store's
+# repository, neatlittlemacapps/yokogaki-umbrel, added on an Umbrel under App
+# Store, Community App Stores. Drafted in neatlittlemacapps/nigari, umbrel/.
+id: yokogaki
+name: yokogaki

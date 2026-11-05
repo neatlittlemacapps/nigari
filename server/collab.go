@@ -422,6 +422,14 @@ func (h *collabHub) reset(pageID string) {
 }
 
 func (s *Server) handleCollab(w http.ResponseWriter, r *http.Request) {
+	// The origin is judged first, by the same rule as every write
+	// (crossorigin.go), and not by the library: its own check compares Origin
+	// with Host only, which a reverse proxy that rewrites Host would break,
+	// and which ignores Sec-Fetch-Site. Before this, every origin was let in.
+	if s.crossOriginSocket(r) {
+		refuseCrossOrigin(w)
+		return
+	}
 	pageID := r.PathValue("id")
 	if !s.canReadReq(r, pageID) {
 		httpError(w, 404, "page not found")
@@ -434,7 +442,7 @@ func (s *Server) handleCollab(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ws, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		InsecureSkipVerify: true, // LAN/self-host: origins vary (IP, hostname)
+		InsecureSkipVerify: true, // judged at the top, by s.crossOriginSocket
 	})
 	if err != nil {
 		return

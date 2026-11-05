@@ -773,6 +773,7 @@
   "These are workspaces nobody can look after any more. With no members left at all you can adopt or delete them. Where members remain, only someone in charge is missing. Appoint one of them in user management.": "Dit zijn werkruimten waar niemand meer voor kan zorgen. Zonder leden kun je ze overnemen of verwijderen. Waar nog leden zijn, ontbreekt alleen een verantwoordelijke. Wijs er een aan bij gebruikersbeheer.",
   "This Google address is not verified.": "Dit Google-adres is niet geverifieerd.",
   "This account has been deactivated. Talk to an admin.": "Dit account is gedeactiveerd. Neem contact op met een beheerder.",
+  "This request did not come from nigari's own page, so it was refused. Behind a proxy, pass on the address you opened nigari by (Host or X-Forwarded-Host).": "Dit verzoek kwam niet van een pagina van nigari zelf en is geweigerd. Achter een proxy moet die het adres doorgeven waarmee je nigari hebt geopend (Host of X-Forwarded-Host).",
   "This action requires signing in through a browser. An API token is not enough.": "Voor deze actie moet je je via een browser aanmelden. Een API-token is niet genoeg.",
   "This address belongs to an account that has not confirmed it. Please sign in with a password or contact your administrator.": "Dit adres hoort bij een account dat het niet heeft bevestigd. Meld je aan met een wachtwoord of neem contact op met je beheerder.",
   "This address cannot create an account here.": "Met dit adres kan hier geen account worden gemaakt.",

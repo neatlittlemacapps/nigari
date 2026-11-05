@@ -214,8 +214,12 @@ func (s *Server) StartTunnel(mode, token string) error {
 					log.Printf("tunnel: connected (%s)", mode)
 				}
 				// Behind Cloudflare the proxy headers are trustworthy — flip it
-				// on so rate limiting & audit see real client IPs.
-				s.setSetting("trust_proxy", "1")
+				// on so rate limiting & audit see real client IPs. Only when
+				// nobody chose: an admin's explicit off ("0") stays off, and a
+				// reconnect does not quietly undo it.
+				if s.setting("trust_proxy", "") == "" {
+					s.setSetting("trust_proxy", "1")
+				}
 			}
 			if strings.Contains(line, "Unauthorized") || strings.Contains(line, "invalid token") || strings.Contains(line, "failed to parse token") {
 				t.mu.Lock()

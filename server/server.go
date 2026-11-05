@@ -428,6 +428,12 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	expireOldCookies(w, r)
+	// Before any handler: a forged cross-site write never reaches one
+	// (crossorigin.go).
+	if s.crossOriginRefused(r) {
+		refuseCrossOrigin(w)
+		return
+	}
 	s.mux.ServeHTTP(w, r)
 }
 

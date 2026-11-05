@@ -136,6 +136,59 @@ To use the published image instead, uncomment the `image:` line and comment out
 `NIGARI_MEMORY_MB`, and the pair `NIGARI_TLS_CERT` / `NIGARI_TLS_KEY` for serving
 HTTPS directly; you supply the mount for the certificate files yourself.
 
+### Run on Umbrel
+
+Umbrel (umbrelOS) runs each app as a small Docker Compose
+project behind its own proxy, and installs apps from app stores: Git
+repositories it reads. nigari is not in Umbrel's official store. It comes from
+a **community app store** whose files live in this repository under
+[`umbrel/`](../umbrel/README.md), ready to be copied into a store repository of
+their own.
+
+**Install it:**
+
+1. On your Umbrel, open the **App Store**, then **Community App Stores**
+   (the ⋯ menu at the top right of the App Store; older versions have it under
+   Settings → App Store).
+2. Paste the store's address, `https://github.com/neatlittlemacapps/yokogaki-umbrel`, and press **Add**.
+3. Open the new store and install **nigari**.
+4. **Open nigari straight away and create your account.** The first account
+   becomes the administrator (see [First run](#first-run)), and until it exists,
+   anybody on your network who opens nigari first could create it.
+
+**What the store sets up, and why:**
+
+- **Umbrel's own sign-in is off** (`PROXY_AUTH_ADD: "false"`). nigari has its
+  own accounts, two-factor sign-in and rate limits, and much of what it is for
+  arrives without an Umbrel session: MCP clients on `/mcp`, the desktop app,
+  public share links, calendar feeds. With Umbrel's sign-in in front, each of
+  those would be sent to Umbrel's login page. The price is the open first run
+  in step 4.
+- **The image is pinned by digest**, for both Intel/AMD (`amd64`) and ARM
+  (`arm64`) machines. An update is a new store version with a new digest.
+- **`NIGARI_TRUST_PROXY=1`**: Umbrel's proxy is always in front and writes the
+  visitor's address itself ([Configuration](#configuration)).
+- **`NIGARI_UPDATE_CHECK=0`**: updates come from the store, so the
+  "a new release is out" banner would point the wrong way.
+- **Data** is in the app's data folder on the Umbrel (`/data` inside the
+  container): the database and the uploads. Umbrel's own backups of app data
+  include it; `nigari backup` works too, run inside the container.
+
+**Address.** nigari is reached at `umbrel.local:8420` (or the Umbrel's IP
+address and that port), over plain HTTP like every Umbrel app. Links nigari
+builds, the MCP address included, name whatever address you opened it by. From
+outside your home, use Umbrel's Tailscale app rather than opening the port; or
+see [Reaching it from outside](domain.md) for a domain and a certificate.
+
+**Other apps on the same Umbrel** share its address and differ only by port, so
+browsers treat them as one site. nigari refuses changes and live-editing
+connections that come from another app's page ([Reaching it from
+outside](domain.md#route-3-your-own-reverse-proxy), "Other apps beside
+nigari"). One thing no app can change: a browser sends a sign-in cookie to every
+port of the host it was set for, so the other apps' servers receive nigari's
+cookie with their own requests. Install only apps you trust beside it, as on any
+shared host.
+
 ### From source
 
 ```sh
@@ -253,6 +306,7 @@ Every variable carries the `NIGARI_` prefix. The prefix is not optional: a bare
 | `NIGARI_RESTORE_FORCE` | empty | any value lets `nigari restore` overwrite an existing database |
 | `NIGARI_IMPORT_ALLOW_PRIVATE` | empty | must be exactly `1`; lets the URL importer reach private addresses |
 | `NIGARI_UPDATE_CHECK` | empty | set to `0` to stop the daily check for a newer release |
+| `NIGARI_TRUST_PROXY` | empty | `1` or `true`: believe the proxy's `X-Forwarded-For`, as the admin checkbox does |
 
 Notes worth having before you hit them:
 
@@ -265,6 +319,15 @@ Notes worth having before you hit them:
   dialog shows the effective number in *Empty the trash automatically after
   (days, 0 = never)* and writes it as a setting when you press **Save**, after
   which the variable no longer has any effect.
+- **`NIGARI_TRUST_PROXY` is for an install that always has a proxy in front**:
+  a compose file with Caddy or Traefik, or an app store such as Umbrel's. It does
+  what **Run behind a reverse proxy (trust X-Forwarded-For)** does in the
+  Instance settings ([Reaching it from outside](domain.md#route-3-your-own-reverse-proxy)),
+  without anybody having to tick it after the install. It loses to the admin
+  setting: once somebody changes the checkbox and saves, the checkbox decides,
+  on or off. Saving the dialog for anything else leaves it to the variable. **Never set it without a proxy in front**: the headers are then written
+  by whoever is calling, and they could name a new address for every password
+  guess.
 - **`NIGARI_IMPORT_ALLOW_PRIVATE` opens a door that is shut on purpose.**
   Importing a page from a URL refuses every address that is not publicly
   routable: loopback, private ranges, link-local (which is where the cloud
