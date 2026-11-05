@@ -6,7 +6,7 @@ services:
   # and the MCP sign-in addresses nigari builds name the address people use.
   app_proxy:
     environment:
-      APP_HOST: neatlittlemacapps-nigari_server_1
+      APP_HOST: yokogaki-nigari_server_1
       APP_PORT: 8420
       # Off: nigari signs people in itself (accounts, 2FA, a rate limit), and
       # MCP clients, the desktop app, public share links and calendar feeds

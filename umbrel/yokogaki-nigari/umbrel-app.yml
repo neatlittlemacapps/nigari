@@ -1,5 +1,5 @@
 manifestVersion: 1
-id: neatlittlemacapps-nigari
+id: yokogaki-nigari
 name: nigari
 tagline: Documents and databases, for people and their agents
 category: files
@@ -32,7 +32,7 @@ repo: https://github.com/neatlittlemacapps/nigari
 support: https://github.com/neatlittlemacapps/nigari/issues
 # TODO: nigari has no icon yet (issue #322). Umbrel shows a placeholder until
 # a square image URL is added here, for example:
-# icon: https://raw.githubusercontent.com/<store-repo>/main/neatlittlemacapps-nigari/icon.svg
+# icon: https://raw.githubusercontent.com/neatlittlemacapps/yokogaki-umbrel/main/yokogaki-nigari/icon.svg
 # TODO: real screenshots of nigari, taken from a running instance (1440x900).
 # None are invented here; Umbrel shows the app without a gallery until then.
 gallery: []

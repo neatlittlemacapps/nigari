@@ -150,7 +150,7 @@ their own.
 1. On your Umbrel, open the **App Store**, then **Community App Stores**
    (the ⋯ menu at the top right of the App Store; older versions have it under
    Settings → App Store).
-2. Paste the address of the store repository and press **Add**.
+2. Paste the store's address, `https://github.com/neatlittlemacapps/yokogaki-umbrel`, and press **Add**.
 3. Open the new store and install **nigari**.
 4. **Open nigari straight away and create your account.** The first account
    becomes the administrator (see [First run](#first-run)), and until it exists,

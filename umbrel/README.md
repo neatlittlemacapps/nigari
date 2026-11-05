@@ -2,15 +2,14 @@
 
 These files are an [Umbrel](https://umbrel.com) community app store with one app,
 nigari. Umbrel adds a store by the address of a Git repository and reads
-`umbrel-app-store.yml` at that repository's root, so **this folder is meant to be
-the whole of a repository of its own**: copy its contents to the root of a new
-repository (for example `neatlittlemacapps/umbrel-apps`) and add that address
-on the Umbrel. It is kept here, beside the code, so a change to nigari and the
-store that runs it can be reviewed together.
+`umbrel-app-store.yml` at that repository's root, so **this folder is copied to
+the root of the store's own repository**, `neatlittlemacapps/yokogaki-umbrel`,
+whose address is what you add on the Umbrel. It is drafted here, beside the
+code, so a change to nigari and the store that runs it can be reviewed together.
 
 ```
 umbrel-app-store.yml                     the store: id and name
-neatlittlemacapps-nigari/
+yokogaki-nigari/
   umbrel-app.yml                         the app as the store lists it
   docker-compose.yml                     what Umbrel runs
   data/.gitkeep                          see "The data folder" below
@@ -36,9 +35,9 @@ How to install it, and why it is set up the way it is, is in the wiki:
   to pin, as `ghcr.io/neatlittlemacapps/nigari:<version>@sha256:<digest>`.
 - **Icon and screenshots are missing**, marked `TODO` in `umbrel-app.yml`.
   nigari has no icon yet (#322), and no screenshots were made up.
-- **The store id** `neatlittlemacapps` names the app folder and the app id
-  (`neatlittlemacapps-nigari`), and so the container `APP_HOST` points at.
-  Changing it means changing all three together.
+- **The store id** is `yokogaki` (the owner's choice, 2026-11-05). It names the
+  app folder, the app id (`yokogaki-nigari`) and the container `APP_HOST`
+  points at, together. Changing it means changing all three together.
 
 ## The data folder
 
