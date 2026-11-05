@@ -364,7 +364,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | v2.1.11 | #570 (spec 014 plan/tasks) | 2026-11-04 15:16:05 |
 | v2.1.12 | #573 (#524 delete-property confirmation) | 2026-11-04 16:59:45 |
 | v2.1.13 | #575 (#571 workspace empty state) | 2026-11-05 08:19:30 |
-| v2.1.14 (expected) | #576 (spec 013 PR 1 views lock) | Release run started 2026-11-05 17:02; CI green |
+| v2.1.14 | #576 (spec 013 PR 1 views lock) | 2026-11-05 17:05:09; Release run 42070584001 green (build + image jobs; image job sets up QEMU and buildx, so likely multi-arch, not verified) |
 - v2.0.5–v2.0.7 (#369 and the user's two release-notes edits) not checked individually. #376's release (expected v2.0.11) not checked.
 - Releases page: https://github.com/neatlittlemacapps/nigari/releases. Assets `nigari-<os>-<arch>` + `SHA256SUMS.txt`. Image `ghcr.io/neatlittlemacapps/nigari`. No desktop app published (#323).
 
@@ -411,13 +411,13 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Spec 014 plan + tasks | merged, v2.1.11 | PR #570 | build PR 2/3 after spec 013 PR 2 |
 | #524 delete-property confirmation (spec 014 PR 1) | merged, v2.1.12 | PR #573 | |
 | #571 workspace empty state | merged, v2.1.13 | PR #575 | |
-| Spec 013 PR 1 (views lock + log) | merged; release v2.1.14 running at handoff time | PR #576 | check the Release run finished |
+| Spec 013 PR 1 (views lock + log) | merged, v2.1.14 | PR #576 | |
 | Spec 013 PR 2/3, spec 014 PR 2/3 | not started | tasks.md | after Umbrel and the owner's go |
 | Umbrel packaging | not started | — | first job, section 11 |
 | Open PRs / running helpers | none | — | clean stop (rule 29) |
 
 ## 11. Next steps
-1. **Next action:** check that the v2.1.14 Release run (merge of #576, `e93f3ec`) finished green with its binaries, `SHA256SUMS.txt` and the image job. Then do the **Umbrel task** below, before anything else (owner, 2026-11-05). Its constraints (rule 28) mean: no commits, pushes, tags or PRs for it; leave the changes uncommitted for the owner.
+1. **Next action:** the **Umbrel task** below (v2.1.14 is out; its Release run's build and image jobs were green, asset list not checked), before anything else (owner, 2026-11-05). Its constraints (rule 28) mean: no commits, pushes, tags or PRs for it; leave the changes uncommitted for the owner.
 2. After Umbrel, write a new handoff that prepares "regular ongoing development of the rest on the board once I give a go" (owner). Board order then: spec 013 PR 2 (personal filters) → PR 3 → spec 014 PR 2/3; bugs by priority (#572, #574 and the older ones).
 
 **The owner's Umbrel brief, word for word (2026-11-05):**
