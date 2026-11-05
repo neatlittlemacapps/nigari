@@ -42,6 +42,7 @@ const PeekPanel = lazy(() => import('./components/PeekPanel'));
 import { dropPeek, peekFromLocation, peekOfEntry, pushPeek, type Peek } from './peekHistory';
 import type { PeekMode } from './peek';
 import { guardDrops } from './dropFiles';
+import { fallbackPage } from './pageFallback';
 
 /** Injected by the build; false everywhere except the website's framed demo. */
 declare const __NIGARI_DEMO__: boolean;
@@ -915,20 +916,11 @@ export default function App() {
       if (!cur || !cur.trashed) return; // in-tree-and-live, OR a row not in the tree → keep
       // else: the current page is trashed → fall through and pick another
     }
-    // Prefer a still-open tab over jumping into the tree, so closing/​trashing the
-    // active page lands on a neighbouring tab rather than the first page.
-    const openAlive = tabsRef.current.find((id) => {
-      const p = pages.find((pp) => pp.id === id);
-      return p && !p.trashed && id !== currentId;
-    });
-    if (openAlive) {
-      navigate(openAlive, true);
-      return;
-    }
-    const first =
-      pages.find((p) => !p.trashed && !p.parentId) ?? pages.find((p) => !p.trashed);
-    navigate(first ? first.id : null, true);
-  }, [pages, currentId, navigate]);
+    // A still-open tab of this workspace first, so closing/trashing the active
+    // page lands beside it; then the workspace's first page; else its empty
+    // state. Never another workspace's page (#571, pageFallback.ts).
+    navigate(fallbackPage(pages, currentWs, tabsRef.current, currentId), true);
+  }, [pages, currentId, currentWs, navigate]);
 
   const createPage = useCallback(
     async (parentId: string | null, type: 'doc' | 'collection' = 'doc') => {
@@ -1140,9 +1132,7 @@ export default function App() {
       setCurrentWs(id);
       const cur = currentId ? pagesById.get(currentId) : undefined;
       if (cur && cur.workspaceId === id) return;
-      const inWs = (p: PageMeta) => !p.trashed && p.workspaceId === id;
-      const first = pages?.find((p) => inWs(p) && !p.parentId) ?? pages?.find(inWs);
-      navigate(first ? first.id : null);
+      navigate(fallbackPage(pages ?? [], id));
     },
     [currentId, pages, pagesById, navigate],
   );

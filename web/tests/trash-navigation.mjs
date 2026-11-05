@@ -23,5 +23,17 @@ await withFixture(async ({ page, api, base, workspace, path }) => {
   await page.getByRole('button', { name: 'More actions', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Move to trash', exact: true }).click();
   await eventually(async () => page.url() === `${base}/p/${parent.id}`);
-  console.log('Trash navigation: collection rows and child documents return to their parent and remove the deleted tab.');
+
+  // #571: trashing the last page of a workspace shows that workspace's empty
+  // state, not a page of another workspace (this fixture's first workspace
+  // still has pages, and one of them is open in a tab).
+  const second = await api('POST', '/api/workspaces', { name: 'Second workspace' });
+  const only = await api('POST', '/api/pages', { title: 'Only page here', workspaceId: second.id });
+  await page.evaluate((id) => localStorage.setItem('nigari-ws', id), second.id);
+  await page.goto(`${base}/p/${only.id}`);
+  await page.getByRole('button', { name: 'More actions', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Move to trash', exact: true }).click();
+  await page.getByRole('heading', { name: 'No pages yet', exact: true }).waitFor();
+  assert.equal(new URL(page.url()).pathname.startsWith('/p/'), false, `still on a page: ${page.url()}`);
+  console.log('Trash navigation: collection rows and child documents return to their parent, the deleted tab goes, and the last page of a workspace leaves its empty state.');
 });
