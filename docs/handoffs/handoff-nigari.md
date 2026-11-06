@@ -1,6 +1,6 @@
 # active-memory handoff: nigari (formerly salt.md fork): agentic setup and feature roadmap
 
-**Handoff #17** · 2026-11-05 · Lineage:
+**Handoff #18** · 2026-11-06 · Lineage:
 - **#1 (2026-10-25):** agentic setup (rules, gate, Spec Kit, parity manifest); four feature branches merged; 25 issues; three specs.
 - **#2 (2026-10-26):** find-and-replace edits (#13, PR #48); specs 001/002 planned; #47 fixed; surfaces registry, board sync, ruleset (PR #49).
 - **#3 (2026-10-26):** board derives its columns (PR #74); spec 002 tasks (#50–#73); storage benchmarks; fixes #75, #76; Codespaces (PR #77).
@@ -18,13 +18,13 @@
 - **#15 (2026-11-02):** board Priority mirrored onto `priority:N` labels by the board-sync Action (PR #423 → v2.1.1); #269 empty values fixed (PR #424 → v2.1.2); #278 chart colours fixed (PR #425 → v2.1.3); epic #426 "database views" filed with 10 sub-issues; spec 012 spec + plan written; German-comment bug #427 found and fixed (PR #428, with spec 012 docs; release expected v2.1.4, not checked).
 - **#16 (2026-11-03):** spec 012 finished: PR 1 (#528 → v2.1.8) and PR 2 (#533 → v2.1.9), built by the helper stream, reviewed and audited by Claude; spec 013 docs merged (#523 → v2.1.10, after Claude resolved its `docs/decisions.md` conflict); owner's embed model (an embed owns its views) → **spec 014** written and clarified (`specs/014-embed-own-views/`, #371 under #426); bugs #524–#527, #532 filed (helper filed #529–#531).
 - **#17 (2026-11-04/05):** spec 014 planned + 36 tasks (#534–#569 under #371; docs PR #570 → v2.1.11); #524 delete-property confirmation (PR #573 → v2.1.12); #571 workspace empty state (PR #575 → v2.1.13); spec 013 PR 1 views lock + activity log, built by helper stream B, reviewed/audited by Claude (PR #576 → v2.1.14 expected); bugs #571, #572, #574 filed; owner's next task: **Umbrel packaging** (section 11).
+- **#18 (2026-11-05/06):** Umbrel packaging done: audit; cross-origin hole fixed (another app's page could write and read the live socket) + `NIGARI_TRUST_PROXY` (PR #579 → v2.1.15, issue #578); store `yokogaki` published at `neatlittlemacapps/yokogaki-umbrel`, pinned to 2.1.15 (PR #580); owner's icon in the store (PR #581); owner added the store on their Umbrel.
 
-> **Read first (2026-11-05):** nothing is in progress. No open PRs, no
-> running helper (stream B session `session_01GhcW33DagCpbrFHHXQVrFu` is
-> stopped, its work merged in #576). Still check `list_sessions`,
-> `git ls-remote --heads origin` and open PRs first (correction 107).
-> **The first job is the Umbrel task in section 11, before anything else on
-> the board** (owner, 2026-11-05).
+> **Read first (2026-11-06):** nothing is in progress. No open PRs, no
+> running helper, no scheduled check-ins. Still check `list_sessions`,
+> `git ls-remote --heads origin` and open PRs first (correction 107), and
+> fetch `origin/claude/handoff-14` and `origin/main` before reading this file
+> from a local checkout (correction 117). The next job is #322 (section 11).
 
 ## 0. Instructions for Claude (read first)
 
@@ -45,7 +45,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - **Also:** "I want you to be able to do as much as possible yourself"; "ensure you have good board and issue hygiene".
 - **Why nigari exists (user, 2026-10-29/30):** "we are too far gone from the original salt to ever contribute back"; "mainly its me discovering how far I can get"; "I think the core is to pay extra attention to UX as well."
 - **CodeGraph (user, 2026-11-01):** "My goal is that Claude can use a continuously up-to-date code graph to understand the architecture, dependencies, function calls and relationships across the entire codebase before making coding changes." / "CodeGraph should be an active coding tool, not merely an installed MCP server."
-- **Order of work now** (owner, 2026-11-05): (0) **Umbrel packaging first** (section 11, owner's brief word for word), then a new handoff for regular development "once I give a go". Earlier order (2026-11-03, after #523), still the order after Umbrel: work goes by the board's Priority (rule 24); only a `bug` + `breaking` issue jumps to P1 (rule 19). (1) **Spec 014 plan** (`/speckit-plan`, then tasks and taskstoissues under #426); (2) **spec 013 build** (45 tasks #478–#522, parent #477) by a helper stream (stream B) per the steward skill, Claude reviews and audits; (3) open bugs by priority: #476, #524, #525, #526, #527, #529, #530, #531, #532; (4) backlog #370, #322, #323, #326, #379.
+- **Order of work now** (2026-11-06): Umbrel is done. (0) **#322 nigari's own logo everywhere** (the owner supplied the artwork; short plan first, section 11). Then the board, as before (2026-11-03, after #523): work goes by the board's Priority (rule 24); only a `bug` + `breaking` issue jumps to P1 (rule 19). (1) **Spec 014 plan** (`/speckit-plan`, then tasks and taskstoissues under #426); (2) **spec 013 build** (45 tasks #478–#522, parent #477) by a helper stream (stream B) per the steward skill, Claude reviews and audits; (3) open bugs by priority: #476, #524, #525, #526, #527, #529, #530, #531, #532; (4) backlog #370, #322, #323, #326, #379.
 
 ## 2. About the user (as relevant to this work)
 - GitHub `neatlittlemacapps` (id 60575307), display name "Frank De Graeve"; email neatlittlemacapps@gmail.com; owns `neatlittlemacapps/nigari` (renamed from `neatlittlemacapps/salt.md` on 2026-10-30), still a GitHub fork of `saltmd/salt.md` (AGPL-3.0); CLA signed upstream. Fork stays attached for now ("I'll leave it for now").
@@ -55,6 +55,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - Local Mac test install: repo at `~/Documents/Salt/salt.md`; data `~/salt-demo`. Run: `cd ~/Documents/Salt/salt.md && NIGARI_DATA=~/salt-demo NIGARI_ADDR=:8420 ./nigari`, open `http://localhost:8420`; Ctrl+C stops. A leftover `SALT_*` variable makes nigari refuse to start. Install latest: `curl -fsSL https://raw.githubusercontent.com/neatlittlemacapps/nigari/main/install.sh | sh`.
 - Uses other agents too: pointed one at the GitHub link and it cloned the repo instead of offering the binary/Mac app (the README "Download" line answers this).
 - GitHub settings: Actions on; auto-merge enabled; `BOARD_TOKEN` secret, `BOARD_PROJECT`=5.
+- Runs an Umbrel at home ("umbrelOS for Docker v2.0.1", per its log, 2026-11-05) and added the yokogaki store there; sends Umbrel logs and screenshots when something fails.
 
 ## 3. Style & communication
 - **Language:** English replies. Translations: German, Spanish and Dutch (all three, every string).
@@ -95,9 +96,9 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 25. Board sync (owner, 2026-11-02): "The GitHub action should tackle this, not you" — Claude does not run the board-sync workflow itself (no `workflow_dispatch` by Claude); the Action runs nightly 03:17 UTC, on issue events, or when the owner taps Actions → Board sync → Run workflow.
 26. Embeds (owner, 2026-11-03, with Notion screenshots): "You basically recreate a view from the originating database, but in itself it is a separate view hat only exists in combo with the embed block on this page. So if you want to add the other views you can but you'd need to add or recreate these." / "it is still possible to edit properties of the dbase and thus change the source base as well. Doing these type of actions (resulting in an alteration of the true source d-base or different views elsewhere) can happen but through a confirmation." / "So think really well on how this pans out".
 27. Conductor/helper (steward skill, applied 2026-11-03): the helper builds on its own branch (`claude/spec-012-views` for spec 012) and never opens PRs; the conductor merges its head into `claude/handoff-14`, reviews the diff, runs `ux-ui-audit`, and offers the PR from `claude/handoff-14`. Helper messages arrive via `send_message`, often late.
-28. Umbrel task constraints (owner, 2026-11-05, word for word): "Do not publish, push, tag or open pull requests. Leave all changes uncommitted for me to review." / "Do not weaken auth, TLS or security checks to make it work. If a security trade-off is needed, stop and explain it." / "Keep the license (AGPL-3.0) and notices intact." (These override rule 3 and the git-check for that task only; see section 12.)
-29. Finishing (owner, 2026-11-05): "I want a clean stop and build/release so I can pick up fresh later" / "ensure a full build and no open stuff is left. After this a new handoff can prepare for regular ongoing development of the rest on the board once I give a go".
-
+28. **Done 2026-11-05** (the owner later approved the local branch, option B, then each push with "Ok"). Umbrel task constraints (owner, 2026-11-05, word for word): "Do not publish, push, tag or open pull requests. Leave all changes uncommitted for me to review." / "Do not weaken auth, TLS or security checks to make it work. If a security trade-off is needed, stop and explain it." / "Keep the license (AGPL-3.0) and notices intact." (These override rule 3 and the git-check for that task only; see section 12.)
+29. Finishing (owner, 2026-11-05; done for Umbrel, still the way to end a stream): "I want a clean stop and build/release so I can pick up fresh later" / "ensure a full build and no open stuff is left. After this a new handoff can prepare for regular ongoing development of the rest on the board once I give a go".
+30. Execution (owner, 2026-11-05, word for word): "Plan with opus execute with sonnet". Claude plans and reviews; mechanical execution steps go to a Sonnet helper (`Agent` with `model: "sonnet"`), whose diff Claude reviews before it is committed or pushed.
 ## 5. Corrections log
 | # | Claude did | The user wanted |
 |---|---|---|
@@ -200,6 +201,15 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 115 | (self) Wrote spec 014's "the other database's column goes too" (Notion's model) | nigari computes back-relations from links (derived.go): the confirmation says the links go; docs corrected |
 | 116 | (self) A cross-session answer to the helper did not arrive as a turn (it read it only later); helper also hit its usage limit mid-task | After sending a helper a decision, check its reply quotes it; resend after a usage-limit stop (check get_session status) |
 | 112 | (self) Told the owner #371 would go into spec 013 | Spec 013 was already planned (45 tasks) by the other session: #371 became spec 014; say when an earlier plan no longer fits |
+| 117 | (self) Opened handoff #15 from a stale local checkout of `claude/handoff-14`; main and the branch held handoffs #16 and #17 | `git fetch origin main claude/handoff-14` and read the newest handoff before anything else |
+| 118 | (self) First origin check trusted `Sec-Fetch-Site`, which browsers send only over HTTPS and to localhost (found by `/code-review`) | On plain HTTP compare `Origin` with `Host`, then `X-Forwarded-Host` or `public_base_url`; Sec-Fetch-Site still decides when sent |
+| 119 | (self) The settings dialog wrote `trust_proxy` on every save, freezing `NIGARI_TRUST_PROXY` (found by `/code-review`) | Write the setting only when the checkbox changes; the tunnel sets it only when unset |
+| 120 | (self) `umbrel/.../data/.gitkeep` never committed: `.gitignore` has `data/` (found by `/code-review`) | `git add -f` that one file; never edit `.gitignore` |
+| 121 | (self) Mutation checks looked uncaught because the `-run` filter missed the new test's name | Run mutations against the test by its own name |
+| 122 | (self) Browser attack test used a cross-site `PUT`, which `no-cors` cannot send | Attack with `POST` (`/api/pages`, `text/plain`) |
+| 123 | (self) Validation script checked the setup text without waiting, so one run reported a false FAIL | `waitFor` the exact text ("Create the first (admin) account for this workspace."), screenshot it |
+| 124 | (self) Linked umbrel.com and `http://umbrel.local` in the wiki; `check-wiki` flags foreign hosts | Reword (no link, `umbrel.local:8420` without scheme); never widen `ALLOWED_HOSTS` |
+| 125 | (self) `/security-review` failed on `origin/HEAD` again (same as 68) | `git remote set-head origin main` at session start |
 
 ## 6. Decisions
 | Decision | Why |
@@ -275,6 +285,14 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Locked database page hides Filter/Sort/Group until spec 013 PR 2 | Helper's choice, Claude's recommendation; owner not answered → stated in PR #576 |
 | Deleting a property a locked view uses is refused (`property_in_locked_view`) | Conductor review → helper option (b) |
 | Dutch strings of #576 kept as the helper wrote them | Owner not answered; stated in PR #576 |
+| Umbrel: Umbrel's own login **off** (`PROXY_AUTH_ADD: "false"`); cost (first visitor becomes admin) said in the app description and wiki | Owner "A off" |
+| Cross-origin check for every setup (`server/crossorigin.go`, Go `http.CrossOriginProtection` + `X-Forwarded-Host`/public-address fallback; bearer, `/mcp/{token}`, OAuth machine routes, two anonymous public routes, desktop exchange with no/null Origin exempt); fixed first, described in the PR after, no public issue before | Owner "Yes" to Claude's recommendation (b) |
+| `NIGARI_TRUST_PROXY`: admin setting first ("0" = explicit off), then the variable, then off | Owner "Yes" (c) |
+| Umbrel store in its own repository `neatlittlemacapps/yokogaki-umbrel` (created by the owner), drafted in `umbrel/` of nigari | Owner named the repo |
+| Store id **`yokogaki`**, app id `yokogaki-nigari`, `APP_HOST: yokogaki-nigari_server_1` | Owner "A" |
+| Umbrel review flow: local-only branch (option B), then pushed and PR'd with the owner's "Ok" | Owner "B", then "Ok" |
+| Store icon = owner's SVG (`yokogaki-nigari/icon.svg`, served from the store repo); nigari's own logo everywhere = #322, next, with a short plan | Owner "do A" |
+| Registry row **Cross-origin requests** (since 2026-11-05) | Rule 5 |
 
 ## 7. Changed / rejected
 - Earlier chats: decisions page in workspace → `docs/decisions.md`; fixed surfaces list → registry; force-push rebase → merge `main`; hand-moved cards → derived Status; committed catalogue baselines → reference per run; hand-drawn SVG charts → Chart.js; owner as commit author → Claude.
@@ -305,6 +323,8 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - Spec 012 catalogue 14px vs 15px comparison → 14px only.
 - #371 into spec 013 (Claude's first plan) → spec 014.
 - Embed Settings option B1 (all view settings on shared views) / B2 (minus rename/move/remove) → embed-owned views (owner's model).
+- Umbrel brief "leave all changes uncommitted" → local branch (B) → pushed with the owner's "Ok". Store draft id `neatlittlemacapps` → `yokogaki`. Store repo name `umbrel-apps` (Claude's suggestion) → `yokogaki-umbrel` (owner). Store pin 2.1.14 → 2.1.15.
+- ❌ Umbrel's own login on with a path allowlist (option B). ❌ The WebSocket library's origin check (Host-only). ❌ A CSRF token in every request. ❌ Bypassing `/api/desktop/exchange` entirely (only no/null Origin passes).
 - ❌ Bugs-first option B. ❌ `nl.machine.json`. ❌ 3+ parallel streams.
 - ❌ Committing the CodeGraph index (25 MB, machine-specific). ❌ A repository `.mcp.json` for CodeGraph. ❌ An external database/R2/salt.md integration/custom graph engine (user's constraint).
 - ❌ Community Go/security/Flutter/mobile/AWS plugins. ❌ GitHub Pages docs site now (later as #326); own domain.
@@ -364,7 +384,9 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | v2.1.11 | #570 (spec 014 plan/tasks) | 2026-11-04 15:16:05 |
 | v2.1.12 | #573 (#524 delete-property confirmation) | 2026-11-04 16:59:45 |
 | v2.1.13 | #575 (#571 workspace empty state) | 2026-11-05 08:19:30 |
-| v2.1.14 | #576 (spec 013 PR 1 views lock) | 2026-11-05 17:05:09; Release run 42070584001 green (build + image jobs; image job sets up QEMU and buildx, so likely multi-arch, not verified) |
+| v2.1.14 | #576 (spec 013 PR 1 views lock) | 2026-11-05 17:05:09; Release run 42070584001 green; image amd64 + arm64 (index `sha256:30f51db57a3f3e08520b67297fad914940cc7095ea07a7528d0aa9374154ce47`), runs as uid 1000 |
+| v2.1.15 | #579 (origin check, `NIGARI_TRUST_PROXY`, Umbrel store) | Release run 42093659270 started 2026-11-05 19:24:58; image index `sha256:73eff6999e35d9437d2b13684ab12908520906b082ecf38e95092186f0b1bc73` (amd64 + arm64); `nigari version` = `2.1.15 (upgrade step 2)` |
+| (v2.1.16, v2.1.17 expected) | #580 (store pins 2.1.15), #581 (store icon) | not checked; store files only |
 - v2.0.5–v2.0.7 (#369 and the user's two release-notes edits) not checked individually. #376's release (expected v2.0.11) not checked.
 - Releases page: https://github.com/neatlittlemacapps/nigari/releases. Assets `nigari-<os>-<arch>` + `SHA256SUMS.txt`. Image `ghcr.io/neatlittlemacapps/nigari`. No desktop app published (#323).
 
@@ -376,7 +398,15 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 
 **Embed today (spec 014 context)**: `database` block (`web/src/blocks.tsx`, `databaseSpec`) props `collectionId`, `local` (JSON `{viewId, views:{<viewId>:{filters,sort}}}`), `chartKind`; MCP `embed_database` (`server/mcp_pages.go` `mcpEmbedDatabase`) writes `local.viewId`; `get_page`/export render the block as `[Collection](/p/<id>)` (`server/export.go`); public page as `▦ Collection` link. Server never reads Yjs; `pages.content` is the browser's debounced copy (spec 014 research R2).
 
-**Facts for the Umbrel task** (read in this chat, re-verify): image `ghcr.io/neatlittlemacapps/nigari` built by `.github/workflows/docker.yml` from each release; listens on `NIGARI_ADDR` (`:8420`), data in `NIGARI_DATA`; realtime editing uses **WebSockets** (`server/collab.go`, `github.com/coder/websocket`, frames for Yjs updates) and the page list uses an event stream (SSE, "the rows event the server sends"); first-run setup is `POST /api/setup` (`web/tests/fixture.mjs`); `docker` is installed in the cloud container (`/usr/bin/docker`, checked 2026-11-05); whether the image is multi-arch and runs as non-root was NOT checked.
+**Umbrel (shipped 2026-11-05)**
+- Store repo `https://github.com/neatlittlemacapps/yokogaki-umbrel` (`main`; commits b795871, b51abf8, 3f63170, all authored Claude); same files in nigari `umbrel/` (`umbrel-app-store.yml`, `yokogaki-nigari/{umbrel-app.yml, docker-compose.yml, icon.svg, data/.gitkeep}`, `README.md`). Copy changes to both.
+- Compose: app_proxy `APP_HOST: yokogaki-nigari_server_1`, `APP_PORT: 8420`, `PROXY_AUTH_ADD: "false"`; server image `ghcr.io/neatlittlemacapps/nigari:2.1.15@sha256:73eff6999e35d9437d2b13684ab12908520906b082ecf38e95092186f0b1bc73`, `user: "1000:1000"`, `restart: on-failure`, `${APP_DATA_DIR}/data:/data`, `NIGARI_ADDR ":8420"`, `NIGARI_DATA "/data"`, `NIGARI_TRUST_PROXY "1"`, `NIGARI_UPDATE_CHECK "0"`. Manifest `version: "2.1.15"`, `port: 8420`, `category: files`, `gallery: []` (screenshots TODO), icon `https://raw.githubusercontent.com/neatlittlemacapps/yokogaki-umbrel/main/yokogaki-nigari/icon.svg`.
+- Umbrel's proxy `getumbrel/app-proxy:1.7.0` (Docker Hub; tags 1.7.0, 1.0.0, v0.5.x): keeps Host (`changeOrigin: false`), overwrites `X-Forwarded-For` with one address, strips `UMBREL_PROXY_TOKEN`, WebSockets on. umbreld `addRepository` saves the URL after the clone, before reading; an unreadable store is hidden from the list but stays stored.
+- Validation (cloud container, Docker started by hand: `dockerd` as a `run_in_background` task; Docker Hub 429s, so test images were built FROM the ghcr release image): script `umbrel-validate.mjs` in the scratchpad (lost with the container). Released 2.1.15 as pinned: 10 of 10 (first run, edit, live second tab, reload, upload, `/mcp` header + `/mcp/{token}` with 34 tools, 401 + OAuth metadata, visitor IP seen). Attack from another port: 2.1.14 planted a page and read 32 socket messages; 2.1.15 refused both. Root-owned data folder → `mkdir /data/files: permission denied`.
+- Not tested: a real Umbrel device's install flow, arm64 actually running, MCP OAuth sign-in in a browser, the desktop app, Tailscale. Tunnel `trust_proxy` change has no test.
+- **Owner's Umbrel** (from its log, 2026-11-05): "umbrelOS for Docker v2.0.1" (dockur/umbrel); yokogaki store added and readable; a stray store `https://github.com/neatlittlemacapps/nigari` was added earlier, is unreadable (no `umbrel-app-store.yml`), hidden from the list, logs an error every ~5 min, cannot be removed in the UI.
+- New code: `server/crossorigin.go` (+ `crossorigin_test.go`), `trustProxy()` in `server/ops.go`, error code `cross_origin` (de/es/nl), vite dev proxy `xfwd: true`; wiki `self-hosting.md` "Run on Umbrel", `domain.md` "Other apps beside nigari".
+- App logo today (for #322): one mark `web/public/logo.svg`; `web/scripts/build-app-icons.mjs` renders `favicon`, `apple-touch-icon.png`, `icon-192/512.png`, `icon-maskable-512.png` (white tile, no own rounding, opaque, on purpose for iOS 26); in-app mark inline in `web/src/Logo.tsx` (Setup, Login, Sidebar, InviteAccept, OAuthConsent…); desktop `desktop/build/icon(.svg/.png)`, `icon-dark(.svg/.png)`. Owner's artwork: 512×512 SVG, lilac tile `#E9E1FE` rx 116 with three overlapping purple shapes `#A98AFB`, `#6542E8`, `#3A1FA6`; copy in `umbrel/yokogaki-nigari/icon.svg`.
 
 **Open issues** (2026-11-05)
 | # | Title |
@@ -394,75 +424,43 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 574 | A menu opened just before its database's config reloads is not closed by Escape (bug) |
 | 477 | Spec 013 parent; #496–#522 open |
 | 370, 322, 323, 326, 379 | backlog |
-- Closed this chat: #524, #571, #534–#537, #478–#495.
+- Closed in #17: #524, #571, #534–#537, #478–#495. Closed in #18: #578 (Umbrel). #322 has its store icon only (PR #581 "Part of #322").
 
 ## 9. People, terms & names
 - **People:** the user (`neatlittlemacapps`, Frank De Graeve); upstream maintainer "Jeremia" (`jeremiaa`).
 - **Terms:** surface = registry row; gap = person can, agent can't; budget = count that only goes down; gate = `scripts/agent-gate.sh`; stream = a parallel work line; conductor = Claude; steward skill = `.claude/skills/steward/SKILL.md`; upgrade step = a numbered goose step; column head = a column's first block; Each row = chart grouping `__row`; code graph = CodeGraph index.
 - **Repo:** `neatlittlemacapps/nigari`.
-- **Sessions:** this conductor `session_01GhcW33CqnUj9FDCkkAFdFE` ("Handoff nigari file location"); helper stream B for spec 013 `session_01GhcW33DagCpbrFHHXQVrFu` (stopped; work merged in #576); older: `session_01GhcW351E6Ld6xR87qCbfon`, `session_01GhcW34o8KcL5EYGzn6ddSJ`, `session_01GhcW33zUfch6tMG6ga8nJc`.
-- **Branches:** work branch `claude/handoff-14` = main `e93f3ec` (merge of #576) plus this handoff commit. Merged, to be deleted by the owner (Branches page → 🗑): `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views`. Old: `claude/pensive-turing-plu40r`.
+- **Sessions:** this conductor `session_01GhcW345K7zwmfiPaw1Eoz3` ("Nigari handoff continuation"); previous conductor `session_01GhcW33CqnUj9FDCkkAFdFE` ("17 Nigari"); helper stream B for spec 013 `session_01GhcW33DagCpbrFHHXQVrFu` (stopped; work merged in #576); older: `session_01GhcW351E6Ld6xR87qCbfon`, `session_01GhcW34o8KcL5EYGzn6ddSJ`, `session_01GhcW33zUfch6tMG6ga8nJc`.
+- **Branches:** work branch `claude/handoff-14` = main `0de35a3` (merge of #581) plus this handoff commit. Merged, to be deleted by the owner (Branches page → 🗑): `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views`. Old: `claude/pensive-turing-plu40r`.
 - **Key files:** `web/src/components/ChartFigure.tsx`, `ChartView.tsx`, `web/src/chartTheme.ts` (`groupColourTokens(drawn, palette, groupProp, series)`), `web/src/columnEnter.ts` (`columnEnterAction`, `columnEnter`), `web/src/blocks.tsx` (`columnsSpec`), `web/src/keys.ts`, `web/src/components/Editor.tsx` (`column.enter` shortcut), `web/scripts/shoot-wiki.mjs` (`text` step), `.claude/hooks/codegraph.sh`, `.claude/rules/codegraph.md`, `server/upgrade.go`, `server/backup.go`, `docs/decisions.md`, `web/src/menuIcons.ts`, `web/src/ui/Menu.tsx` (+ `Menu.css`), `web/scripts/check-menu-icons.mjs`, `web/src/components/SidebarMenus.tsx`, `CollectionMenus.tsx`, `UserMenu.tsx`, `web/src/keys.ts` (`menuOwnsKey`), `web/src/dialog.tsx`.
 - **Terms (new):** option B = menus rebuilt on Base UI; menu function = the verb an item does (one icon each); hand-built button = a raw `<button>` counted by the rawButtons budget.
 
 ## 10. Work state
 | Item | Status | Location | Notes |
 |---|---|---|---|
-| Spec 014 plan + tasks | merged, v2.1.11 | PR #570 | build PR 2/3 after spec 013 PR 2 |
-| #524 delete-property confirmation (spec 014 PR 1) | merged, v2.1.12 | PR #573 | |
-| #571 workspace empty state | merged, v2.1.13 | PR #575 | |
 | Spec 013 PR 1 (views lock + log) | merged, v2.1.14 | PR #576 | |
-| Spec 013 PR 2/3, spec 014 PR 2/3 | not started | tasks.md | after Umbrel and the owner's go |
-| Umbrel packaging | not started | — | first job, section 11 |
-| Open PRs / running helpers | none | — | clean stop (rule 29) |
+| Umbrel: origin check + `NIGARI_TRUST_PROXY` + store | merged, v2.1.15 | PR #579, issue #578 | |
+| Umbrel store pinned to 2.1.15 | merged | PR #580; `yokogaki-umbrel` b51abf8 | |
+| Umbrel store icon | merged | PR #581; `yokogaki-umbrel` 3f63170 | Umbrel refreshes stores every 5 min |
+| #322 nigari's own logo | not started | issue #322 | next, short plan first |
+| Spec 013 PR 2/3, spec 014 PR 2/3 | not started | tasks.md | after #322 |
+| Open PRs / helpers / check-ins | none | — | clean stop |
 
 ## 11. Next steps
-1. **Next action:** the **Umbrel task** below (v2.1.14 is out; its Release run's build and image jobs were green, asset list not checked), before anything else (owner, 2026-11-05). Its constraints (rule 28) mean: no commits, pushes, tags or PRs for it; leave the changes uncommitted for the owner.
-2. After Umbrel, write a new handoff that prepares "regular ongoing development of the rest on the board once I give a go" (owner). Board order then: spec 013 PR 2 (personal filters) → PR 3 → spec 014 PR 2/3; bugs by priority (#572, #574 and the older ones).
-
-**The owner's Umbrel brief, word for word (2026-11-05):**
-
-> Before implementing anything else. do this first:
-> Make this project (nigari) easy to run on Umbrel (umbrelOS), without changing its normal behaviour for other users.
->
-> Context
-> - nigari is a single Go binary / container: image ghcr.io/neatlittlemacapps/nigari, listens on :8420 (NIGARI_ADDR), data in /data (NIGARI_DATA), SQLite + uploads, optional TLS via NIGARI_TLS_CERT/KEY, MCP endpoint at /mcp, realtime collaboration (check whether it uses WebSockets or SSE).
-> - Umbrel runs each app as docker compose behind its own "app_proxy" container, which handles the Umbrel login and exposes the app on the Umbrel host. Apps are distributed via a Git repo called a community app store.
->
-> Tasks
-> 1. Audit nigari for Umbrel compatibility and list any problems before changing code. Check at least:
->    - Does it work behind a reverse proxy on plain HTTP (no TLS inside the container)? Are cookies, redirects, absolute URLs, CORS and Origin/Host checks safe behind a proxy and on a non-standard host:port?
->    - Do WebSockets/SSE and /mcp pass through a proxy?
->    - Does it have its own authentication or first-run setup? Decide whether Umbrel's proxy auth should be on or off (PROXY_AUTH_ADD) and say why, including what that means for MCP clients that connect to /mcp with their own credentials.
->    - Does it run as a non-root user and write only under /data? Can it start with an empty, bind-mounted ${APP_DATA_DIR}/data directory with the right permissions?
->    - Is the prebuilt image published for both linux/amd64 and linux/arm64 (Umbrel runs on both)? Is the tag pinned and reproducible?
-> 2. Create an Umbrel community app store layout in a new directory (e.g. umbrel/), or propose a separate repo layout, containing:
->    - umbrel-app-store.yml (id + name of the store)
->    - one app folder named "<store-id>-nigari" with:
->      - umbrel-app.yml (manifestVersion 1, id, name, tagline, category, version, port 8420, description, developer, website, repo, support, gallery, releaseNotes, submitter, dependencies none, path "")
->      - docker-compose.yml with an app_proxy service (APP_HOST: <app-id>_server_1, APP_PORT: 8420, PROXY_AUTH_ADD set per your decision in task 1) and a server service using the image pinned by sha256 digest, volumes ${APP_DATA_DIR}/data:/data, NIGARI_ADDR and NIGARI_DATA set, restart: on-failure, user set appropriately.
->      - icon and gallery placeholders if none exist (do not invent screenshots; mark them TODO).
-> 3. Make only the code or docs changes needed for Umbrel (for example a proxy-friendly setting) and keep them backward compatible. Add a short "Run on Umbrel" section to wiki/self-hosting.md.
-> 4. Validate: run the image with the compose file locally using docker compose, simulate the proxy hop (HTTP only, different host/port) and confirm login/first-run, a page edit, realtime sync between two browser tabs, an upload, and /mcp all work. Report results honestly, including anything you could not test.
->
-> Constraints
-> - Do not publish, push, tag or open pull requests. Leave all changes uncommitted for me to review.
-> - Do not weaken auth, TLS or security checks to make it work. If a security trade-off is needed, stop and explain it.
-> - Keep the license (AGPL-3.0) and notices intact.
->
-> Deliver: a summary of audit findings, the files you added or changed, and the exact steps to add the store to Umbrel (Settings → App Store → Community App Stores → add the repo URL) and install the app.
->
-> And ensure a full build and no open stuff is left. After this a new handoff can prepare for regular ongoing development of the rest on the board once I give a go
+1. **Next action:** #322, nigari's own logo everywhere from the owner's SVG (`umbrel/yokogaki-nigari/icon.svg`). Write a short plan in the issue (not the full spec cycle; owner was offered "a short plan in the issue"), with CodeGraph on `Logo.tsx`, `build-app-icons.mjs`, the desktop icons and the wiki shots that show the logo; ask the plan's two questions (section 12); then Sonnet executes (rule 30), Claude reviews, audits (`ux-ui-audit`, light/dark) and asks before the PR.
+2. Then the board by Priority: spec 013 PR 2 (personal filters, #496–#509) → PR 3 (#510–#522) → spec 014 PR 2/3 (#538–#569); bugs by priority (#572, #574 and the older ones).
 
 ## 12. Open questions ⚠️
-- **Umbrel vs this repo's rules:** the brief says "leave all changes uncommitted"; the Stop hook's git-check fails on uncommitted work, and AGENTS.md wants every surface (including `capabilities.json`, tests, the gate). Ask the owner at the start: keep the work uncommitted and accept the hook's complaint each stop, or commit to a local-only branch without pushing.
-- **Umbrel store location:** `umbrel/` inside this repo, or a separate community-store repo (Umbrel adds a store by Git URL; a store repo usually holds only store files). The brief allows either; recommend and ask.
-- **Unanswered from this chat (decided by Claude, stated in PR #576):** Filter/Sort/Group hidden on locked databases until spec 013 PR 2; Dutch strings of the lock ("Weergaven vergrendelen", "Naam van weergave gewijzigd", …).
-- **#572 and #574** have no board priority yet.
+- **#322 plan questions:** (a) home-screen icons: keep the build script's white tile without own rounding (Claude's recommendation; iOS rounds and tints, a pre-rounded tile gets a halo) or use the owner's lilac rounded tile as drawn; (b) the in-app logo needs the mark without the tile, and a dark-mode version: colours as drawn, or a single-colour mark?
+- Has the owner installed nigari from the yokogaki store, and does the icon show? (not confirmed)
+- Remove the stray `https://github.com/neatlittlemacapps/nigari` store from the owner's Umbrel? Claude offered to work out a command (Umbrel runs in Docker); not answered.
+- File an issue for the older, minor login CSRF through the desktop code exchange (sandboxed iframe over plain HTTP; not made worse by #579)? Asked twice, not answered.
+- Unanswered from earlier: Filter/Sort/Group hidden on locked databases until spec 013 PR 2; Dutch strings of the lock (stated in PR #576).
+- #572 and #574 have no board priority yet.
 - Delete the stray label `surface:performance` and merged branches `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views` (owner).
 
 ## 13. Re-attach checklist
 Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on branch `claude/handoff-14` of `neatlittlemacapps/nigari` (pushed). Start the new Claude Code session on **`neatlittlemacapps/nigari`**, branch `claude/handoff-14`.
 
 ---
-<sub>Audit: 13/13 sections · 29 rules · 116 corrections · ~470 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
+<sub>Audit: 13/13 sections · 30 rules · 125 corrections · ~520 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
