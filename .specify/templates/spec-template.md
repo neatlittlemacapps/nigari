@@ -8,6 +8,15 @@
 
 **Input**: User description: "$ARGUMENTS"
 
+<!--
+  Keep it lean (constitution IV): a spec records what the code cannot tell —
+  the problem, who it is for, requirements, decisions with the options turned
+  down, numbers measured today. Do not copy what the code graph produces on
+  demand (file lists, caller inventories, symbol counts, pasted output): name
+  the symbol and state the conclusion. Delete optional sections with nothing
+  to say rather than filling them.
+-->
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--

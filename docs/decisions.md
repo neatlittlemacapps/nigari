@@ -7,6 +7,36 @@ entries are not edited away.
 
 ---
 
+## 2026-11-06 — Specs and plans hold decisions, not facts the code graph regenerates
+
+**Decision** (owner: "I just want to avoid creating a huge blob of data to wade
+through", then "add the rule"): constitution IV, "Derive from code", now covers
+specs and plans (version 1.3.0). They record what the code cannot tell — intent,
+requirements, decisions with the options turned down, numbers measured at the
+time — and do not copy what the code graph or the code produce on demand: file
+lists, caller inventories, symbol counts, pasted query output, code bodies. The
+plan's CodeGraph section keeps one line per query with its conclusion. A plan
+artifact with nothing of its own (`research.md` without a decision,
+`data-model.md` without a new entity, `contracts/` without a new route or tool,
+`quickstart.md` repeating the tasks) is not written. The spec template, the plan
+template override, the `/speckit-plan` skill and `AGENTS.md` carry the rule.
+
+**Why:** the twelve specs measured 9,575 lines of Markdown on 2026-11-06, 300 to
+1,350 per feature. Much of the bulk is inventory the graph rebuilds current every
+session; copied into a spec it goes stale the day the code moves and buries the
+decisions a reader came for. The graph answers *what the code is*, the spec
+*why it is that way*; each should hold only its own half.
+
+**Turned down:** a check that measures spec length or flags pasted listings
+(whether a line is a decision or a copied fact is judgement, and a length limit
+would cut decisions as readily as noise, so review holds this rule, an exception
+to IV's "a rule arrives with its check"); trimming the existing specs 001–012
+now (they are the record of why shipped code is as it is, and code comments and
+`check-peek.mjs` point into them; a spec is trimmed when it is next touched);
+deleting shipped specs (same reason).
+
+---
+
 ## 2026-11-05 — Browser requests from another address are refused; `NIGARI_TRUST_PROXY`
 
 Found while auditing nigari for Umbrel (owner's brief, 2026-11-05).

@@ -6,7 +6,8 @@
 
 **Note**: This is nigari's own plan template (`.specify/templates/overrides/`). It is
 filled in by `/speckit-plan`. The Surfaces section is required: a plan without it is
-not ready for `/speckit-tasks`.
+not ready for `/speckit-tasks`. Keep it lean (constitution IV): record decisions and
+conclusions, not facts the code graph regenerates on demand.
 
 ## Summary
 
@@ -46,6 +47,10 @@ not ready for `/speckit-tasks`.
   what they found: callers and blast radius, a second door (REST and MCP), a
   surface you would have missed, the tests that reach the code or the lack of
   them. Where the graph found nothing new, say so.
+
+  One line per query: the query and its conclusion ("3 callers, all behind
+  canWrite; no MCP path"), never the pasted output or a list of every caller.
+  The next reader reruns the query and gets the current answer.
 -->
 
 - `[query]`: [what it found]
@@ -106,10 +111,10 @@ checks as <route>", or "Closed to agents because …, added to not_available_via
 ```text
 specs/[###-feature]/
 ├── plan.md              # This file (/speckit-plan command output)
-├── research.md          # Phase 0 output (/speckit-plan command)
-├── data-model.md        # Phase 1 output (/speckit-plan command)
-├── quickstart.md        # Phase 1 output (/speckit-plan command)
-├── contracts/           # Phase 1 output: REST routes and MCP tool schemas
+├── research.md          # Phase 0 output, only if a decision was made
+├── data-model.md        # Phase 1 output, only if there is a new or changed entity
+├── quickstart.md        # Phase 1 output, only if it adds what tasks.md does not
+├── contracts/           # Phase 1 output, only for new or changed REST routes and MCP tools
 └── tasks.md             # Phase 2 output (/speckit-tasks command - NOT created by /speckit-plan)
 ```
 
