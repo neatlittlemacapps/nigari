@@ -44,12 +44,14 @@ npm install
 npm run dist:mac     # → dist/nigari-<version>-arm64.dmg  (also :win, :linux)
 ```
 
-The icon is built from the product logo: `build/icon.svg` is the source,
-`build/icon.png` (1024×1024) is what electron-builder turns into `.icns` and
-`.ico`. The mark on its own is transparent and made of thin strokes — at 32px
-in a dock it would vanish — so it gets a field in the house green and sits at
-about 60% of the tile. macOS icons are not drawn edge to edge, and one that is
-looks bigger than everything beside it.
+The icon comes from the owner's artwork in `brand/` (#322): `build/icon.png`
+and `build/icon-dark.png` (1024×1024) are rendered by
+`web/scripts/build-app-icons.mjs` and committed. electron-builder turns
+`icon.png` into `.icns` and `.ico`; the app swaps the dock icon to
+`icon-dark.png` when macOS is in dark mode. The square artwork sits on Apple's
+grid, an 824 px tile with rounded corners inside the 1024 px field: macOS does
+not round or shrink an app icon, and one drawn edge to edge looks bigger than
+everything beside it.
 
 ## Unsigned builds and what they look like
 
