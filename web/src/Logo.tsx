@@ -23,10 +23,29 @@ const BACK = '#A98AFB'; // token-ok: brand artwork, brand/mark.svg
 const FRONT = '#6542E8'; // token-ok: brand artwork, brand/mark.svg
 const OVERLAP = '#391FA2'; // token-ok: brand artwork, brand/mark.svg
 
-export default function Logo({ size = 32, className }: { size?: number; className?: string }) {
+// `decorative`: the mark beside the visible word "nigari" (the sign-in and
+// setup wordmark) is hidden from screen readers, or they announce the name
+// twice, "nigari, image" and then the heading "nigari" (#322 audit). Alone,
+// or beside other words (an instance's own name, "Join the workspace"), it
+// keeps its name: there it is the only thing that says which product this is.
+export default function Logo({
+  size = 32,
+  className,
+  decorative = false,
+}: {
+  size?: number;
+  className?: string;
+  decorative?: boolean;
+}) {
   const clip = `nigari-mark-${useId().replace(/:/g, '')}`;
   return (
-    <svg width={size} height={size} viewBox="0 0 512 512" className={className} role="img" aria-label="nigari">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 512 512"
+      className={className}
+      {...(decorative ? { 'aria-hidden': true } : { role: 'img', 'aria-label': 'nigari' })}
+    >
       <defs>
         <clipPath id={clip}>
           <path d={MARK_BACK} />
