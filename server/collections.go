@@ -172,6 +172,8 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 			actor = "agent"
 		}
 		s.auditViewChanges(actor, u, id, s.pageWorkspace(id), storedViews, savedViews)
+		// A removed view takes everybody's own filters for it along (spec 013).
+		s.forgetViewStatesOfMissingViews(id, savedViews)
 	}
 	s.pagesChanged()
 	// The schema and the views ARE the database: adding a column or removing a

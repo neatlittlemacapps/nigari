@@ -183,10 +183,62 @@ func (s *Server) viewOf(colID, viewID string) (name string, filters []rowFilter,
 	return "", nil, nil, errViewNotInDatabase{viewID, colID}
 }
 
+// viewer is the person a view is read for, and where they are looking at it:
+// on the database's own page (scope ""), or in a document's embed (an
+// embed:… scope, viewprefs.go). The zero viewer is "nobody in particular":
+// an agent, which has no personal state, sees the view as it is shared.
+type viewer struct {
+	userID string
+	scope  string
+}
+
+// viewFor is viewOf with the person's own filters laid over the view's
+// (spec 013, FR-005): a row made in a view takes the values the filters the
+// person SEES pin down, or a row made in "only mine" would not be mine.
+//
+// In an embed the person's state is the embed's, not the page's: what they
+// set on the database's page must not decide a row made in a document.
+// (An embed's shared filters live in the document and are not read here, as
+// before this change; spec 014 gives embeds views of their own.)
+func (s *Server) viewFor(colID, viewID string, who viewer) (name string, filters []rowFilter, schema []map[string]any, err error) {
+	if who.userID == "" {
+		return s.viewOf(colID, viewID)
+	}
+	schema, views, err := s.loadCollection(colID)
+	if err != nil {
+		return "", nil, nil, err
+	}
+	scope := viewID
+	if who.scope != "" {
+		if sv, _, ok := scopeViewID(who.scope); !ok || sv != viewID {
+			return "", nil, nil, errViewNotInDatabase{viewID, colID}
+		}
+		scope = who.scope
+	}
+	for _, v := range views {
+		if id, _ := v["id"].(string); id != viewID {
+			continue
+		}
+		name, _ = v["name"].(string)
+		merged, _ := mergeViewState(v, s.viewStateOf(who.userID, colID, scope))
+		raw, _ := json.Marshal(merged)
+		var fs []filterJSON
+		_ = json.Unmarshal(raw, &fs)
+		for _, f := range fs {
+			if f.Property != "" {
+				filters = append(filters, f.rowFilter())
+			}
+		}
+		return name, filters, schema, nil
+	}
+	return "", nil, nil, errViewNotInDatabase{viewID, colID}
+}
+
 // rowPinsForView is what every door calls before it creates a row "in" a
 // view: the values to store, under whatever the caller passes explicitly.
-func (s *Server) rowPinsForView(colID, viewID string) (map[string]any, error) {
-	_, filters, schema, err := s.viewOf(colID, viewID)
+// who is the person making the row, or the zero viewer for an agent.
+func (s *Server) rowPinsForView(colID, viewID string, who viewer) (map[string]any, error) {
+	_, filters, schema, err := s.viewFor(colID, viewID, who)
 	if err != nil {
 		return nil, err
 	}
@@ -196,8 +248,8 @@ func (s *Server) rowPinsForView(colID, viewID string) (map[string]any, error) {
 // rowMatchesView reports whether a row passes every filter of the view, by
 // the SQL the rows query fills the view with, so the answer cannot disagree
 // with what the person then sees.
-func (s *Server) rowMatchesView(rowID, colID, viewID string) (bool, error) {
-	_, filters, _, err := s.viewOf(colID, viewID)
+func (s *Server) rowMatchesView(rowID, colID, viewID string, who viewer) (bool, error) {
+	_, filters, _, err := s.viewFor(colID, viewID, who)
 	if err != nil {
 		return false, err
 	}
@@ -273,10 +325,10 @@ func mergePins(pins map[string]any, explicit json.RawMessage) (json.RawMessage, 
 	return json.Marshal(out)
 }
 
-// propsInView is the properties a row made in a view starts with: the view's
-// pins under the caller's explicit values.
-func (s *Server) propsInView(colID, viewID string, explicit json.RawMessage) (json.RawMessage, error) {
-	pins, err := s.rowPinsForView(colID, viewID)
+// propsInView is the properties a row made in a view starts with: the pins
+// of the view as who sees it, under the caller's explicit values.
+func (s *Server) propsInView(colID, viewID string, who viewer, explicit json.RawMessage) (json.RawMessage, error) {
+	pins, err := s.rowPinsForView(colID, viewID, who)
 	if err != nil {
 		return nil, err
 	}

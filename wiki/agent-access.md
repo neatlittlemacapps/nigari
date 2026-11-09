@@ -340,6 +340,10 @@ a browser. An API token is not enough.":
   is on, `set_view` and `delete_view` refuse with "this database's views are
   locked; a person can unlock them in the interface". A lock an agent could
   lift would not protect views from agents, which is half of why it exists
+- a person's own filter and sort for a view (`/api/collections/{id}/personal`).
+  An agent has no personal state: what it changes with `set_view` changes the
+  view for everyone, and a row it creates in a view takes the values the
+  shared filters pin down, not anybody's own
 
 Three things that sound like they belong on that list and do not:
 

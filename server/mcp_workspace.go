@@ -53,6 +53,7 @@ func (s *Server) mcpWhoami(u *user) (string, error) {
 			"workspace membership and roles (no MCP tool; over REST, a workspace admin's read-write token can manage that workspace's members)",
 			"applying workspace rules (workspace admins may submit a draft via propose_workspace_rules; applying it stays in the browser)",
 			"locking and unlocking a database's views (an agent sees the lock and is refused by it)",
+			"personal view changes (an agent's view change is always for everyone)",
 		},
 		"note": "list with kind=\"users\" names only the people you share a workspace with; " +
 			"account administration needs a signed-in browser session.",

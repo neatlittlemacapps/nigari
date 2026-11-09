@@ -180,7 +180,8 @@ func (s *Server) handleRowFromTemplate(w http.ResponseWriter, r *http.Request) {
 		// The view the row is made in (spec 005). Template first, then the
 		// view's pins, then props: the view the person is looking at beats
 		// the template, and what they typed beats both.
-		ViewID string `json:"viewId"`
+		ViewID    string `json:"viewId"`
+		ViewScope string `json:"viewScope"`
 	}
 	if err := decodeJSON(w, r, &body); err != nil {
 		httpError(w, 400, "invalid JSON")
@@ -191,7 +192,7 @@ func (s *Server) handleRowFromTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if body.ViewID != "" {
-		merged, err := s.propsInView(id, body.ViewID, body.Props)
+		merged, err := s.propsInView(id, body.ViewID, s.viewerOf(r, body.ViewScope), body.Props)
 		if err != nil {
 			httpErrorCode(w, 400, "view_not_in_database", err.Error())
 			return
@@ -217,7 +218,7 @@ func (s *Server) handleRowFromTemplate(w http.ResponseWriter, r *http.Request) {
 	s.rowChanged(nid)
 	s.fireWebhook("page.created", nid)
 	if body.ViewID != "" {
-		matches, err := s.rowMatchesView(nid, id, body.ViewID)
+		matches, err := s.rowMatchesView(nid, id, body.ViewID, s.viewerOf(r, body.ViewScope))
 		if err != nil {
 			httpError(w, 500, err.Error())
 			return

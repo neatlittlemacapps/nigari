@@ -1,0 +1,65 @@
+{
+  "note": "One fixture for both merges of a view with a person's own state (spec 013, research R5): mergeViewState in server/viewprefs.go (TestMergeViewStateMatchesTheBrowser) and mergeViewState in web/src/viewState.ts (check-viewstate.mjs). A case added here is checked on both sides.",
+  "cases": [
+    {
+      "name": "no personal state: the shared view",
+      "view": { "id": "v", "filters": [{ "property": "status", "op": "is", "value": "open" }], "sort": { "property": "due", "dir": "asc" } },
+      "personal": null,
+      "filters": [{ "property": "status", "op": "is", "value": "open" }],
+      "sort": { "property": "due", "dir": "asc" }
+    },
+    {
+      "name": "a view without filters or sort",
+      "view": { "id": "v" },
+      "personal": {},
+      "filters": [],
+      "sort": null
+    },
+    {
+      "name": "personal filters replace the shared ones, the shared sort stays",
+      "view": { "id": "v", "filters": [{ "property": "status", "op": "is", "value": "open" }], "sort": { "property": "due", "dir": "asc" } },
+      "personal": { "filters": [{ "property": "owner", "op": "is", "value": "ada" }] },
+      "filters": [{ "property": "owner", "op": "is", "value": "ada" }],
+      "sort": { "property": "due", "dir": "asc" }
+    },
+    {
+      "name": "an empty personal filter list removes the shared filters",
+      "view": { "id": "v", "filters": [{ "property": "status", "op": "is", "value": "open" }] },
+      "personal": { "filters": [] },
+      "filters": [],
+      "sort": null
+    },
+    {
+      "name": "a personal sort replaces the shared sort, the shared filters stay",
+      "view": { "id": "v", "filters": [{ "property": "status", "op": "is", "value": "open" }], "sort": { "property": "due", "dir": "asc" } },
+      "personal": { "sort": { "property": "status", "dir": "desc" } },
+      "filters": [{ "property": "status", "op": "is", "value": "open" }],
+      "sort": { "property": "status", "dir": "desc" }
+    },
+    {
+      "name": "a personal 'no sort' removes the shared sort",
+      "view": { "id": "v", "sort": { "property": "due", "dir": "asc" } },
+      "personal": { "sort": null },
+      "filters": [],
+      "sort": null
+    },
+    {
+      "name": "quick picks are added after the filters, in the view's order, only for offered properties",
+      "view": { "id": "v", "filters": [{ "property": "status", "op": "is", "value": "open" }], "quickFilters": ["owner", "system"] },
+      "personal": { "quickPicks": { "system": "crm", "owner": "ada", "due": "2026-01-01" } },
+      "filters": [
+        { "property": "status", "op": "is", "value": "open" },
+        { "property": "owner", "op": "is", "value": "ada" },
+        { "property": "system", "op": "is", "value": "crm" }
+      ],
+      "sort": null
+    },
+    {
+      "name": "quick picks are added to personal filters too",
+      "view": { "id": "v", "filters": [{ "property": "status", "op": "is", "value": "open" }], "quickFilters": ["owner"] },
+      "personal": { "filters": [], "quickPicks": { "owner": "ada" } },
+      "filters": [{ "property": "owner", "op": "is", "value": "ada" }],
+      "sort": null
+    }
+  ]
+}

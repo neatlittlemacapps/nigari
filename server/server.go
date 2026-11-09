@@ -311,6 +311,11 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	// unlocking are a person's act; an agent sees the lock and is refused by it.
 	m.HandleFunc("PUT /api/collections/{id}/lock", s.auth(s.sessionOnly(s.handleLockViews)))
 	m.HandleFunc("DELETE /api/collections/{id}/lock", s.auth(s.sessionOnly(s.handleUnlockViews)))
+	// A person's own filter and sort for a view (spec 013, viewprefs.go).
+	// Session-only: an agent has no personal state.
+	m.HandleFunc("GET /api/collections/{id}/personal", s.auth(s.sessionOnly(s.handleGetViewStates)))
+	m.HandleFunc("PUT /api/collections/{id}/personal/{scope}", s.auth(s.sessionOnly(s.handlePutViewState)))
+	m.HandleFunc("DELETE /api/collections/{id}/personal/{scope}", s.auth(s.sessionOnly(s.handleDeleteViewState)))
 	m.HandleFunc("GET /api/collections/{id}/rows", s.auth(s.handleCollectionRows))
 	m.HandleFunc("POST /api/collections/{id}/aggregate", s.auth(s.handleAggregate))
 	m.HandleFunc("GET /api/collections/{id}/templates", s.auth(s.handleListDatabaseTemplates))
