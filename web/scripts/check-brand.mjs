@@ -6,7 +6,7 @@
 // load a file: the React logo (drawn with the page, no request), logo.svg and
 // favicon.svg (served as they are) and the shared-page header in
 // server/public.go (a page that loads nothing from the app). Four copies drift:
-// the salt.md mark lived on in the shared-page header after the app had
+// the mark from before the rename lived on in the shared-page header after the app had
 // changed its own, because nothing compared them. So this does.
 //
 // It also fails on mix-blend-mode in any copy. The owner's artwork drew the
@@ -43,7 +43,7 @@ function problems(file, src) {
 }
 
 // Self-test: the comparison has to be able to fail, or a broken pattern above
-// would pass every copy. The old salt.md mark and a blended copy must both fail.
+// would pass every copy. A copy of the old mark and a blended copy must both fail.
 const blended = mark.replace('<path d=', '<g style="mix-blend-mode:darken"></g><path d=');
 if (!problems('self-test', '<svg><path d="M0 0h1" fill="#37352f"/></svg>').length ||
     !problems('self-test', blended).length) {
