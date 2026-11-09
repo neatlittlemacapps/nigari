@@ -2,18 +2,24 @@
 //
 //   node scripts/check-brand.mjs
 //
-// The mark is inlined in four places, because each has its own reason not to
-// load a file: the React logo (drawn with the page, no request), logo.svg and
-// favicon.svg (served as they are) and the shared-page header in
-// server/public.go (a page that loads nothing from the app). Four copies drift:
-// the mark from before the rename lived on in the shared-page header after the app had
-// changed its own, because nothing compared them. So this does.
+// The mark is inlined in several places, each with its own reason not to load
+// a file: the React logo (drawn with the page, no request), logo.svg and
+// favicon.svg (served as they are), and three pages that load nothing from the
+// app: the shared-page header (server/public.go), the desktop sign-in pages
+// (server/desktop_auth.go) and the desktop app's connect screen. Copies drift:
+// the mark from before the rename lived on in three of them after the app had
+// changed its own, because nothing compared them. So this finds them itself
+// and compares them:
 //
-// It also fails on mix-blend-mode in any copy. The owner's artwork drew the
-// overlap with blend modes, which mix with the page behind the SVG and turned
-// the front shape black in dark mode; the copies draw it as a clipped shape.
+//   - every file that draws the mark's front page draws all of it, in the
+//     artwork's colours, with the overlap clipped to the back page (an
+//     unclipped overlap paints the whole front page dark);
+//   - no file still draws the old mark;
+//   - no copy uses mix-blend-mode. The artwork as drawn coloured the overlap
+//     with blend modes, which mix with the page behind the SVG and turned the
+//     front shape black in dark mode.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -30,6 +36,18 @@ if (shapes.length !== 3) {
   console.error(`check-brand: brand/mark.svg should draw 3 filled shapes, found ${shapes.length}`);
   process.exit(1);
 }
+const FRONT = shapes[1].d;
+
+// Fingerprints of the mark from before the rename: its viewBox and the first
+// command of its outline.
+const OLD_MARK = [/96 100 204 204/, /M201\.1 113\.4/];
+
+// Comments may explain the blend; only code and markup that use one count.
+const withoutComments = (src) =>
+  src
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
 
 function problems(file, src) {
   const out = [];
@@ -37,26 +55,77 @@ function problems(file, src) {
     if (!src.includes(d)) out.push(`${file}: a shape of brand/mark.svg is missing or changed`);
     if (!new RegExp(`["']${fill}["']`, 'i').test(src)) out.push(`${file}: the colour ${fill} is missing`);
   }
-  // Comments may explain the blend; only markup that uses one counts.
-  if (/mix-blend-mode/.test(src.replace(/<!--[\s\S]*?-->/g, ""))) out.push(`${file}: uses mix-blend-mode, which turns the mark black on a dark page`);
+  if (!/<clipPath\b/.test(src) || !/clip-path="url\(#|clipPath=\{/.test(src)) {
+    out.push(`${file}: the overlap is not clipped to the back page`);
+  }
+  if (/mix-blend-mode/.test(withoutComments(src))) {
+    out.push(`${file}: uses mix-blend-mode, which turns the mark black on a dark page`);
+  }
   return out;
 }
 
-// Self-test: the comparison has to be able to fail, or a broken pattern above
-// would pass every copy. A copy of the old mark and a blended copy must both fail.
-const blended = mark.replace('<path d=', '<g style="mix-blend-mode:darken"></g><path d=');
-if (!problems('self-test', '<svg><path d="M0 0h1" fill="#37352f"/></svg>').length ||
-    !problems('self-test', blended).length) {
-  console.error('check-brand: self-test failed, the check cannot tell a wrong mark from the right one');
+// Self-test: each refusal has to be able to fail, or a broken pattern above
+// would pass every copy.
+const selfTests = {
+  'a different mark': '<svg><path d="M0 0h1" fill="#37352f"/></svg>',
+  'a blended copy': mark.replace('<path d=', '<g style="mix-blend-mode:darken"></g><path d='),
+  'an unclipped copy': mark.replace(/ clip-path="url\(#[^"]+\)"/, ''),
+};
+for (const [name, src] of Object.entries(selfTests)) {
+  if (!problems('self-test', src).length) {
+    console.error(`check-brand: self-test failed, ${name} passed`);
+    process.exit(1);
+  }
+}
+if (problems('self-test', mark).length) {
+  console.error('check-brand: self-test failed, brand/mark.svg itself does not pass');
   process.exit(1);
 }
 
-const copies = ['web/src/Logo.tsx', 'web/public/logo.svg', 'web/public/favicon.svg', 'server/public.go'];
-const failures = copies.flatMap((file) => problems(file, read(file)));
+// Where a copy can live. Built output and installed packages are not copies.
+const ROOTS = ['server', 'web/src', 'web/public', 'web/index.html', 'desktop/src'];
+const SKIP = new Set(['node_modules', 'dist']);
+function* files(path) {
+  if (statSync(join(repo, path)).isFile()) {
+    yield path;
+    return;
+  }
+  for (const name of readdirSync(join(repo, path))) {
+    if (!SKIP.has(name)) yield* files(join(path, name));
+  }
+}
+
+// The copies known when this was written. Finding fewer means one was dropped
+// or changed beyond recognition, which the scan alone would not notice.
+const EXPECTED = [
+  'web/src/Logo.tsx',
+  'web/public/logo.svg',
+  'web/public/favicon.svg',
+  'server/public.go',
+  'server/desktop_auth.go',
+  'desktop/src/connect.html',
+];
+
+const failures = [];
+const copies = [];
+for (const root of ROOTS) {
+  for (const file of files(root)) {
+    if (!/\.(go|tsx?|jsx?|mjs|html|svg|css)$/.test(file)) continue;
+    const src = read(file);
+    if (OLD_MARK.some((re) => re.test(src))) failures.push(`${file}: still draws the old mark`);
+    if (src.includes(FRONT)) {
+      copies.push(file);
+      failures.push(...problems(file, src));
+    }
+  }
+}
+for (const file of EXPECTED) {
+  if (!copies.includes(file)) failures.push(`${file}: should draw the mark and does not`);
+}
 
 if (failures.length) {
   for (const f of [...new Set(failures)]) console.error(`check-brand: ${f}`);
-  console.error('Copy the shapes from brand/mark.svg (see brand/README.md).');
+  console.error('Copy the mark from brand/mark.svg (see brand/README.md).');
   process.exit(1);
 }
-console.log(`check-brand: ${copies.length} copies of the mark match brand/mark.svg`);
+console.log(`check-brand: ${copies.length} copies of the mark match brand/mark.svg, no old mark left`);

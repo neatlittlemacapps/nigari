@@ -31,9 +31,16 @@ and an animation. Every logo and icon is now drawn from `brand/`.
 - **One script renders every raster** (`build-app-icons.mjs`, now including
   `favicon.ico` and the desktop PNGs); the old `desktop/build/*.svg` sources
   and the unused `desktop/icon-dark.png` are gone.
-- **`check-brand.mjs`** compares the four inline copies of the mark with
-  `brand/mark.svg` and refuses a blend mode. Without it the salt.md mark had
-  lived on in the shared-page header after the app changed its own.
+- **`check-brand.mjs`** finds every inline copy of the mark itself (six: the
+  React logo, `logo.svg`, `favicon.svg`, the shared-page header, the desktop
+  sign-in pages, the desktop connect screen), compares each with
+  `brand/mark.svg`, requires the overlap to be clipped, refuses a blend mode
+  and refuses any leftover of the old mark. A first version compared a fixed
+  list of four and passed while the desktop pages still drew the old mark
+  (found by `/code-review`).
+- **The manifest's splash colour is the tile's lilac** (`background_color`),
+  so an Android splash shows the icon on its own colour; `theme_color` is the
+  light sidebar colour, as in `index.html`, replacing the old green.
 - **The animation is kept, not used.** The owner wants it on the empty screen
   later, with a set of situational icons still to come; the Welcome page and
   its 🧂 icon are left alone.
