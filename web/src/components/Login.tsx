@@ -102,7 +102,7 @@ export default function Login({ onSuccess }: { onSuccess: (user: User) => void }
   return (
     <div className="login-wrap">
       <form className="login-card ring" onSubmit={submit}>
-        <div className="login-logo"><Logo size={56} /></div>
+        <div className="login-logo"><Logo size={56} decorative={!instanceName} /></div>
         {/* With no instance name of its own this is the wordmark — small, mono,
             tightly tracked, as on the website and in the banner. When the
             instance carries its own name that is the company's mark, and it

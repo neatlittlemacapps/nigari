@@ -11,6 +11,7 @@
       "caption": "The first screen of a brand new instance: it creates the first account, which is also the owner.",
       "shows": [
         "web/src/components/Setup.tsx",
+        "web/src/Logo.tsx",
         "web/src/tokens.css",
         "web/src/theme.css"
       ],
@@ -26,7 +27,8 @@
         }
       ],
       "takenAt": {
-        "web/src/components/Setup.tsx": "495148e9f3a7",
+        "web/src/components/Setup.tsx": "b8dc0ef7f2a2",
+        "web/src/Logo.tsx": "71d65508ee9a",
         "web/src/tokens.css": "febe0adc0e97",
         "web/src/theme.css": "0ef4724d4a6d"
       },
@@ -39,6 +41,7 @@
       "caption": "Signing in. Buttons for Microsoft or Google appear here when single sign-on is configured.",
       "shows": [
         "web/src/components/Login.tsx",
+        "web/src/Logo.tsx",
         "web/src/tokens.css",
         "web/src/theme.css"
       ],
@@ -54,7 +57,8 @@
         }
       ],
       "takenAt": {
-        "web/src/components/Login.tsx": "19f14e0b0571",
+        "web/src/components/Login.tsx": "7b7804d014a5",
+        "web/src/Logo.tsx": "71d65508ee9a",
         "web/src/tokens.css": "febe0adc0e97",
         "web/src/theme.css": "0ef4724d4a6d"
       },
@@ -604,7 +608,7 @@
         }
       ],
       "takenAt": {
-        "server/public.go": "e0881ae3dbc3",
+        "server/public.go": "86b2a62a07d2",
         "web/src/components/Editor.tsx": "3decaea6a9c0",
         "web/src/tokens.css": "febe0adc0e97",
         "web/src/theme.css": "0ef4724d4a6d"

@@ -7,6 +7,78 @@ entries are not edited away.
 
 ---
 
+## 2026-11-09 — nigari's own mark and icons, from one folder of artwork (#322)
+
+The owner sent the artwork on 2026-11-06: the mark, a light and a dark tile,
+and an animation. Every logo and icon is now drawn from `brand/`.
+
+- **The mark is flattened.** As drawn it coloured the overlap with
+  `mix-blend-mode`; a blend mixes with whatever is behind the SVG, and on a
+  dark page the front shape turned black (rendered and checked in Chromium;
+  the owner's dark tile showed it too). The copies draw three plain shapes in
+  the colours the blend gave on white (`#A98AFB`, `#6542E8`, `#391FA2`).
+  Owner: "yes". Rejected: a second, dark-mode mark (one flattened mark reads
+  on both); `isolation: isolate` around the blend (fixes it in Chromium, but
+  leaves every copy depending on a renderer that supports blending; three
+  plain shapes depend on nothing).
+- **The mark keeps its colours in both themes.** The old mark was one colour
+  that took the text colour around it; the new one is drawn in colour, as the
+  owner drew it.
+- **Home-screen tile: the owner's lilac square**, replacing the white tile.
+  Still a plain square: iOS and Android round it themselves.
+- **Desktop icon: the same squares on Apple's 824 px grid**, rounded and with
+  a shadow, because macOS does not round or shrink an app icon.
+- **One script renders every raster** (`build-app-icons.mjs`, now including
+  `favicon.ico` and the desktop PNGs); the old `desktop/build/*.svg` sources
+  and the unused `desktop/icon-dark.png` are gone.
+- **`check-brand.mjs`** finds every inline copy of the mark itself (six: the
+  React logo, `logo.svg`, `favicon.svg`, the shared-page header, the desktop
+  sign-in pages, the desktop connect screen), compares each with
+  `brand/mark.svg`, requires the overlap to be clipped, refuses a blend mode
+  and refuses any leftover of the old mark. A first version compared a fixed
+  list of four and passed while the desktop pages still drew the old mark
+  (found by `/code-review`).
+- **The manifest's splash colour is the tile's lilac** (`background_color`),
+  so an Android splash shows the icon on its own colour; `theme_color` is the
+  light sidebar colour, as in `index.html`, replacing the old green.
+- **The animation is kept, not used.** The owner wants it on the empty screen
+  later, with a set of situational icons still to come; the Welcome page and
+  its 🧂 icon are left alone.
+- **The accent colour stays green.** Changing the product's colours to match
+  the mark is a separate decision for the owner, not part of #322.
+
+---
+
+## 2026-11-06 — Specs and plans hold decisions, not facts the code graph regenerates
+
+**Decision** (owner: "I just want to avoid creating a huge blob of data to wade
+through", then "add the rule"): constitution IV, "Derive from code", now covers
+specs and plans (version 1.3.0). They record what the code cannot tell — intent,
+requirements, decisions with the options turned down, numbers measured at the
+time — and do not copy what the code graph or the code produce on demand: file
+lists, caller inventories, symbol counts, pasted query output, code bodies. The
+plan's CodeGraph section keeps one line per query with its conclusion. A plan
+artifact with nothing of its own (`research.md` without a decision,
+`data-model.md` without a new entity, `contracts/` without a new route or tool,
+`quickstart.md` repeating the tasks) is not written. The spec template, the plan
+template override, the `/speckit-plan` skill and `AGENTS.md` carry the rule.
+
+**Why:** the twelve specs measured 9,575 lines of Markdown on 2026-11-06, 300 to
+1,350 per feature. Much of the bulk is inventory the graph rebuilds current every
+session; copied into a spec it goes stale the day the code moves and buries the
+decisions a reader came for. The graph answers *what the code is*, the spec
+*why it is that way*; each should hold only its own half.
+
+**Turned down:** a check that measures spec length or flags pasted listings
+(whether a line is a decision or a copied fact is judgement, and a length limit
+would cut decisions as readily as noise, so review holds this rule, an exception
+to IV's "a rule arrives with its check"); trimming the existing specs 001–012
+now (they are the record of why shipped code is as it is, and code comments and
+`check-peek.mjs` point into them; a spec is trimmed when it is next touched);
+deleting shipped specs (same reason).
+
+---
+
 ## 2026-11-05 — Browser requests from another address are refused; `NIGARI_TRUST_PROXY`
 
 Found while auditing nigari for Umbrel (owner's brief, 2026-11-05).

@@ -7541,9 +7541,8 @@ a,
   }
 }
 
-/* The logo replaces the earlier 🧂 emoji. It inherits the text colour (see
-   Logo.tsx), so all it needs here is alignment — in dark mode it turns light by
-   itself. */
+/* The logo replaces the earlier 🧂 emoji. It carries its own colours, the
+   same in both themes (see Logo.tsx), so all it needs here is alignment. */
 .login-logo svg,
 .app-loading svg,
 .empty-emoji svg {

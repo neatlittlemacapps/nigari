@@ -27,7 +27,7 @@ export default function Setup({ onSuccess }: { onSuccess: (user: User) => void }
   return (
     <div className="login-wrap">
       <form className="login-card ring" onSubmit={submit}>
-        <div className="login-logo"><Logo size={56} /></div>
+        <div className="login-logo"><Logo size={56} decorative /></div>
         {/* The same card as signing in and as accepting an invitation: the ring,
             the mark at 56, the wordmark. This screen had been left on the older
             shape — a leaf emoji above the mark, and the product name spelled out

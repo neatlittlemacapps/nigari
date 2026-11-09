@@ -71,6 +71,8 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Phase 1: Generate data-model.md, contracts/, quickstart.md
    - Re-evaluate Constitution Check post-design
 
+3a. **Keep it lean** (constitution IV): every artifact records decisions and conclusions, not facts the code graph regenerates (file lists, caller inventories, counts, pasted output). Skip an artifact with nothing of its own — no `research.md` without a decision, no `data-model.md` without a new or changed entity, no `contracts/` without a new or changed route or tool, no `quickstart.md` that repeats the tasks — and say in the Completion Report which were skipped and why.
+
 ## Mandatory Post-Execution Hooks
 
 **You MUST complete this section before reporting completion to the user.**

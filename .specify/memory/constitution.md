@@ -1,5 +1,12 @@
 <!--
 Sync Impact Report
+- Version: 1.2.0 → 1.3.0 (2026-11-06): IV extends "derive, do not remember" to specs
+  and plans — they hold intent and decisions, not facts the code graph regenerates,
+  and an artifact with nothing of its own is not written; a new rule, hence MINOR;
+  asked for by the owner. Updated: spec-template.md, plan-template override,
+  .claude/skills/speckit-plan/SKILL.md, AGENTS.md, docs/decisions.md. No check
+  enforces it: whether a line is a decision or a copied fact is judgement, so
+  review holds it.
 - Version: 1.1.0 → 1.2.0 (2026-10-30): V makes Dutch (`nl.json`) a required catalogue
   beside German, a new enforced rule, hence MINOR; the owner's call (#324, "include Dutch in your
   translation related actions from now on"). Updated: AGENTS.md,
@@ -58,6 +65,20 @@ show. A new rule that matters arrives with the check that enforces it.
 *Why:* a convention without a check decays, and documentation that is wrong is
 worse than none.
 
+The same holds for specs and plans: they record what the code cannot tell —
+intent, requirements, decisions with the options turned down, numbers measured
+at the time — and MUST NOT copy what the code graph or the code produce on
+demand: file lists, caller inventories, symbol counts, pasted query output,
+code bodies. Name the symbol or file and state the conclusion instead. A plan
+artifact with nothing of its own (a `research.md` with no decision, a
+`data-model.md` with no new entity, `contracts/` with no new route or tool, a
+`quickstart.md` that repeats the tasks) is not written.
+
+*Why:* copied facts go stale the day the code moves and mislead the next reader,
+while the graph regenerates them current every session; and every line a reader
+must wade through to find the decision costs attention (owner, 2026-11-06: "I just
+want to avoid creating a huge blob of data to wade through").
+
 ### V. English source
 
 Code, comments and user-facing text are English. UI text goes through `t()` and is
@@ -109,4 +130,4 @@ a person, in a pull request that updates the version, says why, and updates the 
 and tasks overrides and `AGENTS.md` where they depend on the change. Versioning:
 MAJOR for a removed or redefined principle, MINOR for a new one, PATCH for wording.
 
-**Version**: 1.2.0 | **Ratified**: 2026-10-25 | **Last Amended**: 2026-10-30
+**Version**: 1.3.0 | **Ratified**: 2026-10-25 | **Last Amended**: 2026-11-06

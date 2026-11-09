@@ -141,6 +141,12 @@ added on the REST side and missing on the MCP side, found later one by one.
 - Features go through Spec Kit: `/speckit-specify`, `/speckit-clarify`,
   `/speckit-plan`, `/speckit-tasks`, then `/speckit-implement`. Specs live in
   `specs/NNN-name/`; the constitution is `.specify/memory/constitution.md`.
+- **Specs stay lean** (constitution IV, owner 2026-11-06). A spec or plan holds
+  what the code cannot tell: intent, requirements, decisions with the options
+  turned down. It does not copy what the code graph regenerates (file lists,
+  caller inventories, counts, pasted output), and a plan file with nothing of
+  its own (`research.md`, `data-model.md`, `contracts/`, `quickstart.md`) is
+  not written.
 - `tasks.md` is the source of truth for tasks. Issues on the board mirror it and
   are created only by `/speckit-github-taskstoissues`, as sub-issues of the
   feature's issue, titled `T001: …`, with the task's `surface:*` label. Then
