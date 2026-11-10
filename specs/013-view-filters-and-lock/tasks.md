@@ -90,7 +90,7 @@ description: "Tasks for a view's filters changed for oneself, quick filters, sub
 ## Phase 5: Closing PR 2
 
 - [x] T031 [P] [US1] [wiki] `wiki/views.md`: personal changes, the bar, embeds; `docs/what-it-does.md`
-- [ ] T032 [test] Before PR 2 is offered: gate green; `codegraph sync` and `codegraph callers` on `mergeViewState`, `rowPinsForView`, `propsInView`; `/code-review`; `/security-review` (owner-only rows); `ux-ui-audit` on the bar in light and dark at desktop and phone width; findings fixed or filed
+- [x] T032 [test] Before PR 2 is offered: gate green; `codegraph sync` and `codegraph callers` on `mergeViewState`, `rowPinsForView`, `propsInView`; `/code-review`; `/security-review` (owner-only rows); `ux-ui-audit` on the bar in light and dark at desktop and phone width; findings fixed or filed
 
 ---
 
