@@ -46,7 +46,9 @@ await withFixture(async ({ page, api, base, workspace, path, read }) => {
   // ...and nowhere else: the collection's saved view is untouched.
   assert.deepEqual((await read()).views, before, "the collection's views must not change");
 
-  // It is kept with the document.
+  // It is kept: since spec 013 on the person's account first (a personal
+  // change, personal-view.mjs), until they save it for everyone into the
+  // document. A reload right after the edit must not lose it.
   await eventually(async () => {
     await page.reload();
     await rowsIn('.bn-db-embed').first().waitFor();

@@ -1,5 +1,6 @@
 import type { AgentWork } from './agentPresence';
 import type { AggResult } from './chartLayout';
+import type { PersonalViewState } from './viewState';
 import type {
   ApiToken,
   Backlink,
@@ -344,10 +345,14 @@ export const api = {
     // The view a row is made in (spec 005): the server stores the values its
     // filters pin down and answers matchesView.
     viewId?: string,
+    // In a document's embed: its scope (viewState.ts), so the person's own
+    // filters for that embed pin the row, not the ones they set on the
+    // database's page (spec 013).
+    viewScope?: string,
   ) =>
     req<Page & { matchesView?: boolean }>('/api/pages', {
       method: 'POST',
-      body: JSON.stringify({ parentId, title, type, props, workspaceId, viewId }),
+      body: JSON.stringify({ parentId, title, type, props, workspaceId, viewId, viewScope }),
     }),
   getPage: (id: string) => req<Page>(`/api/pages/${id}`),
   updatePage: (
@@ -382,7 +387,7 @@ export const api = {
   addDatabaseTemplate: (collectionId: string, body: { title?: string; fromPageId?: string } = {}) =>
     req<Page>(`/api/collections/${collectionId}/templates`, { method: 'POST', body: JSON.stringify(body) }),
   // One request: a row in this database from its template, props laid on top.
-  rowFromTemplate: (collectionId: string, body: { templateId: string; title?: string; props?: Record<string, unknown>; viewId?: string }) =>
+  rowFromTemplate: (collectionId: string, body: { templateId: string; title?: string; props?: Record<string, unknown>; viewId?: string; viewScope?: string }) =>
     req<Page & { matchesView?: boolean }>(`/api/collections/${collectionId}/from-template`, { method: 'POST', body: JSON.stringify(body) }),
   trashPage: (id: string) => req<{ ok: boolean }>(`/api/pages/${id}`, { method: 'DELETE' }),
   // fromTemplate: instantiate a template (copy keeps the title).
@@ -429,6 +434,17 @@ export const api = {
     req<{ viewsLocked: ViewsLock | null }>(`/api/collections/${pageId}/lock`, { method: 'PUT' }),
   unlockViews: (pageId: string) =>
     req<{ viewsLocked: ViewsLock | null }>(`/api/collections/${pageId}/lock`, { method: 'DELETE' }),
+  // A person's own filter and sort per view (spec 013, US1). Session-only
+  // and the caller's own rows only, on the server.
+  getViewStates: (pageId: string) =>
+    req<{ states: Record<string, PersonalViewState> }>(`/api/collections/${pageId}/personal`),
+  putViewState: (pageId: string, scope: string, state: PersonalViewState) =>
+    req<PersonalViewState>(`/api/collections/${pageId}/personal/${encodeURIComponent(scope)}`, {
+      method: 'PUT',
+      body: JSON.stringify(state),
+    }),
+  deleteViewState: (pageId: string, scope: string) =>
+    req<{ ok: boolean }>(`/api/collections/${pageId}/personal/${encodeURIComponent(scope)}`, { method: 'DELETE' }),
   // Who says they are working on what. Filtered per page on the server — the
   // live signal that triggers this carries no content for exactly that reason.
   presence: () =>

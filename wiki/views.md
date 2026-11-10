@@ -13,10 +13,11 @@ columns work. The rows and the schema behind them are in
 [Collections](collections.md); the property types are in
 [Properties](properties.md).
 
-One thing to know before the rest: **a view is not a personal setting.** It is
-stored on the collection, so a filter you add is the filter everyone sees in
-that view, on every device, the next time they open the collection. If you want
-your own cut of the data, add a view rather than change one.
+One thing to know before the rest: **a view is shared, your filter is
+yours.** A view is stored on the collection: its type, its columns and its
+grouping are what everyone sees. A filter or sort you set is first your own,
+kept on your account, until you choose **Save for everyone** (see [Your own
+filter and sort](#your-own-filter-and-sort)).
 
 ## The eight types
 
@@ -520,6 +521,44 @@ When the view is filtered or sorted, **Filtered** or **Sorted** stands beside
 the view tabs while the buttons are hidden, so rows missing from the table are
 never a surprise. A database on its own page always shows its toolbar.
 
+## Your own filter and sort
+
+Changing a view's **Filter** or **Sort** changes it for you only. Nobody else's
+view moves, and the change is kept on your account, so it is there on your
+phone and after you sign in again. A bar under the toolbar says so:
+
+| | |
+|---|---|
+| *Only you see these changes* | The view shows your filter and sort, not the shared ones. |
+| **Reset** | Drops your change; you see the view as everyone does. |
+| **Save for everyone** | Makes your filter and sort the view's, for everybody, and the bar goes. Offered only to someone who may change the view, and not while the views are [locked](#locking-a-databases-views). It is logged like any change to a view. |
+
+Some things to know:
+
+- **Your filter replaces the shared one; it is not added to it.** You start from
+  the view's filters, so removing one of them is a change too. Set them back to
+  exactly what the view has and the bar goes away by itself.
+- **Somebody else saving the view does not take your change away.** You keep
+  seeing yours, and the bar still offers **Reset**.
+- **Readers** may filter and sort for themselves; **Save for everyone** is not
+  offered to them.
+- **A new row** made in the view takes the values your own filters pin down,
+  as it does for a view's filters (see [What a view leaves out](#what-a-view-leaves-out-without-saying-so)).
+- **The lock does not cover it**: on a locked database you can still filter and
+  sort for yourself.
+- **Grouping, columns and the rest stay shared.** Only filter and sort are
+  personal; a board's **Group** still changes the view for everybody.
+- **Agents have no personal changes.** What an agent changes with `set_view`
+  changes the view for everyone, and a row it makes takes the shared filters'
+  values.
+- When the view itself is removed, everybody's own filter and sort for it go
+  with it.
+
+In a document, the same holds per embedded database: your filter there is
+yours, for that embed only, and **Save for everyone** writes it into the
+document's embed (which only someone who can edit the document may), not into
+the database's view.
+
 ## Filters
 
 A filter is a property, an operator and usually a value. Several filters on one
@@ -617,8 +656,8 @@ With no sort, rows keep the order they have in the collection: the manual
 position first, then when they were created. That is also the order cards come in
 inside a board column and across a gallery.
 
-Like a filter, a sort belongs to the view and applies for everybody looking at
-it.
+Like a filter, a sort you set is your own until you save it for everyone (see
+[Your own filter and sort](#your-own-filter-and-sort)).
 
 ## Which properties a view shows
 
@@ -699,8 +738,9 @@ view. Column widths, column order, hidden columns, how
 rows open, a chart's style and a form's texts are left out, so a table resized
 ten times does not bury the change somebody is looking for.
 
-An embedded collection is the same collection, with the same views: changing a
-filter there changes it everywhere.
+An embedded collection is the same collection, with the same views. Its filter
+and sort belong to the document, not to the views: changing one there changes
+nothing on the collection's page or in another document.
 
 Copying a set of views to another collection is not something the interface can
 do. What it can do is copy a whole workspace's structure:
@@ -727,10 +767,9 @@ While the views are locked:
   right-click menu or double-click rename on the tabs, no moving, hiding or
   resizing of columns, no **Group** on a board, no chart settings, and a form's
   heading and description cannot be edited.
-- **Filter** and **Sort** are not offered on the database's own page either.
-  **Filtered** and **Sorted** beside the tabs say what the view does. Changing
-  a filter just for yourself, while the views stay as they are for everyone
-  else, is planned (spec 013) and not built yet.
+- **Filter** and **Sort** stay: they change the view for you only (see [Your
+  own filter and sort](#your-own-filter-and-sort)). **Save for everyone** is not
+  offered while the views are locked.
 - Rows work as before: new rows, edits, moving a card between columns.
 - The schema is not locked: **Edit properties** still adds, renames, changes
   and removes properties, and the views are left exactly as they are. The one
@@ -740,9 +779,9 @@ While the views are locked:
   and the dialog stays open with your edits. Unlock first, or remove the
   property from that view. The same rule holds for an agent's
   `update_schema`.
-- In a document, the database's own filter and sort controls stay: an
-  embedded database's filters and sort belong to the document, not to the
-  views, and the lock does not cover them.
+- In a document, an embedded database's filters and sort belong to the
+  document, not to the views, and the lock does not cover them: **Save for
+  everyone** stays offered there to anyone who can edit the document.
 
 The server enforces it, not just the interface: a save that would change a
 locked view is refused with *This database's views are locked. Unlock them to

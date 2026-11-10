@@ -72,24 +72,24 @@ description: "Tasks for a view's filters changed for oneself, quick filters, sub
 
 **Independent Test**: quickstart §3 and §4.
 
-- [ ] T019 [US1] [backend] New `server/viewprefs.go`: `GET /api/collections/{id}/personal`, `PUT` and `DELETE /api/collections/{id}/personal/{scope}`, behind `auth` + `sessionOnly` + `canReadReq`, the caller's rows only; state checked as data-model.md says ("At most 32 KB; filters checked like a view's (`checkViewFilter`), unknown properties dropped. An empty state deletes the row"); a scope naming no view of the database, or an embed in a page the caller cannot read, is 404. Routes in `server/server.go`
-- [ ] T020 [US1] [backend] On every views save (REST and MCP), delete `view_prefs` rows whose view id is gone
-- [ ] T021 [US1] [backend] `mergeViewState(shared, personal)` in Go, research R5 (personal filters replace shared, quick picks added, personal sort replaces)
-- [ ] T022 [US1] [backend] `rowPinsForView(colID, viewID, userID)` and `propsInView` (`server/viewpins.go`) use the merged filters for the person; all four callers pass the person (`handleCreatePage`, `handleRowFromTemplate`) or none (`mcpCall`, `mcpCreateFromTemplate`: agents have no personal state)
-- [ ] T023 [US1] [mcp] Closed list entry "personal view changes (an agent's view change is always for everyone)"; `capabilities.json`: personal routes named, "closed" with its reason, `gapBudget` unchanged (decisions.md, 2026-11-04; was "a gap, 11 → 12"); `wiki/agent-access.md`
-- [ ] T024 [US1] [test] Go tests: owner-only reads and writes (another account gets nothing); a reader may write their own; a token refused; cleanup on view delete, and by cascade on database delete and account delete; pins with personal filters; a parity check that `mergeViewState` and the browser's merge agree (shared fixture with `check-viewstate.mjs`)
-- [ ] T025 [P] [US1] [perf] Benchmarks in `server/bench_world_test.go`: the personal-state lookup and `rowPinsForView` with personal filters, within spec 002's read budget
-- [ ] T026 [US1] [ui] New `web/src/viewState.ts` (pure merge, research R5) and `web/scripts/check-viewstate.mjs`, in `npm run check`
-- [ ] T027 [US1] [ui] `web/src/api.ts` personal routes; `CollectionView.tsx` loads the states once per database in parallel with the rows, sends the merged filters and sort to the rows query, makes filter and sort edits personal (database views and embeds, keyed by scope), debounced PUT
-- [ ] T028 [US1] [ui] New `web/src/components/ViewChangeBar.tsx`: "Only you see these changes", **Reset** (`resetView` `RotateCcw`), **Save for everyone** (`saveViewForEveryone` `Users`, only for someone who can edit and, for a database view, while not locked). Save writes through the normal save (REST PUT, or `embed.onView` for an embed), then deletes the personal state (research R4)
-- [ ] T029 [P] [US1] [i18n] The bar's strings in `de.json`, `es.json`, `nl.json`
-- [ ] T030 [US1] [test] New `web/tests/personal-view.mjs`, registered: two accounts, two contexts of one account as two devices; scenarios 1–7 of US1, the embed case and a reader. Mutation-checked
+- [x] T019 [US1] [backend] New `server/viewprefs.go`: `GET /api/collections/{id}/personal`, `PUT` and `DELETE /api/collections/{id}/personal/{scope}`, behind `auth` + `sessionOnly` + `canReadReq`, the caller's rows only; state checked as data-model.md says ("At most 32 KB; filters checked like a view's (`checkViewFilter`), unknown properties dropped. An empty state deletes the row"); a scope naming no view of the database, or an embed in a page the caller cannot read, is 404. Routes in `server/server.go`
+- [x] T020 [US1] [backend] On every views save (REST and MCP), delete `view_prefs` rows whose view id is gone
+- [x] T021 [US1] [backend] `mergeViewState(shared, personal)` in Go, research R5 (personal filters replace shared, quick picks added, personal sort replaces)
+- [x] T022 [US1] [backend] `rowPinsForView(colID, viewID, userID)` and `propsInView` (`server/viewpins.go`) use the merged filters for the person; all four callers pass the person (`handleCreatePage`, `handleRowFromTemplate`) or none (`mcpCall`, `mcpCreateFromTemplate`: agents have no personal state)
+- [x] T023 [US1] [mcp] Closed list entry "personal view changes (an agent's view change is always for everyone)"; `capabilities.json`: personal routes named, "closed" with its reason, `gapBudget` unchanged (decisions.md, 2026-11-04; was "a gap, 11 → 12"); `wiki/agent-access.md`
+- [x] T024 [US1] [test] Go tests: owner-only reads and writes (another account gets nothing); a reader may write their own; a token refused; cleanup on view delete, and by cascade on database delete and account delete; pins with personal filters; a parity check that `mergeViewState` and the browser's merge agree (shared fixture with `check-viewstate.mjs`)
+- [x] T025 [P] [US1] [perf] Benchmarks in `server/bench_world_test.go`: the personal-state lookup and `rowPinsForView` with personal filters, within spec 002's read budget
+- [x] T026 [US1] [ui] New `web/src/viewState.ts` (pure merge, research R5) and `web/scripts/check-viewstate.mjs`, in `npm run check`
+- [x] T027 [US1] [ui] `web/src/api.ts` personal routes; `CollectionView.tsx` loads the states once per database in parallel with the rows, sends the merged filters and sort to the rows query, makes filter and sort edits personal (database views and embeds, keyed by scope), debounced PUT
+- [x] T028 [US1] [ui] New `web/src/components/ViewChangeBar.tsx`: "Only you see these changes", **Reset** (`resetView` `RotateCcw`), **Save for everyone** (`saveViewForEveryone` `Users`, only for someone who can edit and, for a database view, while not locked). Save writes through the normal save (REST PUT, or `embed.onView` for an embed), then deletes the personal state (research R4)
+- [x] T029 [P] [US1] [i18n] The bar's strings in `de.json`, `es.json`, `nl.json`
+- [x] T030 [US1] [test] New `web/tests/personal-view.mjs`, registered: two accounts, two contexts of one account as two devices; scenarios 1–7 of US1, the embed case and a reader. Mutation-checked
 
 ---
 
 ## Phase 5: Closing PR 2
 
-- [ ] T031 [P] [US1] [wiki] `wiki/views.md`: personal changes, the bar, embeds; `docs/what-it-does.md`
+- [x] T031 [P] [US1] [wiki] `wiki/views.md`: personal changes, the bar, embeds; `docs/what-it-does.md`
 - [ ] T032 [test] Before PR 2 is offered: gate green; `codegraph sync` and `codegraph callers` on `mergeViewState`, `rowPinsForView`, `propsInView`; `/code-review`; `/security-review` (owner-only rows); `ux-ui-audit` on the bar in light and dark at desktop and phone width; findings fixed or filed
 
 ---

@@ -1314,5 +1314,8 @@
   "Views locked": "Vistas bloqueadas",
   "Views locked by {name}": "Vistas bloqueadas por {name}",
   "Views unlocked by {name}": "Vistas desbloqueadas por {name}",
-  "The view “{view}” uses “{property}”, and the views are locked. Unlock them to remove the property.": "La vista «{view}» usa «{property}» y las vistas están bloqueadas. Desbloquéalas para eliminar la propiedad."
+  "The view “{view}” uses “{property}”, and the views are locked. Unlock them to remove the property.": "La vista «{view}» usa «{property}» y las vistas están bloqueadas. Desbloquéalas para eliminar la propiedad.",
+  "Only you see these changes": "Solo tú ves estos cambios",
+  "Save for everyone": "Guardar para todos",
+  "Your change to this view was not saved": "Tu cambio en esta vista no se guardó"
 }

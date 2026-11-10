@@ -358,7 +358,7 @@ export const databaseSpec = createReactBlockSpec(
       const collectionId = (block.props as { collectionId: string }).collectionId;
       const chartKind = ((block.props as { chartKind?: string }).chartKind ?? '') as ChartKind | '';
       const localRaw = (block.props as { local?: string }).local ?? '';
-      const { pagesById, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged } = useBlockCtx();
+      const { pagesById, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged, pageId } = useBlockCtx();
       const [q, setQ] = useState('');
       // Somebody who may read the document but not change it can still filter
       // what they see; it just stays with them instead of being written back.
@@ -388,6 +388,12 @@ export const databaseSpec = createReactBlockSpec(
         onViewId: (viewId) => keep({ ...local, viewId }),
         onView: (viewId, patch) =>
           keep({ ...local, views: { ...local.views, [viewId]: { ...local.views[viewId], ...patch } } }),
+        // A filter or sort set here is the person's own first (spec 013);
+        // saving it for everyone writes it into this block, which only
+        // someone who can edit the document may.
+        pageId,
+        blockId: block.id,
+        canSave: editor.isEditable,
       };
 
       if (!collectionId) {
