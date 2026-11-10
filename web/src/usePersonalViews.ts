@@ -15,11 +15,11 @@ const SAVE_DELAY = 400;
  *  rules). Nothing is kept in the browser's storage: the state lives on the
  *  account, so it follows the person to another device (research R2).
  *
- *  `ready` is false until the first answer: the view draws as shared until
- *  then, and the rows wait for it, so they are not fetched twice. */
+ *  Until the first answer the view draws as shared (research R2): the rows
+ *  are not held back by this request. Someone with their own filter sees the
+ *  shared rows for a moment, then theirs. */
 export function usePersonalViews(collectionId: string) {
   const [states, setStates] = useState<Record<string, PersonalViewState>>({});
-  const [ready, setReady] = useState(false);
   // Scopes changed here since the load started: the answer of a load must
   // not put back what the person has just edited.
   const touched = useRef(new Set<string>());
@@ -41,13 +41,9 @@ export function usePersonalViews(collectionId: string) {
   const flushWaiting = useCallback(() => {
     for (const [scope, p] of pending.current) {
       window.clearTimeout(p.timer);
-      const url = `/api/collections/${collectionId}/personal/${encodeURIComponent(scope)}`;
-      void fetch(
-        url,
-        p.state
-          ? { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p.state), keepalive: true }
-          : { method: 'DELETE', keepalive: true },
-      ).catch(() => {});
+      const done = p.state ? api.putViewState(collectionId, scope, p.state, true) : api.deleteViewState(collectionId, scope, true);
+      // Nobody is left to tell when the page is gone.
+      done.catch(() => {});
     }
     pending.current.clear();
   }, [collectionId]);
@@ -61,7 +57,6 @@ export function usePersonalViews(collectionId: string) {
     let live = true;
     touched.current = new Set();
     setStates({});
-    setReady(false);
     api
       .getViewStates(collectionId)
       .then((r) => {
@@ -76,8 +71,7 @@ export function usePersonalViews(collectionId: string) {
         });
       })
       // Not signed in the usual way, or the request failed: the shared view.
-      .catch(() => {})
-      .finally(() => live && setReady(true));
+      .catch(() => {});
     return () => {
       live = false;
       // Leaving the database (another page, another database here): what is
@@ -107,5 +101,5 @@ export function usePersonalViews(collectionId: string) {
     [send],
   );
 
-  return { states, ready, setState };
+  return { states, setState };
 }

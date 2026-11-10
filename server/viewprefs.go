@@ -1,7 +1,6 @@
 package server
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
@@ -130,13 +129,23 @@ func cleanViewState(raw []byte, schema []map[string]any) (map[string]any, error)
 			return nil, errors.New("filters must be a list of conditions")
 		}
 		kept := []any{}
+		dates := dateProps(schema)
 		for _, f := range list {
-			if prop, _ := f["property"].(string); prop == "" || !has(prop) {
+			prop, _ := f["property"].(string)
+			if prop == "" || !has(prop) {
 				continue
 			}
 			entry, err := checkViewFilter(f, "filter", has)
 			if err != nil {
 				return nil, err
+			}
+			// The same day check a shared view's filter gets (applyViewSpec):
+			// a day the server cannot read would pin nothing on a new row and
+			// match nothing in the rows query (code review).
+			if dates[prop] {
+				if v, bad := viewFilterRow(entry).unreadableDay(); bad {
+					return nil, notADay(prop, v)
+				}
 			}
 			kept = append(kept, entry)
 		}
@@ -355,18 +364,23 @@ func (s *Server) handlePutViewState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	stored, _ := json.Marshal(state)
-	var have int
-	var exists sql.NullInt64
-	s.db.QueryRow(`SELECT COUNT(*), SUM(scope = ?) FROM view_prefs WHERE user_id = ? AND collection_id = ?`,
-		scope, u.ID, id).Scan(&have, &exists)
-	if have >= maxViewStatesPerDatabase && exists.Int64 == 0 {
-		httpError(w, 400, "too many personal view states for this database; reset some first")
+	// The cap and the write in one statement, so two tabs adding a new scope
+	// at once cannot both pass a count read before either writes (code
+	// review). An update of a scope the person already has always passes.
+	res, err := s.db.Exec(`INSERT INTO view_prefs (user_id, collection_id, scope, state, updated_at)
+		SELECT ?, ?, ?, ?, ?
+		WHERE (SELECT COUNT(*) FROM view_prefs WHERE user_id = ? AND collection_id = ?) < ?
+		   OR EXISTS (SELECT 1 FROM view_prefs WHERE user_id = ? AND collection_id = ? AND scope = ?)
+		ON CONFLICT (user_id, collection_id, scope) DO UPDATE SET state = excluded.state, updated_at = excluded.updated_at`,
+		u.ID, id, scope, string(stored), now(),
+		u.ID, id, maxViewStatesPerDatabase,
+		u.ID, id, scope)
+	if err != nil {
+		httpError(w, 500, err.Error())
 		return
 	}
-	if _, err := s.db.Exec(`INSERT INTO view_prefs (user_id, collection_id, scope, state, updated_at) VALUES (?, ?, ?, ?, ?)
-		ON CONFLICT (user_id, collection_id, scope) DO UPDATE SET state = excluded.state, updated_at = excluded.updated_at`,
-		u.ID, id, scope, string(stored), now()); err != nil {
-		httpError(w, 500, err.Error())
+	if n, _ := res.RowsAffected(); n == 0 {
+		httpError(w, 400, "too many personal view states for this database; reset some first")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

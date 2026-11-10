@@ -2213,7 +2213,8 @@ body:has(.icon-picker) .bn-side-menu {
 
 @media (max-width: 768px) {
   .view-change-bar {
-    padding-inline: var(--space-200);
+    /* The toolbar's own phone padding (.collection-toolbar, 14px). */
+    padding-inline: 14px;
   }
 }
 

@@ -361,6 +361,11 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const personalState = personalScope ? personal.states[personalScope] : undefined;
   const view0 = sharedView && personalScope ? { ...sharedView, ...mergeViewState(sharedView, personalState) } : sharedView;
   const personalChange = !!sharedView && !!personalScope && hasPersonalChange(sharedView, personalState);
+  // What the person edits and what Save for everyone writes: their own
+  // filter and sort, WITHOUT quick filter picks (spec 013 PR 3). A pick is a
+  // chip of its own; written into the filters it would stay after the chip
+  // is cleared, and Save would give it to everyone (code review).
+  const ownFilterSort = sharedView ? mergeViewState({ filters: sharedView.filters, sort: sharedView.sort }, personalState) : null;
   // Server-side filter/sort (real Q25): the view's filters/sort become query
   // params so a 50k-row database is filtered in SQLite, not in the browser.
   // Only finished conditions travel. An unfinished one is not "match nothing",
@@ -380,9 +385,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const isChart = view0?.type === 'chart';
   // Nothing is loaded before the views are known: a page load used to fetch
   // every row first and learn only afterwards that the view was a chart.
-  // …nor before the person's own states are: the rows would be fetched for
-  // the shared view and again a moment later for theirs.
-  const viewKnown = !!view0 && personal.ready;
+  const viewKnown = !!view0;
   const fsKey = JSON.stringify([serverFilters, serverSort, todayStr, isChart, viewKnown]);
   // Moves on every reload a chart should follow (rows changed elsewhere, a
   // pull to refresh), standing in for the rows it does not load.
@@ -728,7 +731,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const maySaveForEveryone = embed ? !!embed.canSave : mayChangeViews;
   const savePersonalForEveryone = async () => {
     if (!personalScope || !sharedView) return;
-    const merged = { filters: view.filters ?? [], sort: view.sort ?? null };
+    const merged = { filters: ownFilterSort?.filters ?? [], sort: ownFilterSort?.sort ?? null };
     if (embed) {
       embed.onView(sharedView.id, merged);
     } else {
@@ -920,7 +923,13 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             person's own (spec 013, FR-009). Grouping changes the view for
             everyone, so it goes with the lock. */}
         {view.type !== 'form' && (
-          <FilterSortControls schema={schema} view={view} onChange={updateView} onOpenChange={setFsOpen} canGroup={!viewsLock} />
+          <FilterSortControls
+            schema={schema}
+            view={ownFilterSort ? { ...view, ...ownFilterSort } : view}
+            onChange={updateView}
+            onOpenChange={setFsOpen}
+            canGroup={!viewsLock}
+          />
         )}
         {/* Everything that configures the view and the database, in one menu
             (spec 012, US4): what the Columns popover, the Properties button,

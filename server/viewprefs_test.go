@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"reflect"
 	"strings"
@@ -183,6 +184,43 @@ func TestPersonalViewStateIsChecked(t *testing.T) {
 	}
 	if code, _ = put(`{}`); code != 200 || f.prefRows(t) != 0 {
 		t.Errorf("an empty state should remove the row: %d, %d row(s) left", code, f.prefRows(t))
+	}
+}
+
+// A personal date filter gets the day check a shared view's does (code
+// review): "due is not a day" would pin nothing and match nothing.
+func TestPersonalViewStateRefusesAnUnreadableDay(t *testing.T) {
+	f := newLockFixture(t)
+	path := "/api/collections/" + f.col + "/personal/t"
+	rec := requestAs(t, f.s, f.cookie, "PUT", path, `{"filters":[{"property":"due","op":"is","value":"not a day"}]}`)
+	if rec.Code != 400 || f.prefRows(t) != 0 {
+		t.Fatalf("an unreadable day: %d %s, %d row(s)", rec.Code, rec.Body.String(), f.prefRows(t))
+	}
+	if rec := requestAs(t, f.s, f.cookie, "PUT", path, `{"filters":[{"property":"due","op":"is","value":"today"}]}`); rec.Code != 200 {
+		t.Fatalf("a relative day: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+// At most maxViewStatesPerDatabase states per person and database: a new
+// scope beyond it is refused, an update of one they already have is not,
+// and another person's count is their own.
+func TestPersonalViewStatesAreCappedPerPersonAndDatabase(t *testing.T) {
+	f := newLockFixture(t)
+	for i := 0; i < maxViewStatesPerDatabase; i++ {
+		if _, err := f.s.db.Exec(`INSERT INTO view_prefs (user_id, collection_id, scope, state, updated_at) VALUES (?, ?, ?, '{}', ?)`,
+			f.owner, f.col, fmt.Sprintf("embed:%s:b%d:t", f.col, i), now()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	base := "/api/collections/" + f.col + "/personal/"
+	if rec := requestAs(t, f.s, f.cookie, "PUT", base+"t", mineOnly); rec.Code != 400 {
+		t.Errorf("a new scope over the cap: %d %s, want 400", rec.Code, rec.Body.String())
+	}
+	if rec := requestAs(t, f.s, f.cookie, "PUT", base+"embed:"+f.col+":b7:t", mineOnly); rec.Code != 200 {
+		t.Errorf("an update at the cap: %d %s, want 200", rec.Code, rec.Body.String())
+	}
+	if rec := requestAs(t, f.s, f.readerCookie, "PUT", base+"t", mineOnly); rec.Code != 200 {
+		t.Errorf("another person at the owner's cap: %d %s, want 200", rec.Code, rec.Body.String())
 	}
 }
 

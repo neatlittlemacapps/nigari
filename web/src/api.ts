@@ -438,13 +438,16 @@ export const api = {
   // and the caller's own rows only, on the server.
   getViewStates: (pageId: string) =>
     req<{ states: Record<string, PersonalViewState> }>(`/api/collections/${pageId}/personal`),
-  putViewState: (pageId: string, scope: string, state: PersonalViewState) =>
+  // keepalive: sent while the page goes away (usePersonalViews), finished by
+  // the browser after it is gone.
+  putViewState: (pageId: string, scope: string, state: PersonalViewState, keepalive = false) =>
     req<PersonalViewState>(`/api/collections/${pageId}/personal/${encodeURIComponent(scope)}`, {
       method: 'PUT',
       body: JSON.stringify(state),
+      keepalive,
     }),
-  deleteViewState: (pageId: string, scope: string) =>
-    req<{ ok: boolean }>(`/api/collections/${pageId}/personal/${encodeURIComponent(scope)}`, { method: 'DELETE' }),
+  deleteViewState: (pageId: string, scope: string, keepalive = false) =>
+    req<{ ok: boolean }>(`/api/collections/${pageId}/personal/${encodeURIComponent(scope)}`, { method: 'DELETE', keepalive }),
   // Who says they are working on what. Filtered per page on the server — the
   // live signal that triggers this carries no content for exactly that reason.
   presence: () =>
