@@ -1317,5 +1317,13 @@
   "The view “{view}” uses “{property}”, and the views are locked. Unlock them to remove the property.": "La vista «{view}» usa «{property}» y las vistas están bloqueadas. Desbloquéalas para eliminar la propiedad.",
   "Only you see these changes": "Solo tú ves estos cambios",
   "Save for everyone": "Guardar para todos",
-  "Your change to this view was not saved": "Tu cambio en esta vista no se guardó"
+  "Your change to this view was not saved": "Tu cambio en esta vista no se guardó",
+  "A board's lanes need a select, person, relation, formula or rollup property other than its columns.": "Los carriles de un tablero necesitan una propiedad de selección, persona, relación, fórmula o rollup distinta de sus columnas.",
+  "Clear {name}": "Borrar {name}",
+  "No sub-group": "Sin subgrupo",
+  "None": "Ninguno",
+  "Quick filters": "Filtros rápidos",
+  "Sub-group": "Subgrupo",
+  "These quick filters cannot be offered: choose up to 8 select, person, checkbox or relation properties.": "Estos filtros rápidos no se pueden ofrecer: elige hasta 8 propiedades de selección, persona, casilla o relación.",
+  "{name}: {value}": "{name}: {value}"
 }

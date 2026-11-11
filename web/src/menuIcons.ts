@@ -88,6 +88,7 @@ import {
   Plus,
   Printer,
   Quote,
+  Rows2,
   Rows3,
   ScanEye,
   ScissorsLineDashed,
@@ -111,6 +112,7 @@ import {
   Users,
   Video,
   Workflow,
+  Zap,
   type LucideIcon,
   type LucideProps,
 } from 'lucide-react';
@@ -186,6 +188,9 @@ export const MENU_ICONS = {
   // LockOpen: Lock is a page's visibility, and the two must not look alike.
   lockViews: LockKeyhole,
   unlockViews: LockKeyholeOpen,
+  // A view's quick filters and a board's lanes (spec 013, PR 3).
+  quickFilters: Zap,
+  subGroup: Rows2,
   // Property visibility's two bulk actions, carried over from the Columns
   // popover the Settings menu replaces.
   showAllProperties: ScanEye,

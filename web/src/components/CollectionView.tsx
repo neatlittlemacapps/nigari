@@ -2,7 +2,9 @@ import { Fragment, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useM
 import type { PeekMode } from '../peek';
 import { api, ApiError } from '../api';
 import { usePersonalViews } from '../usePersonalViews';
-import { hasPersonalChange, mergeViewState, viewScope, withPersonalEdit, withoutFilterAndSort } from '../viewState';
+import { hasPersonalChange, mergeViewState, viewScope, withPersonalEdit, withQuickPick, withoutViewChanges } from '../viewState';
+import { quickFilterProps } from '../quickFilters';
+import QuickFilters from './QuickFilters';
 import ViewChangeBar from './ViewChangeBar';
 import { onRefresh } from '../pwa';
 import Portal from './Portal';
@@ -361,10 +363,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const personalState = personalScope ? personal.states[personalScope] : undefined;
   const view0 = sharedView && personalScope ? { ...sharedView, ...mergeViewState(sharedView, personalState) } : sharedView;
   const personalChange = !!sharedView && !!personalScope && hasPersonalChange(sharedView, personalState);
-  // What the person edits and what Save for everyone writes: their own
-  // filter and sort, WITHOUT quick filter picks (spec 013 PR 3). A pick is a
-  // chip of its own; written into the filters it would stay after the chip
-  // is cleared, and Save would give it to everyone (code review).
+  // What the filter controls edit: the person's own filter and sort, WITHOUT
+  // quick filter picks. A pick is a chip of its own; written into the
+  // filters by an edit, it would stay after the chip is cleared (code
+  // review). Save for everyone does take the picks (FR-014), on purpose.
   const ownFilterSort = sharedView ? mergeViewState({ filters: sharedView.filters, sort: sharedView.sort }, personalState) : null;
   // Server-side filter/sort (real Q25): the view's filters/sort become query
   // params so a 50k-row database is filtered in SQLite, not in the browser.
@@ -721,7 +723,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // The bar's two answers to a personal change (spec 013, research R4).
   // Reset: the person's filter and sort go, and they see the shared view.
   const resetPersonal = () => {
-    if (personalScope) personal.setState(personalScope, withoutFilterAndSort(personalState));
+    if (personalScope) personal.setState(personalScope, withoutViewChanges(personalState));
   };
   // Save for everyone: what the person sees becomes the view, through the
   // normal save, so the lock, the per-view checks and the activity log
@@ -731,7 +733,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const maySaveForEveryone = embed ? !!embed.canSave : mayChangeViews;
   const savePersonalForEveryone = async () => {
     if (!personalScope || !sharedView) return;
-    const merged = { filters: ownFilterSort?.filters ?? [], sort: ownFilterSort?.sort ?? null };
+    // What the person sees, quick filter picks included: a picked chip
+    // becomes a shared filter of the view, and the chip is cleared (FR-014).
+    const merged = { filters: view.filters ?? [], sort: view.sort ?? null };
     if (embed) {
       embed.onView(sharedView.id, merged);
     } else {
@@ -1033,6 +1037,15 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       }
     >
       {viewSwitcher}
+      {personalScope && sharedView && (
+        <QuickFilters
+          props={(sharedView.quickFilters ?? [])
+            .map((id) => quickFilterProps(schema).find((p) => p.id === id))
+            .filter((p): p is NonNullable<typeof p> => !!p)}
+          picks={personalState?.quickPicks ?? {}}
+          onPick={(prop, value) => personal.setState(personalScope, withQuickPick(personalState, prop, value))}
+        />
+      )}
       {personalChange && (
         <ViewChangeBar onReset={resetPersonal} onSaveForEveryone={maySaveForEveryone ? () => void savePersonalForEveryone() : undefined} />
       )}

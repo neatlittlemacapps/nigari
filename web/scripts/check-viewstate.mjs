@@ -63,7 +63,9 @@ try {
   check('the same filters, written the other way: no change',
     vs.hasPersonalChange(shared, { filters: [{ value: 'open', property: 'status' }] }), false);
   check('the same sort: no change', vs.hasPersonalChange(shared, { sort: { dir: 'asc', property: 'due' } }), false);
-  check('only quick picks or folded lanes: no bar', vs.hasPersonalChange(shared, { quickPicks: { owner: 'ada' }, foldedLanes: ['x'] }), false);
+  check('only folded lanes: no bar', vs.hasPersonalChange(shared, { foldedLanes: ['x'] }), false);
+  check('a quick pick the view offers: the bar', vs.hasPersonalChange({ ...shared, quickFilters: ['owner'] }, { quickPicks: { owner: 'ada' } }), true);
+  check('a pick for a chip the view no longer offers: no bar', vs.hasPersonalChange(shared, { quickPicks: { owner: 'ada' } }), false);
   check('a view with no filters and an empty personal list: no change', vs.hasPersonalChange({}, { filters: [], sort: null }), false);
   // The server stores value "" on a condition without one; that is no change.
   check('the server\'s empty value is not a difference',
@@ -78,10 +80,19 @@ try {
   check('an edit keeps quick picks', vs.withPersonalEdit(shared, { quickPicks: { owner: 'ada' } }, { sort: null }), { quickPicks: { owner: 'ada' }, sort: null });
 
   // ---- Reset and Save for everyone ----
-  check('reset drops filter and sort', vs.withoutFilterAndSort({ filters: mine, sort: null }), null);
-  check('reset keeps quick picks and folded lanes',
-    vs.withoutFilterAndSort({ filters: mine, quickPicks: { owner: 'ada' }, foldedLanes: ['x'] }), { quickPicks: { owner: 'ada' }, foldedLanes: ['x'] });
-  check('reset of nothing', vs.withoutFilterAndSort(null), null);
+  check('reset drops filter and sort', vs.withoutViewChanges({ filters: mine, sort: null }), null);
+  check('reset drops quick picks, keeps folded lanes',
+    vs.withoutViewChanges({ filters: mine, quickPicks: { owner: 'ada' }, foldedLanes: ['x'] }), { foldedLanes: ['x'] });
+  check('reset of nothing', vs.withoutViewChanges(null), null);
+
+  // ---- Quick picks and folded lanes ----
+  check('a pick', vs.withQuickPick(null, 'owner', 'ada'), { quickPicks: { owner: 'ada' } });
+  check('a second pick keeps the first', vs.withQuickPick({ quickPicks: { owner: 'ada' } }, 'status', 'open'), { quickPicks: { owner: 'ada', status: 'open' } });
+  check('clearing the last pick leaves nothing', vs.withQuickPick({ quickPicks: { owner: 'ada' } }, 'owner', ''), null);
+  check('clearing a pick keeps the filters', vs.withQuickPick({ filters: mine, quickPicks: { owner: 'ada' } }, 'owner', ''), { filters: mine });
+  check('fold a lane', vs.withFoldedLane(null, 'ada', true), { foldedLanes: ['ada'] });
+  check('unfold the last lane', vs.withFoldedLane({ foldedLanes: ['ada'] }, 'ada', false), null);
+  check('folding keeps the picks', vs.withFoldedLane({ quickPicks: { owner: 'ada' } }, 'x', true), { quickPicks: { owner: 'ada' }, foldedLanes: ['x'] });
 
   // ---- Scopes ----
   check('a view on its page', vs.viewScope('v1'), 'v1');

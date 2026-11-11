@@ -1317,5 +1317,13 @@
   "The view “{view}” uses “{property}”, and the views are locked. Unlock them to remove the property.": "De weergave “{view}” gebruikt “{property}” en de weergaven zijn vergrendeld. Ontgrendel ze om de eigenschap te verwijderen.",
   "Only you see these changes": "Alleen jij ziet deze wijzigingen",
   "Save for everyone": "Opslaan voor iedereen",
-  "Your change to this view was not saved": "Je wijziging aan deze weergave is niet opgeslagen"
+  "Your change to this view was not saved": "Je wijziging aan deze weergave is niet opgeslagen",
+  "A board's lanes need a select, person, relation, formula or rollup property other than its columns.": "De banen van een bord hebben een selectie-, persoon-, relatie-, formule- of rollup-eigenschap nodig die niet de kolommen vormt.",
+  "Clear {name}": "{name} wissen",
+  "No sub-group": "Geen subgroep",
+  "None": "Geen",
+  "Quick filters": "Snelfilters",
+  "Sub-group": "Subgroep",
+  "These quick filters cannot be offered: choose up to 8 select, person, checkbox or relation properties.": "Deze snelfilters kunnen niet worden aangeboden: kies tot 8 selectie-, persoon-, selectievakje- of relatie-eigenschappen.",
+  "{name}: {value}": "{name}: {value}"
 }

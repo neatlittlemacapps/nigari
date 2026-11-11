@@ -48,9 +48,21 @@ export function usePersonalViews(collectionId: string) {
     pending.current.clear();
   }, [collectionId]);
 
+  // Also when the page goes to the background (another tab, the phone's home
+  // screen): a hidden page's timers are slowed or stopped, so the 400 ms
+  // wait could last until the person came back, and on a phone the page may
+  // be closed from the background without a pagehide (quick-filters.mjs
+  // found the first: a pick in a page that was not in front was not stored).
   useEffect(() => {
+    const onHidden = () => {
+      if (document.visibilityState === 'hidden') flushWaiting();
+    };
     window.addEventListener('pagehide', flushWaiting);
-    return () => window.removeEventListener('pagehide', flushWaiting);
+    document.addEventListener('visibilitychange', onHidden);
+    return () => {
+      window.removeEventListener('pagehide', flushWaiting);
+      document.removeEventListener('visibilitychange', onHidden);
+    };
   }, [flushWaiting]);
 
   useEffect(() => {
