@@ -117,5 +117,17 @@ await withFixture(async ({ page, api, path }) => {
   await eventually(async () => (await page.locator('.board-lane').count()) === 0);
   await page.locator('.board > .board-col').first().waitFor();
 
-  console.log('Board lanes: sub-group from Settings, lanes with No value, ten cell drags with both values, fold kept over a reload, formula lanes refuse a drop between them, back to the plain board passed.');
+  // ---- Choosing the lanes' property as the columns takes the lanes away ----
+  await api('PUT', path, { views: (await api('GET', path)).views.map((v) => ({ ...v, subGroupBy: 'lane' })) });
+  await page.reload();
+  await lane('x').waitFor();
+  await page.locator('.collection-toolbar').getByRole('button', { name: 'Group' }).click();
+  await page.locator('.fs-popover select.prop-select').selectOption('lane');
+  await eventually(async () => {
+    const v = (await api('GET', path)).views[0];
+    return v.groupBy === 'lane' && !v.subGroupBy;
+  });
+  await eventually(async () => (await page.locator('.board-lane').count()) === 0);
+
+  console.log('Board lanes: sub-group from Settings, lanes with No value, ten cell drags with both values, fold kept over a reload, formula lanes refuse a drop between them, back to the plain board, choosing the lane property as columns removes the lanes passed.');
 });

@@ -40,8 +40,8 @@ export interface Lane {
  *  (multi-select, relation, several people) puts the card in each of its
  *  lanes, as a multi-select puts it in each of its columns. Nothing, or only
  *  values that are not lanes, is the No value lane. */
-export function laneIdsOf(value: unknown, lanes: Lane[]): string[] {
-  const known = new Set(lanes.map((l) => l.id));
+export function laneIdsOf(value: unknown, lanes: Lane[] | Set<string>): string[] {
+  const known = lanes instanceof Set ? lanes : new Set(lanes.map((l) => l.id));
   const list = Array.isArray(value) ? value : value === undefined || value === null || value === '' ? [] : [value];
   const ids = list.map((v) => (typeof v === 'number' || typeof v === 'boolean' ? String(v) : typeof v === 'string' ? v : '')).filter((v) => v && known.has(v));
   return ids.length ? [...new Set(ids)] : [NO_VALUE];
@@ -79,7 +79,11 @@ export function laneValue(prop: LaneProp, lane: string): unknown {
 /** What a drop from one cell to another writes: both values when both
  *  changed, one when one did, nothing for the cell it came from or for a
  *  lane change on a property no drag can write (FR-018). `columnValue` is
- *  the board's own, unchanged rule for its column (groupValueFor). */
+ *  the board's own, unchanged rule for its column (groupValueFor).
+ *
+ *  `current` is the row's present value of the lane property. A card with
+ *  several values (tags A and C) is in lanes A and C; dragged from A to B it
+ *  must end as B and C. Writing [B] lost C without a word (code review). */
 export function dropPatch(
   from: string,
   to: string,
@@ -87,6 +91,7 @@ export function dropPatch(
   laneBy: string,
   laneProp: LaneProp,
   columnValue: (col: string) => unknown,
+  current?: unknown,
 ): Record<string, unknown> | null {
   const a = parseCellKey(from);
   const b = parseCellKey(to);
@@ -95,7 +100,12 @@ export function dropPatch(
   if (a.lane !== b.lane) {
     const v = laneValue(laneProp, b.lane);
     if (v === null) return null;
-    patch[laneBy] = v;
+    if (Array.isArray(v) && Array.isArray(current)) {
+      const kept = current.filter((x) => String(x) !== a.lane && String(x) !== b.lane);
+      patch[laneBy] = b.lane === NO_VALUE ? kept : [...kept, b.lane];
+    } else {
+      patch[laneBy] = v;
+    }
   }
   if (a.col !== b.col) patch[groupBy] = columnValue(b.col);
   return Object.keys(patch).length ? patch : null;

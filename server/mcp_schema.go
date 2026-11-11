@@ -665,10 +665,10 @@ func applyViewSpec(view map[string]any, spec viewSpec, schema []map[string]any) 
 		view["subGroupBy"] = *spec.SubGroupBy
 	}
 	// Both on every create and update, as normalizeViews does for REST.
-	if err := checkViewQuickFilters(view, schema); err != nil {
+	if err := checkViewQuickFilters(view, schema, spec.QuickFilters != nil); err != nil {
 		return fmt.Errorf("quick_filters: %w", err)
 	}
-	if err := checkViewSubGroup(view, schema); err != nil {
+	if err := checkViewSubGroup(view, schema, spec.SubGroupBy != nil || spec.GroupBy != nil); err != nil {
 		return fmt.Errorf("sub_group_by: %w", err)
 	}
 	if err := applyChartSpec(view, spec); err != nil {

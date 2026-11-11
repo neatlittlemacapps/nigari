@@ -363,8 +363,15 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       ? viewScope(sharedView.id, embed ? { pageId: embed.pageId!, blockId: embed.blockId! } : null)
       : null;
   const personalState = personalScope ? personal.states[personalScope] : undefined;
-  const view0 = sharedView && personalScope ? { ...sharedView, ...mergeViewState(sharedView, personalState) } : sharedView;
-  const personalChange = !!sharedView && !!personalScope && hasPersonalChange(sharedView, personalState);
+  // Only quick filters that still are: a pick for a property deleted or
+  // retyped since would narrow the view with no chip to show or clear it
+  // (code review). The server drops the same ones (liveQuickFilters).
+  const liveView = sharedView && {
+    ...sharedView,
+    quickFilters: (sharedView.quickFilters ?? []).filter((id) => quickFilterProps(config?.schema ?? []).some((p) => p.id === id)),
+  };
+  const view0 = liveView && personalScope ? { ...sharedView, ...mergeViewState(liveView, personalState) } : sharedView;
+  const personalChange = !!liveView && !!personalScope && hasPersonalChange(liveView, personalState);
   // What the filter controls edit: the person's own filter and sort, WITHOUT
   // quick filter picks. A pick is a chip of its own; written into the
   // filters by an edit, it would stay after the chip is cleared (code
@@ -700,6 +707,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     });
 
   const updateView = (patch: Partial<ViewDef>) => {
+    // A board grouped by the property its lanes are drawn by would be a
+    // diagonal, and the server refuses it: choosing that property as the
+    // columns takes the lanes away in the same save (code review).
+    if (patch.groupBy && patch.groupBy === view.subGroupBy) patch = { ...patch, subGroupBy: '' };
     // A filter or sort edit is the person's own (spec 013, US1): it is kept
     // on their account and changes nothing for anyone else, until they save
     // it for everyone from the bar. On a database's page and in a document.
@@ -2170,11 +2181,17 @@ function BoardView({
   // and their names (people and related rows by name).
   const laneName = useLaneNames(lanes?.prop);
   const laneList: Lane[] = lanes ? lanesFor(lanes.prop, rows.map((r) => r.props[lanes.by])) : [];
+  // Each row's lanes, worked out once per render: the cells and the lane
+  // counts read this instead of each scanning every row again, which on a
+  // large board ran on every pointer move of a drag (code review).
+  const laneKnown = new Set(laneList.map((l) => l.id));
+  const rowLanes = new Map(lanes ? rows.map((r) => [r.id, laneIdsOf(r.props[lanes.by], laneKnown)]) : []);
   const { drag, armedRow, startDrag, consumeClick } = useBoardDrag((rowId, toCol, fromCol) => {
     if (!lanes) return onDrop(rowId, groupBy, toCol);
     // Between cells: only what changed is written, in one change; a lane of
     // a formula or rollup is not changed by any drop (dropPatch says null).
-    const patch = dropPatch(fromCol, toCol, groupBy, lanes.by, lanes.prop, (col) => columnValue(col));
+    const row = rows.find((r) => r.id === rowId);
+    const patch = dropPatch(fromCol, toCol, groupBy, lanes.by, lanes.prop, (col) => columnValue(col), row?.props[lanes.by]);
     if (patch) lanes.onDropPatch(rowId, patch);
   });
   // When grouping by a relation, the columns are the rows of the target
@@ -2239,7 +2256,7 @@ function BoardView({
   const dragged = drag ? rows.find((r) => r.id === drag.rowId) : undefined;
   // The value a column stands for, in the shape the property stores.
   const columnValue = (col: string): unknown =>
-    col === UNSET ? (prop.type === 'select' ? '' : []) : prop.type === 'select' ? col : [col];
+    col === UNSET ? (prop.type === 'select' ? '' : []) : groupValueFor(schema, groupBy, col);
   // Whether a drag may land on a cell: on a board whose lanes are a formula
   // or a rollup, only within the card's own lane (FR-018).
   const mayDropOn = (key: string): boolean => {
@@ -2275,7 +2292,7 @@ function BoardView({
         // On a board with lanes a cell is the meeting of a column and a lane,
         // keyed by both (boardLanes.ts); without lanes the key is the column.
         const key = laneId === null ? col.id : cellKey(laneId, col.id);
-        const cards = laneId === null ? rowsFor(col.id) : rowsFor(col.id).filter((r) => laneIdsOf(r.props[lanes!.by], laneList).includes(laneId));
+        const cards = laneId === null ? rowsFor(col.id) : rowsFor(col.id).filter((r) => (rowLanes.get(r.id) ?? []).includes(laneId));
         const at = dropAt(key, cards);
         return (
         <div
@@ -2445,7 +2462,7 @@ function BoardView({
     <div className={'board' + (drag ? ' is-dragging' : '') + (lanes ? ' has-lanes' : '')}>
       {lanes
         ? laneList.map((lane) => {
-            const inLane = rows.filter((r) => laneIdsOf(r.props[lanes.by], laneList).includes(lane.id));
+            const inLane = rows.filter((r) => (rowLanes.get(r.id) ?? []).includes(lane.id));
             const folded = lanes.folded.has(lane.id);
             return (
               <section key={lane.id} className="board-lane" data-lane={lane.id} aria-label={laneName(lane)}>

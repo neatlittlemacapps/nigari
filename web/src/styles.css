@@ -2286,11 +2286,6 @@ body:has(.icon-picker) .bn-side-menu {
   white-space: nowrap;
 }
 
-/* Widened from 272px. At that width a normal task title broke after three or
-   four words and a card with five faces plus an agent had almost no line left —
-   the board read as cramped before anyone had put much in it. The columns are
-   what buys room; enlarging the cards inside a narrow column only moves the
-   squeeze. */
 /* A board with lanes (spec 013, US4): the lanes stack, each a row of the
    board's columns. One scroll container (.board) for all of them, so the
    columns of every lane stay lined up when the board scrolls sideways. A
@@ -2326,6 +2321,11 @@ body:has(.icon-picker) .bn-side-menu {
   max-height: none;
 }
 
+/* Widened from 272px. At that width a normal task title broke after three or
+   four words and a card with five faces plus an agent had almost no line left —
+   the board read as cramped before anyone had put much in it. The columns are
+   what buys room; enlarging the cards inside a narrow column only moves the
+   squeeze. */
 .board-col {
   width: 320px;
   flex-shrink: 0;

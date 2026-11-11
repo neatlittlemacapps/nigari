@@ -156,3 +156,43 @@ func TestSubGroupOnBothDoors(t *testing.T) {
 		t.Error(`sub_group_by "" did not clear it`)
 	}
 }
+
+// A quick filter or sub-group that a later schema change made invalid (the
+// property turned into text) must not block every views save of the
+// database: it is dropped from the view nobody touched, while a save that
+// sets it now is still refused (code review).
+func TestStaleQuickFiltersAndSubGroupDoNotBlockSaves(t *testing.T) {
+	f := quickFixture(t)
+	if code, body := f.putViews(t, `[{"id":"t","name":"Table","type":"table","quickFilters":["owner"]},{"id":"b","name":"Board","type":"board","groupBy":"status","subGroupBy":"owner"}]`); code != 200 {
+		t.Fatalf("setup: %d %s", code, body)
+	}
+	// Owner becomes a text property, by a schema-only save.
+	var schema string
+	f.s.db.QueryRow(`SELECT schema FROM collections WHERE page_id = ?`, f.col).Scan(&schema)
+	schema = strings.Replace(schema, `{"id":"owner","name":"Owner","type":"person"}`, `{"id":"owner","name":"Owner","type":"text"}`, 1)
+	f.s.db.Exec(`UPDATE collections SET schema = ? WHERE page_id = ?`, schema, f.col)
+	// An unrelated views save (the table's column widths) goes through.
+	code, body := f.putViews(t, `[{"id":"t","name":"Table","type":"table","quickFilters":["owner"],"colWidths":{"__title":300}},{"id":"b","name":"Board","type":"board","groupBy":"status","subGroupBy":"owner"}]`)
+	if code != 200 {
+		t.Fatalf("an unrelated save was refused: %d %s", code, body)
+	}
+	if _, has := f.viewByID(t, "t")["quickFilters"]; has {
+		t.Error("the stale quick filter was kept")
+	}
+	if _, has := f.viewByID(t, "b")["subGroupBy"]; has {
+		t.Error("the stale sub-group was kept")
+	}
+	// Setting it now is still refused.
+	if code, body := f.putViews(t, `[{"id":"t","name":"Table","type":"table","quickFilters":["owner"]},{"id":"b","name":"Board","type":"board","groupBy":"status"}]`); code != 400 {
+		t.Errorf("setting a text quick filter: %d %s, want 400", code, body)
+	}
+}
+
+// A board saved without groupBy draws its columns from the first select
+// property; lanes by that property would be the columns again.
+func TestSubGroupKnowsTheBoardsDefaultColumns(t *testing.T) {
+	f := quickFixture(t)
+	if code, body := f.putViews(t, `[{"id":"b","name":"Board","type":"board","subGroupBy":"status"}]`); code != 400 || !strings.Contains(body, "invalid_view_sub_group") {
+		t.Errorf("lanes by the default columns: %d %s, want 400 invalid_view_sub_group", code, body)
+	}
+}

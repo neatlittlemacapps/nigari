@@ -79,6 +79,12 @@ try {
   check('to No value', bl.dropPatch(key('a', 'todo'), key(N, N), 'status', 'owner', select, col), { owner: '', status: '' });
   check('a formula lane change is refused', bl.dropPatch(key('3', 'todo'), key('5', 'done'), 'status', 'score', formula, col), null);
   check('a column change in a formula lane still moves', bl.dropPatch(key('3', 'todo'), key('3', 'done'), 'status', 'score', formula, col), { status: 'done' });
+  // A card with several lane values keeps the ones it was not dragged from.
+  check('multi-select A to B keeps C', bl.dropPatch(key('a', 'todo'), key('b', 'todo'), 'status', 'tags', multi, col, ['a', 'c']), { tags: ['c', 'b'] });
+  check('multi-select A to No value keeps C', bl.dropPatch(key('a', 'todo'), key(N, 'todo'), 'status', 'tags', multi, col, ['a', 'c']), { tags: ['c'] });
+  check('multi-select to a lane it is already in does not repeat it', bl.dropPatch(key('a', 'todo'), key('c', 'todo'), 'status', 'tags', multi, col, ['a', 'c']), { tags: ['c'] });
+  check('from No value adds', bl.dropPatch(key(N, 'todo'), key('a', 'todo'), 'status', 'tags', multi, col, []), { tags: ['a'] });
+  check('several people swap one', bl.dropPatch(key('u1', 'todo'), key('u2', 'todo'), 'status', 'who', people, col, ['u1', 'u3']), { who: ['u3', 'u2'] });
 
   let fail = 0;
   for (const c of out) {

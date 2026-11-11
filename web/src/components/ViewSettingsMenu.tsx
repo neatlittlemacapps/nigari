@@ -96,7 +96,9 @@ export default function ViewSettingsMenu({
   const offered = (view.quickFilters ?? []).filter((id) => quickCandidates.some((p) => p.id === id));
   const toggleQuick = (id: string, on: boolean) =>
     onChange({ quickFilters: on ? [...offered, id] : offered.filter((x) => x !== id) });
-  const laneCandidates = subGroupProps(schema, view.groupBy);
+  // The board's columns: its groupBy, or for a board saved without one the
+  // first select property, as BoardView draws it (and the server checks).
+  const laneCandidates = subGroupProps(schema, view.groupBy || schema.find((p) => p.type === 'select')?.id);
   // A timeline with no start property draws its bars from the first date
   // property (CollectionView's TimelineView call), so None would be a value
   // the view is not using: the item says which property that is.
