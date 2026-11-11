@@ -127,6 +127,27 @@ func normalizeViews(raw []byte, schema []map[string]any, stored []map[string]any
 		if _, hasOrder := view["colOrder"]; string(orderAfter) != string(orderBefore) || hadOrder != hasOrder {
 			changed = true
 		}
+		// Quick filters and a sub-group (spec 013): compared before and after
+		// like the column order, so a dropped id is stored as set_view would
+		// store it.
+		qfBefore, _ := json.Marshal(view["quickFilters"])
+		_, hadQF := view["quickFilters"]
+		if err := checkViewQuickFilters(view, schema); err != nil {
+			return nil, errViewQuickFilters{fmt.Sprintf("%s: %s", name, err.Error())}
+		}
+		qfAfter, _ := json.Marshal(view["quickFilters"])
+		if _, hasQF := view["quickFilters"]; string(qfAfter) != string(qfBefore) || hadQF != hasQF {
+			changed = true
+		}
+		sgBefore, _ := json.Marshal(view["subGroupBy"])
+		_, hadSG := view["subGroupBy"]
+		if err := checkViewSubGroup(view, schema); err != nil {
+			return nil, errViewSubGroup{fmt.Sprintf("%s: %s", name, err.Error())}
+		}
+		sgAfter, _ := json.Marshal(view["subGroupBy"])
+		if _, hasSG := view["subGroupBy"]; string(sgAfter) != string(sgBefore) || hadSG != hasSG {
+			changed = true
+		}
 		id, _ := view["id"].(string)
 		old, known := before[id]
 		if err := checkChartView(view, schema, !known || old != chartSignature(view)); err != nil {
@@ -203,5 +224,157 @@ func checkViewColOrder(view map[string]any, schema []map[string]any) error {
 		return nil
 	}
 	view["colOrder"] = out
+	return nil
+}
+
+// Quick filters and a board's sub-group (spec 013, US3 and US4; research R7
+// and R8). Two view keys, checked by one function each that both doors call:
+// normalizeViews for PUT /api/collections/{id}, applyViewSpec for MCP
+// set_view. A rule on one side only is how this repository's earlier
+// REST/MCP gaps started.
+
+// quickFilterTypes are the property types a view may offer as a quick filter:
+// the ones whose values a chip can list in a menu (options, people, a
+// checkbox's two states, the rows a relation points at). Text, numbers and
+// dates are left out on purpose: their values are as many as their rows, so
+// a chip would need a text field, which is what Filter already is.
+var quickFilterTypes = map[string]bool{
+	"select": true, "multiselect": true, "person": true, "checkbox": true, "relation": true,
+}
+
+// maxQuickFilters bounds the chips above a view: more than a row of them is a
+// second filter bar, not a shortcut.
+const maxQuickFilters = 8
+
+// errViewQuickFilters marks a refusal of checkViewQuickFilters, so REST can
+// answer it with its own code (invalid_view_quick_filters).
+type errViewQuickFilters struct{ msg string }
+
+func (e errViewQuickFilters) Error() string { return e.msg }
+
+// checkViewQuickFilters validates view["quickFilters"] in place:
+//   - a list of property ids; anything else is refused;
+//   - ids that are not properties of the schema, and repeats, are dropped
+//     without a word: a property deleted since is not the caller's mistake,
+//     and refusing it would make every later save of the view fail (US3
+//     scenario 6, "the chip is gone and nothing breaks");
+//   - a property of a type a chip cannot offer is refused;
+//   - more than maxQuickFilters is refused;
+//   - a form and a chart have no rows to narrow: refused there;
+//   - an empty list removes the key.
+func checkViewQuickFilters(view map[string]any, schema []map[string]any) error {
+	raw, ok := view["quickFilters"]
+	if !ok || raw == nil {
+		delete(view, "quickFilters")
+		return nil
+	}
+	list, isList := raw.([]any)
+	if !isList {
+		return errViewQuickFilters{"quick filters must be a list of property ids"}
+	}
+	if t, _ := view["type"].(string); t == "form" || t == "chart" {
+		if len(list) > 0 {
+			return errViewQuickFilters{fmt.Sprintf("a %s view has no quick filters", t)}
+		}
+	}
+	types := map[string]string{}
+	names := map[string]string{}
+	for _, p := range schema {
+		if id, _ := p["id"].(string); id != "" {
+			pt, _ := p["type"].(string)
+			if pt == "" {
+				pt = "text"
+			}
+			types[id] = pt
+			names[id], _ = p["name"].(string)
+		}
+	}
+	seen := map[string]bool{}
+	out := make([]any, 0, len(list))
+	for _, item := range list {
+		id, isString := item.(string)
+		if !isString {
+			return errViewQuickFilters{"quick filters must be a list of property ids"}
+		}
+		pt, known := types[id]
+		if !known || seen[id] {
+			continue
+		}
+		if !quickFilterTypes[pt] {
+			return errViewQuickFilters{fmt.Sprintf("%q is a %s property; a quick filter is a select, multi-select, person, checkbox or relation", names[id], pt)}
+		}
+		seen[id] = true
+		out = append(out, id)
+	}
+	if len(out) > maxQuickFilters {
+		return errViewQuickFilters{fmt.Sprintf("a view offers at most %d quick filters", maxQuickFilters)}
+	}
+	if len(out) == 0 {
+		delete(view, "quickFilters")
+		return nil
+	}
+	view["quickFilters"] = out
+	return nil
+}
+
+// subGroupTypes are the property types a board may draw lanes by: the board's
+// own column types, a person, and two that are read but cannot be written
+// (formula, rollup). Those draw lanes, and the interface refuses a drop
+// between their lanes (FR-018), since no drag can change a computed value.
+var subGroupTypes = map[string]bool{
+	"select": true, "multiselect": true, "relation": true, "person": true,
+	"formula": true, "rollup": true,
+}
+
+// errViewSubGroup marks a refusal of checkViewSubGroup, so REST can answer it
+// with its own code (invalid_view_sub_group).
+type errViewSubGroup struct{ msg string }
+
+func (e errViewSubGroup) Error() string { return e.msg }
+
+// checkViewSubGroup validates view["subGroupBy"] in place:
+//   - only a board has one;
+//   - a property id that is no longer in the schema is dropped (the lanes go,
+//     nothing breaks), as checkViewColOrder drops a deleted column;
+//   - it must be a property of a type lanes can be drawn by, and not the
+//     board's own grouping (lanes of the columns would be a diagonal);
+//   - "" removes the key.
+func checkViewSubGroup(view map[string]any, schema []map[string]any) error {
+	raw, ok := view["subGroupBy"]
+	if !ok || raw == nil {
+		delete(view, "subGroupBy")
+		return nil
+	}
+	id, isString := raw.(string)
+	if !isString {
+		return errViewSubGroup{"sub-group must be a property id"}
+	}
+	if id == "" {
+		delete(view, "subGroupBy")
+		return nil
+	}
+	if t, _ := view["type"].(string); t != "board" {
+		return errViewSubGroup{"only a board has a sub-group"}
+	}
+	var pt, name string
+	for _, p := range schema {
+		if pid, _ := p["id"].(string); pid == id {
+			pt, _ = p["type"].(string)
+			if pt == "" {
+				pt = "text"
+			}
+			name, _ = p["name"].(string)
+		}
+	}
+	if pt == "" {
+		delete(view, "subGroupBy")
+		return nil
+	}
+	if !subGroupTypes[pt] {
+		return errViewSubGroup{fmt.Sprintf("%q is a %s property; a board's lanes are a select, multi-select, relation, person, formula or rollup", name, pt)}
+	}
+	if g, _ := view["groupBy"].(string); g == id {
+		return errViewSubGroup{fmt.Sprintf("%q is already the board's columns; choose another property for its lanes", name)}
+	}
 	return nil
 }

@@ -421,6 +421,12 @@ type viewSpec struct {
 	// Checked by checkViewColOrder, the rule PUT /api/collections applies
 	// too. A pointer so [] can mean "back to the schema's order".
 	ColumnOrder *[]string `json:"column_order"`
+	// The chips a view offers its viewers (spec 013), stored as
+	// quickFilters; [] removes them. Checked by checkViewQuickFilters.
+	QuickFilters *[]string `json:"quick_filters"`
+	// A board's lanes (spec 013), stored as subGroupBy; "" clears it.
+	// Checked by checkViewSubGroup.
+	SubGroupBy *string `json:"sub_group_by"`
 	// A chart's settings (spec 004), checked by checkChartView, the rule PUT
 	// /api/collections applies too.
 	ChartKind         *string         `json:"chart_kind"`
@@ -639,6 +645,31 @@ func applyViewSpec(view map[string]any, spec viewSpec, schema []map[string]any) 
 	// it is the same call normalizeViews makes for every view REST stores.
 	if err := checkViewColOrder(view, schema); err != nil {
 		return err
+	}
+	if spec.QuickFilters != nil {
+		list := make([]any, 0, len(*spec.QuickFilters))
+		for _, id := range *spec.QuickFilters {
+			// Refused here, as hidden and column_order refuse theirs: an agent
+			// that passes names would otherwise be told it worked.
+			if !has(id) {
+				return fmt.Errorf("quick_filters: %q is not a property of this database (use the property ids from get_collection)", id)
+			}
+			list = append(list, id)
+		}
+		view["quickFilters"] = list
+	}
+	if spec.SubGroupBy != nil {
+		if *spec.SubGroupBy != "" && !has(*spec.SubGroupBy) {
+			return fmt.Errorf("sub_group_by: %q is not a property of this database (use the property ids from get_collection)", *spec.SubGroupBy)
+		}
+		view["subGroupBy"] = *spec.SubGroupBy
+	}
+	// Both on every create and update, as normalizeViews does for REST.
+	if err := checkViewQuickFilters(view, schema); err != nil {
+		return fmt.Errorf("quick_filters: %w", err)
+	}
+	if err := checkViewSubGroup(view, schema); err != nil {
+		return fmt.Errorf("sub_group_by: %w", err)
 	}
 	if err := applyChartSpec(view, spec); err != nil {
 		return err

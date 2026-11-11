@@ -446,6 +446,8 @@ var mcpTools = []map[string]any{
 				"sort":               map[string]any{"type": "string", "description": "\"propertyId:asc\" or \"propertyId:desc\", the same spelling query_rows uses. Pass \"\" to clear."},
 				"hidden":             map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Property ids to hide in this view. Pass [] to show all."},
 				"column_order":       map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "table: property ids in the order this view shows them; ones you leave out follow in the schema's order, and the title column always stays first. An id that is not a property is refused. Pass [] to go back to the schema's order. Refused on any view that is not a table."},
+				"quick_filters":      map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Property ids offered as quick filters: chips above the view where each person picks a value for themselves (their pick is theirs, not the view's). Select, multi-select, person, checkbox or relation properties, at most 8. Pass [] to remove them. Not on a form or a chart."},
+				"sub_group_by":       map[string]any{"type": "string", "description": "board: a second grouping drawn as lanes across the columns, one lane per value plus a No value lane. A select, multi-select, relation, person, formula or rollup property, not the board's group_by. Pass \"\" to remove the lanes."},
 				"open_in":            map[string]any{"type": "string", "enum": []string{"full_page", "side_peek", "center_peek"}, "description": "How a click on one of this view's rows opens it for people: full_page (the tab navigates to the row, the default), side_peek (the row opens in a panel beside the view, which stays usable) or center_peek (the row opens in a panel over the dimmed view, a focused reading mode). Pass full_page to go back to the default. Not for form views, which show no rows. get_collection returns it on each view as openIn; no key means full_page."},
 			},
 			"required": []string{"page_id"}},
@@ -793,6 +795,9 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		OpenIn *string `json:"open_in"`
 		// set_view: a table view's column order (spec 012).
 		ColumnOrder *[]string `json:"column_order"`
+		// set_view: quick filters and a board's lanes (spec 013).
+		QuickFilters *[]string `json:"quick_filters"`
+		SubGroupBy   *string   `json:"sub_group_by"`
 		// Charts (spec 004): query_rows aggregates, set_view's chart settings.
 		Period            *string         `json:"period"`
 		Aggregate         *string         `json:"aggregate"`
@@ -1193,6 +1198,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 				Name: args.Name, Type: args.Type, GroupBy: args.GroupBy,
 				DateProp: args.DateProp, EndDateProp: args.EndDateProp,
 				Filters: args.Filters, Sort: args.Sort, Hidden: args.Hidden, OpenIn: args.OpenIn, ColumnOrder: args.ColumnOrder,
+				QuickFilters: args.QuickFilters, SubGroupBy: args.SubGroupBy,
 				ChartKind: args.ChartKind, Period: args.Period, Aggregate: args.Aggregate,
 				AggregateProperty: args.AggregateProperty, ShowEmpty: args.ShowEmpty, ShowZero: args.ShowZero,
 				ChartSort: args.ChartSort, HiddenGroups: args.HiddenGroups, ChartStyle: args.ChartStyle}
