@@ -322,7 +322,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "9aac766f04fc",
+        "web/src/components/CollectionView.tsx": "7c096e5a79ee",
         "web/src/tokens.css": "febe0adc0e97",
         "web/src/theme.css": "0ef4724d4a6d"
       }
@@ -333,6 +333,7 @@
       "caption": "A board view, grouped by a select property. Each column is one option.",
       "shows": [
         "web/src/components/CollectionView.tsx",
+        "web/src/components/BoardView.tsx",
         "web/src/cardLayout.ts",
         "web/src/tokens.css",
         "web/src/theme.css"
@@ -358,7 +359,8 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "9aac766f04fc",
+        "web/src/components/CollectionView.tsx": "7c096e5a79ee",
+        "web/src/components/BoardView.tsx": "8cf0d18dfc22",
         "web/src/cardLayout.ts": "eb7f92584275",
         "web/src/tokens.css": "febe0adc0e97",
         "web/src/theme.css": "0ef4724d4a6d"
@@ -394,7 +396,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "9aac766f04fc",
+        "web/src/components/CollectionView.tsx": "7c096e5a79ee",
         "web/src/tokens.css": "febe0adc0e97",
         "web/src/theme.css": "0ef4724d4a6d"
       }
@@ -438,7 +440,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "9aac766f04fc",
+        "web/src/components/CollectionView.tsx": "7c096e5a79ee",
         "web/src/components/ChartFigure.tsx": "3fcca96f94d5",
         "web/src/components/ChartView.css": "ad6a7c9c7acf",
         "web/src/components/ChartSettings.tsx": "4f8c7aeacbc8",
@@ -501,7 +503,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "9aac766f04fc",
+        "web/src/components/CollectionView.tsx": "7c096e5a79ee",
         "web/src/components/ChartSettings.tsx": "4f8c7aeacbc8",
         "web/src/components/ChartSettings.css": "16a9584f65dc",
         "web/src/components/ChartPane.tsx": "1fbe458f0d0b",
