@@ -100,12 +100,12 @@ description: "Tasks for a view's filters changed for oneself, quick filters, sub
 
 **Independent Test**: quickstart §5.
 
-- [ ] T033 [US3] [backend] `checkViewQuickFilters` in `server/viewopen.go`, data-model.md verbatim ("array of property ids of a filterable type; repeats dropped; at most 8; `invalid_view_quick_filters` otherwise"), called from `normalizeViews` and `applyViewSpec`
-- [ ] T034 [US3] [mcp] `set_view` `quick_filters` (`server/mcp.go`, `viewSpec`); an unknown id refused, as `hidden` does; description
-- [ ] T035 [US3] [test] Go tests on both doors and the parity pair "set quick filters"
-- [ ] T036 [US3] [ui] Settings › Quick filters (`quickFilters` `Zap`); `web/src/components/QuickFilters.tsx` chips, a `ui/` chip component if `web/src/ui/` has none (catalogue section, README entry); a pick stored as `quickPicks` in personal state; Save for everyone turns picks into filters
-- [ ] T037 [P] [US3] [i18n] Strings and `invalid_view_quick_filters` in `serverErrors.ts`, de/es/nl
-- [ ] T038 [US3] [test] New `web/tests/quick-filters.mjs`, registered. Mutation-checked
+- [x] T033 [US3] [backend] `checkViewQuickFilters` in `server/viewopen.go`, data-model.md verbatim ("array of property ids of a filterable type; repeats dropped; at most 8; `invalid_view_quick_filters` otherwise"), called from `normalizeViews` and `applyViewSpec`
+- [x] T034 [US3] [mcp] `set_view` `quick_filters` (`server/mcp.go`, `viewSpec`); an unknown id refused, as `hidden` does; description
+- [x] T035 [US3] [test] Go tests on both doors and the parity pair "set quick filters"
+- [x] T036 [US3] [ui] Settings › Quick filters (`quickFilters` `Zap`); `web/src/components/QuickFilters.tsx` chips, a `ui/` chip component if `web/src/ui/` has none (catalogue section, README entry); a pick stored as `quickPicks` in personal state; Save for everyone turns picks into filters
+- [x] T037 [P] [US3] [i18n] Strings and `invalid_view_quick_filters` in `serverErrors.ts`, de/es/nl
+- [x] T038 [US3] [test] New `web/tests/quick-filters.mjs`, registered. Mutation-checked
 
 ---
 
@@ -115,18 +115,18 @@ description: "Tasks for a view's filters changed for oneself, quick filters, sub
 
 **Independent Test**: quickstart §6.
 
-- [ ] T039 [US4] [backend] `checkViewSubGroup` (data-model.md: board only, "a groupable property id, not `groupBy`; `invalid_view_sub_group` otherwise"), both doors; `set_view` `sub_group_by` [mcp work in the same task: `server/mcp.go`], with Go tests and the parity pair "set a sub-group"
-- [ ] T040 [US4] [ui] New `web/src/boardLanes.ts` (pure cells and values) and `web/scripts/check-boardlanes.mjs`; `BoardView` draws lanes with a "No value" lane, fold buttons (`foldLane` `ChevronsDownUp`, folded lanes in personal state), a drop writes both values in one `propsPatch` beside `setGroupValue`, spec 012's marker in the cell, no drop between lanes of an unwritable property; Settings › Sub-group (`subGroup` `Rows2`)
-- [ ] T041 [P] [US4] [i18n] Strings and `invalid_view_sub_group`, de/es/nl
-- [ ] T042 [US4] [test] New `web/tests/board-lanes.mjs`, registered: ten cell drags land with both values (SC-005); fold; formula lane. Mutation-checked
+- [x] T039 [US4] [backend] `checkViewSubGroup` (data-model.md: board only, "a groupable property id, not `groupBy`; `invalid_view_sub_group` otherwise"), both doors; `set_view` `sub_group_by` [mcp work in the same task: `server/mcp.go`], with Go tests and the parity pair "set a sub-group"
+- [x] T040 [US4] [ui] New `web/src/boardLanes.ts` (pure cells and values) and `web/scripts/check-boardlanes.mjs`; `BoardView` draws lanes with a "No value" lane, fold buttons (`foldLane` `ChevronsDownUp`, folded lanes in personal state), a drop writes both values in one `propsPatch` beside `setGroupValue`, spec 012's marker in the cell, no drop between lanes of an unwritable property; Settings › Sub-group (`subGroup` `Rows2`)
+- [x] T041 [P] [US4] [i18n] Strings and `invalid_view_sub_group`, de/es/nl
+- [x] T042 [US4] [test] New `web/tests/board-lanes.mjs`, registered: ten cell drags land with both values (SC-005); fold; formula lane. Mutation-checked
 
 ---
 
 ## Phase 8: Polish (PR 3)
 
-- [ ] T043 [P] [wiki] `wiki/views.md` (quick filters, lanes), `wiki/mcp-tools.md` (`quick_filters`, `sub_group_by`), `docs/what-it-does.md`; stale shots retaken with `shoot-wiki.mjs`
-- [ ] T044 [ui] Budgets: `rawButtons` and `fontSize` lowered to measured counts if they went down; bundle measured against the cap
-- [ ] T045 [test] Before PR 3 is offered: gate green; `codegraph sync` and `codegraph callers` on the new exported symbols; `/code-review`; `ux-ui-audit` on chips and lanes in light and dark at desktop and phone width; findings fixed or filed
+- [x] T043 [P] [wiki] `wiki/views.md` (quick filters, lanes), `wiki/mcp-tools.md` (`quick_filters`, `sub_group_by`), `docs/what-it-does.md`; stale shots retaken with `shoot-wiki.mjs`
+- [x] T044 [ui] Budgets: `rawButtons` and `fontSize` lowered to measured counts if they went down; bundle measured against the cap
+- [x] T045 [test] Before PR 3 is offered: gate green; `codegraph sync` and `codegraph callers` on the new exported symbols; `/code-review`; `ux-ui-audit` on chips and lanes in light and dark at desktop and phone width; findings fixed or filed
 
 ---
 

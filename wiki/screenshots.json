@@ -322,7 +322,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "c69e3012a19e",
+        "web/src/components/CollectionView.tsx": "265c84378271",
         "web/src/tokens.css": "febe0adc0e97",
         "web/src/theme.css": "0ef4724d4a6d"
       }
@@ -358,7 +358,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "c69e3012a19e",
+        "web/src/components/CollectionView.tsx": "265c84378271",
         "web/src/cardLayout.ts": "eb7f92584275",
         "web/src/tokens.css": "febe0adc0e97",
         "web/src/theme.css": "0ef4724d4a6d"
@@ -394,7 +394,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "c69e3012a19e",
+        "web/src/components/CollectionView.tsx": "265c84378271",
         "web/src/tokens.css": "febe0adc0e97",
         "web/src/theme.css": "0ef4724d4a6d"
       }
@@ -438,7 +438,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "c69e3012a19e",
+        "web/src/components/CollectionView.tsx": "265c84378271",
         "web/src/components/ChartFigure.tsx": "3fcca96f94d5",
         "web/src/components/ChartView.css": "ad6a7c9c7acf",
         "web/src/components/ChartSettings.tsx": "4f8c7aeacbc8",
@@ -501,7 +501,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "c69e3012a19e",
+        "web/src/components/CollectionView.tsx": "265c84378271",
         "web/src/components/ChartSettings.tsx": "4f8c7aeacbc8",
         "web/src/components/ChartSettings.css": "16a9584f65dc",
         "web/src/components/ChartPane.tsx": "1fbe458f0d0b",
