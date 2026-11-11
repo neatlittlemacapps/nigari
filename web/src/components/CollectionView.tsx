@@ -2,10 +2,12 @@ import { Fragment, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useM
 import type { PeekMode } from '../peek';
 import { api, ApiError } from '../api';
 import { usePersonalViews } from '../usePersonalViews';
-import { hasPersonalChange, mergeViewState, viewScope, withPersonalEdit, withQuickPick, withoutViewChanges } from '../viewState';
-import { quickFilterProps } from '../quickFilters';
+import { hasPersonalChange, mergeViewState, viewScope, withFoldedLane, withPersonalEdit, withQuickPick, withoutViewChanges } from '../viewState';
+import { laneIsReadOnly, quickFilterProps } from '../quickFilters';
 import QuickFilters from './QuickFilters';
 import ViewChangeBar from './ViewChangeBar';
+import BoardLaneHead, { useLaneNames } from './BoardLaneHead';
+import { cellKey, dropPatch, laneIdsOf, lanesFor, laneValue, parseCellKey, type Lane } from '../boardLanes';
 import { onRefresh } from '../pwa';
 import Portal from './Portal';
 import { anchoredMenuStyle } from '../anchoredMenu';
@@ -626,6 +628,18 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     });
   };
 
+  // Several properties of one row in one change: a card dropped into another
+  // cell of a board with lanes takes its column and its lane together, so it
+  // is never half-moved and the history has one entry (spec 013, R9).
+  const setRowProps = async (rowId: string, patch: Record<string, unknown>) => {
+    setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, props: { ...r.props, ...patch } } : r)));
+    try {
+      await api.updatePage(rowId, { propsPatch: patch });
+    } catch {
+      toast(t('Change not saved'));
+    }
+  };
+
   const setRowProp = async (rowId: string, propId: string, value: unknown) => {
     setRows((prev) =>
       prev.map((r) => (r.id === rowId ? { ...r, props: { ...r.props, [propId]: value } } : r)),
@@ -747,6 +761,23 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     }
     resetPersonal();
   };
+
+  // A board's lanes (spec 013, US4): drawn when the view has a sub-group
+  // whose property still exists. Folding is the person's own; a drop between
+  // cells writes both values in one change (setRowProps).
+  const laneProp = view.type === 'board' && view.subGroupBy ? schema.find((p) => p.id === view.subGroupBy) : undefined;
+  const boardLanes = laneProp
+    ? {
+        by: laneProp.id,
+        prop: laneProp,
+        folded: new Set(personalState?.foldedLanes ?? []),
+        onFold: personalScope
+          ? (lane: string, f: boolean) => personal.setState(personalScope, withFoldedLane(personalState, lane, f))
+          : undefined,
+        readOnly: laneIsReadOnly(laneProp),
+        onDropPatch: (rowId: string, patch: Record<string, unknown>) => void setRowProps(rowId, patch),
+      }
+    : undefined;
 
   // Renaming and removing a view. Both were MCP-only: the ＋ made views and
   // nothing took them away, so a board somebody added by accident stayed for
@@ -1075,9 +1106,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             void setGroupValue(rowId, groupBy, optId);
           }}
           onTrashRow={trashRow}
-          onAddInColumn={(groupBy, optId) =>
-            void addRow(optId === UNSET ? {} : { [groupBy]: groupValueFor(schema, groupBy, optId) })
+          onAddInColumn={(groupBy, optId, extra) =>
+            void addRow({ ...(optId === UNSET ? {} : { [groupBy]: groupValueFor(schema, groupBy, optId) }), ...(extra ?? {}) })
           }
+          lanes={boardLanes}
         />
       ) : view.type === 'gallery' ? (
         <GalleryView
@@ -2090,6 +2122,7 @@ function BoardView({
   onDrop,
   onTrashRow,
   onAddInColumn,
+  lanes,
 }: {
   rows: Row[];
   sort?: Sort | null;
@@ -2104,7 +2137,20 @@ function BoardView({
   onSetOptions: (propId: string, options: PropOption[]) => void;
   onDrop: (rowId: string, groupBy: string, optId: string) => void;
   onTrashRow: (id: string, title: string) => Promise<void>;
-  onAddInColumn: (groupBy: string, optId: string) => void;
+  /** extra: on a board with lanes, the lane's value too (spec 013). */
+  onAddInColumn: (groupBy: string, optId: string, extra?: Record<string, unknown>) => void;
+  /** A board's lanes (spec 013, US4): the sub-group property, its lanes,
+   *  which ones this person folded, and how a drop between cells is written
+   *  (both values in one change, boardLanes.ts). */
+  lanes?: {
+    by: string;
+    prop: PropDef;
+    folded: Set<string>;
+    onFold?: (lane: string, folded: boolean) => void;
+    /** A formula or rollup: lanes are drawn, no drop changes one (FR-018). */
+    readOnly: boolean;
+    onDropPatch: (rowId: string, patch: Record<string, unknown>) => void;
+  };
 }) {
   // What a click on a row does follows the view (spec 007, pageOpen.ts).
   const openRow = useOpenRow({ onNavigate, onOpenInNewTab });
@@ -2120,9 +2166,17 @@ function BoardView({
   // opened card is a glance, not a setting.
   const [openCards, setOpenCards] = useState<Set<string>>(new Set());
   // Pointer-based dragging instead of the jerky native drag (see boardDrag).
-  const { drag, armedRow, startDrag, consumeClick } = useBoardDrag((rowId, toCol) =>
-    onDrop(rowId, groupBy, toCol),
-  );
+  // The lanes, from the property's options or from the values the rows hold,
+  // and their names (people and related rows by name).
+  const laneName = useLaneNames(lanes?.prop);
+  const laneList: Lane[] = lanes ? lanesFor(lanes.prop, rows.map((r) => r.props[lanes.by])) : [];
+  const { drag, armedRow, startDrag, consumeClick } = useBoardDrag((rowId, toCol, fromCol) => {
+    if (!lanes) return onDrop(rowId, groupBy, toCol);
+    // Between cells: only what changed is written, in one change; a lane of
+    // a formula or rollup is not changed by any drop (dropPatch says null).
+    const patch = dropPatch(fromCol, toCol, groupBy, lanes.by, lanes.prop, (col) => columnValue(col));
+    if (patch) lanes.onDropPatch(rowId, patch);
+  });
   // When grouping by a relation, the columns are the rows of the target
   // collection. Loaded through the same cache the relation cells use, so the
   // column heading and the cell always say the same thing.
@@ -2183,33 +2237,55 @@ function BoardView({
   // 012, US3): the place the view's sort gives it there, not the pointer's.
   // Over its own column nothing is added: the card's own dimmed place is it.
   const dragged = drag ? rows.find((r) => r.id === drag.rowId) : undefined;
-  const dropAt = (col: string, cards: Row[]): number => {
-    if (!drag || !dragged || drag.over !== col || drag.fromCol === col) return -1;
+  // The value a column stands for, in the shape the property stores.
+  const columnValue = (col: string): unknown =>
+    col === UNSET ? (prop.type === 'select' ? '' : []) : prop.type === 'select' ? col : [col];
+  // Whether a drag may land on a cell: on a board whose lanes are a formula
+  // or a rollup, only within the card's own lane (FR-018).
+  const mayDropOn = (key: string): boolean => {
+    if (!lanes?.readOnly || !drag) return true;
+    return parseCellKey(key)?.lane === parseCellKey(drag.fromCol)?.lane;
+  };
+  const dropAt = (key: string, cards: Row[]): number => {
+    if (!drag || !dragged || drag.over !== key || drag.fromCol === key || !mayDropOn(key)) return -1;
+    const col = lanes ? (parseCellKey(key)?.col ?? key) : key;
     // On a multi-select or relation board the card can already be in this
     // column too; then it is its own place there, as in its own column.
     if (cards.some((c) => c.id === dragged.id)) return -1;
-    const value = col === UNSET ? (prop.type === 'select' ? '' : []) : prop.type === 'select' ? col : [col];
-    const moved = { ...dragged, props: { ...dragged.props, [groupBy]: value } };
+    const moved = { ...dragged, props: { ...dragged.props, [groupBy]: columnValue(col) } };
     return dropIndex(cards, moved, sort, (id) => rowOrder.get(id) ?? 0);
   };
+  // On a board with lanes the marker is a line, not a card-sized gap: a gap
+  // made the lane under the pointer taller and pushed every lane below it
+  // down, so the cell being aimed at moved away from the pointer
+  // (board-lanes.mjs found it). A line says where the card lands without
+  // moving anything.
   const placeholder = drag ? (
-    <div className="board-drop-place" style={{ height: drag.height }} aria-hidden="true" />
+    lanes ? (
+      <div className="board-drop-place is-line" aria-hidden="true" />
+    ) : (
+      <div className="board-drop-place" style={{ height: drag.height }} aria-hidden="true" />
+    )
   ) : null;
 
-  return (
-    <div className={'board' + (drag ? ' is-dragging' : '')}>
+  // The columns, for the whole board or for one lane of it (spec 013).
+  const renderColumns = (laneId: string | null) => (
+    <>
       {columns.map((col) => {
-        const cards = rowsFor(col.id);
-        const at = dropAt(col.id, cards);
+        // On a board with lanes a cell is the meeting of a column and a lane,
+        // keyed by both (boardLanes.ts); without lanes the key is the column.
+        const key = laneId === null ? col.id : cellKey(laneId, col.id);
+        const cards = laneId === null ? rowsFor(col.id) : rowsFor(col.id).filter((r) => laneIdsOf(r.props[lanes!.by], laneList).includes(laneId));
+        const at = dropAt(key, cards);
         return (
         <div
-          key={col.id}
-          data-col={col.id}
+          key={key}
+          data-col={key}
           className={
             'board-col' +
             // Highlight the target column but not the source column — putting it
             // back there is not a change.
-            (drag && drag.over === col.id && drag.fromCol !== col.id ? ' drag-over' : '')
+            (drag && drag.over === key && drag.fromCol !== key && mayDropOn(key) ? ' drag-over' : '')
           }
           // The column carries the colour of ITS option (choosable in the
           // properties dialog since W94) — the tint used to come from a
@@ -2223,7 +2299,7 @@ function BoardView({
               </span>
               <span className="board-count">{cards.length}</span>
             </span>
-            <button className="board-add" title={t('New')} onClick={() => onAddInColumn(groupBy, col.id)}>
+            <button className="board-add" title={t('New')} onClick={() => onAddInColumn(groupBy, col.id, laneId === null || lanes?.readOnly ? undefined : lanes ? { [lanes.by]: laneValue(lanes.prop, laneId) } : undefined)}>
               <Plus size={14} />
             </button>
           </div>
@@ -2234,13 +2310,13 @@ function BoardView({
               <div
                 className={
                   'board-card' +
-                  (drag?.rowId === r.id && drag.fromCol === col.id ? ' is-dragging' : '') +
+                  (drag?.rowId === r.id && drag.fromCol === key ? ' is-dragging' : '') +
                   (armedRow === r.id ? ' is-armed' : '')
                 }
                 // Focusable by script only (not a Tab stop): a menu opened by a
                 // right-click on the card gives focus back to the card.
                 tabIndex={-1}
-                onPointerDown={(e) => startDrag(e, r.id, col.id, r.title || t('Untitled'))}
+                onPointerDown={(e) => startDrag(e, r.id, key, r.title || t('Untitled'))}
                 onClick={(e) => {
                   // Do NOT open after a drag — otherwise every move jumps
                   // straight into the card.
@@ -2256,8 +2332,8 @@ function BoardView({
                   e.preventDefault();
                   moveReturn.current = e.currentTarget;
                   const box = e.currentTarget.getBoundingClientRect();
-                  setMovePoint({ key: `${col.id}:${r.id}`, point: e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : { x: box.right, y: box.top } });
-                  setMoveMenu(`${col.id}:${r.id}`);
+                  setMovePoint({ key: `${key}:${r.id}`, point: e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : { x: box.right, y: box.top } });
+                  setMoveMenu(`${key}:${r.id}`);
                 }}
               >
                 <div className="board-card-top">
@@ -2291,12 +2367,12 @@ function BoardView({
                       devices also cannot HTML5-drag, so the column list has to
                       stay whatever else joins it. */}
                   <CardMenu
-                    open={moveMenu === `${col.id}:${r.id}`}
-                    point={movePoint?.key === `${col.id}:${r.id}` ? movePoint.point : null}
-                    returnFocus={movePoint?.key === `${col.id}:${r.id}` ? moveReturn : undefined}
+                    open={moveMenu === `${key}:${r.id}`}
+                    point={movePoint?.key === `${key}:${r.id}` ? movePoint.point : null}
+                    returnFocus={movePoint?.key === `${key}:${r.id}` ? moveReturn : undefined}
                     onOpenChange={(o) => {
                       if (o) setMovePoint(null);
-                      setMoveMenu(o ? `${col.id}:${r.id}` : null);
+                      setMoveMenu(o ? `${key}:${r.id}` : null);
                     }}
                   >
                     <MenuItem fn="open" onClick={() => openRow({}, r.id)}>
@@ -2362,6 +2438,28 @@ function BoardView({
         </div>
         );
       })}
+    </>
+  );
+
+  return (
+    <div className={'board' + (drag ? ' is-dragging' : '') + (lanes ? ' has-lanes' : '')}>
+      {lanes
+        ? laneList.map((lane) => {
+            const inLane = rows.filter((r) => laneIdsOf(r.props[lanes.by], laneList).includes(lane.id));
+            const folded = lanes.folded.has(lane.id);
+            return (
+              <section key={lane.id} className="board-lane" data-lane={lane.id} aria-label={laneName(lane)}>
+                <BoardLaneHead
+                  name={laneName(lane)}
+                  count={inLane.length}
+                  folded={folded}
+                  onFold={lanes.onFold ? (f) => lanes.onFold!(lane.id, f) : undefined}
+                />
+                {!folded && <div className="board-lane-cells">{renderColumns(lane.id)}</div>}
+              </section>
+            );
+          })
+        : renderColumns(null)}
 
       {/* Die schwebende Karte folgt dem Zeiger. Als letztes Kind mit
           position:fixed so it sits above everything; pointer-events:none so it

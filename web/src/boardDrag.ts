@@ -68,7 +68,9 @@ const TOUCH_HOLD_MS = 320;
 // a swipe, and the drag is never armed in the first place.
 const TOUCH_HOLD_SLOP = 10;
 
-export function useBoardDrag(onMove: (rowId: string, toCol: string) => void) {
+// fromCol is where the card was picked up: on a board with lanes the cell's
+// key (boardLanes.ts), so the drop can write only what changed.
+export function useBoardDrag(onMove: (rowId: string, toCol: string, fromCol: string) => void) {
   const [drag, setDrag] = useState<DragState | null>(null);
   // Which card is armed after the hold but has not moved yet. On the iPhone
   // there is no navigator.vibrate — without a visible signal nothing at all
@@ -167,7 +169,7 @@ export function useBoardDrag(onMove: (rowId: string, toCol: string) => void) {
       setDrag(null);
       setArmedRow(null);
       if (l && l.started && l.over && l.over !== l.fromCol) {
-        onMove(l.rowId, l.over);
+        onMove(l.rowId, l.over, l.fromCol);
       }
       // draggedRef stays set until the next click, so the card's click
       // handler can suppress navigation.

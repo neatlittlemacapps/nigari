@@ -2291,6 +2291,41 @@ body:has(.icon-picker) .bn-side-menu {
    the board read as cramped before anyone had put much in it. The columns are
    what buys room; enlarging the cards inside a narrow column only moves the
    squeeze. */
+/* A board with lanes (spec 013, US4): the lanes stack, each a row of the
+   board's columns. One scroll container (.board) for all of them, so the
+   columns of every lane stay lined up when the board scrolls sideways. A
+   lane's cells size to their cards instead of the window's height. */
+.board.has-lanes {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-300);
+}
+
+.board-lane {
+  width: max-content;
+  min-width: 100%;
+}
+
+.board-lane-head {
+  position: sticky;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-100);
+  padding: var(--space-50) 0 var(--space-150);
+  font-weight: 600;
+}
+
+.board-lane-cells {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.board-lane-cells .board-col {
+  max-height: none;
+}
+
 .board-col {
   width: 320px;
   flex-shrink: 0;
@@ -5847,6 +5882,15 @@ body.is-col-resizing {
   border-radius: var(--radius-scale-lg);
   background: var(--color-hover);
   animation: board-drop-in var(--motion-duration-fast) ease-out;
+}
+
+.board-drop-place.is-line {
+  height: 0;
+  border: 0;
+  border-top: 2px solid var(--color-accent-default);
+  border-radius: var(--radius-scale-full);
+  background: none;
+  margin: calc(var(--space-50) * -1) 0;
 }
 
 @keyframes board-drop-in {

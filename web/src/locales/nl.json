@@ -1325,5 +1325,7 @@
   "Quick filters": "Snelfilters",
   "Sub-group": "Subgroep",
   "These quick filters cannot be offered: choose up to 8 select, person, checkbox or relation properties.": "Deze snelfilters kunnen niet worden aangeboden: kies tot 8 selectie-, persoon-, selectievakje- of relatie-eigenschappen.",
-  "{name}: {value}": "{name}: {value}"
+  "{name}: {value}": "{name}: {value}",
+  "Fold lane": "Baan inklappen",
+  "Unfold lane": "Baan uitklappen"
 }

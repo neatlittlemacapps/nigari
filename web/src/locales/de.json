@@ -1325,5 +1325,7 @@
   "Quick filters": "Schnellfilter",
   "Sub-group": "Untergruppe",
   "These quick filters cannot be offered: choose up to 8 select, person, checkbox or relation properties.": "Diese Schnellfilter können nicht angeboten werden: Wähle bis zu 8 Auswahl-, Personen-, Kontrollkästchen- oder Verknüpfungs-Eigenschaften.",
-  "{name}: {value}": "{name}: {value}"
+  "{name}: {value}": "{name}: {value}",
+  "Fold lane": "Bahn einklappen",
+  "Unfold lane": "Bahn ausklappen"
 }
