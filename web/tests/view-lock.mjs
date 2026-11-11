@@ -5,8 +5,8 @@ import { eventually, withFixture } from './fixture.mjs';
 // The views lock (spec 013, US2, quickstart §1). A person who can edit locks
 // a database's views from Settings; from then on nothing that changes a view
 // is offered (Settings' view items, ＋ add view, the tab's menu and
-// double-click rename, column moves, hides and resizes, the board's grouping,
-// filter and sort) and the server refuses whoever tries anyway: a second
+// double-click rename, column moves, hides and resizes, the board's grouping)
+// and the server refuses whoever tries anyway: a second
 // account and an agent. Rows stay editable. Locking from elsewhere reaches an
 // open tab without a reload. Unlocking brings everything back.
 
@@ -59,11 +59,12 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
   }
   assert(items.includes('Edit properties') && items.includes('Unlock views'), `locked menu: ${items}`);
   assert.equal(await toolbar.locator('.view-add').count(), 0, '＋ add view offered while locked');
-  for (const gone of ['Filter', 'Sort']) {
-    assert.equal(await toolbar.getByRole('button', { name: gone }).count(), 0, `${gone} offered while locked`);
+  // Filter and sort stay: since spec 013's personal changes (PR 2) they are
+  // the person's own, which the lock does not cover (FR-009). Before PR 2
+  // they were hidden here, because they changed the view for everyone.
+  for (const kept of ['Filter', 'Sort']) {
+    assert(await toolbar.locator('.fs-controls button', { hasText: kept }).first().isVisible(), `${kept} not offered while locked`);
   }
-  // The table's own filter is still said.
-  assert(await toolbar.getByText('Filtered', { exact: true }).isVisible(), 'the filter is no longer said');
   assert.equal(await page.locator('.col-resize').count(), 0, 'a column grip while locked');
   assert.equal(await page.locator('.db-table .th-label').count(), 0, 'a column menu while locked');
   const tab = page.locator('.view-tab', { hasText: 'Table' });

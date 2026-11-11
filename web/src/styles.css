@@ -2178,12 +2178,43 @@ body:has(.icon-picker) .bn-side-menu {
   flex: none;
 }
 
-/* On a database page whose views are locked (spec 013) the same markers
-   stand in for the filter and sort buttons, which are not drawn: there they
-   are the only place the filter is said, on a phone too. */
-@media (hover: none) {
-  .embed-view-state.is-page {
-    display: inline-flex;
+/* "Only you see these changes" (spec 013, US1): a line under the toolbar of a
+   view the person filtered or sorted for themselves. Quiet, the accent's soft
+   tint: it informs, it does not warn. It wraps instead of scrolling, so
+   Reset and Save for everyone are never off screen on a phone. Lined up with
+   the toolbar's own padding on a page and on a phone. */
+.view-change-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-100) var(--space-200);
+  padding: var(--space-100) calc(var(--space-600) * 2);
+  background: var(--color-accent-soft);
+  color: var(--color-text-default);
+  font-size: var(--font-size-sm);
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.collection-scroll.is-embed .view-change-bar {
+  padding-inline: var(--space-200);
+}
+
+.view-change-bar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-100);
+  margin-left: auto;
+}
+
+.view-change-bar-actions svg {
+  flex: none;
+}
+
+@media (max-width: 768px) {
+  .view-change-bar {
+    /* The toolbar's own phone padding (.collection-toolbar, 14px). */
+    padding-inline: 14px;
   }
 }
 

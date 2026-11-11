@@ -1024,7 +1024,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 				// Before anything is created: a view of another database is
 				// refused here, and nothing is left behind.
 				if args.ViewID != "" {
-					props, err := s.propsInView(parentID, args.ViewID, args.Properties)
+					props, err := s.propsInView(parentID, args.ViewID, viewer{}, args.Properties)
 					if err != nil {
 						return "", err
 					}

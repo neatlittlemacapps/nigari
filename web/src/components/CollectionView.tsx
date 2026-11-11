@@ -1,6 +1,9 @@
 import { Fragment, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { PeekMode } from '../peek';
 import { api, ApiError } from '../api';
+import { usePersonalViews } from '../usePersonalViews';
+import { hasPersonalChange, mergeViewState, viewScope, withPersonalEdit, withoutFilterAndSort } from '../viewState';
+import ViewChangeBar from './ViewChangeBar';
 import { onRefresh } from '../pwa';
 import Portal from './Portal';
 import { anchoredMenuStyle } from '../anchoredMenu';
@@ -58,6 +61,13 @@ export interface EmbedState {
   views: Record<string, { filters?: Filter[]; sort?: ViewDef['sort'] }>;
   onViewId: (viewId: string) => void;
   onView: (viewId: string, patch: { filters?: Filter[]; sort?: ViewDef['sort'] }) => void;
+  /** Where this embed sits: with the view id, the scope a person's own
+   *  filter and sort for it are kept under (spec 013, viewState.ts). */
+  pageId?: string;
+  blockId?: string;
+  /** Whether the person may change the document, and so the embed's own
+   *  filters: what Save for everyone needs here (FR-006a). */
+  canSave?: boolean;
 }
 
 interface Props {
@@ -226,6 +236,8 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     embed?.onViewId(id);
   };
   const [schemaOpen, setSchemaOpen] = useState(false);
+  // The person's own filter and sort per view (spec 013, US1).
+  const personal = usePersonalViews(collectionId);
   // A popover of the filter or sort controls is open: with the templates
   // menu, what keeps an embed's folding toolbar shown (data-menu-open).
   const [fsOpen, setFsOpen] = useState(false);
@@ -261,7 +273,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const addRowFromTemplate = async (templateId: string) => {
     setTplOpen(false);
     try {
-      const row = await api.rowFromTemplate(collectionId, { templateId, viewId: rowViewId() });
+      const row = await api.rowFromTemplate(collectionId, { templateId, viewId: rowViewId(), viewScope: rowViewScope() });
       onPagesChanged();
       announceIfHidden(row);
     } catch {
@@ -337,7 +349,23 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const savedView = config?.views.find((v) => v.id === viewId) ?? config?.views[0];
   // In a document, the embed's own filters and sort stand in for the view's.
   const own = savedView && embed?.views[savedView.id];
-  const view0 = savedView && own ? { ...savedView, ...own } : savedView;
+  // The view as everyone sees it…
+  const sharedView = savedView && own ? { ...savedView, ...own } : savedView;
+  // …and as this person sees it: their own filter and sort laid over it
+  // (spec 013, US1). A form has no filters. An embed without a place (a
+  // bare context) keeps the old behaviour: its filters go to the document.
+  const personalScope =
+    sharedView && sharedView.type !== 'form' && (!embed || (embed.pageId && embed.blockId))
+      ? viewScope(sharedView.id, embed ? { pageId: embed.pageId!, blockId: embed.blockId! } : null)
+      : null;
+  const personalState = personalScope ? personal.states[personalScope] : undefined;
+  const view0 = sharedView && personalScope ? { ...sharedView, ...mergeViewState(sharedView, personalState) } : sharedView;
+  const personalChange = !!sharedView && !!personalScope && hasPersonalChange(sharedView, personalState);
+  // What the person edits and what Save for everyone writes: their own
+  // filter and sort, WITHOUT quick filter picks (spec 013 PR 3). A pick is a
+  // chip of its own; written into the filters it would stay after the chip
+  // is cleared, and Save would give it to everyone (code review).
+  const ownFilterSort = sharedView ? mergeViewState({ filters: sharedView.filters, sort: sharedView.sort }, personalState) : null;
   // Server-side filter/sort (real Q25): the view's filters/sort become query
   // params so a 50k-row database is filtered in SQLite, not in the browser.
   // Only finished conditions travel. An unfinished one is not "match nothing",
@@ -562,7 +590,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     // English in every language and turned up in search and exports.
     // In the view the person is looking at (spec 005): the server fills in
     // what its filters pin down, under presetProps (a board column's value).
-    const row = await api.createPage(collectionId, '', 'doc', presetProps, undefined, rowViewId());
+    const row = await api.createPage(collectionId, '', 'doc', presetProps, undefined, rowViewId(), rowViewScope());
     onPagesChanged();
     announceIfHidden(row);
   };
@@ -570,6 +598,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // The view a new row is made in. A form has no filters, and its fields are
   // what the person fills in.
   const rowViewId = () => (view && view.type !== 'form' ? view.id : undefined);
+  // In a document, the embed's scope: the server pins the row from the
+  // person's own filters for this embed, not from those they set on the
+  // database's page (spec 013, FR-005).
+  const rowViewScope = () => (embed && personalScope ? personalScope : undefined);
   // A row the view's filters still leave out (Estimate > 3, "contains") would
   // vanish without a word; say so and offer the way to it.
   const announceIfHidden = (row: { id: string; matchesView?: boolean }) => {
@@ -652,8 +684,24 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     });
 
   const updateView = (patch: Partial<ViewDef>) => {
+    // A filter or sort edit is the person's own (spec 013, US1): it is kept
+    // on their account and changes nothing for anyone else, until they save
+    // it for everyone from the bar. On a database's page and in a document.
+    if (personalScope && sharedView && ('filters' in patch || 'sort' in patch)) {
+      const { filters, sort, ...rest } = patch;
+      personal.setState(
+        personalScope,
+        withPersonalEdit(sharedView, personalState, {
+          ...('filters' in patch ? { filters } : {}),
+          ...('sort' in patch ? { sort } : {}),
+        }),
+      );
+      if (Object.keys(rest).length === 0) return;
+      patch = rest;
+    }
     // An embed keeps its filters and sort to itself (#26): set inside a
     // document, they must not change the collection's view everywhere else.
+    // (Reached only by an embed without a place; see personalScope.)
     if (embed && ('filters' in patch || 'sort' in patch)) {
       const { filters, sort, ...rest } = patch;
       embed.onView(view.id, {
@@ -668,6 +716,32 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       views: config.views.map((v) => (v.id === view.id ? { ...v, ...patch } : v)),
     };
     void saveConfig(next);
+  };
+
+  // The bar's two answers to a personal change (spec 013, research R4).
+  // Reset: the person's filter and sort go, and they see the shared view.
+  const resetPersonal = () => {
+    if (personalScope) personal.setState(personalScope, withoutFilterAndSort(personalState));
+  };
+  // Save for everyone: what the person sees becomes the view, through the
+  // normal save, so the lock, the per-view checks and the activity log
+  // apply; only then is the personal state dropped. A refused save keeps it,
+  // so nothing the person set is lost. In a document the embed's own filters
+  // are written (FR-006a), which belong to the document.
+  const maySaveForEveryone = embed ? !!embed.canSave : mayChangeViews;
+  const savePersonalForEveryone = async () => {
+    if (!personalScope || !sharedView) return;
+    const merged = { filters: ownFilterSort?.filters ?? [], sort: ownFilterSort?.sort ?? null };
+    if (embed) {
+      embed.onView(sharedView.id, merged);
+    } else {
+      const ok = await saveConfig({
+        ...config,
+        views: config.views.map((v) => (v.id === sharedView.id ? { ...v, ...merged } : v)),
+      });
+      if (!ok) return;
+    }
+    resetPersonal();
   };
 
   // Renaming and removing a view. Both were MCP-only: the ＋ made views and
@@ -838,18 +912,24 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           reached for (spec 012, US5); a filter or a sort of the view must not
           fold away with them (FR-021), so it is said here, beside the tabs,
           and stays when the buttons are hidden. */}
-      {/* On a database page with its views locked the filter and sort
-          controls are gone (spec 013, PR 1: a person's own filter arrives
-          with PR 2), so the same words say what the view does. */}
-      {(embed || viewsLock) && (viewFiltered || view.sort) && (
-        <span className={'embed-view-state' + (embed ? '' : ' is-page')}>
+      {embed && (viewFiltered || view.sort) && (
+        <span className="embed-view-state">
           {viewFiltered && <span className="embed-view-state-item">{t('Filtered')}</span>}
           {view.sort && <span className="embed-view-state-item">{t('Sorted')}</span>}
         </span>
       )}
       <div className="collection-actions" data-menu-open={fsOpen || tplOpen ? '' : undefined}>
-        {view.type !== 'form' && (embed || !viewsLock) && (
-          <FilterSortControls schema={schema} view={view} onChange={updateView} onOpenChange={setFsOpen} canGroup={!viewsLock} />
+        {/* Filter and sort stay while the views are locked: they are the
+            person's own (spec 013, FR-009). Grouping changes the view for
+            everyone, so it goes with the lock. */}
+        {view.type !== 'form' && (
+          <FilterSortControls
+            schema={schema}
+            view={ownFilterSort ? { ...view, ...ownFilterSort } : view}
+            onChange={updateView}
+            onOpenChange={setFsOpen}
+            canGroup={!viewsLock}
+          />
         )}
         {/* Everything that configures the view and the database, in one menu
             (spec 012, US4): what the Columns popover, the Properties button,
@@ -953,6 +1033,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       }
     >
       {viewSwitcher}
+      {personalChange && (
+        <ViewChangeBar onReset={resetPersonal} onSaveForEveryone={maySaveForEveryone ? () => void savePersonalForEveryone() : undefined} />
+      )}
       <RowOpenContext.Provider value={rowOpen}>
       {view.type === 'form' ? (
         <FormView

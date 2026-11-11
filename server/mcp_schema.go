@@ -176,6 +176,9 @@ func (s *Server) saveCollection(pageID string, schema []map[string]any, views []
 	if _, err := s.db.Exec(`UPDATE pages SET updated_at = ? WHERE id = ?`, now(), pageID); err != nil {
 		return err
 	}
+	// A removed view takes everybody's own filters for it along (spec 013);
+	// here, so every MCP path that writes views does it.
+	s.forgetViewStatesOfMissingViews(pageID, views)
 	s.pagesChanged()
 	// Open views of this collection learn about it the way they learn about a
 	// change from another browser: an agent's new property used to stay

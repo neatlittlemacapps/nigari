@@ -365,3 +365,50 @@ func TestPercentileIsNearestRank(t *testing.T) {
 		}
 	}
 }
+
+// A person's own view state (spec 013, US1) on the seeded 1k-row database:
+// the read a database open adds (every state of the person for it, by the
+// primary key's prefix), and a row made in a view the person filtered for
+// themselves (one more row by primary key than BenchmarkCreateRowWithView's
+// "view" case, which is the number to read it beside).
+func BenchmarkPersonalViewState(b *testing.B) {
+	w := sharedBenchWorld(b, 0, 1000)
+	views := `[{"id":"v-own","name":"All","type":"table"}]`
+	if _, err := w.s.db.Exec(`UPDATE collections SET views = ? WHERE page_id = ?`, views, w.rowsDB); err != nil {
+		b.Fatal(err)
+	}
+	put := httptest.NewRequest("PUT", "/api/collections/"+w.rowsDB+"/personal/v-own",
+		strings.NewReader(`{"filters":[{"property":"stage","op":"is","value":"s2"}]}`))
+	put.Header.Set("Cookie", w.memberCookie())
+	rec := httptest.NewRecorder()
+	w.s.ServeHTTP(rec, put)
+	if rec.Code != 200 {
+		b.Fatalf("PUT personal: %d %s", rec.Code, rec.Body.String())
+	}
+	b.Run("lookup", func(b *testing.B) {
+		var l latencies
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			l.time(func() { w.get(b, "/api/collections/"+w.rowsDB+"/personal", w.memberCookie()) })
+		}
+		l.report(b)
+	})
+	b.Run("create-row", func(b *testing.B) {
+		body := `{"parentId":"` + w.rowsDB + `","title":"","viewId":"v-own"}`
+		var l latencies
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			l.time(func() {
+				req := httptest.NewRequest("POST", "/api/pages", strings.NewReader(body))
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Cookie", w.memberCookie())
+				rec := httptest.NewRecorder()
+				w.s.ServeHTTP(rec, req)
+				if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"s2"`) {
+					b.Fatalf("create: %d %s", rec.Code, rec.Body.String())
+				}
+			})
+		}
+		l.report(b)
+	})
+}

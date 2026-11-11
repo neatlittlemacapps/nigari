@@ -117,6 +117,13 @@
       "rest": ["PUT /api/collections/{id}/lock", "DELETE /api/collections/{id}/lock"],
       "wiki": "wiki/collections.md"
     },
+    "views.personal": {
+      "summary": "A person's own filter and sort for a view, kept on their account until they reset it or save it for everyone",
+      "agent": "closed",
+      "reason": "Listed in not_available_via_mcp (owner, spec 013, 2026-11-03): an agent has no personal state; its view change (set_view) is always for everyone, and a row it makes in a view takes the shared filters' values.",
+      "rest": ["GET /api/collections/{id}/personal", "PUT /api/collections/{id}/personal/{scope}", "DELETE /api/collections/{id}/personal/{scope}"],
+      "wiki": "wiki/views.md"
+    },
     "collections.templates": {
       "summary": "A database's own templates: list, add, rename, remove, and create a row from one",
       "agent": "allowed",

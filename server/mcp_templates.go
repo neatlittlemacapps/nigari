@@ -97,7 +97,7 @@ func (s *Server) mcpCreateFromTemplate(u *user, templateID, title, parentID stri
 		}
 		// Template, then the view's pins, then props (spec 005, as over REST).
 		if viewID != "" {
-			merged, err := s.propsInView(owner, viewID, props)
+			merged, err := s.propsInView(owner, viewID, viewer{}, props)
 			if err != nil {
 				return "", err
 			}
