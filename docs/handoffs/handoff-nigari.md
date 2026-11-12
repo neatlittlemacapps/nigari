@@ -1,6 +1,6 @@
 # active-memory handoff: nigari (formerly salt.md fork): agentic setup and feature roadmap
 
-**Handoff #19** · 2026-11-12 · Lineage:
+**Handoff #20** · 2026-11-12 · Lineage:
 - **#1 (2026-10-25):** agentic setup (rules, gate, Spec Kit, parity manifest); four feature branches merged; 25 issues; three specs.
 - **#2 (2026-10-26):** find-and-replace edits (#13, PR #48); specs 001/002 planned; #47 fixed; surfaces registry, board sync, ruleset (PR #49).
 - **#3 (2026-10-26):** board derives its columns (PR #74); spec 002 tasks (#50–#73); storage benchmarks; fixes #75, #76; Codespaces (PR #77).
@@ -20,14 +20,16 @@
 - **#17 (2026-11-04/05):** spec 014 planned + 36 tasks (#534–#569 under #371; docs PR #570 → v2.1.11); #524 delete-property confirmation (PR #573 → v2.1.12); #571 workspace empty state (PR #575 → v2.1.13); spec 013 PR 1 views lock + activity log, built by helper stream B, reviewed/audited by Claude (PR #576 → v2.1.14 expected); bugs #571, #572, #574 filed; owner's next task: **Umbrel packaging** (section 11).
 - **#18 (2026-11-05/06):** Umbrel packaging done: audit; cross-origin hole fixed (another app's page could write and read the live socket) + `NIGARI_TRUST_PROXY` (PR #579 → v2.1.15, issue #578); store `yokogaki` published at `neatlittlemacapps/yokogaki-umbrel`, pinned to 2.1.15 (PR #580); owner's icon in the store (PR #581); owner added the store on their Umbrel.
 - **#19 (2026-11-06 → 11-12):** #322 logo (#583 → v2.1.18); spec 013 PR 2 personal filter/sort (#584 → v2.1.19); spec 013 PR 3 quick filters + lanes (#587 → v2.1.21), conflict with #586 (BoardView refactor from Claude's suggested task) resolved; spec 013 finished (#477 closed).
+- **#20 (2026-11-12):** one branch per pull request + overlap rules in the steward skill, handoff now on `main` (#588 → v2.1.22); each release opens a pull request on the Umbrel store (#589 → v2.1.23); first one, neatlittlemacapps/yokogaki-umbrel#1, moves the store 2.1.15 → 2.1.23.
 
-> **Read first (2026-11-12):** nothing is in progress. No open PRs, no
-> running helper, no scheduled check-ins. Still check `list_sessions`,
-> `git ls-remote --heads origin` and open PRs first (correction 107), and
-> fetch `origin/claude/handoff-14` and `origin/main` before reading this file
-> from a local checkout (correction 117). Spec 013 is finished. The next job
-> is spec 014 PR 2, on a **new branch** `claude/spec-014-pr2` from `main`
-> (one branch per pull request, owner 2026-11-12; steward skill).
+> **Read first (2026-11-12):** nothing is in progress in nigari. No
+> running helper, no scheduled check-ins. Open: this handoff's own small
+> pull request (branch `claude/handoff-20`) and, on the store,
+> neatlittlemacapps/yokogaki-umbrel#1 (owner merges it). Still check
+> `list_sessions`, `git ls-remote --heads origin` and open PRs first
+> (correction 107), and fetch `origin/main` before reading this file from a
+> local checkout (correction 117). The next job is spec 014 PR 2, on a
+> **new branch** `claude/spec-014-pr2` from `main` (rule 31).
 
 ## 0. Instructions for Claude (read first)
 
@@ -103,6 +105,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 29. Finishing (owner, 2026-11-05; done for Umbrel, still the way to end a stream): "I want a clean stop and build/release so I can pick up fresh later" / "ensure a full build and no open stuff is left. After this a new handoff can prepare for regular ongoing development of the rest on the board once I give a go".
 30. Execution (owner, 2026-11-05, word for word): "Plan with opus execute with sonnet". Claude plans and reviews; mechanical execution steps go to a Sonnet helper (`Agent` with `model: "sonnet"`), whose diff Claude reviews before it is committed or pushed.
 31. Branches (owner, 2026-11-12, "ok" to Claude's proposal): one branch per pull request, named after the work, from the newest `main`, even when the session is handed a fixed branch; the handoff file goes to `main`. A suggested task touching an open PR's files says "Start after PR #N merges."; before offering a PR, check `list_sessions` and open PRs for the same files. In `.claude/skills/steward/SKILL.md` and `docs/decisions.md`.
+32. Umbrel store updates (owner, 2026-11-12, "2" = automatic): each release's `umbrel-store` job opens a pull request on `neatlittlemacapps/yokogaki-umbrel`; the owner merges the ones they want on their Umbrel. Never push to the store's `main` directly. nigari's own `umbrel/` copy keeps its 2.1.15 pin on purpose (a commit to `main` is a release; updating it would release forever).
 ## 5. Corrections log
 | # | Claude did | The user wanted |
 |---|---|---|
@@ -225,6 +228,8 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 134 | (self) Fold test raced a reload | The test waits for the PUT before reloading |
 | 135 | (self) Code review on PR 3: stale settings blocked every views save; group picker clashed with sub-group; default groupBy offered as lanes; stale picks still filtered; multi-value lane drop lost values; per-cell recomputation; duplicated code | All fixed in `ecfa8e1`; large-file finding became #586 |
 | 136 | (self) Suggested a BoardView refactor task (#586) without saying "start after #587 merges"; it touched the same file and #587 conflicted (owner: "How did this happen? How to avoid?") | A suggested task that touches an open PR's files says "start after PR #N merges"; check sessions and open PRs before offering a PR (accepted 2026-11-12: rule 31) |
+| 137 | (self) Wrote a check log to `/home/user/check2.log`, outside the repo and the scratchpad (deleted at once) | Logs go in the scratchpad directory |
+| 138 | (self) Resolving the #588/#589 conflict in `docs/decisions.md` joined two entries without the `---` separator | Keep both entries, each followed by `---`; read the seam after resolving |
 
 ## 6. Decisions
 | Decision | Why |
@@ -308,11 +313,16 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Umbrel review flow: local-only branch (option B), then pushed and PR'd with the owner's "Ok" | Owner "B", then "Ok" |
 | Store icon = owner's SVG (`yokogaki-nigari/icon.svg`, served from the store repo); nigari's own logo everywhere = #322, next, with a short plan | Owner "do A" |
 | Registry row **Cross-origin requests** (since 2026-11-05) | Rule 5 |
+| One branch per pull request, named after the work; handoff on `main` | Owner "ok" (2026-11-12); rule 31 |
+| Umbrel store moves by a pull request per release, opened by `release.yml` job `umbrel-store` with secret `UMBREL_STORE_TOKEN` (fine-grained, `yokogaki-umbrel` only, Contents + Pull requests read/write) | Owner "2" (2026-11-12); rule 32 |
 
 ## 7. Changed / rejected
 - Earlier chats: decisions page in workspace → `docs/decisions.md`; fixed surfaces list → registry; force-push rebase → merge `main`; hand-moved cards → derived Status; committed catalogue baselines → reference per run; hand-drawn SVG charts → Chart.js; owner as commit author → Claude.
 - #263 research B → C (goose); notices from `go list -m all` → linked modules only.
 - Name "salty.md" → "nigari". Rename option B → C. Transition period → none.
+- One reused branch `claude/handoff-14` for every PR → one branch per PR (owner, 2026-11-12). Owner starting each session on a fresh branch ❌ (more work for the owner).
+- Umbrel store pin moved by hand → automatic PR per release. ❌ Pushing to the store's `main` directly (untested releases to every Umbrel). ❌ A `[skip release]` marker to keep nigari's `umbrel/` copy current. ❌ Reusing `BOARD_TOKEN` for the store (Claude advised a separate token so one leak cannot reach both; owner followed the separate-token steps).
+- ❌ Lock file or label per file to avoid overlaps; ❌ forbidding refactors while a feature is open.
 - Spec 008 one PR → two parts (both merged).
 - R8 first version (rename calendar UIDs) → UIDs keep `@salt.md`.
 - Pinning the image uid → no pinned uid. Copy before the DB move → no copy.
@@ -406,6 +416,8 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | v2.1.19 | #584 (spec 013 PR 2 personal filter/sort) | 2026-11 |
 | (v2.1.20 expected) | #586 (BoardView.tsx out of CollectionView.tsx) | not checked |
 | v2.1.21 | #587 (spec 013 PR 3 quick filters + lanes) | 5 binaries + SHA256SUMS |
+| v2.1.22 | #588 (one branch per PR; handoff #19 to `main`) | Release run 43219888922, 2026-11-12 12:39:22Z, success |
+| v2.1.23 | #589 (Umbrel store job) | Release run 43221648442, 2026-11-12 12:50:45–12:55:59Z, success; `umbrel-store` job 131197031255 opened neatlittlemacapps/yokogaki-umbrel#1 (branch `nigari-2.1.23`) |
 - v2.0.5–v2.0.7 (#369 and the user's two release-notes edits) not checked individually. #376's release (expected v2.0.11) not checked.
 - Releases page: https://github.com/neatlittlemacapps/nigari/releases. Assets `nigari-<os>-<arch>` + `SHA256SUMS.txt`. Image `ghcr.io/neatlittlemacapps/nigari`. No desktop app published (#323).
 
@@ -426,6 +438,13 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - **Owner's Umbrel** (from its log, 2026-11-05): "umbrelOS for Docker v2.0.1" (dockur/umbrel); yokogaki store added and readable; a stray store `https://github.com/neatlittlemacapps/nigari` was added earlier, is unreadable (no `umbrel-app-store.yml`), hidden from the list, logs an error every ~5 min, cannot be removed in the UI.
 - New code: `server/crossorigin.go` (+ `crossorigin_test.go`), `trustProxy()` in `server/ops.go`, error code `cross_origin` (de/es/nl), vite dev proxy `xfwd: true`; wiki `self-hosting.md` "Run on Umbrel", `domain.md` "Other apps beside nigari".
 - App logo today (for #322): one mark `web/public/logo.svg`; `web/scripts/build-app-icons.mjs` renders `favicon`, `apple-touch-icon.png`, `icon-192/512.png`, `icon-maskable-512.png` (white tile, no own rounding, opaque, on purpose for iOS 26); in-app mark inline in `web/src/Logo.tsx` (Setup, Login, Sidebar, InviteAccept, OAuthConsent…); desktop `desktop/build/icon(.svg/.png)`, `icon-dark(.svg/.png)`. Owner's artwork: 512×512 SVG, lilac tile `#E9E1FE` rx 116 with three overlapping purple shapes `#A98AFB`, `#6542E8`, `#3A1FA6`; copy in `umbrel/yokogaki-nigari/icon.svg`.
+
+**Umbrel store automation (shipped #589)**
+- Job `umbrel-store` in `.github/workflows/release.yml`, `needs: [build, image]`, `permissions: {}`; env `GH_TOKEN: secrets.UMBREL_STORE_TOKEN`, `STORE: neatlittlemacapps/yokogaki-umbrel`.
+- Digest: `docker buildx imagetools inspect <image> --format '{{json .Manifest}}' | jq -r .digest` (index, amd64 + arm64).
+- Rewrites in the store clone: `version: "<ver>"` and `releases/tag/v<ver>` in `yokogaki-nigari/umbrel-app.yml`; `image: ghcr.io/neatlittlemacapps/nigari:<ver>@<digest>` in `docker-compose.yml`; pushes branch `nigari-<ver>`, opens PR "nigari <ver>" if none. No token → summary line, job passes. Already pinned → no PR.
+- Older store PRs stay open until the owner merges or closes them.
+- `umbrel/README.md` and `wiki/self-hosting.md` say the store can lag a release or two; nigari's `umbrel/` copy stays at 2.1.15.
 
 **#322 logo (shipped #583)**
 - `brand/`: `mark.svg` (3 flat shapes, overlap clipped), `icon-light.svg`, `icon-dark.svg`, `mark-animation.svg` (unused; owner: "the empty screen. but leave it for now. I'll add a bunch of icons later that we'll use in specific situations."), `README.md`.
@@ -468,7 +487,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - **Terms:** surface = registry row; gap = person can, agent can't; budget = count that only goes down; gate = `scripts/agent-gate.sh`; stream = a parallel work line; conductor = Claude; steward skill = `.claude/skills/steward/SKILL.md`; upgrade step = a numbered goose step; column head = a column's first block; Each row = chart grouping `__row`; code graph = CodeGraph index.
 - **Repo:** `neatlittlemacapps/nigari`.
 - **Sessions:** this conductor `session_01GhcW37HJ35bLUDWA4gX12z`; previous conductors `session_01GhcW345K7zwmfiPaw1Eoz3` ("Nigari handoff continuation"), `session_01GhcW33CqnUj9FDCkkAFdFE` ("17 Nigari"); helper stream B for spec 013 `session_01GhcW33DagCpbrFHHXQVrFu` (stopped; work merged in #576); older: `session_01GhcW351E6Ld6xR87qCbfon`, `session_01GhcW34o8KcL5EYGzn6ddSJ`, `session_01GhcW33zUfch6tMG6ga8nJc`.
-- **Branches:** `claude/handoff-14` = main `f62ff3d` (merge of #587) plus the handoff #19 commit; retired by rule 31 (owner may delete it). This handoff is on `claude/steward-branch-per-pr`, bound for `main`. #586's branch `claude/serene-archimedes-87plg8` merged. Merged, to be deleted by the owner (Branches page → 🗑): `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views`. Old: `claude/pensive-turing-plu40r`.
+- **Branches:** main `3762f43` (merge of #589). This handoff: `claude/handoff-20` → PR to `main`. Merged, deletable by the owner: `claude/handoff-14` (retired by rule 31), `claude/steward-branch-per-pr`, `claude/umbrel-store-bump`. #586's branch `claude/serene-archimedes-87plg8` merged. Merged, to be deleted by the owner (Branches page → 🗑): `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views`. Old: `claude/pensive-turing-plu40r`.
 - **Key files:** `web/src/components/ChartFigure.tsx`, `ChartView.tsx`, `web/src/chartTheme.ts` (`groupColourTokens(drawn, palette, groupProp, series)`), `web/src/columnEnter.ts` (`columnEnterAction`, `columnEnter`), `web/src/blocks.tsx` (`columnsSpec`), `web/src/keys.ts`, `web/src/components/Editor.tsx` (`column.enter` shortcut), `web/scripts/shoot-wiki.mjs` (`text` step), `.claude/hooks/codegraph.sh`, `.claude/rules/codegraph.md`, `server/upgrade.go`, `server/backup.go`, `docs/decisions.md`, `web/src/menuIcons.ts`, `web/src/ui/Menu.tsx` (+ `Menu.css`), `web/scripts/check-menu-icons.mjs`, `web/src/components/SidebarMenus.tsx`, `CollectionMenus.tsx`, `UserMenu.tsx`, `web/src/keys.ts` (`menuOwnsKey`), `web/src/dialog.tsx`.
 - **Terms (new):** option B = menus rebuilt on Base UI; menu function = the verb an item does (one icon each); hand-built button = a raw `<button>` counted by the rawButtons budget.
 
@@ -483,24 +502,29 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Spec 013 PR 2 personal filter/sort | merged, v2.1.19 | PR #584 | |
 | BoardView.tsx refactor | merged | PR #586 | from Claude's suggested task, other session |
 | Spec 013 PR 3 quick filters + lanes | merged, v2.1.21 | PR #587 | spec 013 finished |
+| One branch per PR (steward skill) | merged, v2.1.22 | PR #588 | |
+| Umbrel store auto-PR | merged, v2.1.23 | PR #589 | first run worked |
+| Store to 2.1.23 | open, owner merges | neatlittlemacapps/yokogaki-umbrel#1 | then Umbrel offers the update in ~5 min; untested jump 2.1.15 → 2.1.23 |
+| Handoff #20 | PR open | branch `claude/handoff-20` | owner merges |
 | Spec 014 PR 2/3 | not started | `specs/014-embed-own-views/tasks.md` | next |
 | Open PRs / helpers / check-ins | none | — | clean stop |
 
 ## 11. Next steps
-1. **Next action:** check the steward PR (branch `claude/steward-branch-per-pr`: rule 31 + this handoff) is merged; then spec 014 PR 2 on new branch `claude/spec-014-pr2` (T005–T020, #538–#553): label `in-progress`, CodeGraph on the embed block and spec 013's `view_prefs` scope `embed:…`, Sonnet executes mechanical steps (rule 30), Claude reviews, `/code-review`, `ux-ui-audit`, ask before the PR.
+1. **Next action:** ask whether neatlittlemacapps/yokogaki-umbrel#1 is merged and the Umbrel updated to 2.1.23 (help if not); then spec 014 PR 2 on new branch `claude/spec-014-pr2` (T005–T020, #538–#553): label `in-progress`, CodeGraph on the embed block and spec 013's `view_prefs` scope `embed:…`, Sonnet executes mechanical steps (rule 30), Claude reviews, `/code-review`, `ux-ui-audit`, ask before the PR.
 2. Then spec 014 PR 3 (#554–#569); bugs by priority (#572, #574 and the older ones).
 3. When the owner sends them: the empty-screen animation (`brand/mark-animation.svg`) and situational icons.
 
 ## 12. Open questions ⚠️
+- Has the owner merged neatlittlemacapps/yokogaki-umbrel#1, and did the Umbrel update from 2.1.15 to 2.1.23 cleanly? (not confirmed)
 - Has the owner installed nigari from the yokogaki store, and does the icon show? (not confirmed)
 - Remove the stray `https://github.com/neatlittlemacapps/nigari` store from the owner's Umbrel? Claude offered to work out a command (Umbrel runs in Docker); not answered.
 - File an issue for the older, minor login CSRF through the desktop code exchange (sandboxed iframe over plain HTTP; not made worse by #579)? Asked twice, not answered.
 - Unanswered from earlier: Dutch strings of the lock (stated in PR #576). (Filter/Sort now stay on locked databases since #584.)
 - #572 and #574 have no board priority yet.
-- Delete the stray label `surface:performance` and merged branches `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views` (owner).
+- Delete the stray label `surface:performance` and merged branches `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views`, `claude/handoff-14`, `claude/steward-branch-per-pr`, `claude/umbrel-store-bump` (owner).
 
 ## 13. Re-attach checklist
-Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on `main` of `neatlittlemacapps/nigari` once the steward PR merges (until then on branch `claude/steward-branch-per-pr`). Start the new Claude Code session on **`neatlittlemacapps/nigari`**; whatever branch it is handed, work goes on a new branch per pull request (rule 31).
+Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on `main` of `neatlittlemacapps/nigari` once its PR merges (until then on branch `claude/handoff-20`). Start the new Claude Code session on **`neatlittlemacapps/nigari`**; whatever branch it is handed, work goes on a new branch per pull request (rule 31).
 
 ---
-<sub>Audit: 13/13 sections · 31 rules · 136 corrections · ~600 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
+<sub>Audit: 13/13 sections · 32 rules · 138 corrections · ~630 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
