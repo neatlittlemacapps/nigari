@@ -78,21 +78,40 @@ try {
   check('a new id is not a taken one', taken.has(ev.newEmbedViewId(taken)), false);
   check('a new id is spelled like the interface\'s', /^v[0-9a-z]{7}$/.test(ev.newEmbedViewId()), true);
 
-  // ---- A block in the new shape survives the interface's edits ----
-  const v2 = ev.encodeEmbedLocal('b', [
-    { id: 'a', name: 'A', type: 'table' },
-    { id: 'b', name: 'B', type: 'board', groupBy: 'status' },
-  ]);
-  const parsed = ev.parseEmbedBlockLocal(v2);
-  check('a new-shape block opens its open view', parsed.viewId, 'b');
-  const filter = [{ property: 'status', op: 'is', value: 'open' }];
-  const edited = ev.serializeEmbedBlockLocal({ ...parsed, views: { ...parsed.views, b: { ...parsed.views.b, filters: filter } } });
-  check('a filter set in the interface stays on its view and the list stays a list',
-    JSON.parse(edited), { v: 2, viewId: 'b', views: [{ id: 'a', name: 'A', type: 'table' }, { id: 'b', name: 'B', type: 'board', groupBy: 'status', filters: filter }] });
-  check('switching view keeps both views', JSON.parse(ev.serializeEmbedBlockLocal({ ...parsed, viewId: 'a' })).views.length, 2);
-  check('an old-shape block is written as before',
-    JSON.parse(ev.serializeEmbedBlockLocal(ev.parseEmbedBlockLocal('{"viewId":"x","views":{"x":{"filters":[]}}}'))), { viewId: 'x', views: { x: { filters: [] } } });
-  check('an empty block', ev.parseEmbedBlockLocal(''), { viewId: '', views: {} });
+  // ---- Changing an embed ----
+  const dbViews = [
+    { id: 'all', name: 'All', type: 'table' },
+    { id: 'board', name: 'By status', type: 'board', groupBy: 'status' },
+    { id: 'signup', name: 'Sign-up', type: 'form' },
+  ];
+  const oldLocal = '{"viewId":"all","views":{"all":{"filters":[{"property":"s","op":"is","value":"x"}]}}}';
+  check('an old block is not the new shape', ev.isEmbedV2(oldLocal), false);
+  check('a new block is', ev.isEmbedV2(ev.encodeEmbedLocal('a', [{ id: 'a', name: 'A', type: 'table' }])), true);
+  // Opening another tab of an old embed writes the open view and nothing else:
+  // it must not turn into a snapshot of the database's views by being looked at.
+  const reopened = ev.withOpenView(oldLocal, dbViews, 'board');
+  check('opening a tab of an old embed keeps the old shape', JSON.parse(reopened), { viewId: 'board', views: { all: { filters: [{ property: 's', op: 'is', value: 'x' }] } } });
+  check('opening a tab of an empty embed', JSON.parse(ev.withOpenView('', dbViews, 'board')), { viewId: 'board', views: {} });
+  const v2 = ev.encodeEmbedLocal('a', [{ id: 'a', name: 'A', type: 'table' }, { id: 'b', name: 'B', type: 'list' }]);
+  check('opening a tab of a new embed keeps every view', JSON.parse(ev.withOpenView(v2, dbViews, 'b')), { v: 2, viewId: 'b', views: [{ id: 'a', name: 'A', type: 'table' }, { id: 'b', name: 'B', type: 'list' }] });
+  check('a form is not copyable', ev.copyableViews(dbViews).map((v) => v.id), ['all', 'board']);
+  const takenIds = new Set(['all', 'board']);
+  const copy = ev.copyDatabaseView(dbViews[1], takenIds);
+  check('a copy has an id of its own', copy.id !== 'board' && !takenIds.has(copy.id), true);
+  check('a copy keeps everything else', { ...copy, id: '' }, { id: '', name: 'By status', type: 'board', groupBy: 'status' });
+  copy.name = 'Changed';
+  check('a copy shares nothing with the database view', dbViews[1].name, 'By status');
+  const three = [{ id: 'a', name: 'A', type: 'table' }, { id: 'b', name: 'B', type: 'table' }, { id: 'c', name: 'C', type: 'table' }];
+  check('move right', ev.moveView(three, 'a', 1).map((v) => v.id), ['b', 'a', 'c']);
+  check('move left at the start does nothing', ev.moveView(three, 'a', -1) === three, true);
+  check('move right at the end does nothing', ev.moveView(three, 'c', 1) === three, true);
+  const gone = ev.removeView(three, 'b', 'b');
+  check('removing the open view opens the first left', [gone.views.map((v) => v.id), gone.viewId], [['a', 'c'], 'a']);
+  check('removing another view keeps the open one', ev.removeView(three, 'c', 'a').viewId, 'c');
+  const only = [three[0]];
+  const kept = ev.removeView(only, 'a', 'a');
+  check('an embed keeps at least one view', [kept.views === only, kept.viewId], [true, 'a']);
+  check('a new embed is one view, open', JSON.parse(ev.newEmbedLocal(three[0])), { v: 2, viewId: 'a', views: [three[0]] });
 
   const failed = out.filter((r) => r.got !== r.want);
   for (const r of failed) console.error(`  FAIL  ${r.name}\n        got  ${r.got}\n        want ${r.want}`);

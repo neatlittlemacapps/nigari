@@ -1112,6 +1112,12 @@ export default function App() {
   // A viewer (read-only workspace role) may not edit; the doc editor renders
   // read-only so a viewer isn't teased with an editable-looking page whose
   // writes the server would only reject.
+  // An embedded database's properties are offered in a document to someone who
+  // may write the database it shows, not only the document (spec 014, R9).
+  const canWriteWorkspace = useCallback(
+    (workspaceId: string) => workspaces.find((w) => w.id === workspaceId)?.role !== 'viewer',
+    [workspaces],
+  );
   const canEditCurrent = useMemo(() => {
     if (!currentId) return true;
     const page = pagesById.get(currentId);
@@ -1355,6 +1361,7 @@ export default function App() {
               onCreatePage={createPage}
               onTrash={trashPage}
               onPagesChanged={loadPages}
+              canWriteWorkspace={canWriteWorkspace}
             />
             {peek && (
               <Suspense fallback={null}>

@@ -1327,5 +1327,9 @@
   "These quick filters cannot be offered: choose up to 8 select, person, checkbox or relation properties.": "Deze snelfilters kunnen niet worden aangeboden: kies tot 8 selectie-, persoon-, selectievakje- of relatie-eigenschappen.",
   "{name}: {value}": "{name}: {value}",
   "Fold lane": "Baan inklappen",
-  "Unfold lane": "Baan uitklappen"
+  "Unfold lane": "Baan uitklappen",
+  "Change properties": "Eigenschappen wijzigen",
+  "Change the properties of {database}?": "De eigenschappen van “{database}” wijzigen?",
+  "This changes the database and every view of it, everywhere.": "Dit wijzigt de database en elke weergave ervan, overal.",
+  "Views on {name}": "Weergaven van {name}"
 }

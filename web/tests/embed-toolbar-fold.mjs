@@ -55,7 +55,8 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
   // ---- One Tab from the view reaches them ----
   await rest();
   await eventually(async () => (await opacity(first)) === 0);
-  await first.locator('.view-tab').last().focus();
+  // The ＋ follows the tabs now that an embed has views of its own (spec 014).
+  await first.locator('.view-add').focus();
   await page.keyboard.press('Tab');
   assert(await page.evaluate(() => !!document.activeElement?.closest('.collection-actions')), 'one Tab from the view does not reach the buttons');
   await eventually(async () => (await opacity(first)) === 1);

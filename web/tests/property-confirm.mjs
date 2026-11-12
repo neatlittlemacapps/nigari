@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { withFixture } from './fixture.mjs';
 
-await withFixture(async ({ page, api, workspace, path, open, read }) => {
+await withFixture(async ({ page, api, base, workspace, path, open, read }) => {
   page.setDefaultTimeout(15000);
   const items = page.locator('.schema-item');
   const names = () => items.locator('.schema-row > .prop-input').evaluateAll((inputs) => inputs.map((i) => i.value));
@@ -69,5 +69,44 @@ await withFixture(async ({ page, api, workspace, path, open, read }) => {
   await ask.waitFor();
   assert.match(await ask.locator('.confirm-message').innerText(), /Its links to rows of “Other database” go with it\./);
   await ask.getByRole('button', { name: 'Cancel', exact: true }).click();
+
+  // ---- Saving the properties from a document asks first (spec 014, FR-012) ----
+  // The dialog opened from an embed changes the database and every view of it,
+  // everywhere, so Save asks; Cancel returns to the dialog with the edits kept.
+  const collectionId = path.split('/').pop();
+  const doc = await api('POST', '/api/pages', { title: 'Plan', workspaceId: workspace.id });
+  await api('PATCH', `/api/pages/${doc.id}`, {
+    content: [{ id: 'emb', type: 'database', props: { collectionId }, content: [], children: [] }],
+  });
+  await page.goto(`${base}/p/${doc.id}`);
+  const embed = page.locator('.bn-db-embed');
+  await embed.locator('.view-tab').first().waitFor();
+  await embed.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Edit properties', exact: true }).click();
+  await page.getByRole('heading', { name: 'Collection properties' }).waitFor();
+  await page.getByPlaceholder('New property name', { exact: true }).fill('Estimate');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  const before = (await read()).schema.length;
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await ask.waitFor();
+  const saveText = await ask.locator('.confirm-message').innerText();
+  assert.match(saveText, /Change the properties of Option editing test\?\s+This changes the database and every view of it, everywhere\./);
+  await ask.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await ask.waitFor({ state: 'hidden' });
+  assert.equal((await read()).schema.length, before, 'Cancel saved the properties');
+  assert((await names()).includes('Estimate'), 'Cancel threw the edits away');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await ask.getByRole('button', { name: 'Change properties', exact: true }).click();
+  await page.getByRole('heading', { name: 'Collection properties' }).waitFor({ state: 'hidden' });
+  assert.equal((await read()).schema.length, before + 1, 'confirming did not save');
+
+  // On the database's own page nothing extra is asked: it is the database.
+  await page.goto(`${base}/p/${collectionId}`);
+  await open();
+  await page.getByPlaceholder('New property name', { exact: true }).fill('Plain');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('heading', { name: 'Collection properties' }).waitFor({ state: 'hidden' });
+  assert.equal(await ask.count(), 0, 'the database page asked before saving');
 });
-console.log('Property confirm: delete asks, Cancel keeps, confirm removes, drafts and relations passed.');
+console.log('Property confirm: delete asks, Cancel keeps, confirm removes, drafts, relations, and a save from a document passed.');

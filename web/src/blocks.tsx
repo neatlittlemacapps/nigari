@@ -6,9 +6,8 @@ import { MERMAID_REV, renderMermaid } from './mermaidLoader';
 import { PageIcon } from './pageIcon';
 import { openPage, openPageAux } from './pageOpen';
 import CollectionView, { type EmbedState } from './components/CollectionView';
-import { addChartView, openSettingsOnce } from './chartInsert';
+import { chartEmbed, openSettingsOnce } from './chartInsert';
 import type { ChartKind } from './chartLayout';
-import { parseEmbedBlockLocal, serializeEmbedBlockLocal, type EmbedBlockLocal } from './embedViews';
 import { toast } from './toast';
 import { plural, t } from './i18n';
 import {
@@ -317,18 +316,16 @@ export const bookmarkSpec = createReactBlockSpec(
 // document AND a database separately, because a database page cannot have a
 // body of text. Now both live in one document.
 
-type EmbedLocal = EmbedBlockLocal;
-const parseEmbedLocal = parseEmbedBlockLocal;
-const serializeEmbedLocal = serializeEmbedBlockLocal;
-
 export const databaseSpec = createReactBlockSpec(
   {
     type: 'database',
     propSchema: {
       collectionId: { default: '' },
-      // This embed's own way of looking at the collection, as JSON: the view
-      // it shows, and per view the filters and sort it applies (#26). Empty
-      // means "as the collection's views say" — every embed written before.
+      // This embed's own views, as JSON (spec 014, embedViews.ts): the list of
+      // views it shows and the open one, kept in the document so changing
+      // them never changes the database's. Empty, or the shape written before
+      // spec 014 (the open view and a filter and sort per database view), is
+      // read as a copy of the database's views.
       local: { default: '' },
       // The chart kind a / entry asked for (spec 004, R14), until a database
       // is picked: then a chart view of that kind is added to it and shown
@@ -343,42 +340,42 @@ export const databaseSpec = createReactBlockSpec(
       const collectionId = (block.props as { collectionId: string }).collectionId;
       const chartKind = ((block.props as { chartKind?: string }).chartKind ?? '') as ChartKind | '';
       const localRaw = (block.props as { local?: string }).local ?? '';
-      const { pagesById, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged, pageId } = useBlockCtx();
+      const { pagesById, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged, pageId, canWriteWorkspace } = useBlockCtx();
       const [q, setQ] = useState('');
-      // Somebody who may read the document but not change it can still filter
-      // what they see; it just stays with them instead of being written back.
-      const [unsaved, setUnsaved] = useState<EmbedLocal | null>(null);
-      const local = unsaved ?? parseEmbedLocal(localRaw);
-      const keep = (next: EmbedLocal) => {
-        if (editor.isEditable) editor.updateBlock(block, { props: { local: serializeEmbedLocal(next) } } as never);
-        else setUnsaved(next);
-      };
-      // A pick for a chart adds the chart view first, then shows it here with
-      // its settings open. Refused (a database this person may only read):
-      // the database is still embedded, as it is, and the toast says why.
+      // Somebody who may read the document but not change it can still look
+      // at another view or filter what they see; it just stays with them
+      // instead of being written back.
+      const [unsaved, setUnsaved] = useState<string | null>(null);
+      const local = unsaved ?? localRaw;
+      // A chart for a chosen database becomes the embed's own view: written
+      // into the block with its settings open, and nothing added to the
+      // database (spec 014, research R12), so it works for a database this
+      // person may only read. A failure to read the database leaves it
+      // embedded as it is, and the toast says why.
       const pickForChart = async (id: string) => {
         if (!chartKind) return;
         try {
-          const viewId = await addChartView(id, chartKind, t('Chart'));
+          const { viewId, local: chartLocal } = await chartEmbed(id, chartKind, t('Chart'));
           openSettingsOnce(viewId);
-          editor.updateBlock(block, { props: { collectionId: id, chartKind: '', local: JSON.stringify({ viewId, views: {} }) } } as never);
+          editor.updateBlock(block, { props: { collectionId: id, chartKind: '', local: chartLocal } } as never);
         } catch (e) {
           editor.updateBlock(block, { props: { collectionId: id, chartKind: '' } } as never);
           toast(t('No chart was added to this database: {reason}', { reason: (e as Error).message }));
         }
       };
       const embed: EmbedState = {
-        viewId: local.viewId,
-        views: local.views,
-        onViewId: (viewId) => keep({ ...local, viewId }),
-        onView: (viewId, patch) =>
-          keep({ ...local, views: { ...local.views, [viewId]: { ...local.views[viewId], ...patch } } }),
+        local,
+        onLocal: (next) => {
+          if (editor.isEditable) editor.updateBlock(block, { props: { local: next } } as never);
+          else setUnsaved(next);
+        },
         // A filter or sort set here is the person's own first (spec 013);
         // saving it for everyone writes it into this block, which only
         // someone who can edit the document may.
         pageId,
         blockId: block.id,
         canSave: editor.isEditable,
+        canEditDatabase: canWriteWorkspace ? canWriteWorkspace(pagesById.get(collectionId)?.workspaceId ?? '') : true,
       };
 
       if (!collectionId) {

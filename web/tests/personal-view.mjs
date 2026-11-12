@@ -138,7 +138,7 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
   await embedBar.waitFor();
   const scope = `embed:${doc.id}:db:table`;
   await eventually(async () => scope in (await personal()));
-  assert.equal((await localOf()).views?.table, undefined, 'the embed\'s own filters changed before saving for everyone');
+  assert.deepEqual(await localOf(), {}, 'the document was written before saving for everyone');
   assert.equal((await sharedFilters())[0]?.value, 'third', 'an embed\'s filter reached the database\'s view');
   // The database's own page is not touched by the embed's personal change.
   await second.goto(`${base}/p/${collectionId}`);
@@ -148,7 +148,12 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
 
   await embedBar.getByRole('button', { name: 'Save for everyone' }).click();
   await embedBar.waitFor({ state: 'hidden' });
-  await eventually(async () => Array.isArray((await localOf()).views?.table?.filters) && (await localOf()).views.table.filters.length === 0);
+  // The first change turns the embed into a list of views of its own (spec
+  // 014): the filter is gone from its copy of the table, not from the database's.
+  await eventually(async () => {
+    const local = await localOf();
+    return local.v === 2 && local.views.find((v) => v.id === 'table')?.filters?.length === 0;
+  });
   await eventually(async () => !(scope in (await personal())));
   assert.equal((await sharedFilters())[0]?.value, 'third', 'saving an embed for everyone changed the database\'s view');
   assert.equal(await rowsOn(page, embed).count(), 2);

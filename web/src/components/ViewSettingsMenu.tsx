@@ -56,6 +56,8 @@ export default function ViewSettingsMenu({
   locked,
   onLock,
   onUnlock,
+  embedded = false,
+  canEditDatabase = true,
 }: {
   view: ViewDef;
   views: ViewDef[];
@@ -75,6 +77,13 @@ export default function ViewSettingsMenu({
   locked: boolean;
   onLock: () => void;
   onUnlock: () => void;
+  /** Opened from a document's embed (spec 014): the settings act on the
+   *  embed's own view, and the views lock, which is the database's, is not
+   *  offered. */
+  embedded?: boolean;
+  /** Whether the person may write the database. Without it Edit properties
+   *  is not offered: the server would refuse it (research R9). */
+  canEditDatabase?: boolean;
 }) {
   // Where focus goes when the menu closes, and so where a dialog it opened
   // (Rename view, Edit properties) gives it back. Without it, focus fell to
@@ -220,11 +229,15 @@ export default function ViewSettingsMenu({
           <MenuSeparator />
         </>
       )}
+      {(canEditDatabase || !embedded) && (
+        <>
       <MenuLabel>{t('Database settings')}</MenuLabel>
       <MenuItem fn="editProperties" opensDialog onClick={onEditProperties}>
         {t('Edit properties')}
       </MenuItem>
-      {locked ? (
+        </>
+      )}
+      {embedded ? null : locked ? (
         <MenuItem fn="unlockViews" onClick={onUnlock}>
           {t('Unlock views')}
         </MenuItem>
