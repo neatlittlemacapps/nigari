@@ -48,27 +48,45 @@ locale files are JSON objects: keep both keys, then `npm run check`.
 
 ### Branches and labels
 
-- One branch per stream, named in the helper's first prompt. A stream never
-  pushes to the other's branch, and never to `main`.
+- **One branch per pull request** (owner, 2026-11-12), named after the work:
+  `claude/spec-014-pr2`, `claude/fix-572`. Cut it from the newest `main`,
+  and let the owner delete it after the merge. A session that was handed one
+  fixed branch (a cloud session's "Develop on branch …") still opens a new
+  branch for each pull request; the owner allowed this once for all sessions.
+  Before, one branch (`claude/handoff-14`) carried every pull request for
+  weeks: its name said nothing, and the next job piled onto an open one.
+- A helper's branch is named in its first prompt. A stream never pushes to
+  the other's branch, and never to `main`.
+- **The handoff file goes to `main`** like any other doc, in its own small
+  pull request or with the next one, so the next session finds it there.
 - Label the task issues `in-progress` when the stream starts them. Remove the
   label when the pull request merges: closed issues keep no `in-progress`.
 - Tick each task in `tasks.md` in the pull request that does it, and list
   every task issue it finishes as `Closes #N` (closing a feature issue does
   not close its sub-issues).
+- **A task suggested for another session** (a suggested-task card, a
+  helper's prompt) that touches files of an open pull request says so in its
+  first line: "Start after PR #N merges." (owner, 2026-11-12). #586 was
+  suggested without it while #587 was open, moved the code #587 changed, and
+  #587 had to be ported by hand.
 - After any merge to `main`, the other stream merges `main` into its branch
   before its next push: a merge commit, never a rebase or force-push on a
   branch someone else may have checked out.
 
 ## Before a pull request is offered
 
-1. `scripts/agent-gate.sh` passes. In a shallow clone, fetch `origin/main` and
+1. **No overlap with other work** (owner, 2026-11-12): `list_sessions` and
+   the open pull requests are checked for the files this one touches. An
+   overlap is named to the owner with the order to merge them in, before
+   the pull request is offered.
+2. `scripts/agent-gate.sh` passes. In a shallow clone, fetch `origin/main` and
    deepen first, or the gate decides nothing changed.
-2. The reviews in `.claude/rules/claude-code.md` ran: `/code-review` always;
+3. The reviews in `.claude/rules/claude-code.md` ran: `/code-review` always;
    `ux-ui-audit` for visible changes (light and dark); `/security-review` when
    sign-in, permissions or tokens change.
-3. The conductor reviews a helper's diff before it is offered. The gate
+4. The conductor reviews a helper's diff before it is offered. The gate
    checks rules; it does not check that a German word means the right thing.
-4. The conductor asks the owner before opening it ("Ready to continue with
+5. The conductor asks the owner before opening it ("Ready to continue with
    opening the PR?"), unless the owner just asked for it.
 
 The pull request body says why the change was needed, lists every surface
@@ -91,6 +109,6 @@ writes it.
 1. Remove `in-progress` from every issue the pull request closed.
 2. Check the release run (every push to `main` is a release): version,
    the five binaries and `SHA256SUMS.txt`, the image job.
-3. Bring the working branch up to `main`. If it holds nothing beyond `main`,
-   fast-forward it: `git push origin origin/main:refs/heads/<branch>`.
+3. Start the next pull request on a new branch from `main`; the merged one
+   is done.
 4. Tell the other stream to merge `main`.

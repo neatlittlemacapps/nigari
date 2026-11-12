@@ -1,6 +1,6 @@
 # active-memory handoff: nigari (formerly salt.md fork): agentic setup and feature roadmap
 
-**Handoff #18** · 2026-11-06 · Lineage:
+**Handoff #19** · 2026-11-12 · Lineage:
 - **#1 (2026-10-25):** agentic setup (rules, gate, Spec Kit, parity manifest); four feature branches merged; 25 issues; three specs.
 - **#2 (2026-10-26):** find-and-replace edits (#13, PR #48); specs 001/002 planned; #47 fixed; surfaces registry, board sync, ruleset (PR #49).
 - **#3 (2026-10-26):** board derives its columns (PR #74); spec 002 tasks (#50–#73); storage benchmarks; fixes #75, #76; Codespaces (PR #77).
@@ -19,12 +19,15 @@
 - **#16 (2026-11-03):** spec 012 finished: PR 1 (#528 → v2.1.8) and PR 2 (#533 → v2.1.9), built by the helper stream, reviewed and audited by Claude; spec 013 docs merged (#523 → v2.1.10, after Claude resolved its `docs/decisions.md` conflict); owner's embed model (an embed owns its views) → **spec 014** written and clarified (`specs/014-embed-own-views/`, #371 under #426); bugs #524–#527, #532 filed (helper filed #529–#531).
 - **#17 (2026-11-04/05):** spec 014 planned + 36 tasks (#534–#569 under #371; docs PR #570 → v2.1.11); #524 delete-property confirmation (PR #573 → v2.1.12); #571 workspace empty state (PR #575 → v2.1.13); spec 013 PR 1 views lock + activity log, built by helper stream B, reviewed/audited by Claude (PR #576 → v2.1.14 expected); bugs #571, #572, #574 filed; owner's next task: **Umbrel packaging** (section 11).
 - **#18 (2026-11-05/06):** Umbrel packaging done: audit; cross-origin hole fixed (another app's page could write and read the live socket) + `NIGARI_TRUST_PROXY` (PR #579 → v2.1.15, issue #578); store `yokogaki` published at `neatlittlemacapps/yokogaki-umbrel`, pinned to 2.1.15 (PR #580); owner's icon in the store (PR #581); owner added the store on their Umbrel.
+- **#19 (2026-11-06 → 11-12):** #322 logo (#583 → v2.1.18); spec 013 PR 2 personal filter/sort (#584 → v2.1.19); spec 013 PR 3 quick filters + lanes (#587 → v2.1.21), conflict with #586 (BoardView refactor from Claude's suggested task) resolved; spec 013 finished (#477 closed).
 
-> **Read first (2026-11-06):** nothing is in progress. No open PRs, no
+> **Read first (2026-11-12):** nothing is in progress. No open PRs, no
 > running helper, no scheduled check-ins. Still check `list_sessions`,
 > `git ls-remote --heads origin` and open PRs first (correction 107), and
 > fetch `origin/claude/handoff-14` and `origin/main` before reading this file
-> from a local checkout (correction 117). The next job is #322 (section 11).
+> from a local checkout (correction 117). Spec 013 is finished. The next job
+> is spec 014 PR 2, on a **new branch** `claude/spec-014-pr2` from `main`
+> (one branch per pull request, owner 2026-11-12; steward skill).
 
 ## 0. Instructions for Claude (read first)
 
@@ -99,6 +102,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 28. **Done 2026-11-05** (the owner later approved the local branch, option B, then each push with "Ok"). Umbrel task constraints (owner, 2026-11-05, word for word): "Do not publish, push, tag or open pull requests. Leave all changes uncommitted for me to review." / "Do not weaken auth, TLS or security checks to make it work. If a security trade-off is needed, stop and explain it." / "Keep the license (AGPL-3.0) and notices intact." (These override rule 3 and the git-check for that task only; see section 12.)
 29. Finishing (owner, 2026-11-05; done for Umbrel, still the way to end a stream): "I want a clean stop and build/release so I can pick up fresh later" / "ensure a full build and no open stuff is left. After this a new handoff can prepare for regular ongoing development of the rest on the board once I give a go".
 30. Execution (owner, 2026-11-05, word for word): "Plan with opus execute with sonnet". Claude plans and reviews; mechanical execution steps go to a Sonnet helper (`Agent` with `model: "sonnet"`), whose diff Claude reviews before it is committed or pushed.
+31. Branches (owner, 2026-11-12, "ok" to Claude's proposal): one branch per pull request, named after the work, from the newest `main`, even when the session is handed a fixed branch; the handoff file goes to `main`. A suggested task touching an open PR's files says "Start after PR #N merges."; before offering a PR, check `list_sessions` and open PRs for the same files. In `.claude/skills/steward/SKILL.md` and `docs/decisions.md`.
 ## 5. Corrections log
 | # | Claude did | The user wanted |
 |---|---|---|
@@ -210,6 +214,17 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 123 | (self) Validation script checked the setup text without waiting, so one run reported a false FAIL | `waitFor` the exact text ("Create the first (admin) account for this workspace."), screenshot it |
 | 124 | (self) Linked umbrel.com and `http://umbrel.local` in the wiki; `check-wiki` flags foreign hosts | Reword (no link, `umbrel.local:8420` without scheme); never widen `ALLOWED_HOSTS` |
 | 125 | (self) `/security-review` failed on `origin/HEAD` again (same as 68) | `git remote set-head origin main` at session start |
+| 126 | (self) Read a stale local handoff again at the start of #19 (same as 117) | `git fetch origin main claude/handoff-14` first, then read the newest |
+| 127 | (self) The owner's mark used blend modes; the front shape turned black on dark backgrounds | Flatten into 3 plain shapes, the overlap clipped (`brand/mark.svg`) |
+| 128 | (self) First `check-brand.mjs` scanned only `web/` and missed the desktop and server copies of the mark (found by `/code-review`); also a comment false positive and a self-test that tested nothing | Scan the whole tree (server, web/src, web/public, web/index.html, desktop/src); strip comments before matching; self-tests that fail on the old mark |
+| 129 | (self) `check-names` flagged "salt.md" in a new comment | Reword the comment; never widen the allowlist for it |
+| 130 | (self) Tried to amend a pushed commit; denied | Add a new commit instead |
+| 131 | (self) Personal view: the last edit was lost on reload (debounce never fired) | Flush with `keepalive` on `pagehide` |
+| 132 | (self) A quick-filter pick made in a tab then hidden was lost | Also flush on `visibilitychange` (hidden) |
+| 133 | (self) Lane drag placeholder pushed lanes under the pointer | A thin line marker when lanes are on |
+| 134 | (self) Fold test raced a reload | The test waits for the PUT before reloading |
+| 135 | (self) Code review on PR 3: stale settings blocked every views save; group picker clashed with sub-group; default groupBy offered as lanes; stale picks still filtered; multi-value lane drop lost values; per-cell recomputation; duplicated code | All fixed in `ecfa8e1`; large-file finding became #586 |
+| 136 | (self) Suggested a BoardView refactor task (#586) without saying "start after #587 merges"; it touched the same file and #587 conflicted (owner: "How did this happen? How to avoid?") | A suggested task that touches an open PR's files says "start after PR #N merges"; check sessions and open PRs before offering a PR (accepted 2026-11-12: rule 31) |
 
 ## 6. Decisions
 | Decision | Why |
@@ -387,10 +402,14 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | v2.1.14 | #576 (spec 013 PR 1 views lock) | 2026-11-05 17:05:09; Release run 42070584001 green; image amd64 + arm64 (index `sha256:30f51db57a3f3e08520b67297fad914940cc7095ea07a7528d0aa9374154ce47`), runs as uid 1000 |
 | v2.1.15 | #579 (origin check, `NIGARI_TRUST_PROXY`, Umbrel store) | Release run 42093659270 started 2026-11-05 19:24:58; image index `sha256:73eff6999e35d9437d2b13684ab12908520906b082ecf38e95092186f0b1bc73` (amd64 + arm64); `nigari version` = `2.1.15 (upgrade step 2)` |
 | (v2.1.16, v2.1.17 expected) | #580 (store pins 2.1.15), #581 (store icon) | not checked; store files only |
+| v2.1.18 | #583 (#322 nigari's own logo) | 2026-11 |
+| v2.1.19 | #584 (spec 013 PR 2 personal filter/sort) | 2026-11 |
+| (v2.1.20 expected) | #586 (BoardView.tsx out of CollectionView.tsx) | not checked |
+| v2.1.21 | #587 (spec 013 PR 3 quick filters + lanes) | 5 binaries + SHA256SUMS |
 - v2.0.5–v2.0.7 (#369 and the user's two release-notes edits) not checked individually. #376's release (expected v2.0.11) not checked.
 - Releases page: https://github.com/neatlittlemacapps/nigari/releases. Assets `nigari-<os>-<arch>` + `SHA256SUMS.txt`. Image `ghcr.io/neatlittlemacapps/nigari`. No desktop app published (#323).
 
-**Specs**: 008, 010, 011, 012 done. **013** `specs/013-view-filters-and-lock/`: PR 1 (T001–T018, #478–#495, views lock + activity log) merged as #576; PR 2 (T019–T032, personal filters, #496–#509) and PR 3 (T033–T045, quick filters + board lanes, #510–#522) not started; parent #477. **014** `specs/014-embed-own-views/`: plan, research R1–R13, data model, contracts, quickstart, 36 tasks (#534–#569 under #371); PR 1 (T001–T004, #524) merged as #573; PR 2 (T005–T020) and PR 3 (T021–T036) not started, after spec 013 PR 2.
+**Specs**: 008, 010, 011, 012, **013** done (PR 1 #576, PR 2 #584, PR 3 #587; parent #477 closed). **014** `specs/014-embed-own-views/`: plan, research R1–R13, data model, contracts, quickstart, 36 tasks (#534–#569 under #371); PR 1 (T001–T004, #524) merged as #573; PR 2 (T005–T020, #538–#553) and PR 3 (T021–T036, #554–#569) not started; next.
 
 **Spec 013 PR 1 as shipped** (build stream's measurements): main chunk 583,515 B gzip (6.5 KB under the 590,146 cap); fontSize 366, rawButtons 265; upgrade step 2 (`collections.views_locked_by`, `views_locked_at`; fixture `server/testdata/upgrade/step-1.db`); routes `PUT`/`DELETE /api/collections/{id}/lock` (session-only, closed to agents); errors `views_locked` 409, `property_in_locked_view` 409; menu icons `LockKeyhole`/`LockKeyholeOpen`; registry row **View lock**; tests `view-lock.mjs`, `activity-views.mjs`, `TestEveryViewDoorIsRefusedWhileLocked`. Conductor audit: marker 26px, focus ring 6.54:1 light / 6.64:1 dark.
 
@@ -408,7 +427,26 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - New code: `server/crossorigin.go` (+ `crossorigin_test.go`), `trustProxy()` in `server/ops.go`, error code `cross_origin` (de/es/nl), vite dev proxy `xfwd: true`; wiki `self-hosting.md` "Run on Umbrel", `domain.md` "Other apps beside nigari".
 - App logo today (for #322): one mark `web/public/logo.svg`; `web/scripts/build-app-icons.mjs` renders `favicon`, `apple-touch-icon.png`, `icon-192/512.png`, `icon-maskable-512.png` (white tile, no own rounding, opaque, on purpose for iOS 26); in-app mark inline in `web/src/Logo.tsx` (Setup, Login, Sidebar, InviteAccept, OAuthConsent…); desktop `desktop/build/icon(.svg/.png)`, `icon-dark(.svg/.png)`. Owner's artwork: 512×512 SVG, lilac tile `#E9E1FE` rx 116 with three overlapping purple shapes `#A98AFB`, `#6542E8`, `#3A1FA6`; copy in `umbrel/yokogaki-nigari/icon.svg`.
 
-**Open issues** (2026-11-05)
+**#322 logo (shipped #583)**
+- `brand/`: `mark.svg` (3 flat shapes, overlap clipped), `icon-light.svg`, `icon-dark.svg`, `mark-animation.svg` (unused; owner: "the empty screen. but leave it for now. I'll add a bunch of icons later that we'll use in specific situations."), `README.md`.
+- `web/src/Logo.tsx`: clip id via `useId`; `decorative` prop (aria-hidden beside the wordmark: Login without instanceName, Setup always).
+- `build-app-icons.mjs`: home-screen icons from icon-light; favicon.ico 16/32/48 PNG-in-ICO; desktop `icon.png`/`icon-dark.png` on Apple's 824 px tile, rx 185. Manifest background `#E9E1FE`, theme `#f7f6f3`. Deleted `desktop/build/*.svg`, `desktop/icon-dark.png`.
+- Inline marks with unique clip ids: `server/public.go`, `server/desktop_auth.go`, `desktop/src/connect.html`.
+- `check-brand.mjs`: 6 expected copies; refuses the old mark (`96 100 204 204`, `M201.1 113.4`); requires a clip; refuses mix-blend outside comments; self-tests. Decision in `docs/decisions.md` (2026-11-09).
+
+**Spec 013 PR 2 (shipped #584)**
+- `server/viewprefs.go`: GET/PUT/DELETE `/api/collections/{id}/personal[/{scope}]` (auth + sessionOnly + canReadReq); `cleanViewState` (32 KB cap, `checkViewFilter`); max 200 states per person and database, atomic INSERT…SELECT WHERE; `mergeViewState`; `forgetViewStatesOfMissingViews`. Table `view_prefs`; scope = view id or `embed:<pageId>:<blockId>:<viewId>`.
+- `server/viewpins.go`: `viewer{userID, scope}`, `viewFor`; `liveQuickFilters`. `viewScope` on `POST /api/pages` and from-template.
+- `capabilities.json` `views.personal` (closed to agents; in `not_available_via_mcp`); shared fixture `server/testdata/viewstate.json` (Go and TS `mergeViewState` agree); `BenchmarkPersonalViewState`.
+- Web: `viewState.ts`, `usePersonalViews.ts` (400 ms debounce, keepalive flush on pagehide + visibilitychange), `ViewChangeBar.tsx` ("Only you see these changes", Reset, Save for everyone); `check-viewstate.mjs` 37 cases; `web/tests/personal-view.mjs`.
+
+**Spec 013 PR 3 (shipped #587)**
+- `server/viewopen.go`: `checkViewQuickFilters` (select, multiselect, person, checkbox, relation; max 8; not on form/chart), `checkViewSubGroup` (board only; select, multiselect, relation, person, formula, rollup; not the effective groupBy, where none = first select); strict only when changed; `normalizeKey`. Errors `invalid_view_quick_filters`, `invalid_view_sub_group`; MCP `set_view` `quick_filters`, `sub_group_by`; 2 parity pairs (parity world gained person property `owner`); `server/viewquick_test.go`.
+- Web: `quickFilters.ts`, `components/QuickFilters.tsx` (ui/Button + IconButton + Menu, no new primitive), `boardLanes.ts` (`check-boardlanes.mjs` 31 cases; cell key separator `\u001f`), `components/BoardLaneHead.tsx`, lanes in `components/BoardView.tsx`; `boardDrag.ts` `onMove(rowId, toCol, fromCol)`; menu icons quickFilters Zap, subGroup Rows2 (98 distinct functions).
+- Tests `web/tests/quick-filters.mjs`, `board-lanes.mjs`; `view-lock.mjs` expects Filter and Sort to stay while locked. Wiki `views.md`, `mcp-tools.md`; `docs/what-it-does.md`.
+- Known gap (in the wiki): dragging a card does not scroll the page to an off-screen lane.
+
+**Open issues** (2026-11-05; #322, #477, #496–#522 closed since)
 | # | Title |
 |---|---|
 | 371 | Embed has its own views (spec 014), priority:1, in-progress (feature still open) |
@@ -422,16 +460,15 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 532 | A document ending with a database opens with that block node-selected (bug) |
 | 572 | Shared confirm dialog: no initial focus, focus escapes, no name, danger drawn like Cancel (bug; fix: route through `ui/AlertDialog`) |
 | 574 | A menu opened just before its database's config reloads is not closed by Escape (bug) |
-| 477 | Spec 013 parent; #496–#522 open |
-| 370, 322, 323, 326, 379 | backlog |
+| 370, 323, 326, 379 | backlog |
 - Closed in #17: #524, #571, #534–#537, #478–#495. Closed in #18: #578 (Umbrel). #322 has its store icon only (PR #581 "Part of #322").
 
 ## 9. People, terms & names
 - **People:** the user (`neatlittlemacapps`, Frank De Graeve); upstream maintainer "Jeremia" (`jeremiaa`).
 - **Terms:** surface = registry row; gap = person can, agent can't; budget = count that only goes down; gate = `scripts/agent-gate.sh`; stream = a parallel work line; conductor = Claude; steward skill = `.claude/skills/steward/SKILL.md`; upgrade step = a numbered goose step; column head = a column's first block; Each row = chart grouping `__row`; code graph = CodeGraph index.
 - **Repo:** `neatlittlemacapps/nigari`.
-- **Sessions:** this conductor `session_01GhcW345K7zwmfiPaw1Eoz3` ("Nigari handoff continuation"); previous conductor `session_01GhcW33CqnUj9FDCkkAFdFE` ("17 Nigari"); helper stream B for spec 013 `session_01GhcW33DagCpbrFHHXQVrFu` (stopped; work merged in #576); older: `session_01GhcW351E6Ld6xR87qCbfon`, `session_01GhcW34o8KcL5EYGzn6ddSJ`, `session_01GhcW33zUfch6tMG6ga8nJc`.
-- **Branches:** work branch `claude/handoff-14` = main `0de35a3` (merge of #581) plus this handoff commit. Merged, to be deleted by the owner (Branches page → 🗑): `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views`. Old: `claude/pensive-turing-plu40r`.
+- **Sessions:** this conductor `session_01GhcW37HJ35bLUDWA4gX12z`; previous conductors `session_01GhcW345K7zwmfiPaw1Eoz3` ("Nigari handoff continuation"), `session_01GhcW33CqnUj9FDCkkAFdFE` ("17 Nigari"); helper stream B for spec 013 `session_01GhcW33DagCpbrFHHXQVrFu` (stopped; work merged in #576); older: `session_01GhcW351E6Ld6xR87qCbfon`, `session_01GhcW34o8KcL5EYGzn6ddSJ`, `session_01GhcW33zUfch6tMG6ga8nJc`.
+- **Branches:** `claude/handoff-14` = main `f62ff3d` (merge of #587) plus the handoff #19 commit; retired by rule 31 (owner may delete it). This handoff is on `claude/steward-branch-per-pr`, bound for `main`. #586's branch `claude/serene-archimedes-87plg8` merged. Merged, to be deleted by the owner (Branches page → 🗑): `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views`. Old: `claude/pensive-turing-plu40r`.
 - **Key files:** `web/src/components/ChartFigure.tsx`, `ChartView.tsx`, `web/src/chartTheme.ts` (`groupColourTokens(drawn, palette, groupProp, series)`), `web/src/columnEnter.ts` (`columnEnterAction`, `columnEnter`), `web/src/blocks.tsx` (`columnsSpec`), `web/src/keys.ts`, `web/src/components/Editor.tsx` (`column.enter` shortcut), `web/scripts/shoot-wiki.mjs` (`text` step), `.claude/hooks/codegraph.sh`, `.claude/rules/codegraph.md`, `server/upgrade.go`, `server/backup.go`, `docs/decisions.md`, `web/src/menuIcons.ts`, `web/src/ui/Menu.tsx` (+ `Menu.css`), `web/scripts/check-menu-icons.mjs`, `web/src/components/SidebarMenus.tsx`, `CollectionMenus.tsx`, `UserMenu.tsx`, `web/src/keys.ts` (`menuOwnsKey`), `web/src/dialog.tsx`.
 - **Terms (new):** option B = menus rebuilt on Base UI; menu function = the verb an item does (one icon each); hand-built button = a raw `<button>` counted by the rawButtons budget.
 
@@ -442,25 +479,28 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Umbrel: origin check + `NIGARI_TRUST_PROXY` + store | merged, v2.1.15 | PR #579, issue #578 | |
 | Umbrel store pinned to 2.1.15 | merged | PR #580; `yokogaki-umbrel` b51abf8 | |
 | Umbrel store icon | merged | PR #581; `yokogaki-umbrel` 3f63170 | Umbrel refreshes stores every 5 min |
-| #322 nigari's own logo | not started | issue #322 | next, short plan first |
-| Spec 013 PR 2/3, spec 014 PR 2/3 | not started | tasks.md | after #322 |
+| #322 nigari's own logo | merged, v2.1.18 | PR #583 | animation + situational icons wait for the owner's assets |
+| Spec 013 PR 2 personal filter/sort | merged, v2.1.19 | PR #584 | |
+| BoardView.tsx refactor | merged | PR #586 | from Claude's suggested task, other session |
+| Spec 013 PR 3 quick filters + lanes | merged, v2.1.21 | PR #587 | spec 013 finished |
+| Spec 014 PR 2/3 | not started | `specs/014-embed-own-views/tasks.md` | next |
 | Open PRs / helpers / check-ins | none | — | clean stop |
 
 ## 11. Next steps
-1. **Next action:** #322, nigari's own logo everywhere from the owner's SVG (`umbrel/yokogaki-nigari/icon.svg`). Write a short plan in the issue (not the full spec cycle; owner was offered "a short plan in the issue"), with CodeGraph on `Logo.tsx`, `build-app-icons.mjs`, the desktop icons and the wiki shots that show the logo; ask the plan's two questions (section 12); then Sonnet executes (rule 30), Claude reviews, audits (`ux-ui-audit`, light/dark) and asks before the PR.
-2. Then the board by Priority: spec 013 PR 2 (personal filters, #496–#509) → PR 3 (#510–#522) → spec 014 PR 2/3 (#538–#569); bugs by priority (#572, #574 and the older ones).
+1. **Next action:** check the steward PR (branch `claude/steward-branch-per-pr`: rule 31 + this handoff) is merged; then spec 014 PR 2 on new branch `claude/spec-014-pr2` (T005–T020, #538–#553): label `in-progress`, CodeGraph on the embed block and spec 013's `view_prefs` scope `embed:…`, Sonnet executes mechanical steps (rule 30), Claude reviews, `/code-review`, `ux-ui-audit`, ask before the PR.
+2. Then spec 014 PR 3 (#554–#569); bugs by priority (#572, #574 and the older ones).
+3. When the owner sends them: the empty-screen animation (`brand/mark-animation.svg`) and situational icons.
 
 ## 12. Open questions ⚠️
-- **#322 plan questions:** (a) home-screen icons: keep the build script's white tile without own rounding (Claude's recommendation; iOS rounds and tints, a pre-rounded tile gets a halo) or use the owner's lilac rounded tile as drawn; (b) the in-app logo needs the mark without the tile, and a dark-mode version: colours as drawn, or a single-colour mark?
 - Has the owner installed nigari from the yokogaki store, and does the icon show? (not confirmed)
 - Remove the stray `https://github.com/neatlittlemacapps/nigari` store from the owner's Umbrel? Claude offered to work out a command (Umbrel runs in Docker); not answered.
 - File an issue for the older, minor login CSRF through the desktop code exchange (sandboxed iframe over plain HTTP; not made worse by #579)? Asked twice, not answered.
-- Unanswered from earlier: Filter/Sort/Group hidden on locked databases until spec 013 PR 2; Dutch strings of the lock (stated in PR #576).
+- Unanswered from earlier: Dutch strings of the lock (stated in PR #576). (Filter/Sort now stay on locked databases since #584.)
 - #572 and #574 have no board priority yet.
 - Delete the stray label `surface:performance` and merged branches `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views` (owner).
 
 ## 13. Re-attach checklist
-Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on branch `claude/handoff-14` of `neatlittlemacapps/nigari` (pushed). Start the new Claude Code session on **`neatlittlemacapps/nigari`**, branch `claude/handoff-14`.
+Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on `main` of `neatlittlemacapps/nigari` once the steward PR merges (until then on branch `claude/steward-branch-per-pr`). Start the new Claude Code session on **`neatlittlemacapps/nigari`**; whatever branch it is handed, work goes on a new branch per pull request (rule 31).
 
 ---
-<sub>Audit: 13/13 sections · 30 rules · 125 corrections · ~520 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
+<sub>Audit: 13/13 sections · 31 rules · 136 corrections · ~600 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
