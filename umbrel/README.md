@@ -21,16 +21,20 @@ How to install it, and why it is set up the way it is, is in the wiki:
 
 ## Releases and what is still missing
 
-- **Updating to a new release.** Put the version in `umbrel-app.yml` (`version`
-  and the release-notes link) and the pinned image in `docker-compose.yml`, in
-  nigari's `umbrel/` and in the store repository alike. To find the digest:
-
-  ```sh
-  docker buildx imagetools inspect ghcr.io/neatlittlemacapps/nigari:<version>
-  ```
-
-  The `Digest:` line at the top (the index, covering amd64 and arm64) is the one
-  to pin, as `ghcr.io/neatlittlemacapps/nigari:<version>@sha256:<digest>`.
+- **Updating to a new release** happens on its own: after each release, the
+  `umbrel-store` job in `.github/workflows/release.yml` opens a pull request
+  on the store repository with the new `version`, release-notes link and
+  pinned image (`ghcr.io/neatlittlemacapps/nigari:<version>@sha256:<digest>`,
+  the index digest covering amd64 and arm64). Merge it, and Umbrel offers the
+  update within about 5 minutes. The job needs the secret `UMBREL_STORE_TOKEN`
+  in nigari (a fine-grained token for `yokogaki-umbrel` only, Contents and
+  Pull requests read/write); without it the release still passes and the
+  job's summary says the store was not updated.
+- **The version here is not kept current.** The store repository is where the
+  pinned release lives. This copy keeps its first pin (2.1.15): a commit to
+  `main` is a release, so a release that updated this folder would release
+  again, without end. Everything else (the compose file's settings, the
+  manifest text, the icon) is still drafted here first and copied over.
 - **Screenshots are missing**, marked `TODO` in `umbrel-app.yml`; none were made up.
   The icon (`yokogaki-nigari/icon.svg`, the owner's artwork, 2026-11-05) is served
   from the store repository; nigari's own logo in the app is #322.

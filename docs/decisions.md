@@ -7,6 +7,27 @@ entries are not edited away.
 
 ---
 
+## 2026-11-12 — Each release proposes itself to the Umbrel store
+
+Owner: "2", choosing automatic over moving the pin by hand. The store pinned
+2.1.15 while `main` had released 2.1.21; nothing moved it, and by hand it was
+forgotten.
+
+- **A job after the release opens a pull request on `yokogaki-umbrel`** with
+  the new version, release-notes link and index digest. The owner merges it,
+  so what reaches Umbrels is still the owner's call. Rejected: pushing to the
+  store's `main` directly (every daily release would reach every Umbrel
+  untested); moving the pin by hand (forgotten, as shown).
+- **nigari's own `umbrel/` copy keeps its first pin.** A commit to `main` is a
+  release; a release that committed the new pin to `main` would release
+  again, forever. Rejected: a `[skip release]` marker (one more rule in the
+  release workflow, for a copy nobody installs from).
+- **It needs a token the owner makes** (`UMBREL_STORE_TOKEN`, fine-grained,
+  that one repository). Without it the job passes and says so: a missing
+  store update must not mark a release failed.
+
+---
+
 ## 2026-11-12 — One branch per pull request; no work that collides with an open one
 
 Owner: "ok", after asking "why do we keep working on the same branch. Is that
