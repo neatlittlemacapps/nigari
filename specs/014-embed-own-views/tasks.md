@@ -92,11 +92,11 @@ description: "Tasks for a database in a document having views of its own"
 
 **Independent Test**: quickstart §1, §2, §7, §8.
 
-- [ ] T021 [US1] [ui] New `web/src/viewSource.ts`: a view source with `views`, `viewId`, `saveViews(next, openId?)` and `canChange`, for a database (`config.views`, `saveConfig`) and for an embed (`EmbedState`, writing through the block). Pure parts (add, rename, move, remove keeping one, patch) as functions `check-embedviews.mjs` also asserts
-- [ ] T022 [US1] [ui] `web/src/components/CollectionView.tsx`: `updateView`, `renameView`, `removeView`, `moveView`, `addView`, column order, widths, hiding, chart settings and the view tabs all through the view source; spec 012's `!embed` guards become `source.canChange`; in an embed, Remove is not offered on the only view
-- [ ] T023 [US1] [ui] Rows and charts of an embed view: the rows query takes the embed view's filters and sort (as today's embed filters); `ChartView` for an embed view sends `groupBy`, `period`, `aggregate`, `aggregateProp`, `filters` with no `viewId` (research R6); a new row sends `viewFilters` (`web/src/api.ts` `createPage`, `rowFromTemplate`)
-- [ ] T024 [US5] [ui] `web/src/blocks.tsx`: `parseEmbedLocal` replaced by `readEmbedLocal` with the database's views from the loaded collection; `EmbedState` carries the embed's views; `keep` writes `encodeEmbedLocal` on the first change only (opening writes nothing); a reader's changes stay in `unsaved`
-- [ ] T025 [US1] [test] New `web/tests/embed-views.mjs`, registered: a new embed has one table; add, rename, filter, move, remove in the embed leave the database's page unchanged (its views JSON compared through `GET /api/collections/{id}`); two embeds of one database in one document stay apart; a reader filters without saving; an old-shape block (written by the fixture through `PATCH /api/pages/{id}`) of each view type shows the same view, rows and filter, and is written `"v":2` only after a change (SC-002). Mutation-checked
+- [x] T021 [US1] [ui] (built as `saveViews` in `CollectionView.tsx` and the pure functions in `web/src/embedViews.ts`, not a separate `viewSource.ts`: there is no second source to abstract over once the embed's list is one string) A view source with `views`, `viewId`, `saveViews(next, openId?)` and `canChange`, for a database (`config.views`, `saveConfig`) and for an embed (`EmbedState`, writing through the block). Pure parts (add, rename, move, remove keeping one, patch) as functions `check-embedviews.mjs` also asserts
+- [x] T022 [US1] [ui] `web/src/components/CollectionView.tsx`: `updateView`, `renameView`, `removeView`, `moveView`, `addView`, column order, widths, hiding, chart settings and the view tabs all through the view source; spec 012's `!embed` guards become `source.canChange`; in an embed, Remove is not offered on the only view
+- [x] T023 [US1] [ui] Rows and charts of an embed view: the rows query takes the embed view's filters and sort (as today's embed filters); `ChartView` for an embed view sends `groupBy`, `period`, `aggregate`, `aggregateProp`, `filters` with no `viewId` (research R6); a new row sends `viewFilters` (`web/src/api.ts` `createPage`, `rowFromTemplate`)
+- [x] T024 [US5] [ui] `web/src/blocks.tsx`: `parseEmbedLocal` replaced by `readEmbedLocal` with the database's views from the loaded collection; `EmbedState` carries the embed's views; `keep` writes `encodeEmbedLocal` on the first change only (opening writes nothing); a reader's changes stay in `unsaved`
+- [x] T025 [US1] [test] New `web/tests/embed-views.mjs`, registered: a new embed has one table; add, rename, filter, move, remove in the embed leave the database's page unchanged (its views JSON compared through `GET /api/collections/{id}`); two embeds of one database in one document stay apart; a reader filters without saving; an old-shape block (written by the fixture through `PATCH /api/pages/{id}`) of each view type shows the same view, rows and filter, and is written `"v":2` only after a change (SC-002). Mutation-checked
 
 **Checkpoint**: US1 and US5 work; the embed is usable with type views only.
 
@@ -108,9 +108,9 @@ description: "Tasks for a database in a document having views of its own"
 
 **Independent Test**: quickstart §3.
 
-- [ ] T026 [US2] [ui] `AddViewMenu` (`web/src/components/CollectionMenus.tsx`): view types without form in an embed; a second `MenuValues` group headed "Views on {name}" with the database's views (forms left out), each with its type's icon; picking one adds a copy with a new id and opens it (through the view source)
-- [ ] T027 [P] [US2] [i18n] "Views on {name}" in `de.json`, `es.json`, `nl.json`
-- [ ] T028 [US2] [test] `web/tests/embed-views.mjs`: copy a table, a board and a chart; each draws as on the database; changing the copy leaves the original unchanged and the other way round; two clicks from the ＋
+- [x] T026 [US2] [ui] `AddViewMenu` (`web/src/components/CollectionMenus.tsx`): view types without form in an embed; a second `MenuValues` group headed "Views on {name}" with the database's views (forms left out), each with its type's icon; picking one adds a copy with a new id and opens it (through the view source)
+- [x] T027 [P] [US2] [i18n] "Views on {name}" in `de.json`, `es.json`, `nl.json`
+- [x] T028 [US2] [test] `web/tests/embed-views.mjs`: copy a table, a board and a chart; each draws as on the database; changing the copy leaves the original unchanged and the other way round; two clicks from the ＋
 
 ---
 
@@ -120,19 +120,19 @@ description: "Tasks for a database in a document having views of its own"
 
 **Independent Test**: quickstart §5, §6.
 
-- [ ] T029 [US3] [ui] `ViewSettingsMenu` shown in embeds for someone who may edit the document, acting through the view source; the timeline's Start/End and the table's Sub-items back in embeds; Edit properties only when the database's workspace role is not `viewer` (research R9) (`web/src/components/ViewSettingsMenu.tsx`, `CollectionView.tsx`)
-- [ ] T030 [US3] [ui] A chart from the / menu (`pickForChart`, `web/src/blocks.tsx`) writes the embed with one chart view from `defaultChartView`, settings open, nothing added to the database (research R12); `addChartView` (`web/src/chartInsert.ts`), left without a caller, removed
-- [ ] T031 [US4] [ui] `SchemaEditor` opened from a document: Save asks first ("Change the properties of {database}?" / "This changes the database and every view of it, everywhere." / "Change properties"); Cancel returns to the dialog with the edits kept (contracts/ui.md)
-- [ ] T032 [P] [US4] [i18n] The Settings and confirmation strings of contracts/ui.md not yet translated, in `de.json`, `es.json`, `nl.json`
-- [ ] T033 [US3] [test] `web/tests/embed-views.mjs`: every View settings item changes only the embed; a reader gets no changes; a document editor who may only read the database has no Edit properties. `web/tests/property-confirm.mjs`: from a document, Save asks, Cancel keeps the dialog, confirm saves. `web/tests/chart-builder.mjs` (the / menu chart) expects the chart in the embed and no new view on the database. Mutation-checked
+- [x] T029 [US3] [ui] `ViewSettingsMenu` shown in embeds for someone who may edit the document, acting through the view source; the timeline's Start/End and the table's Sub-items back in embeds; Edit properties only when the database's workspace role is not `viewer` (research R9) (`web/src/components/ViewSettingsMenu.tsx`, `CollectionView.tsx`)
+- [x] T030 [US3] [ui] A chart from the / menu (`pickForChart`, `web/src/blocks.tsx`) writes the embed with one chart view from `defaultChartView`, settings open, nothing added to the database (research R12); `addChartView` (`web/src/chartInsert.ts`), left without a caller, removed
+- [x] T031 [US4] [ui] `SchemaEditor` opened from a document: Save asks first ("Change the properties of {database}?" / "This changes the database and every view of it, everywhere." / "Change properties"); Cancel returns to the dialog with the edits kept (contracts/ui.md)
+- [x] T032 [P] [US4] [i18n] The Settings and confirmation strings of contracts/ui.md not yet translated, in `de.json`, `es.json`, `nl.json`
+- [x] T033 [US3] [test] `web/tests/embed-views.mjs`: every View settings item changes only the embed; a reader gets no changes; a document editor who may only read the database has no Edit properties. `web/tests/property-confirm.mjs`: from a document, Save asks, Cancel keeps the dialog, confirm saves. `web/tests/chart-builder.mjs` (the / menu chart) expects the chart in the embed and no new view on the database. Mutation-checked
 
 ---
 
 ## Phase 8: Polish (PR 3)
 
-- [ ] T034 [wiki] `wiki/views.md` (or the page describing embeds): an embed's own views, Views on…, Settings in embeds, the Save confirmation, what is not built (no "save this view to the database"); `docs/what-it-does.md` one line. Stale shots retaken with `web/scripts/shoot-wiki.mjs`
-- [ ] T035 [test] `ux-ui-audit` on an embed (tabs, ＋ menu, Settings, both confirmations), light and dark, desktop and phone width; findings fixed or filed
-- [ ] T036 [perf] The converter on a 50-view database timed in `server/embedviews_test.go`; the figure measured and written in the PR; `codegraph sync`, then `codegraph callers` on `readEmbedLocal`, `embedViewOf`, `pinsForFilters`, `saveViews` compared with this file
+- [x] T034 [wiki] `wiki/views.md` (or the page describing embeds): an embed's own views, Views on…, Settings in embeds, the Save confirmation, what is not built (no "save this view to the database"); `docs/what-it-does.md` one line. Stale shots retaken with `web/scripts/shoot-wiki.mjs`
+- [x] T035 [test] `ux-ui-audit` on an embed (tabs, ＋ menu, Settings, both confirmations), light and dark, desktop and phone width; findings fixed or filed
+- [x] T036 [perf] The converter on a 50-view database timed in `server/embedviews_test.go`; the figure measured and written in the PR; `codegraph sync`, then `codegraph callers` on `readEmbedLocal`, `embedViewOf`, `pinsForFilters`, `saveViews` compared with this file
 
 ---
 

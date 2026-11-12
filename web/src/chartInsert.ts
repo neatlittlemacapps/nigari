@@ -1,25 +1,26 @@
 // A chart put into a document from the / menu (spec 004, FR-018, research
 // R14). There is no chart block: a chart in a document is the database block
-// showing a chart view (local.viewId, #26), so the same chart can be embedded
-// in two places and looks the same in both, and an agent builds it with
-// set_view and embed_database. The / entry inserts a database block that
+// with a chart view of its own (spec 014), and an agent builds it with
+// embed_database and set_view. The / entry inserts a database block that
 // remembers which kind was asked for (chartKind) until a database is picked.
 
 import { api } from './api';
 import { defaultChartView } from './chartDefaults';
 import type { ChartKind } from './chartLayout';
+import { newEmbedLocal, newEmbedViewId } from './embedViews';
 
 /** The five / entries, in Notion's order. */
 export const CHART_SLASH_KINDS: ChartKind[] = ['bar', 'hbar', 'line', 'donut', 'number'];
 
-/** Adds a chart view of this kind to a database, drawable from the start
- *  (FR-019), saved through the same check as any view (checkChartView).
- *  Returns its id; throws the server's refusal (a reader of that database). */
-export async function addChartView(collectionId: string, kind: ChartKind, name: string): Promise<string> {
+/** The embed a chart from the / menu makes: one chart view of this kind,
+ *  drawable from the start (FR-019), kept in the document and nowhere else
+ *  (spec 014, research R12). It adds nothing to the database, so it works for
+ *  a database this person may only read. Returns the view's id, to open its
+ *  settings, and the block's `local`. */
+export async function chartEmbed(collectionId: string, kind: ChartKind, name: string): Promise<{ viewId: string; local: string }> {
   const config = await api.getCollection(collectionId);
-  const id = 'v' + Math.random().toString(36).slice(2, 9);
-  await api.putCollection(collectionId, { views: [...config.views, defaultChartView(kind, config.schema, id, name)] });
-  return id;
+  const view = defaultChartView(kind, config.schema, newEmbedViewId(new Set(config.views.map((v) => v.id))), name);
+  return { viewId: view.id, local: newEmbedLocal(view) };
 }
 
 // A chart inserted from the / menu opens its settings once, so it is finished

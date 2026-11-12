@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useRef, useState, type ComponentPropsWithoutRef,
 import { Plus } from 'lucide-react';
 import { t } from '../i18n';
 import type { ViewDef } from '../types';
-import { Menu, MenuItem, MenuSeparator, MenuValueItem, MenuValues, type MenuPoint } from '../ui/Menu';
+import { Menu, MenuItem, MenuLabel, MenuSeparator, MenuValueItem, MenuValues, type MenuPoint } from '../ui/Menu';
 
 // The database's menus (spec 010, part 2), moved out of CollectionView.tsx when
 // they became ui/Menu: the view actions (a tab's right-click and the toolbar's
@@ -62,11 +62,15 @@ export function AddViewMenu({
   icon,
   label,
   onAdd,
+  copy,
 }: {
   types: ViewDef['type'][];
   icon: (type: ViewDef['type']) => ReactNode;
   label: (type: ViewDef['type']) => string;
   onAdd: (type: ViewDef['type']) => void;
+  /** In a document's embed (spec 014): the database's views, to start the
+   *  embed's own from. Picking one adds a copy; the database's stays as it is. */
+  copy?: { databaseName: string; views: ViewDef[]; onCopy: (view: ViewDef) => void };
 }) {
   return (
     <Menu
@@ -82,6 +86,19 @@ export function AddViewMenu({
           </MenuValueItem>
         ))}
       </MenuValues>
+      {copy && copy.views.length > 0 && (
+        <>
+          <MenuSeparator />
+          <MenuLabel>{t('Views on {name}', { name: copy.databaseName })}</MenuLabel>
+          <MenuValues reason="The database's views are values of one function, add a view; each keeps the icon its type has">
+            {copy.views.map((v) => (
+              <MenuValueItem key={v.id} icon={icon(v.type)} onClick={() => copy.onCopy(v)}>
+                {v.name}
+              </MenuValueItem>
+            ))}
+          </MenuValues>
+        </>
+      )}
     </Menu>
   );
 }

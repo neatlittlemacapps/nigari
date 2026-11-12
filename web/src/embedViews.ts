@@ -98,57 +98,70 @@ export function encodeEmbedLocal(viewId: string, views: ViewDef[]): string {
   return JSON.stringify({ v: 2, viewId, views });
 }
 
-// ---- What the interface does with an embed until it draws its own views ----
+// ---- Changing an embed -----------------------------------------------------
 //
-// Spec 014 PR 3 draws an embed's own views. Until then the interface still
-// shows the database's views with the embed's filter and sort laid over the
-// open one, as before, but a block may already hold the new shape (an agent's
-// embed_database and set_view with embed_id write it). Such a block must not
-// be damaged: the list stays a list, and a filter set here is laid back onto
-// the view it belongs to. Without this, the old-shape write below would turn
-// the list into an object and the embed would lose every view.
+// The interface keeps a block's `local` as the string it is stored as and
+// asks these functions for the next one, so there is one place that knows
+// what an old embed becomes (spec 014, research R2): until a view of it
+// changes it stays in the shape it was written in, and opening another tab
+// writes the open view only. Changing a view writes the new shape.
 
-type Filters = ViewDef['filters'];
-type SortDef = ViewDef['sort'];
-
-export interface EmbedBlockLocal {
-  viewId: string;
-  /** Per view id: the filters and sort the interface lays over it. */
-  views: Record<string, { filters?: Filters; sort?: SortDef }>;
-  /** Set when the block holds the new shape: its own list of views. */
-  v2?: ViewDef[];
-}
-
-export function parseEmbedBlockLocal(raw: string): EmbedBlockLocal {
+/** Whether `raw` is the new shape. */
+export function isEmbedV2(raw: string): boolean {
   try {
     const v = raw ? JSON.parse(raw) : null;
-    if (isObject(v)) {
-      if (v.v === 2) {
-        const own = readEmbedLocal(raw, []);
-        const views: EmbedBlockLocal['views'] = {};
-        for (const view of own.views) views[view.id] = { filters: view.filters, sort: view.sort };
-        return { viewId: own.viewId, views, v2: own.views };
-      }
-      return {
-        viewId: typeof v.viewId === 'string' ? v.viewId : '',
-        views: isObject(v.views) ? (v.views as EmbedBlockLocal['views']) : {},
-      };
-    }
+    return isObject(v) && v.v === 2;
   } catch {
-    /* fall through */
+    return false;
   }
-  return { viewId: '', views: {} };
 }
 
-export function serializeEmbedBlockLocal(next: EmbedBlockLocal): string {
-  if (!next.v2) return JSON.stringify({ viewId: next.viewId, views: next.views });
-  const views = next.v2.map((view) => {
-    const own = next.views[view.id];
-    if (!own) return view;
-    const merged: ViewDef = { ...view };
-    if (own.filters !== undefined) merged.filters = own.filters;
-    if (own.sort !== undefined) merged.sort = own.sort;
-    return merged;
-  });
-  return encodeEmbedLocal(next.viewId, views);
+/** The block's `local` after another view is opened. An old-shape embed
+ *  stays old-shape (its viewId changes, nothing else), so looking at another
+ *  tab does not turn it into a snapshot of the database's views. */
+export function withOpenView(raw: string, dbViews: ViewDef[], viewId: string, defaultName?: string): string {
+  if (isEmbedV2(raw)) return encodeEmbedLocal(viewId, readEmbedLocal(raw, dbViews, defaultName).views);
+  let old: Record<string, unknown> = {};
+  try {
+    const v = raw ? JSON.parse(raw) : null;
+    if (isObject(v)) old = v;
+  } catch {
+    /* an unreadable value starts again */
+  }
+  return JSON.stringify({ ...old, viewId, views: isObject(old.views) ? old.views : {} });
+}
+
+/** The views an embed starts with when a database is picked in a document:
+ *  one table, or the given view (a chart from the / menu). */
+export function newEmbedLocal(view: ViewDef): string {
+  return encodeEmbedLocal(view.id, [view]);
+}
+
+/** A copy of one of the database's views, for the embed: a new id, nothing
+ *  shared with the database's view (FR-007). */
+export function copyDatabaseView(dbView: ViewDef, taken: Set<string>): ViewDef {
+  return { ...clone(dbView), id: newEmbedViewId(taken) };
+}
+
+/** The views of the database an embed can copy from: every one but a form. */
+export function copyableViews(dbViews: ViewDef[]): ViewDef[] {
+  return dbViews.filter((v) => embedViewType(v.type));
+}
+
+/** Moves a view one place along the tabs; the list as it was if it cannot. */
+export function moveView(views: ViewDef[], id: string, delta: -1 | 1): ViewDef[] {
+  const at = views.findIndex((v) => v.id === id);
+  const to = at + delta;
+  if (at < 0 || to < 0 || to >= views.length) return views;
+  const next = [...views];
+  [next[at], next[to]] = [next[to], next[at]];
+  return next;
+}
+
+/** The embed's views without one; an embed keeps at least one, so the list as
+ *  it was when this is the last. The view that opens is the first left. */
+export function removeView(views: ViewDef[], viewId: string, id: string): { views: ViewDef[]; viewId: string } {
+  if (views.length <= 1) return { views, viewId };
+  const rest = views.filter((v) => v.id !== id);
+  return { views: rest, viewId: rest.some((v) => v.id === viewId) ? viewId : rest[0].id };
 }

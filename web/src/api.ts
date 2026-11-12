@@ -2,6 +2,7 @@ import type { AgentWork } from './agentPresence';
 import type { AggResult } from './chartLayout';
 import type { PersonalViewState } from './viewState';
 import type {
+  Filter,
   ApiToken,
   Backlink,
   BlueprintEntry,
@@ -349,10 +350,15 @@ export const api = {
     // filters for that embed pin the row, not the ones they set on the
     // database's page (spec 013).
     viewScope?: string,
+    // In a document's embed: the filters of the embed's own view as the
+    // person sees them, which the server pins the row's values from (spec
+    // 014). Instead of viewId, never with it: an embed's views live in the
+    // document, not in the database.
+    viewFilters?: Filter[],
   ) =>
     req<Page & { matchesView?: boolean }>('/api/pages', {
       method: 'POST',
-      body: JSON.stringify({ parentId, title, type, props, workspaceId, viewId, viewScope }),
+      body: JSON.stringify({ parentId, title, type, props, workspaceId, viewId, viewScope, viewFilters }),
     }),
   getPage: (id: string) => req<Page>(`/api/pages/${id}`),
   updatePage: (
@@ -387,7 +393,7 @@ export const api = {
   addDatabaseTemplate: (collectionId: string, body: { title?: string; fromPageId?: string } = {}) =>
     req<Page>(`/api/collections/${collectionId}/templates`, { method: 'POST', body: JSON.stringify(body) }),
   // One request: a row in this database from its template, props laid on top.
-  rowFromTemplate: (collectionId: string, body: { templateId: string; title?: string; props?: Record<string, unknown>; viewId?: string; viewScope?: string }) =>
+  rowFromTemplate: (collectionId: string, body: { templateId: string; title?: string; props?: Record<string, unknown>; viewId?: string; viewScope?: string; viewFilters?: Filter[] }) =>
     req<Page & { matchesView?: boolean }>(`/api/collections/${collectionId}/from-template`, { method: 'POST', body: JSON.stringify(body) }),
   trashPage: (id: string) => req<{ ok: boolean }>(`/api/pages/${id}`, { method: 'DELETE' }),
   // fromTemplate: instantiate a template (copy keeps the title).

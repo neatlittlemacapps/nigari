@@ -20,6 +20,11 @@ export interface BlockCtx {
   onPeek?: (id: string, mode: PeekMode) => void;
   onPagesChanged: () => void;
   pageId?: string;
+  /** Whether this person may change what is in a workspace (its role is not
+   *  viewer). An embedded database's properties are offered in a document only
+   *  to someone who may write the database (spec 014, research R9). Absent:
+   *  yes; the server decides in the end. */
+  canWriteWorkspace?: (workspaceId: string) => boolean;
 }
 
 const empty: BlockCtx = {

@@ -42,6 +42,7 @@ import ListView from './ListView';
 import BoardView from './BoardView';
 import { groupValueFor, UNSET, type Row } from '../collectionRow';
 import { defaultChartView } from '../chartDefaults';
+import { copyDatabaseView, copyableViews, encodeEmbedLocal, moveView as moveEmbedView, newEmbedViewId, readEmbedLocal, removeView as removeEmbedView, withOpenView } from '../embedViews';
 
 // A chart (spec 004) brings Chart.js, about 60 KB gzip: loaded only when a
 // chart view is shown, so nobody who never opens one pays for it (SC-006).
@@ -53,23 +54,27 @@ import { Table2, Columns3, LayoutGrid, CalendarDays, List, Plus, Filter as Filte
 /** A collection shown inside a document rather than as its own page.
  *
  *  The rows stay the collection's: an edit in an embed is an edit everywhere.
- *  What an embed keeps to itself is how it LOOKS at them — which view, and the
- *  filters and sort it applies there — so filtering the Tasks embedded in
- *  Project A to Project A no longer filters Tasks for everybody, everywhere
- *  (#26). A view without an entry shows what the collection's view says, which
- *  is every embed written before this existed. */
+ *  The views are the embed's own (spec 014): a list of them kept in the
+ *  document, so adding, renaming, filtering or removing one changes nothing
+ *  on the database page or in any other document. They are kept as the block's
+ *  `local` string; embedViews.ts reads it in the shape written now and in the
+ *  shape written before, which is read as a copy of the database's views. */
 export interface EmbedState {
-  viewId: string;
-  views: Record<string, { filters?: Filter[]; sort?: ViewDef['sort'] }>;
-  onViewId: (viewId: string) => void;
-  onView: (viewId: string, patch: { filters?: Filter[]; sort?: ViewDef['sort'] }) => void;
+  /** The block's `local` as stored, or as a reader who cannot change the
+   *  document last left it. */
+  local: string;
+  /** Writes the next `local`: into the block, or for a reader only into the
+   *  browser. */
+  onLocal: (next: string) => void;
   /** Where this embed sits: with the view id, the scope a person's own
    *  filter and sort for it are kept under (spec 013, viewState.ts). */
   pageId?: string;
   blockId?: string;
-  /** Whether the person may change the document, and so the embed's own
-   *  filters: what Save for everyone needs here (FR-006a). */
+  /** Whether the person may change the document, and so the embed's views. */
   canSave?: boolean;
+  /** Whether the person may write the database (not only read it), and so
+   *  change its properties from here (R9). Absent: yes. */
+  canEditDatabase?: boolean;
 }
 
 interface Props {
@@ -209,13 +214,25 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // pageUiState). An embed never touches that store: its view lives in the
   // block itself, and borrowing the page's would couple every embed of the
   // collection to the last visited page.
-  const [viewId, setViewId] = useState<string>(() => embed?.viewId ?? (embed ? '' : (readViewId(collectionId) ?? '')));
+  const [pageViewId, setViewId] = useState<string>(() => (embed ? '' : (readViewId(collectionId) ?? '')));
+  // In a document the embed's own list says which view is open and which
+  // views there are; the database's config only supplies what an embed in the
+  // old shape is a copy of.
+  const embedRead = useMemo(
+    () => (embed && config ? readEmbedLocal(embed.local, config.views, t('Table')) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [embed?.local, config?.views],
+  );
+  const viewId = embedRead ? embedRead.viewId : pageViewId;
   const pickView = (id: string) => {
-    setViewId(id);
     // An embed keeps its view to itself; a full page remembers it across tab
     // switches and reloads (see pageUiState).
-    if (!embed) writeViewId(collectionId, id);
-    embed?.onViewId(id);
+    if (embed && config) {
+      embed.onLocal(withOpenView(embed.local, config.views, id, t('Table')));
+      return;
+    }
+    setViewId(id);
+    writeViewId(collectionId, id);
   };
   const [schemaOpen, setSchemaOpen] = useState(false);
   // The person's own filter and sort per view (spec 013, US1).
@@ -255,7 +272,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const addRowFromTemplate = async (templateId: string) => {
     setTplOpen(false);
     try {
-      const row = await api.rowFromTemplate(collectionId, { templateId, viewId: rowViewId(), viewScope: rowViewScope() });
+      const row = await api.rowFromTemplate(collectionId, { templateId, viewId: rowViewId(), viewFilters: rowViewFilters() });
       onPagesChanged();
       announceIfHidden(row);
     } catch {
@@ -328,11 +345,17 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // Rows are fetched from the server (filtered/paginated there), NOT from the
   // global page list — a database can have tens of thousands of rows that must
   // not choke the sidebar tree load.
-  const savedView = config?.views.find((v) => v.id === viewId) ?? config?.views[0];
-  // In a document, the embed's own filters and sort stand in for the view's.
-  const own = savedView && embed?.views[savedView.id];
+  // The views this component shows: the database's, or in a document the
+  // embed's own.
+  const views = embedRead ? embedRead.views : config?.views;
+  // The latest list, for a handler that waits for a dialog (renameView): the
+  // embed may have changed meanwhile, and the list captured before would put
+  // the old one back.
+  const viewsRef = useRef(views);
+  viewsRef.current = views;
+  const savedView = views?.find((v) => v.id === viewId) ?? views?.[0];
   // The view as everyone sees it…
-  const sharedView = savedView && own ? { ...savedView, ...own } : savedView;
+  const sharedView = savedView;
   // …and as this person sees it: their own filter and sort laid over it
   // (spec 013, US1). A form has no filters. An embed without a place (a
   // bare context) keeps the old behaviour: its filters go to the document.
@@ -484,6 +507,18 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // Without this the effect below fires once while the loader is still up
   // (rootRef is empty) and never again, so returning to a tab restores
   // nothing — the position it was asked to remember is still in the store.
+  // In an embed the tab strip scrolls inside itself once there are more views
+  // than fit (styles.css); the open one is brought into view when it changes,
+  // or a view added or picked from a menu would open out of sight.
+  useEffect(() => {
+    const strip = rootRef.current?.querySelector<HTMLElement>('.view-tabs');
+    const tab = strip?.querySelector<HTMLElement>('.view-tab.active');
+    if (!strip || !tab) return;
+    const s = strip.getBoundingClientRect();
+    const r = tab.getBoundingClientRect();
+    if (r.left < s.left) strip.scrollLeft -= s.left - r.left;
+    else if (r.right > s.right) strip.scrollLeft += r.right - s.right;
+  }, [viewId, views?.length]);
   const viewReady = config !== null;
   const rowsArrived = rows.length > 0;
   useEffect(() => {
@@ -579,18 +614,22 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     // English in every language and turned up in search and exports.
     // In the view the person is looking at (spec 005): the server fills in
     // what its filters pin down, under presetProps (a board column's value).
-    const row = await api.createPage(collectionId, '', 'doc', presetProps, undefined, rowViewId(), rowViewScope());
+    const row = await api.createPage(collectionId, '', 'doc', presetProps, undefined, rowViewId(), undefined, rowViewFilters());
     onPagesChanged();
     announceIfHidden(row);
   };
 
   // The view a new row is made in. A form has no filters, and its fields are
   // what the person fills in.
-  const rowViewId = () => (view && view.type !== 'form' ? view.id : undefined);
-  // In a document, the embed's scope: the server pins the row from the
-  // person's own filters for this embed, not from those they set on the
-  // database's page (spec 013, FR-005).
-  const rowViewScope = () => (embed && personalScope ? personalScope : undefined);
+  // In a document the view is the embed's own and the server has no such view
+  // by id (it lives in the document), so the filters travel instead.
+  const rowViewId = () => (!embed && view && view.type !== 'form' ? view.id : undefined);
+  // The filters of the embed's view as the person sees it, their own and quick
+  // picks included (spec 013, FR-005; spec 014, research R5): the server pins
+  // the row's values from them.
+  // Only the finished ones, as the rows query sends them: a half-typed filter
+  // narrows nothing, so it must not make the new row 'not match' either.
+  const rowViewFilters = () => (embed && view ? serverFilters : undefined);
   // A row the view's filters still leave out (Estimate > 3, "contains") would
   // vanish without a word; say so and offer the way to it.
   const announceIfHidden = (row: { id: string; matchesView?: boolean }) => {
@@ -677,8 +716,24 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // refuse each with views_locked, and an offer that is refused breaks a
   // promise. What stays: rows, the schema, and in a document the embed's own
   // filters and sort, which belong to the document and not to the views.
-  const viewsLock = config.viewsLocked ?? null;
-  const mayChangeViews = canEdit && !viewsLock;
+  // An embed's views are the document's, not the database's, so the lock (the
+  // database's) neither marks nor stops them (spec 014).
+  const viewsLock = embed ? null : (config.viewsLocked ?? null);
+  const mayChangeViews = embed ? !!embed.canSave : canEdit && !viewsLock;
+  // The one place views are saved: the database's through its config, an
+  // embed's into the document. openId is the view to open after (a new one, or
+  // the first left when the open one is removed).
+  const saveViews = (next: ViewDef[], openId?: string) => {
+    if (embed) {
+      embed.onLocal(encodeEmbedLocal(openId ?? viewId, next));
+      return;
+    }
+    void saveConfig({ ...config, views: next });
+    if (openId) {
+      setViewId(openId);
+      writeViewId(collectionId, openId);
+    }
+  };
   const setLock = (lock: boolean) =>
     void setViewsLocked(collectionId, lock).then((viewsLocked) => {
       if (viewsLocked !== undefined) setConfig((c) => (c ? { ...c, viewsLocked } : c));
@@ -704,23 +759,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       if (Object.keys(rest).length === 0) return;
       patch = rest;
     }
-    // An embed keeps its filters and sort to itself (#26): set inside a
-    // document, they must not change the collection's view everywhere else.
-    // (Reached only by an embed without a place; see personalScope.)
-    if (embed && ('filters' in patch || 'sort' in patch)) {
-      const { filters, sort, ...rest } = patch;
-      embed.onView(view.id, {
-        ...('filters' in patch ? { filters } : {}),
-        ...('sort' in patch ? { sort } : {}),
-      });
-      if (Object.keys(rest).length === 0) return;
-      patch = rest;
-    }
-    const next = {
-      ...config,
-      views: config.views.map((v) => (v.id === view.id ? { ...v, ...patch } : v)),
-    };
-    void saveConfig(next);
+    saveViews(views!.map((v) => (v.id === view.id ? { ...v, ...patch } : v)));
   };
 
   // The bar's two answers to a personal change (spec 013, research R4).
@@ -740,7 +779,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     // becomes a shared filter of the view, and the chip is cleared (FR-014).
     const merged = { filters: view.filters ?? [], sort: view.sort ?? null };
     if (embed) {
-      embed.onView(sharedView.id, merged);
+      saveViews(views!.map((v) => (v.id === sharedView.id ? { ...v, ...merged } : v)));
     } else {
       const ok = await saveConfig({
         ...config,
@@ -778,19 +817,16 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     setViewMenuFor(null);
     const n = name?.trim();
     if (!n || n === v.name) return;
-    void saveConfig({ ...config, views: config.views.map((x) => (x.id === v.id ? { ...x, name: n } : x)) });
+    saveViews(viewsRef.current!.map((x) => (x.id === v.id ? { ...x, name: n } : x)));
   };
 
-  // A collection with no view has nothing to render, so the last one stays.
+  // A collection with no view has nothing to render, so the last one stays;
+  // so does an embed's.
   const removeView = (v: ViewDef) => {
     setViewMenuFor(null);
-    if (config.views.length <= 1) return;
-    const rest = config.views.filter((x) => x.id !== v.id);
-    void saveConfig({ ...config, views: rest });
-    if (v.id === viewId) {
-      setViewId(rest[0].id);
-      if (!embed) writeViewId(collectionId, rest[0].id);
-    }
+    if (views!.length <= 1) return;
+    const { views: rest, viewId: open } = removeEmbedView(views!, viewId, v.id);
+    saveViews(rest, open !== viewId ? open : undefined);
   };
 
   // Moving a view along the strip. The ＋ appends and nothing ever moved, so
@@ -802,16 +838,12 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // already the place the view is renamed and removed. Grey out at the ends
   // instead of hiding, so the pair does not jump around as you shuffle.
   const moveView = (v: ViewDef, delta: -1 | 1) => {
-    const at = config.views.findIndex((x) => x.id === v.id);
-    const to = at + delta;
-    if (at < 0 || to < 0 || to >= config.views.length) return;
-    const next = [...config.views];
-    [next[at], next[to]] = [next[to], next[at]];
-    void saveConfig({ ...config, views: next });
+    const next = moveEmbedView(views!, v.id, delta);
+    if (next !== views) saveViews(next);
   };
 
   const addView = (type: ViewDef['type']) => {
-    const id = 'v' + Math.random().toString(36).slice(2, 9);
+    const id = newEmbedViewId(new Set(views!.map((x) => x.id)));
     // A chart starts drawn, grouped by the first select (chartDefaults.ts),
     // never as an empty frame waiting for its first setting.
     const nv: ViewDef = type === 'chart' ? defaultChartView('bar', schema, id, viewTypeLabel(type)) : { id, name: viewTypeLabel(type), type };
@@ -822,9 +854,14 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       nv.dateProp = dates[0]?.id;
       nv.endDateProp = dates[1]?.id;
     }
-    void saveConfig({ ...config, views: [...config.views, nv] });
-    setViewId(nv.id);
-    if (!embed) writeViewId(collectionId, nv.id);
+    saveViews([...views!, nv], nv.id);
+  };
+
+  // A copy of one of the database's views as a view of this embed (spec 014,
+  // FR-006/7): its own id and nothing shared with the original, opened at once.
+  const addCopy = (dbView: ViewDef) => {
+    const copy = copyDatabaseView(dbView, new Set(views!.map((x) => x.id)));
+    saveViews([...views!, copy], copy.id);
   };
 
   const viewRows = applyView(rows, view, schema);
@@ -878,21 +915,19 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const viewSwitcher = (
     <div className="collection-toolbar">
       <div className="view-tabs">
-        {config.views.map((v) => (
+        {views!.map((v) => (
           <span key={v.id} className="view-tab-wrap">
             <button
               className={'view-tab view-tab--' + v.type + (v.id === view.id ? ' active' : '')}
               onClick={() => pickView(v.id)}
               onDoubleClick={() => {
-                if (!embed && mayChangeViews) void renameView(v);
+                if (mayChangeViews) void renameView(v);
               }}
               onContextMenu={(e) => {
-                // Inside a document the views are the collection's business,
-                // reached through "Open as page" — not something a reader of
-                // the document should rename or remove by accident.
                 // A reader may not rename, move or remove a view: the server
-                // refuses it, so offering it only promises what it undoes.
-                if (embed || !mayChangeViews) return;
+                // refuses it (in a document, the document is theirs to read
+                // only), so offering it only promises what it undoes.
+                if (!mayChangeViews) return;
                 e.preventDefault();
                 tabMenuReturn.current = e.currentTarget;
                 // Shift+F10 or the menu key report (0, 0): open under the tab.
@@ -906,12 +941,19 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             </button>
           </span>
         ))}
-        {!embed && mayChangeViews && (
+        {mayChangeViews && (
           <AddViewMenu
-            types={['table', 'board', 'gallery', 'calendar', 'timeline', 'list', 'form', 'chart']}
+            // A form collects rows and stays on the database: an embed cannot
+            // show one (spec 014).
+            types={embed ? ['table', 'board', 'gallery', 'calendar', 'timeline', 'list', 'chart'] : ['table', 'board', 'gallery', 'calendar', 'timeline', 'list', 'form', 'chart']}
             icon={tabIcon}
             label={viewTypeLabel}
             onAdd={addView}
+            copy={
+              embed
+                ? { databaseName: pages.get(collectionId)?.title || t('Untitled'), views: copyableViews(config.views), onCopy: addCopy }
+                : undefined
+            }
           />
         )}
       </div>
@@ -929,7 +971,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         }}
       >
         {tabMenu && (
-          <ViewActionItems view={tabMenu.view} views={config.views} onRename={renameView} onMove={moveView} onRemove={removeView} />
+          <ViewActionItems view={tabMenu.view} views={views!} onRename={renameView} onMove={moveView} onRemove={removeView} />
         )}
       </Menu>
       {/* In a document the toolbar's buttons fold away until they are
@@ -957,15 +999,14 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         )}
         {/* Everything that configures the view and the database, in one menu
             (spec 012, US4): what the Columns popover, the Properties button,
-            the ⋯ and the timeline's and sub-items' <select>s did. Not in a
-            document: an embed shows the database's own views, so a setting
-            changed there would change them everywhere (research R10; embeds
-            get views of their own in spec 014). A reader is offered nothing
-            to change. */}
-        {!embed && canEdit && (
+            the ⋯ and the timeline's and sub-items' <select>s did. In a
+            document it acts on the embed's own view (spec 014), and its
+            database settings only for someone who may write the database. A
+            reader is offered nothing to change. */}
+        {(embed ? !!embed.canSave : canEdit) && (
           <ViewSettingsMenu
             view={view}
-            views={config.views}
+            views={views!}
             schema={schema}
             selfRelProps={selfRelProps}
             dateProps={dateProps}
@@ -979,6 +1020,8 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             locked={!!viewsLock}
             onLock={() => setLock(true)}
             onUnlock={() => setLock(false)}
+            embedded={!!embed}
+            canEditDatabase={embed ? embed.canEditDatabase !== false : true}
           />
         )}
         {view.type !== 'form' && (
@@ -1178,16 +1221,15 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           // server refuses, nor while the views are locked (spec 013).
           onSetColWidths={mayChangeViews ? (colWidths) => updateView({ colWidths }) : undefined}
           // Moving and hiding a column are this view's own (spec 012): only a
-          // table stores an order, and a reader is offered neither. Nor is a
-          // database in a document: its columns are the database's, edited on
-          // its own page (#22, the reason it has no Columns control), and a
-          // column hidden there could not be shown again from there.
+          // table stores an order, and a reader is offered neither. In a
+          // document they are the embed's view's own (spec 014), so a column
+          // hidden there can be shown again from its Settings.
           onSetColumns={
-            mayChangeViews && !embed && view.type === 'table'
+            mayChangeViews && view.type === 'table'
               ? (visible) => updateView({ colOrder: storedOrder(schema.map((p) => p.id), view.colOrder, visible) })
               : undefined
           }
-          onHideColumn={mayChangeViews && !embed && view.type === 'table' ? (id) => updateView({ hidden: [...(view.hidden ?? []), id] }) : undefined}
+          onHideColumn={mayChangeViews && view.type === 'table' ? (id) => updateView({ hidden: [...(view.hidden ?? []), id] }) : undefined}
           onNavigate={onNavigate}
           onOpenInNewTab={onOpenInNewTab}
           onSetProp={setRowProp}
@@ -1204,7 +1246,22 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             // A template is a snapshot, not a database rows can point at.
             .filter((p) => p.type === 'collection' && !p.trashed && !p.isTemplate)
             .map((p) => ({ id: p.id, title: p.title }))}
-          onSave={saveConfig}
+          // From a document the dialog changes the database, and every view of
+          // it, everywhere: say so before it is saved (spec 014, FR-012).
+          // Cancelling returns to the dialog with the edits kept.
+          onSave={
+            embed
+              ? async (next) => {
+                  const ok = await confirm(
+                    t('Change the properties of {database}?', { database: pages.get(collectionId)?.title || t('Untitled') }) +
+                      '\n' +
+                      t('This changes the database and every view of it, everywhere.'),
+                    { confirmText: t('Change properties') },
+                  );
+                  return ok ? saveConfig(next) : false;
+                }
+              : saveConfig
+          }
           onClose={() => setSchemaOpen(false)}
         />
       )}

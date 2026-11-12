@@ -86,6 +86,9 @@ export interface EditorProps {
   // the one menu every page has, so it is the honest place for it.
   onTrash: (id: string) => void;
   onPagesChanged: () => void;
+  /** Whether this person may write what a workspace holds; an embedded
+   *  database's properties are offered only to them (spec 014, R9). */
+  canWriteWorkspace?: (workspaceId: string) => boolean;
 }
 
 export default function Editor(props: EditorProps) {
@@ -253,6 +256,7 @@ export default function Editor(props: EditorProps) {
             onPeek={props.onPeek}
             onCreatePage={props.onCreatePage}
             onPagesChanged={props.onPagesChanged}
+            canWriteWorkspace={props.canWriteWorkspace}
             onReset={() => setNonce((n) => n + 1)}
           />
         )}
@@ -1582,6 +1586,7 @@ interface CollabProps {
   onPeek?: (id: string, mode: PeekMode) => void;
   onCreatePage: (parentId: string | null, type?: 'doc' | 'collection') => void;
   onPagesChanged: () => void;
+  canWriteWorkspace?: (workspaceId: string) => boolean;
   onReset: () => void;
   /** The panel lists linked references too; the strip under the body stands in
    *  while it is closed, so the information is never in two places at once and
@@ -1696,6 +1701,7 @@ function BlockContent({
   onPeek,
   onCreatePage,
   onPagesChanged,
+  canWriteWorkspace,
   structureOpen,
 }: {
   provider: NigariProvider;
@@ -1713,6 +1719,7 @@ function BlockContent({
   onPeek?: (id: string, mode: PeekMode) => void;
   onCreatePage: (parentId: string | null, type?: 'doc' | 'collection') => void;
   onPagesChanged: () => void;
+  canWriteWorkspace?: (workspaceId: string) => boolean;
 }) {
   const editor = useCreateBlockNote({
     schema: nigariSchema,
@@ -2212,7 +2219,7 @@ function BlockContent({
       <div className="editor-inner" onClickCapture={onFileClick}>
         {/* The database block renders inside the editor and would otherwise
             not reach the page list, the tag colours or navigation. */}
-        <BlockContext.Provider value={{ pagesById, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged, pageId: provider.pageId }}>
+        <BlockContext.Provider value={{ pagesById, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged, pageId: provider.pageId, canWriteWorkspace }}>
         <BlockNoteView editor={editor} theme={theme} editable={canEdit} slashMenu={false} sideMenu={false}>
           <SuggestionMenuController triggerCharacter="/" getItems={getSlashItems} />
           <SideMenuController sideMenu={SideMenuWithIcons} />

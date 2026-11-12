@@ -32,9 +32,13 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
     await page.locator('.bn-suggestion-menu').waitFor();
     await page.keyboard.press('Enter');
   };
-  const chartBlocks = async (docId) => {
+  // A chart from the / menu is the embed's own view, kept in the document
+  // (spec 014, R12): read it from the block, never from the database.
+  const embedViews = async (docId) => {
     const doc = await api('GET', `/api/pages/${docId}`);
-    return JSON.stringify(doc.content);
+    const block = doc.content.find((b) => b.type === 'database');
+    const local = block?.props?.local ? JSON.parse(block.props.local) : null;
+    return local?.v === 2 ? local.views : [];
   };
 
   // ---- the five / entries ----
@@ -57,16 +61,16 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
     await page.keyboard.press('Escape');
     await panel.waitFor({ state: 'hidden' });
     await page.locator('figure.chart').waitFor();
-    // The block shows the new view, and the view is of the asked kind.
-    let viewId = '';
+    // The block holds one chart view of the asked kind, and the database
+    // got none (R12: it works for a database this person may only read).
+    let view;
     await eventually(async () => {
-      const m = (await chartBlocks(docId)).match(/viewId\\+":\\+"(v[a-z0-9]+)/);
-      viewId = m?.[1] ?? '';
-      return !!viewId;
+      view = (await embedViews(docId))[0];
+      return !!view;
     });
-    const view = (await api('GET', path)).views.find((v) => v.id === viewId);
-    assert.equal(view?.type, 'chart', `${entry}: no chart view was added`);
+    assert.equal(view.type, 'chart', `${entry}: no chart view was made`);
     assert.equal(view.chartKind ?? 'bar', kind, `${entry}: the view is of another kind`);
+    assert.equal((await api('GET', path)).views.some((v) => v.type === 'chart'), false, `${entry}: a chart view was added to the database`);
   }
 
   // ---- every setting survives a reload (SC-007) ----
@@ -93,7 +97,7 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
   await page.keyboard.press('Escape');
   await panel.waitFor({ state: 'hidden' });
   await eventually(async () => {
-    const v = (await api('GET', path)).views.find((x) => x.chartStyle?.caption === 'Hours per status');
+    const v = (await embedViews(barDoc)).find((x) => x.chartStyle?.caption === 'Hours per status');
     return v && v.agg === 'sum' && v.aggProp === 'hours' && v.chartSort === 'value_desc' && v.chartStyle.palette === 'blue' &&
       v.chartStyle.height === 'large' && v.chartStyle.labels === true && v.hiddenGroups?.includes('done');
   });
