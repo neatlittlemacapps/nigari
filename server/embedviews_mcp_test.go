@@ -490,3 +490,27 @@ func TestARowCannotBeMadeThroughAnEmbedInADocumentTheCallerCannotRead(t *testing
 		t.Errorf("a private document's embed was read: err %v, rows %d → %d", err, n, after)
 	}
 }
+
+// A copy of a database view is named after it (owner, 2026-11-12), as the
+// interface names it, so two tabs of one embed are not both "All"; a name the
+// agent gives wins. The database's own view keeps its name.
+func TestACopyOfADatabaseViewIsNamedCopyOf(t *testing.T) {
+	f := newEmbedFixture(t)
+	before := f.dbViews(t)
+	if _, err := callTool(t, f.s, f.u, "set_view", `{"page_id":"`+f.doc+`","embed_id":"emb1","copy_of":"all"}`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := callTool(t, f.s, f.u, "set_view", `{"page_id":"`+f.doc+`","embed_id":"emb1","copy_of":"all","name":"Mine"}`); err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, v := range f.embedViews(t) {
+		names = append(names, v["name"].(string))
+	}
+	if got := strings.Join(names, ","); got != "All,By status,Copy of All,Mine" {
+		t.Errorf("tab names %s, want All,By status,Copy of All,Mine", got)
+	}
+	if f.dbViews(t) != before {
+		t.Error("copying renamed or changed the database's view")
+	}
+}

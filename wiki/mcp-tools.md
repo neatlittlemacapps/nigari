@@ -1165,8 +1165,9 @@ you, so there is no tool for it.
 changing them never changes the database's views, and the lock on the
 database's views does not apply to them. An embed cannot show a form. `copy_of`
 (creating only, with `embed_id`) is the id of one of the database's views to
-start from: the copy gets a new id, the other arguments change the copy, and the
-database's view stays as it was. Passing `copy_of` with `view_id` or without
+start from: the copy gets a new id and is named `Copy of <name>` unless you pass
+`name`, the other arguments change the copy, and the database's view stays as
+it was. Passing `copy_of` with `view_id` or without
 `embed_id` is refused.
 
 An unnamed view is named after its type, capitalised.

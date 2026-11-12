@@ -88,6 +88,8 @@ await withFixture(async ({ page, context, api, base, workspace, path, read }) =>
   const copied = (await storedLocal(doc, 'emb')).views[3];
   assert.equal(copied.type, 'board');
   assert.equal(copied.groupBy, 'status', "the copy lost the database view's grouping");
+  assert.equal(copied.name, 'Copy of Board', 'a copy is not named after the view it came from');
+  assert.equal((await tabNames(embed)).filter((n) => n === 'Board').length, 1, 'two tabs are called Board');
   assert.notEqual(copied.id, 'board', 'the copy shares an id with the database view');
   assert.equal(await dbViews(), original, 'copying a view changed the database');
 

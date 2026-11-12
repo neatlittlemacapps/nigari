@@ -552,7 +552,7 @@ are.
 - **A new embed starts with one Table view.** The **＋** after the tabs offers
   the view types (no form: a form stays on the database) and, under **Views on**
   and the database's name, the database's own views. Picking one adds a
-  **copy** to the embed. The copy is separate: changing it does not change the
+  **copy** to the embed, named *Copy of* and the view's name. The copy is separate: changing it does not change the
   original, and later changes to the original do not reach the copy. There is
   no way yet to save an embed's view back to the database.
 - **An embed made before this existed** shows what it always showed: a copy of
