@@ -459,8 +459,9 @@ without an option colour (an option with an older or imported colour, or no
 select at all) never takes a colour that another group in the same chart already
 shows, as long as one of the twelve is left. **No value** and **Other** are grey.
 
-**In a document** a chart keeps the document's own filters, like any embedded
-view (see [Collections inside documents](collections.md#collections-inside-documents)).
+**In a document** a chart is one of the embed's own views (see
+[Views in a document](#views-in-a-document)). A chart added from the `/` menu
+adds nothing to the database, so it works for a database you may only read.
 
 **A filter on a rollup, formula or backrelation does not work on a chart.**
 Those values are worked out after the database has filtered (see
@@ -524,13 +525,9 @@ right, with `›` where a further list opens:
 Escape closes the menu and puts focus back on **Settings**. There is no item to
 change a view's type (a board into a table); create a new view instead.
 
-Someone who can only read the database gets no **Settings**, and neither does a
-database shown inside a document: its views are the database's own, so a
-change made there would change them everywhere. That includes a timeline's
-start and end dates and a table's sub-items, which a document used to offer:
-change them on the database's own page, under **Settings**, and every document
-that shows the view follows. Embedded databases are to get views of their own,
-with a Settings of their own; that is not built yet.
+Someone who can only read the database gets no **Settings**. A database shown
+inside a document has Settings too, for anyone who can edit the document; see
+[Views in a document](#views-in-a-document).
 
 ### In a document
 
@@ -543,6 +540,45 @@ shows them. On a touch screen, where there is no hover, they are always shown.
 When the view is filtered or sorted, **Filtered** or **Sorted** stands beside
 the view tabs while the buttons are hidden, so rows missing from the table are
 never a surprise. A database on its own page always shows its toolbar.
+
+### Views in a document
+
+A database embedded in a document has views of its own, kept in the document.
+Adding, renaming, moving or removing a view there, and changing its filters,
+sort, grouping, hidden columns, column order or a chart's settings, change only
+that embed. The database's own views and every other embed of it stay as they
+are.
+
+- **A new embed starts with one Table view.** The **＋** after the tabs offers
+  the view types (no form: a form stays on the database) and, under **Views on**
+  and the database's name, the database's own views. Picking one adds a
+  **copy** to the embed. The copy is separate: changing it does not change the
+  original, and later changes to the original do not reach the copy. There is
+  no way yet to save an embed's view back to the database.
+- **An embed made before this existed** shows what it always showed: a copy of
+  the database's views, with its own filter and sort on the open one. The first
+  time someone changes one of its views it becomes a list of views of its own,
+  and from then on it no longer follows later changes to the database's views.
+- **Settings** (the sliders button) works in an embed for anyone who can edit
+  the document, and acts on the embed's current view: rename, property
+  visibility, open rows in, a timeline's start and end, quick filters,
+  sub-group, a table's sub-items, move left or right, and remove. The only
+  view of an embed cannot be removed. In a table view the columns can be moved,
+  hidden and resized.
+- **The lock is the database's.** **Lock views** does not stop changes to an
+  embed's own views, and the lock marker does not show on an embed.
+- **Edit properties** appears in an embed's Settings only for someone who may
+  write the database, not for a viewer of its workspace. Saving it from a
+  document asks first: *Change the properties of {database}? This changes the
+  database and every view of it, everywhere.* Choose **Change properties**, or
+  **Cancel** to go back to the dialog with your edits kept.
+- **A new row** made in an embed's view takes the values that view's filters
+  fix, as on the database's own page.
+- **A reader of the document** can switch views and filter or sort for
+  themselves; they cannot change the embed's views.
+- **Agents** see a document's embeds in `get_page`, and `set_view`,
+  `delete_view` and `get_collection` take an `embed_id`; see
+  [MCP tools](mcp-tools.md).
 
 ## Your own filter and sort
 
@@ -780,9 +816,10 @@ view. Column widths, column order, hidden columns, how
 rows open, a chart's style and a form's texts are left out, so a table resized
 ten times does not bury the change somebody is looking for.
 
-An embedded collection is the same collection, with the same views. Its filter
-and sort belong to the document, not to the views: changing one there changes
-nothing on the collection's page or in another document.
+An embedded collection is the same collection and the same rows, but its views
+are its own, kept in the document (see [Views in a document](#views-in-a-document)).
+A change to one of them changes nothing on the collection's page or in another
+document.
 
 Copying a set of views to another collection is not something the interface can
 do. What it can do is copy a whole workspace's structure:
@@ -822,9 +859,8 @@ While the views are locked:
   and the dialog stays open with your edits. Unlock first, or remove the
   property from that view. The same rule holds for an agent's
   `update_schema`.
-- In a document, an embedded database's filters and sort belong to the
-  document, not to the views, and the lock does not cover them: **Save for
-  everyone** stays offered there to anyone who can edit the document.
+- In a document, an embedded database's views are the embed's own and the lock
+  does not cover them: they stay editable by anyone who can edit the document.
 
 The server enforces it, not just the interface: a save that would change a
 locked view is refused with *This database's views are locked. Unlock them to

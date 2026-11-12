@@ -173,8 +173,8 @@ row.
 - In a centre peek, Tab stays inside the panel. Dialogs the page opens, such
   as **Version history** or **Share**, open over the peek and close back to
   it.
-- A database embedded in a document follows its view's setting; the peek opens
-  beside the document.
+- A database embedded in a document follows the setting of the embed's own
+  view; the peek opens beside the document.
 - A form has no rows to click, so it has no setting.
 
 Like a filter, the setting belongs to the view and so to everyone who opens
@@ -375,6 +375,9 @@ Three things about editing a schema that are worth knowing before you do it:
 - **Changing a type does not destroy values.** The stored value stays as it is
   and is read through the new type. Text that is not a number simply shows blank
   in a number cell; switch back and it is there again.
+- **Deleting a property asks first.** The question names the property and the
+  database; for a relation it adds that its links to rows go too. The deletion
+  is still a draft until you save the dialog.
 - **Deleting a property does not delete the values either.** They stay on the
   rows. Re-adding a property with the same id brings the column back with its
   contents.
@@ -436,12 +439,13 @@ matches the description as well as the name. What you get is fully usable
 in place (filter it, add rows, drag cards), with the document's own text above
 and below it. The heading of the block opens it as its own page
 (**Open as page ↗**). Its toolbar stays out of the way of the text until you
-reach for it, and it has no **Settings**: the views are the database's own. See
-[Views](views.md#in-a-document).
+reach for it. The rows are the collection's; the views are the embed's own,
+kept in the document, so changing them there changes nothing on the
+collection's page. See [Views in a document](views.md#views-in-a-document).
 
-Only a reference is stored. The collection stays one object in one place, the
-same collection can be embedded in several documents, and an edit made in one of
-them shows up in all of them. If the collection is deleted, or lives in a
+The rows stay one set in one place: the same collection can be embedded in
+several documents, and a row edited in one of them shows up in all of them. The
+embed's views are stored in the document, not in the collection. If the collection is deleted, or lives in a
 workspace the reader may not see, the block says
 *This collection is no longer available.* rather than breaking the page.
 

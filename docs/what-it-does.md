@@ -63,7 +63,9 @@ people outside the workspace can submit entries into it. A filter or sort
 someone sets on a view is their own, kept on their account across devices, until
 they reset it or save it for everyone. A view can offer quick filters, chips
 each person sets for themselves, and a board can be split into lanes by a second
-property, with a card dragged between cells taking both values. A row added in a
+property, with a card dragged between cells taking both values. A database embedded in a
+document has views of its own, kept in the document, so changing them leaves the
+database's views alone. A row added in a
 filtered view starts with the values that view filters on, so it stays in sight. A view
 can open its rows in a peek, beside the view or over it, instead of as a full page.
 A table's columns move by dragging their headings, in that view only, and an
