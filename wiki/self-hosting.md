@@ -165,7 +165,10 @@ their own.
   those would be sent to Umbrel's login page. The price is the open first run
   in step 4.
 - **The image is pinned by digest**, for both Intel/AMD (`amd64`) and ARM
-  (`arm64`) machines. An update is a new store version with a new digest.
+  (`arm64`) machines. An update is a new store version with a new digest:
+  each nigari release proposes one to the store, and it reaches your Umbrel
+  once the store's owner accepts it. So the store can be a release or two
+  behind nigari's releases page.
 - **`NIGARI_TRUST_PROXY=1`**: Umbrel's proxy is always in front and writes the
   visitor's address itself ([Configuration](#configuration)).
 - **`NIGARI_UPDATE_CHECK=0`**: updates come from the store, so the

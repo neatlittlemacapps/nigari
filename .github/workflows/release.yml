@@ -121,3 +121,66 @@ jobs:
     permissions:
       contents: read
       packages: write
+
+  # The Umbrel store pins one release by version and image digest, so Umbrel
+  # installs exactly the image that was built and offers an update only when
+  # the version changes. Moving the pin by hand was forgotten: the store sat
+  # at 2.1.15 while main released 2.1.21 (owner, 2026-11-12: automate it).
+  #
+  # This opens a pull request on the store repository; the owner merges it,
+  # so a release reaches Umbrels only when the owner says so. It does not
+  # write nigari's own umbrel/ copy: a commit to main is a release, and a
+  # release that commits to main would release again, forever.
+  #
+  # Needs the secret UMBREL_STORE_TOKEN: a fine-grained token for
+  # neatlittlemacapps/yokogaki-umbrel only, Contents and Pull requests
+  # read/write. Without it the job says so and passes; the release is done.
+  umbrel-store:
+    needs: [build, image]
+    runs-on: ubuntu-latest
+    permissions: {}
+    env:
+      GH_TOKEN: ${{ secrets.UMBREL_STORE_TOKEN }}
+      VERSION: ${{ needs.build.outputs.version }}
+      STORE: neatlittlemacapps/yokogaki-umbrel
+    steps:
+      - name: Open a pull request on the Umbrel store
+        run: |
+          set -eu
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "UMBREL_STORE_TOKEN is not set; the Umbrel store was not updated." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          ver="${VERSION#v}"
+          image="ghcr.io/${GITHUB_REPOSITORY}:${ver}"
+          # The index digest, covering amd64 and arm64: the one Umbrel pins.
+          digest=$(docker buildx imagetools inspect "${image}" --format '{{json .Manifest}}' | jq -r .digest)
+          case "${digest}" in sha256:*) ;; *) echo "No digest for ${image}" >&2; exit 1 ;; esac
+
+          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${STORE}.git" store
+          cd store
+          app=yokogaki-nigari
+          sed -i -E "s|^version: \".*\"$|version: \"${ver}\"|" "${app}/umbrel-app.yml"
+          sed -i -E "s|(releases/tag/)v[0-9.]+|\1v${ver}|" "${app}/umbrel-app.yml"
+          sed -i -E "s|(image: ghcr.io/[^:]+/nigari):[^@]+@sha256:[0-9a-f]+|\1:${ver}@${digest}|" "${app}/docker-compose.yml"
+          grep -q "version: \"${ver}\"" "${app}/umbrel-app.yml"
+          grep -q "nigari:${ver}@${digest}" "${app}/docker-compose.yml"
+          if git diff --quiet; then
+            echo "The store already pins ${ver}." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          branch="nigari-${ver}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${branch}"
+          git commit -qam "nigari ${ver}"
+          git push -f origin "${branch}"
+          # One open pull request per release; an older one stays until the
+          # owner merges or closes it, and the newest one supersedes it.
+          if [ -z "$(gh pr list --repo "${STORE}" --head "${branch}" --json number --jq '.[].number')" ]; then
+            gh pr create --repo "${STORE}" --base main --head "${branch}" \
+              --title "nigari ${ver}" \
+              --body "Moves the store to nigari ${ver} (${digest}). Release notes: https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${ver}. Merge it and Umbrel offers the update within about 5 minutes."
+          fi
+          echo "Opened a pull request on ${STORE} for ${ver}." >> "$GITHUB_STEP_SUMMARY"
