@@ -182,6 +182,29 @@ the card, so a status can be set without opening the row, without putting a row
 of dashes under every title. Open comments show as a speech bubble with their
 count.
 
+**Lanes.** A board can also be split the other way: **Settings** → **Sub-group**
+picks a second property, and the board draws one horizontal lane per value of
+it, each with the board's columns, plus a lane **No** followed by the
+property's name for rows without a value. A board grouped by Status and
+sub-grouped by Owner answers "who is doing what, at which stage" on one screen.
+A sub-group is a select, multi-select, relation, person, formula or rollup
+property, never the one the board groups by; **No sub-group** takes the lanes
+away again.
+
+- **Dragging a card to another cell** sets both its column and its lane value,
+  in one change (one entry in the page history). While you drag, a line in the
+  cell under the pointer shows where it will land.
+- **A formula or rollup** can't be changed by a drag: its lanes are drawn, a
+  card still moves between the columns of its own lane, but a drop in another
+  lane changes nothing.
+- **A lane folds** from the arrow in its heading, leaving its name and its card
+  count. Folding is yours only, kept on your account like your own filter.
+- A row with several values (a multi-select, a relation, several people) shows
+  in each of its lanes, as it shows in each of its columns.
+- **Not built yet:** dragging doesn't scroll the page by itself, so to drop a
+  card in a lane that is off screen, scroll with the mouse wheel or trackpad
+  while you hold it.
+
 ### `list`
 
 One line per row and deliberately not a narrow table: no header row, no column
@@ -559,6 +582,25 @@ yours, for that embed only, and **Save for everyone** writes it into the
 document's embed (which only someone who can edit the document may), not into
 the database's view.
 
+## Quick filters
+
+A view can offer **quick filters**: chips under the toolbar, one per property,
+that each person sets for themselves. **Settings** → **Quick filters** chooses
+which properties get a chip: select, multi-select, person, checkbox and
+relation properties, at most eight, on any view but a form or a chart.
+
+- **Tap a chip** and pick a value: the view narrows to rows with that value, for
+  you only, and the chip shows it (*Owner: Ada*). The `✕` beside it clears it.
+  Your pick is kept on your account, like your own filter, and the bar *Only you
+  see these changes* says so.
+- **A pick adds to the view's filters**: a row has to match both.
+- **Save for everyone** turns your picks into filters of the view, for everyone,
+  and clears the chips. **Reset** clears them.
+- A property that is deleted takes its chip with it; a quick filter that is
+  taken off the view takes its chip away for everyone.
+- Text, number and date properties can't be quick filters: they have as many
+  values as rows, so a chip would be a text field, which **Filter** already is.
+
 ## Filters
 
 A filter is a property, an operator and usually a value. Several filters on one
@@ -768,8 +810,9 @@ While the views are locked:
   resizing of columns, no **Group** on a board, no chart settings, and a form's
   heading and description cannot be edited.
 - **Filter** and **Sort** stay: they change the view for you only (see [Your
-  own filter and sort](#your-own-filter-and-sort)). **Save for everyone** is not
-  offered while the views are locked.
+  own filter and sort](#your-own-filter-and-sort)). So do [quick
+  filters](#quick-filters) and folding a board's lanes. **Save for everyone**
+  is not offered while the views are locked.
 - Rows work as before: new rows, edits, moving a card between columns.
 - The schema is not locked: **Edit properties** still adds, renames, changes
   and removes properties, and the views are left exactly as they are. The one

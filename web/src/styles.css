@@ -2178,6 +2178,40 @@ body:has(.icon-picker) .bn-side-menu {
   flex: none;
 }
 
+/* Quick filters (spec 013, US3): a row of chips under the toolbar, lined up
+   with it like the bar below. A picked chip is the filled button with a
+   clear button beside it. Wraps on a narrow screen rather than scrolling, so
+   no chip is off screen. */
+.quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-100);
+  padding: var(--space-100) calc(var(--space-600) * 2);
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.collection-scroll.is-embed .quick-filters {
+  padding-inline: var(--space-200);
+}
+
+.quick-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-50);
+}
+
+.quick-filter-chip svg {
+  flex: none;
+}
+
+@media (max-width: 768px) {
+  .quick-filters {
+    /* The toolbar's own phone padding (.collection-toolbar, 14px). */
+    padding-inline: 14px;
+  }
+}
+
 /* "Only you see these changes" (spec 013, US1): a line under the toolbar of a
    view the person filtered or sorted for themselves. Quiet, the accent's soft
    tint: it informs, it does not warn. It wraps instead of scrolling, so
@@ -2250,6 +2284,41 @@ body:has(.icon-picker) .bn-side-menu {
   color: var(--color-text-muted);
   font-size: var(--font-size-2xs);
   white-space: nowrap;
+}
+
+/* A board with lanes (spec 013, US4): the lanes stack, each a row of the
+   board's columns. One scroll container (.board) for all of them, so the
+   columns of every lane stay lined up when the board scrolls sideways. A
+   lane's cells size to their cards instead of the window's height. */
+.board.has-lanes {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-300);
+}
+
+.board-lane {
+  width: max-content;
+  min-width: 100%;
+}
+
+.board-lane-head {
+  position: sticky;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-100);
+  padding: var(--space-50) 0 var(--space-150);
+  font-weight: 600;
+}
+
+.board-lane-cells {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.board-lane-cells .board-col {
+  max-height: none;
 }
 
 /* Widened from 272px. At that width a normal task title broke after three or
@@ -5813,6 +5882,15 @@ body.is-col-resizing {
   border-radius: var(--radius-scale-lg);
   background: var(--color-hover);
   animation: board-drop-in var(--motion-duration-fast) ease-out;
+}
+
+.board-drop-place.is-line {
+  height: 0;
+  border: 0;
+  border-top: 2px solid var(--color-accent-default);
+  border-radius: var(--radius-scale-full);
+  background: none;
+  margin: calc(var(--space-50) * -1) 0;
 }
 
 @keyframes board-drop-in {

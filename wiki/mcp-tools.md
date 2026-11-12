@@ -1019,6 +1019,8 @@ Create a view, or change one.
 | `hidden` | array of string | no |
 | `open_in` | string | no |
 | `column_order` | array of string | table |
+| `quick_filters` | array of string | any but form and chart |
+| `sub_group_by` | string | board |
 | `chart_kind` | string | chart |
 | `period` | string | chart, by a date |
 | `aggregate` | string | chart |
@@ -1077,6 +1079,21 @@ is simply skipped. `[]` goes back to the schema's order. `get_collection` return
 view follows the schema. Only a table has one: on any other view it is
 refused, as a value that is not a list of ids is. The interface's own save
 checks the same rule, with the code `invalid_view_column_order`.
+
+`quick_filters` sets the chips a view offers: property ids of select,
+multi-select, person, checkbox or relation properties, at most 8. Each person
+picks a value for themselves in the interface; an agent sets which chips there
+are, not anybody's pick (an agent has no personal state). An id that is not a
+property is refused, a property of another type is refused, `[]` removes them,
+and a form or a chart has none. `get_collection` returns them on the view as
+`quickFilters`. The interface's own save checks the same rule, with the code
+`invalid_view_quick_filters`.
+
+`sub_group_by` splits a board into lanes: a select, multi-select, relation,
+person, formula or rollup property that is not the board's `group_by`. `""`
+removes the lanes. Only a board has one. `get_collection` returns it as
+`subGroupBy`; the interface's own save checks the same rule, with the code
+`invalid_view_sub_group`.
 
 **A chart** is built the way a person builds one in the interface's chart
 settings. `chart_kind` is `bar` (the default), `hbar` (horizontal bars), `line`,

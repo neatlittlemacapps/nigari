@@ -93,7 +93,15 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 		views, err := normalizeViews(body.Views, schema, stored)
 		var chartErr errChart
 		var orderErr errViewColOrder
+		var quickErr errViewQuickFilters
+		var subErr errViewSubGroup
 		switch {
+		case errors.As(err, &quickErr):
+			httpErrorCode(w, 400, "invalid_view_quick_filters", err.Error())
+			return
+		case errors.As(err, &subErr):
+			httpErrorCode(w, 400, "invalid_view_sub_group", err.Error())
+			return
 		case errors.As(err, &orderErr):
 			httpErrorCode(w, 400, "invalid_view_column_order", err.Error())
 			return

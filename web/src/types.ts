@@ -312,6 +312,11 @@ export interface ViewDef {
   // it follow in schema order, and the title column is never in it (always
   // first). The server cleans it (checkViewColOrder).
   colOrder?: string[];
+  // Quick filters (spec 013): property ids offered as chips above the view;
+  // each person's pick is theirs (personal state, viewState.ts).
+  quickFilters?: string[];
+  // board view: a second grouping drawn as lanes across the columns (spec 013).
+  subGroupBy?: string;
   // How a click opens one of this view's rows (spec 007): beside the view in a
   // side peek, or (follow-up) over it in a centre peek. Missing = full page.
   openIn?: 'side_peek' | 'center_peek';

@@ -69,6 +69,13 @@ var parityActs = []parityAct{
 	// (checkViewColOrder) on both doors, behind the database's write gate.
 	{"view column order", "PUT", "/api/collections/%s", `{"views":[{"id":"v-parity","name":"To do","type":"table","colOrder":["status"],"filters":[{"property":"status","op":"is","value":"todo"}]}]}`,
 		"set_view", `{"page_id":"%s","view_id":"v-parity","column_order":["status"]}`, true},
+	// Quick filters and a board's lanes (spec 013): view settings, checked by
+	// one rule each (checkViewQuickFilters, checkViewSubGroup) on both doors,
+	// behind the database's write gate.
+	{"set quick filters", "PUT", "/api/collections/%s", `{"views":[{"id":"v-parity","name":"To do","type":"table","quickFilters":["status"],"filters":[{"property":"status","op":"is","value":"todo"}]}]}`,
+		"set_view", `{"page_id":"%s","view_id":"v-parity","quick_filters":["status"]}`, true},
+	{"set a sub-group", "PUT", "/api/collections/%s", `{"views":[{"id":"v-parity","name":"To do","type":"table","filters":[{"property":"status","op":"is","value":"todo"}]},{"id":"v-board","name":"Board","type":"board","groupBy":"status","subGroupBy":"owner"}]}`,
+		"set_view", `{"page_id":"%s","type":"board","name":"Board","group_by":"status","sub_group_by":"owner"}`, true},
 	// A chart's numbers (spec 004): a read, so the database's read gate
 	// decides on both doors; a read-scoped credential may aggregate.
 	{"aggregate", "POST", "/api/collections/%s/aggregate", `{"groupBy":"status"}`, "query_rows", `{"page_id":"%s","group_by":"status"}`, true},
@@ -259,7 +266,7 @@ func TestAgentParityHoldsForEveryCredentialShape(t *testing.T) {
 			if act.database {
 				w.s.db.Exec(`UPDATE pages SET type = 'collection' WHERE id = ?`, pages[j])
 				w.s.db.Exec(`INSERT INTO collections (page_id, schema, views) VALUES (?, ?, ?)`, pages[j],
-					`[{"id":"status","name":"Status","type":"select","options":[{"id":"todo","name":"To do"}]}]`,
+					`[{"id":"status","name":"Status","type":"select","options":[{"id":"todo","name":"To do"}]},{"id":"owner","name":"Owner","type":"person"}]`,
 					`[{"id":"v-parity","name":"To do","type":"table","filters":[{"property":"status","op":"is","value":"todo"}]}]`)
 				if parityLockedActs[act.name] {
 					w.s.db.Exec(`UPDATE collections SET views_locked_by = ?, views_locked_at = ? WHERE page_id = ?`, w.owner, now(), pages[j])

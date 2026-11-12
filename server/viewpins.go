@@ -220,7 +220,18 @@ func (s *Server) viewFor(colID, viewID string, who viewer) (name string, filters
 			continue
 		}
 		name, _ = v["name"].(string)
-		merged, _ := mergeViewState(v, s.viewStateOf(who.userID, colID, scope))
+		// Only quick filters that still are: a pick for a property deleted
+		// or retyped since must not pin a value nobody can see or clear (code
+		// review). The browser drops the same ones (CollectionView).
+		offered := v
+		if qf, ok := v["quickFilters"]; ok {
+			offered = map[string]any{}
+			for k, val := range v {
+				offered[k] = val
+			}
+			offered["quickFilters"] = liveQuickFilters(qf, schema)
+		}
+		merged, _ := mergeViewState(offered, s.viewStateOf(who.userID, colID, scope))
 		raw, _ := json.Marshal(merged)
 		var fs []filterJSON
 		_ = json.Unmarshal(raw, &fs)

@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import { t } from '../i18n';
 import { CENTER_PEEK_SHIPPED } from '../peek';
+import { MAX_QUICK_FILTERS, quickFilterProps, subGroupProps } from '../quickFilters';
 import type { PropDef, ViewDef } from '../types';
 import { IconButton } from '../ui/IconButton';
 import { Menu, MenuCheckboxItem, MenuItem, MenuLabel, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuSubmenu } from '../ui/Menu';
@@ -89,6 +90,15 @@ export default function ViewSettingsMenu({
     onChange({ hidden: [...next] });
   };
   const nameOf = (id: string | undefined, among: PropDef[]) => among.find((p) => p.id === id)?.name;
+  // Quick filters (spec 013): the properties a chip can offer, in the
+  // schema's order; what the view offers keeps the order it was added in.
+  const quickCandidates = quickFilterProps(schema);
+  const offered = (view.quickFilters ?? []).filter((id) => quickCandidates.some((p) => p.id === id));
+  const toggleQuick = (id: string, on: boolean) =>
+    onChange({ quickFilters: on ? [...offered, id] : offered.filter((x) => x !== id) });
+  // The board's columns: its groupBy, or for a board saved without one the
+  // first select property, as BoardView draws it (and the server checks).
+  const laneCandidates = subGroupProps(schema, view.groupBy || schema.find((p) => p.type === 'select')?.id);
   // A timeline with no start property draws its bars from the first date
   // property (CollectionView's TimelineView call), so None would be a value
   // the view is not using: the item says which property that is.
@@ -173,6 +183,32 @@ export default function ViewSettingsMenu({
                 {propRadio(view.endDateProp, dateProps, (id) => onChange({ endDateProp: id }), t('No end date'))}
               </MenuSubmenu>
             </>
+          )}
+          {view.type !== 'form' && view.type !== 'chart' && quickCandidates.length > 0 && (
+            <MenuSubmenu
+              fn="quickFilters"
+              label={t('Quick filters')}
+              value={offered.length ? String(offered.length) : t('None')}
+            >
+              {quickCandidates.map((p) => (
+                <MenuCheckboxItem
+                  key={p.id}
+                  fn="quickFilters"
+                  checked={offered.includes(p.id)}
+                  // At most 8 (the server's rule): the rest wait until one goes.
+                  disabled={!offered.includes(p.id) && offered.length >= MAX_QUICK_FILTERS}
+                  onCheckedChange={(c) => toggleQuick(p.id, c)}
+                  closeOnClick={false}
+                >
+                  {p.name}
+                </MenuCheckboxItem>
+              ))}
+            </MenuSubmenu>
+          )}
+          {view.type === 'board' && laneCandidates.length > 0 && (
+            <MenuSubmenu fn="subGroup" label={t('Sub-group')} value={nameOf(view.subGroupBy, laneCandidates) ?? t('No sub-group')}>
+              {propRadio(view.subGroupBy, laneCandidates, (id) => onChange({ subGroupBy: id ?? '' }), t('No sub-group'))}
+            </MenuSubmenu>
           )}
           {view.type === 'table' && selfRelProps.length > 0 && (
             <MenuSubmenu fn="subItems" label={t('Sub-items')} value={nameOf(view.subItemProp, selfRelProps) ?? t('No sub-items')}>

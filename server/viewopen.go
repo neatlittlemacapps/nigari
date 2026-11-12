@@ -91,9 +91,11 @@ func normalizeViews(raw []byte, schema []map[string]any, stored []map[string]any
 		return raw, nil
 	}
 	before := map[string]string{}
+	storedByID := map[string]map[string]any{}
 	for _, v := range stored {
 		if id, _ := v["id"].(string); id != "" {
 			before[id] = chartSignature(v)
+			storedByID[id] = v
 		}
 	}
 	changed := false
@@ -113,19 +115,40 @@ func normalizeViews(raw []byte, schema []map[string]any, stored []map[string]any
 		if _, has := view["openIn"]; had && !has {
 			changed = true
 		}
-		// The order is compared as JSON before and after, so a dropped id or
-		// an emptied list re-encodes the array and REST stores what set_view
-		// stores for the same request.
-		// Key presence counts too: a "colOrder": null is removed in memory and
-		// would otherwise be stored as sent, which set_view never stores.
-		orderBefore, _ := json.Marshal(view["colOrder"])
-		_, hadOrder := view["colOrder"]
-		if err := checkViewColOrder(view, schema); err != nil {
-			return nil, errViewColOrder{fmt.Sprintf("%s: %s", name, err.Error())}
+		// The order, the quick filters and the sub-group are each compared
+		// as JSON before and after their check (normalizeKey), so a dropped
+		// id or an emptied list re-encodes the array and REST stores what
+		// set_view stores for the same request.
+		vid, _ := view["id"].(string)
+		// Strict only for what this save changes (code review): a stored
+		// quick filter or sub-group that a later schema change made invalid
+		// (a property turned into text) is dropped, not refused, or every
+		// views save of the database (a column resize, another view's
+		// rename) would fail on a view nobody touched. checkChartView draws
+		// the same line.
+		changedKey := func(key string) bool {
+			was, _ := json.Marshal(storedByID[vid][key])
+			now, _ := json.Marshal(view[key])
+			return string(was) != string(now)
 		}
-		orderAfter, _ := json.Marshal(view["colOrder"])
-		if _, hasOrder := view["colOrder"]; string(orderAfter) != string(orderBefore) || hadOrder != hasOrder {
-			changed = true
+		for _, k := range []struct {
+			key   string
+			check func() error
+			wrap  func(string) error
+		}{
+			{"colOrder", func() error { return checkViewColOrder(view, schema) }, func(m string) error { return errViewColOrder{m} }},
+			{"quickFilters", func() error { return checkViewQuickFilters(view, schema, changedKey("quickFilters")) }, func(m string) error { return errViewQuickFilters{m} }},
+			{"subGroupBy", func() error {
+				return checkViewSubGroup(view, schema, changedKey("subGroupBy") || changedKey("groupBy"))
+			}, func(m string) error { return errViewSubGroup{m} }},
+		} {
+			moved, err := normalizeKey(view, k.key, k.check)
+			if err != nil {
+				return nil, k.wrap(fmt.Sprintf("%s: %s", name, err.Error()))
+			}
+			if moved {
+				changed = true
+			}
 		}
 		id, _ := view["id"].(string)
 		old, known := before[id]
@@ -137,6 +160,21 @@ func normalizeViews(raw []byte, schema []map[string]any, stored []map[string]any
 		return raw, nil
 	}
 	return json.Marshal(views)
+}
+
+// normalizeKey runs one view key's check and says whether it changed what is
+// stored: the key's JSON before and after, and its presence (a "key": null is
+// removed in memory and would otherwise be stored as sent, which set_view
+// never stores).
+func normalizeKey(view map[string]any, key string, check func() error) (bool, error) {
+	before, _ := json.Marshal(view[key])
+	_, had := view[key]
+	if err := check(); err != nil {
+		return false, err
+	}
+	after, _ := json.Marshal(view[key])
+	_, has := view[key]
+	return string(after) != string(before) || had != has, nil
 }
 
 // A table view's column order (spec 012): colOrder, a list of property ids
@@ -204,4 +242,213 @@ func checkViewColOrder(view map[string]any, schema []map[string]any) error {
 	}
 	view["colOrder"] = out
 	return nil
+}
+
+// Quick filters and a board's sub-group (spec 013, US3 and US4; research R7
+// and R8). Two view keys, checked by one function each that both doors call:
+// normalizeViews for PUT /api/collections/{id}, applyViewSpec for MCP
+// set_view. A rule on one side only is how this repository's earlier
+// REST/MCP gaps started.
+
+// quickFilterTypes are the property types a view may offer as a quick filter:
+// the ones whose values a chip can list in a menu (options, people, a
+// checkbox's two states, the rows a relation points at). Text, numbers and
+// dates are left out on purpose: their values are as many as their rows, so
+// a chip would need a text field, which is what Filter already is.
+var quickFilterTypes = map[string]bool{
+	"select": true, "multiselect": true, "person": true, "checkbox": true, "relation": true,
+}
+
+// maxQuickFilters bounds the chips above a view: more than a row of them is a
+// second filter bar, not a shortcut.
+const maxQuickFilters = 8
+
+// errViewQuickFilters marks a refusal of checkViewQuickFilters, so REST can
+// answer it with its own code (invalid_view_quick_filters).
+type errViewQuickFilters struct{ msg string }
+
+func (e errViewQuickFilters) Error() string { return e.msg }
+
+// checkViewQuickFilters validates view["quickFilters"] in place:
+//   - a list of property ids; anything else is refused;
+//   - ids that are not properties of the schema, and repeats, are dropped
+//     without a word: a property deleted since is not the caller's mistake,
+//     and refusing it would make every later save of the view fail (US3
+//     scenario 6, "the chip is gone and nothing breaks");
+//   - a property of a type a chip cannot offer is refused;
+//   - more than maxQuickFilters is refused;
+//   - a form and a chart have no rows to narrow: refused there;
+//   - an empty list removes the key.
+//
+// strict: refuse a property of the wrong type and a form's or chart's quick
+// filters, as for a value somebody is setting now. Not strict (a stored value
+// this save does not change): drop them, since a schema change since is not
+// this caller's mistake.
+func checkViewQuickFilters(view map[string]any, schema []map[string]any, strict bool) error {
+	raw, ok := view["quickFilters"]
+	if !ok || raw == nil {
+		delete(view, "quickFilters")
+		return nil
+	}
+	list, isList := raw.([]any)
+	if !isList {
+		return errViewQuickFilters{"quick filters must be a list of property ids"}
+	}
+	if t, _ := view["type"].(string); t == "form" || t == "chart" {
+		if len(list) > 0 && strict {
+			return errViewQuickFilters{fmt.Sprintf("a %s view has no quick filters", t)}
+		}
+		delete(view, "quickFilters")
+		return nil
+	}
+	types := map[string]string{}
+	names := map[string]string{}
+	for _, p := range schema {
+		if id, _ := p["id"].(string); id != "" {
+			pt, _ := p["type"].(string)
+			if pt == "" {
+				pt = "text"
+			}
+			types[id] = pt
+			names[id], _ = p["name"].(string)
+		}
+	}
+	seen := map[string]bool{}
+	out := make([]any, 0, len(list))
+	for _, item := range list {
+		id, isString := item.(string)
+		if !isString {
+			return errViewQuickFilters{"quick filters must be a list of property ids"}
+		}
+		pt, known := types[id]
+		if !known || seen[id] {
+			continue
+		}
+		if !quickFilterTypes[pt] {
+			if !strict {
+				continue
+			}
+			return errViewQuickFilters{fmt.Sprintf("%q is a %s property; a quick filter is a select, multi-select, person, checkbox or relation", names[id], pt)}
+		}
+		seen[id] = true
+		out = append(out, id)
+	}
+	if len(out) > maxQuickFilters {
+		return errViewQuickFilters{fmt.Sprintf("a view offers at most %d quick filters", maxQuickFilters)}
+	}
+	if len(out) == 0 {
+		delete(view, "quickFilters")
+		return nil
+	}
+	view["quickFilters"] = out
+	return nil
+}
+
+// subGroupTypes are the property types a board may draw lanes by: the board's
+// own column types, a person, and two that are read but cannot be written
+// (formula, rollup). Those draw lanes, and the interface refuses a drop
+// between their lanes (FR-018), since no drag can change a computed value.
+var subGroupTypes = map[string]bool{
+	"select": true, "multiselect": true, "relation": true, "person": true,
+	"formula": true, "rollup": true,
+}
+
+// errViewSubGroup marks a refusal of checkViewSubGroup, so REST can answer it
+// with its own code (invalid_view_sub_group).
+type errViewSubGroup struct{ msg string }
+
+func (e errViewSubGroup) Error() string { return e.msg }
+
+// checkViewSubGroup validates view["subGroupBy"] in place:
+//   - only a board has one;
+//   - a property id that is no longer in the schema is dropped (the lanes go,
+//     nothing breaks), as checkViewColOrder drops a deleted column;
+//   - it must be a property of a type lanes can be drawn by, and not the
+//     board's own grouping (lanes of the columns would be a diagonal);
+//   - "" removes the key.
+//
+// strict as for checkViewQuickFilters: a stored sub-group made invalid by a
+// later schema change is removed rather than refused.
+func checkViewSubGroup(view map[string]any, schema []map[string]any, strict bool) error {
+	raw, ok := view["subGroupBy"]
+	if !ok || raw == nil {
+		delete(view, "subGroupBy")
+		return nil
+	}
+	id, isString := raw.(string)
+	if !isString {
+		return errViewSubGroup{"sub-group must be a property id"}
+	}
+	if id == "" {
+		delete(view, "subGroupBy")
+		return nil
+	}
+	if t, _ := view["type"].(string); t != "board" {
+		if !strict {
+			delete(view, "subGroupBy")
+			return nil
+		}
+		return errViewSubGroup{"only a board has a sub-group"}
+	}
+	var pt, name string
+	for _, p := range schema {
+		if pid, _ := p["id"].(string); pid == id {
+			pt, _ = p["type"].(string)
+			if pt == "" {
+				pt = "text"
+			}
+			name, _ = p["name"].(string)
+		}
+	}
+	if pt == "" {
+		delete(view, "subGroupBy")
+		return nil
+	}
+	if !subGroupTypes[pt] {
+		if !strict {
+			delete(view, "subGroupBy")
+			return nil
+		}
+		return errViewSubGroup{fmt.Sprintf("%q is a %s property; a board's lanes are a select, multi-select, relation, person, formula or rollup", name, pt)}
+	}
+	// The board's columns: its groupBy, or, for a board saved without one,
+	// the first select property, which is what the interface draws then
+	// (BoardView). Without that the lanes could be the columns again.
+	g, _ := view["groupBy"].(string)
+	if g == "" {
+		for _, p := range schema {
+			if pt, _ := p["type"].(string); pt == "select" {
+				g, _ = p["id"].(string)
+				break
+			}
+		}
+	}
+	if g == id {
+		if !strict {
+			delete(view, "subGroupBy")
+			return nil
+		}
+		return errViewSubGroup{fmt.Sprintf("%q is already the board's columns; choose another property for its lanes", name)}
+	}
+	return nil
+}
+
+// liveQuickFilters is a stored quick filters list without the properties
+// that are no longer of a type a chip offers (deleted, or retyped since).
+func liveQuickFilters(raw any, schema []map[string]any) []any {
+	list, _ := raw.([]any)
+	types := map[string]string{}
+	for _, p := range schema {
+		if id, _ := p["id"].(string); id != "" {
+			pt, _ := p["type"].(string)
+			types[id] = pt
+		}
+	}
+	out := []any{}
+	for _, item := range list {
+		if id, _ := item.(string); quickFilterTypes[types[id]] {
+			out = append(out, id)
+		}
+	}
+	return out
 }

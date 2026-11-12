@@ -1317,5 +1317,15 @@
   "The view “{view}” uses “{property}”, and the views are locked. Unlock them to remove the property.": "Die Ansicht „{view}“ verwendet „{property}“, und die Ansichten sind gesperrt. Entsperre sie, um die Eigenschaft zu entfernen.",
   "Only you see these changes": "Nur du siehst diese Änderungen",
   "Save for everyone": "Für alle speichern",
-  "Your change to this view was not saved": "Deine Änderung an dieser Ansicht wurde nicht gespeichert"
+  "Your change to this view was not saved": "Deine Änderung an dieser Ansicht wurde nicht gespeichert",
+  "A board's lanes need a select, person, relation, formula or rollup property other than its columns.": "Die Bahnen eines Boards brauchen eine Auswahl-, Personen-, Verknüpfungs-, Formel- oder Rollup-Eigenschaft, die nicht seine Spalten bildet.",
+  "Clear {name}": "{name} leeren",
+  "No sub-group": "Keine Untergruppe",
+  "None": "Keine",
+  "Quick filters": "Schnellfilter",
+  "Sub-group": "Untergruppe",
+  "These quick filters cannot be offered: choose up to 8 select, person, checkbox or relation properties.": "Diese Schnellfilter können nicht angeboten werden: Wähle bis zu 8 Auswahl-, Personen-, Kontrollkästchen- oder Verknüpfungs-Eigenschaften.",
+  "{name}: {value}": "{name}: {value}",
+  "Fold lane": "Bahn einklappen",
+  "Unfold lane": "Bahn ausklappen"
 }

@@ -59,6 +59,12 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
     case 'invalid_view_column_order':
       return t('A column order is only for a table view, as a list of its properties, so the view was not saved.');
 
+    // ---- quick filters and board lanes (spec 013) ----
+    case 'invalid_view_quick_filters':
+      return t('These quick filters cannot be offered: choose up to 8 select, person, checkbox or relation properties.');
+    case 'invalid_view_sub_group':
+      return t("A board's lanes need a select, person, relation, formula or rollup property other than its columns.");
+
     // ---- charts (spec 004) ----
     case 'invalid_chart':
       return t('This chart cannot be drawn with these settings. Choose another grouping or value.');

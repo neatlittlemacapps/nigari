@@ -72,11 +72,14 @@ function plain(f: Filter): Record<string, unknown> {
   return out;
 }
 
-/** Whether the person's filter or sort differs from the shared view's: what
- *  the "Only you see these changes" bar hangs on. A state that says the same
- *  as the view (they changed a filter and changed it back) is no change. */
+/** Whether what the person sees differs from the shared view: their filter
+ *  or sort, or a quick filter they picked (a pick narrows the view for them
+ *  alone, so it is said the same way). What the "Only you see these changes"
+ *  bar hangs on. A state that says the same as the view (they changed a
+ *  filter and changed it back) is no change; folded lanes are not one. */
 export function hasPersonalChange(view: SharedView, personal: PersonalViewState | null | undefined): boolean {
   if (!personal) return false;
+  if ((view.quickFilters ?? []).some((prop) => personal.quickPicks?.[prop])) return true;
   if ('filters' in personal && !same((personal.filters ?? []).map(plain), (view.filters ?? []).map(plain))) return true;
   if ('sort' in personal && !same(personal.sort ?? null, view.sort ?? null)) return true;
   return false;
@@ -103,12 +106,44 @@ export function withPersonalEdit(
   return Object.keys(next).length ? next : null;
 }
 
-/** The state after Reset or Save for everyone: the filter and sort go, what
- *  else the person keeps for the view (quick picks, folded lanes) stays. */
-export function withoutFilterAndSort(personal: PersonalViewState | null | undefined): PersonalViewState | null {
+/** The state after Reset or Save for everyone: the filter, the sort and the
+ *  quick filter picks go (Reset shows the view as everyone sees it; Save
+ *  made them the view's). Folded lanes stay: they are how the person reads
+ *  the board, not what it shows. */
+export function withoutViewChanges(personal: PersonalViewState | null | undefined): PersonalViewState | null {
   if (!personal) return null;
-  const { filters: _f, sort: _s, ...rest } = personal;
+  const { filters: _f, sort: _s, quickPicks: _q, ...rest } = personal;
   return Object.keys(rest).length ? rest : null;
+}
+
+/** The state with one quick filter picked, or with an empty value cleared. */
+export function withQuickPick(
+  personal: PersonalViewState | null | undefined,
+  prop: string,
+  value: string,
+): PersonalViewState | null {
+  const picks = { ...(personal?.quickPicks ?? {}) };
+  if (value) picks[prop] = value;
+  else delete picks[prop];
+  const next: PersonalViewState = { ...(personal ?? {}) };
+  if (Object.keys(picks).length) next.quickPicks = picks;
+  else delete next.quickPicks;
+  return Object.keys(next).length ? next : null;
+}
+
+/** The state with a board lane folded or unfolded. */
+export function withFoldedLane(
+  personal: PersonalViewState | null | undefined,
+  lane: string,
+  folded: boolean,
+): PersonalViewState | null {
+  const lanes = new Set(personal?.foldedLanes ?? []);
+  if (folded) lanes.add(lane);
+  else lanes.delete(lane);
+  const next: PersonalViewState = { ...(personal ?? {}) };
+  if (lanes.size) next.foldedLanes = [...lanes];
+  else delete next.foldedLanes;
+  return Object.keys(next).length ? next : null;
 }
 
 /** The scope of a view on its database's page, or inside one embed. */

@@ -2,7 +2,9 @@ import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import type { PeekMode } from '../peek';
 import { api, ApiError } from '../api';
 import { usePersonalViews } from '../usePersonalViews';
-import { hasPersonalChange, mergeViewState, viewScope, withPersonalEdit, withoutFilterAndSort } from '../viewState';
+import { hasPersonalChange, mergeViewState, viewScope, withFoldedLane, withPersonalEdit, withQuickPick, withoutViewChanges } from '../viewState';
+import { laneIsReadOnly, quickFilterProps } from '../quickFilters';
+import QuickFilters from './QuickFilters';
 import ViewChangeBar from './ViewChangeBar';
 import { onRefresh } from '../pwa';
 import Portal from './Portal';
@@ -339,12 +341,19 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       ? viewScope(sharedView.id, embed ? { pageId: embed.pageId!, blockId: embed.blockId! } : null)
       : null;
   const personalState = personalScope ? personal.states[personalScope] : undefined;
-  const view0 = sharedView && personalScope ? { ...sharedView, ...mergeViewState(sharedView, personalState) } : sharedView;
-  const personalChange = !!sharedView && !!personalScope && hasPersonalChange(sharedView, personalState);
-  // What the person edits and what Save for everyone writes: their own
-  // filter and sort, WITHOUT quick filter picks (spec 013 PR 3). A pick is a
-  // chip of its own; written into the filters it would stay after the chip
-  // is cleared, and Save would give it to everyone (code review).
+  // Only quick filters that still are: a pick for a property deleted or
+  // retyped since would narrow the view with no chip to show or clear it
+  // (code review). The server drops the same ones (liveQuickFilters).
+  const liveView = sharedView && {
+    ...sharedView,
+    quickFilters: (sharedView.quickFilters ?? []).filter((id) => quickFilterProps(config?.schema ?? []).some((p) => p.id === id)),
+  };
+  const view0 = liveView && personalScope ? { ...sharedView, ...mergeViewState(liveView, personalState) } : sharedView;
+  const personalChange = !!liveView && !!personalScope && hasPersonalChange(liveView, personalState);
+  // What the filter controls edit: the person's own filter and sort, WITHOUT
+  // quick filter picks. A pick is a chip of its own; written into the
+  // filters by an edit, it would stay after the chip is cleared (code
+  // review). Save for everyone does take the picks (FR-014), on purpose.
   const ownFilterSort = sharedView ? mergeViewState({ filters: sharedView.filters, sort: sharedView.sort }, personalState) : null;
   // Server-side filter/sort (real Q25): the view's filters/sort become query
   // params so a 50k-row database is filtered in SQLite, not in the browser.
@@ -604,6 +613,18 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     });
   };
 
+  // Several properties of one row in one change: a card dropped into another
+  // cell of a board with lanes takes its column and its lane together, so it
+  // is never half-moved and the history has one entry (spec 013, R9).
+  const setRowProps = async (rowId: string, patch: Record<string, unknown>) => {
+    setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, props: { ...r.props, ...patch } } : r)));
+    try {
+      await api.updatePage(rowId, { propsPatch: patch });
+    } catch {
+      toast(t('Change not saved'));
+    }
+  };
+
   const setRowProp = async (rowId: string, propId: string, value: unknown) => {
     setRows((prev) =>
       prev.map((r) => (r.id === rowId ? { ...r, props: { ...r.props, [propId]: value } } : r)),
@@ -664,6 +685,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     });
 
   const updateView = (patch: Partial<ViewDef>) => {
+    // A board grouped by the property its lanes are drawn by would be a
+    // diagonal, and the server refuses it: choosing that property as the
+    // columns takes the lanes away in the same save (code review).
+    if (patch.groupBy && patch.groupBy === view.subGroupBy) patch = { ...patch, subGroupBy: '' };
     // A filter or sort edit is the person's own (spec 013, US1): it is kept
     // on their account and changes nothing for anyone else, until they save
     // it for everyone from the bar. On a database's page and in a document.
@@ -701,7 +726,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // The bar's two answers to a personal change (spec 013, research R4).
   // Reset: the person's filter and sort go, and they see the shared view.
   const resetPersonal = () => {
-    if (personalScope) personal.setState(personalScope, withoutFilterAndSort(personalState));
+    if (personalScope) personal.setState(personalScope, withoutViewChanges(personalState));
   };
   // Save for everyone: what the person sees becomes the view, through the
   // normal save, so the lock, the per-view checks and the activity log
@@ -711,7 +736,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const maySaveForEveryone = embed ? !!embed.canSave : mayChangeViews;
   const savePersonalForEveryone = async () => {
     if (!personalScope || !sharedView) return;
-    const merged = { filters: ownFilterSort?.filters ?? [], sort: ownFilterSort?.sort ?? null };
+    // What the person sees, quick filter picks included: a picked chip
+    // becomes a shared filter of the view, and the chip is cleared (FR-014).
+    const merged = { filters: view.filters ?? [], sort: view.sort ?? null };
     if (embed) {
       embed.onView(sharedView.id, merged);
     } else {
@@ -723,6 +750,23 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     }
     resetPersonal();
   };
+
+  // A board's lanes (spec 013, US4): drawn when the view has a sub-group
+  // whose property still exists. Folding is the person's own; a drop between
+  // cells writes both values in one change (setRowProps).
+  const laneProp = view.type === 'board' && view.subGroupBy ? schema.find((p) => p.id === view.subGroupBy) : undefined;
+  const boardLanes = laneProp
+    ? {
+        by: laneProp.id,
+        prop: laneProp,
+        folded: new Set(personalState?.foldedLanes ?? []),
+        onFold: personalScope
+          ? (lane: string, f: boolean) => personal.setState(personalScope, withFoldedLane(personalState, lane, f))
+          : undefined,
+        readOnly: laneIsReadOnly(laneProp),
+        onDropPatch: (rowId: string, patch: Record<string, unknown>) => void setRowProps(rowId, patch),
+      }
+    : undefined;
 
   // Renaming and removing a view. Both were MCP-only: the ＋ made views and
   // nothing took them away, so a board somebody added by accident stayed for
@@ -1013,6 +1057,15 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       }
     >
       {viewSwitcher}
+      {personalScope && sharedView && (
+        <QuickFilters
+          props={(sharedView.quickFilters ?? [])
+            .map((id) => quickFilterProps(schema).find((p) => p.id === id))
+            .filter((p): p is NonNullable<typeof p> => !!p)}
+          picks={personalState?.quickPicks ?? {}}
+          onPick={(prop, value) => personal.setState(personalScope, withQuickPick(personalState, prop, value))}
+        />
+      )}
       {personalChange && (
         <ViewChangeBar onReset={resetPersonal} onSaveForEveryone={maySaveForEveryone ? () => void savePersonalForEveryone() : undefined} />
       )}
@@ -1042,9 +1095,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             void setGroupValue(rowId, groupBy, optId);
           }}
           onTrashRow={trashRow}
-          onAddInColumn={(groupBy, optId) =>
-            void addRow(optId === UNSET ? {} : { [groupBy]: groupValueFor(schema, groupBy, optId) })
+          onAddInColumn={(groupBy, optId, extra) =>
+            void addRow({ ...(optId === UNSET ? {} : { [groupBy]: groupValueFor(schema, groupBy, optId) }), ...(extra ?? {}) })
           }
+          lanes={boardLanes}
         />
       ) : view.type === 'gallery' ? (
         <GalleryView
