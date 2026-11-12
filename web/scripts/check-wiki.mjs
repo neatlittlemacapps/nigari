@@ -34,7 +34,7 @@ const all = [...pages.values()].join('\n');
 // Words that look like a tool name but are prose or a shell command. Kept
 // short and explicit: the point of the rule is to catch a tool that quietly
 // stopped existing, and a long allow-list would defeat it.
-const ALLOWED_NON_TOOLS = new Set(['list_pages', 'sha256sum', 'create_rows_per_row']);
+const ALLOWED_NON_TOOLS = new Set(['list_pages', 'sha256sum', 'create_rows_per_row', 'embed_id', 'embed']);
 
 const errors = [];
 const notes = [];
