@@ -151,5 +151,35 @@ await withFixture(async ({ page, api, base, workspace, path, read }) => {
   assert.deepEqual(await tabNames(embed), ['Only mine', 'Another']);
   assert.equal(await dbViews(), original);
 
+  // ---- Many views: the buttons stay inside the embed, the open tab stays in view ----
+  // Found by ux-ui-audit: from the fourth view on the toolbar ran past the
+  // embed's edge and took New with it (measured 45px outside).
+  const many = await embedDoc('Many', [block('many', JSON.stringify({
+    v: 2,
+    viewId: 'v0',
+    views: Array.from({ length: 10 }, (_, i) => ({ id: `v${i}`, name: `A longer view name ${i}`, type: 'table' })),
+  }))]);
+  await page.goto(`${base}/p/${many.id}`);
+  await tabs(embed).first().waitFor();
+  const inside = () => embed.evaluate((e) => {
+    const edge = e.getBoundingClientRect().right;
+    const strip = e.querySelector('.view-tabs').getBoundingClientRect();
+    const box = (sel) => e.querySelector(sel).getBoundingClientRect();
+    return {
+      newInside: box('.view-menu-wrap').right <= edge + 0.5,
+      settingsInside: box('.view-settings-btn').right <= edge + 0.5,
+      addInStrip: box('.view-add').right <= strip.right + 0.5 && box('.view-add').left >= strip.left - 0.5,
+      activeInStrip: box('.view-tab.active').right <= strip.right + 0.5 && box('.view-tab.active').left >= strip.left - 0.5,
+    };
+  });
+  await embed.hover();
+  assert.deepEqual(await inside(), { newInside: true, settingsInside: true, addInStrip: true, activeInStrip: true }, 'with ten views the toolbar runs past the embed');
+  await tabs(embed).nth(0).focus();
+  await addMenu(embed).click();
+  await menuNamed('Add view').getByRole('menuitem', { name: 'List', exact: true }).first().click();
+  await eventually(async () => (await tabNames(embed)).length === 11);
+  await eventually(async () => (await inside()).activeInStrip);
+  assert.deepEqual(await inside(), { newInside: true, settingsInside: true, addInStrip: true, activeInStrip: true }, 'the view just added is out of sight');
+
   console.log("Embed views: add, copy, rename, filter, move, remove all stay in the document; the database's views never moved.");
 });

@@ -2168,6 +2168,42 @@ body:has(.icon-picker) .bn-side-menu {
   }
 }
 
+/* An embed has views of its own (spec 014): a ＋ and several tabs share a
+   toolbar the width of the text column with Filter, Sort, Settings and New.
+   Left alone the row ran past the embed's edge from the fourth view on and
+   took New with it (measured: New 45px outside a 788px embed with four
+   views). The tabs give way instead, scrolling inside their own strip, and the
+   buttons keep their place. On a phone the whole toolbar scrolls (below), so
+   this is for the wider screens. The padding and negative margin leave room for
+   a focus ring, which the strip's overflow would otherwise cut. */
+@media (min-width: 769px) {
+  .collection-scroll.is-embed .view-tabs {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    padding: 3px;
+    margin: -3px;
+  }
+  .collection-scroll.is-embed .view-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .collection-scroll.is-embed .view-tab-wrap,
+  .collection-scroll.is-embed .view-add {
+    flex: none;
+  }
+  /* The ＋ stays at the strip's right end however far the tabs have scrolled. */
+  .collection-scroll.is-embed .view-add {
+    position: sticky;
+    right: 0;
+    background: var(--bg);
+  }
+  .collection-scroll.is-embed .collection-actions {
+    flex: none;
+  }
+}
+
 /* Beside the view tabs: the toolbar spaces its children apart, and the auto
    margin keeps this one against the tabs rather than in the middle. */
 .embed-view-state {

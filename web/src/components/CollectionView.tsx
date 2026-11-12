@@ -507,6 +507,18 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // Without this the effect below fires once while the loader is still up
   // (rootRef is empty) and never again, so returning to a tab restores
   // nothing — the position it was asked to remember is still in the store.
+  // In an embed the tab strip scrolls inside itself once there are more views
+  // than fit (styles.css); the open one is brought into view when it changes,
+  // or a view added or picked from a menu would open out of sight.
+  useEffect(() => {
+    const strip = rootRef.current?.querySelector<HTMLElement>('.view-tabs');
+    const tab = strip?.querySelector<HTMLElement>('.view-tab.active');
+    if (!strip || !tab) return;
+    const s = strip.getBoundingClientRect();
+    const r = tab.getBoundingClientRect();
+    if (r.left < s.left) strip.scrollLeft -= s.left - r.left;
+    else if (r.right > s.right) strip.scrollLeft += r.right - s.right;
+  }, [viewId, views?.length]);
   const viewReady = config !== null;
   const rowsArrived = rows.length > 0;
   useEffect(() => {
