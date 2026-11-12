@@ -26,8 +26,8 @@
 > `git ls-remote --heads origin` and open PRs first (correction 107), and
 > fetch `origin/claude/handoff-14` and `origin/main` before reading this file
 > from a local checkout (correction 117). Spec 013 is finished. The next job
-> is spec 014 PR 2, after the owner answers the steward-rule question
-> (section 12).
+> is spec 014 PR 2, on a **new branch** `claude/spec-014-pr2` from `main`
+> (one branch per pull request, owner 2026-11-12; steward skill).
 
 ## 0. Instructions for Claude (read first)
 
@@ -102,6 +102,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 28. **Done 2026-11-05** (the owner later approved the local branch, option B, then each push with "Ok"). Umbrel task constraints (owner, 2026-11-05, word for word): "Do not publish, push, tag or open pull requests. Leave all changes uncommitted for me to review." / "Do not weaken auth, TLS or security checks to make it work. If a security trade-off is needed, stop and explain it." / "Keep the license (AGPL-3.0) and notices intact." (These override rule 3 and the git-check for that task only; see section 12.)
 29. Finishing (owner, 2026-11-05; done for Umbrel, still the way to end a stream): "I want a clean stop and build/release so I can pick up fresh later" / "ensure a full build and no open stuff is left. After this a new handoff can prepare for regular ongoing development of the rest on the board once I give a go".
 30. Execution (owner, 2026-11-05, word for word): "Plan with opus execute with sonnet". Claude plans and reviews; mechanical execution steps go to a Sonnet helper (`Agent` with `model: "sonnet"`), whose diff Claude reviews before it is committed or pushed.
+31. Branches (owner, 2026-11-12, "ok" to Claude's proposal): one branch per pull request, named after the work, from the newest `main`, even when the session is handed a fixed branch; the handoff file goes to `main`. A suggested task touching an open PR's files says "Start after PR #N merges."; before offering a PR, check `list_sessions` and open PRs for the same files. In `.claude/skills/steward/SKILL.md` and `docs/decisions.md`.
 ## 5. Corrections log
 | # | Claude did | The user wanted |
 |---|---|---|
@@ -223,7 +224,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 133 | (self) Lane drag placeholder pushed lanes under the pointer | A thin line marker when lanes are on |
 | 134 | (self) Fold test raced a reload | The test waits for the PUT before reloading |
 | 135 | (self) Code review on PR 3: stale settings blocked every views save; group picker clashed with sub-group; default groupBy offered as lanes; stale picks still filtered; multi-value lane drop lost values; per-cell recomputation; duplicated code | All fixed in `ecfa8e1`; large-file finding became #586 |
-| 136 | (self) Suggested a BoardView refactor task (#586) without saying "start after #587 merges"; it touched the same file and #587 conflicted (owner: "How did this happen? How to avoid?") | A suggested task that touches an open PR's files says "start after PR #N merges"; check sessions and open PRs before offering a PR (proposal A + C, not yet accepted: section 12) |
+| 136 | (self) Suggested a BoardView refactor task (#586) without saying "start after #587 merges"; it touched the same file and #587 conflicted (owner: "How did this happen? How to avoid?") | A suggested task that touches an open PR's files says "start after PR #N merges"; check sessions and open PRs before offering a PR (accepted 2026-11-12: rule 31) |
 
 ## 6. Decisions
 | Decision | Why |
@@ -467,7 +468,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - **Terms:** surface = registry row; gap = person can, agent can't; budget = count that only goes down; gate = `scripts/agent-gate.sh`; stream = a parallel work line; conductor = Claude; steward skill = `.claude/skills/steward/SKILL.md`; upgrade step = a numbered goose step; column head = a column's first block; Each row = chart grouping `__row`; code graph = CodeGraph index.
 - **Repo:** `neatlittlemacapps/nigari`.
 - **Sessions:** this conductor `session_01GhcW37HJ35bLUDWA4gX12z`; previous conductors `session_01GhcW345K7zwmfiPaw1Eoz3` ("Nigari handoff continuation"), `session_01GhcW33CqnUj9FDCkkAFdFE` ("17 Nigari"); helper stream B for spec 013 `session_01GhcW33DagCpbrFHHXQVrFu` (stopped; work merged in #576); older: `session_01GhcW351E6Ld6xR87qCbfon`, `session_01GhcW34o8KcL5EYGzn6ddSJ`, `session_01GhcW33zUfch6tMG6ga8nJc`.
-- **Branches:** work branch `claude/handoff-14` = main `f62ff3d` (merge of #587) plus this handoff commit. #586's branch `claude/serene-archimedes-87plg8` merged. Merged, to be deleted by the owner (Branches page → 🗑): `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views`. Old: `claude/pensive-turing-plu40r`.
+- **Branches:** `claude/handoff-14` = main `f62ff3d` (merge of #587) plus the handoff #19 commit; retired by rule 31 (owner may delete it). This handoff is on `claude/steward-branch-per-pr`, bound for `main`. #586's branch `claude/serene-archimedes-87plg8` merged. Merged, to be deleted by the owner (Branches page → 🗑): `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views`. Old: `claude/pensive-turing-plu40r`.
 - **Key files:** `web/src/components/ChartFigure.tsx`, `ChartView.tsx`, `web/src/chartTheme.ts` (`groupColourTokens(drawn, palette, groupProp, series)`), `web/src/columnEnter.ts` (`columnEnterAction`, `columnEnter`), `web/src/blocks.tsx` (`columnsSpec`), `web/src/keys.ts`, `web/src/components/Editor.tsx` (`column.enter` shortcut), `web/scripts/shoot-wiki.mjs` (`text` step), `.claude/hooks/codegraph.sh`, `.claude/rules/codegraph.md`, `server/upgrade.go`, `server/backup.go`, `docs/decisions.md`, `web/src/menuIcons.ts`, `web/src/ui/Menu.tsx` (+ `Menu.css`), `web/scripts/check-menu-icons.mjs`, `web/src/components/SidebarMenus.tsx`, `CollectionMenus.tsx`, `UserMenu.tsx`, `web/src/keys.ts` (`menuOwnsKey`), `web/src/dialog.tsx`.
 - **Terms (new):** option B = menus rebuilt on Base UI; menu function = the verb an item does (one icon each); hand-built button = a raw `<button>` counted by the rawButtons budget.
 
@@ -486,12 +487,11 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Open PRs / helpers / check-ins | none | — | clean stop |
 
 ## 11. Next steps
-1. **Next action:** ask the steward-rule question (section 12); if accepted, add A + C to `.claude/skills/steward/SKILL.md` in a small PR. Then spec 014 PR 2 (T005–T020, #538–#553): label `in-progress`, CodeGraph on the embed block and spec 013's `view_prefs` scope `embed:…`, Sonnet executes mechanical steps (rule 30), Claude reviews, `/code-review`, `ux-ui-audit`, ask before the PR.
+1. **Next action:** check the steward PR (branch `claude/steward-branch-per-pr`: rule 31 + this handoff) is merged; then spec 014 PR 2 on new branch `claude/spec-014-pr2` (T005–T020, #538–#553): label `in-progress`, CodeGraph on the embed block and spec 013's `view_prefs` scope `embed:…`, Sonnet executes mechanical steps (rule 30), Claude reviews, `/code-review`, `ux-ui-audit`, ask before the PR.
 2. Then spec 014 PR 3 (#554–#569); bugs by priority (#572, #574 and the older ones).
 3. When the owner sends them: the empty-screen animation (`brand/mark-animation.svg`) and situational icons.
 
 ## 12. Open questions ⚠️
-- **Steward rule (asked 2026-11-12, after the #586/#587 conflict):** A = a suggested task that touches files of an open PR says "start after PR #N merges"; C = before offering a PR, check `list_sessions` and open PRs for overlapping files. Claude proposed A + C; owner has not answered.
 - Has the owner installed nigari from the yokogaki store, and does the icon show? (not confirmed)
 - Remove the stray `https://github.com/neatlittlemacapps/nigari` store from the owner's Umbrel? Claude offered to work out a command (Umbrel runs in Docker); not answered.
 - File an issue for the older, minor login CSRF through the desktop code exchange (sandboxed iframe over plain HTTP; not made worse by #579)? Asked twice, not answered.
@@ -500,7 +500,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - Delete the stray label `surface:performance` and merged branches `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views` (owner).
 
 ## 13. Re-attach checklist
-Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on branch `claude/handoff-14` of `neatlittlemacapps/nigari` (pushed). Start the new Claude Code session on **`neatlittlemacapps/nigari`**, branch `claude/handoff-14`.
+Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on `main` of `neatlittlemacapps/nigari` once the steward PR merges (until then on branch `claude/steward-branch-per-pr`). Start the new Claude Code session on **`neatlittlemacapps/nigari`**; whatever branch it is handed, work goes on a new branch per pull request (rule 31).
 
 ---
-<sub>Audit: 13/13 sections · 30 rules · 136 corrections · ~600 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
+<sub>Audit: 13/13 sections · 31 rules · 136 corrections · ~600 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
