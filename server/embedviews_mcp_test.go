@@ -467,3 +467,26 @@ func TestTwoChangesToOneEmbedBothSurvive(t *testing.T) {
 		t.Errorf("a change was lost: %s", got)
 	}
 }
+
+// embed.page_id is a document named inside an argument, so mcpCall does not
+// gate it: embedViewFilters must, by the person's role as well as the
+// credential. A private document of someone else's, naming an embed of a
+// database the caller can write, is refused with nothing created.
+func TestARowCannotBeMadeThroughAnEmbedInADocumentTheCallerCannotRead(t *testing.T) {
+	f := newEmbedFixture(t)
+	other, _ := signedIn(t, f.s, "embed-private@example.test")
+	f.s.addMember(t, f.ws, other, "member")
+	private := f.s.makePage(t, f.ws, f.owner, "", "Private plan", `{}`)
+	if _, err := f.s.db.Exec(`UPDATE pages SET visibility = 'private' WHERE id = ?`, private); err != nil {
+		t.Fatal(err)
+	}
+	f.setContent(t, private, `[{"id":"pe","type":"database","props":{"collectionId":"`+f.col+`","local":""},"content":[],"children":[]}]`)
+	var n int
+	f.s.db.QueryRow(`SELECT COUNT(*) FROM pages WHERE parent_id = ?`, f.col).Scan(&n)
+	_, err := callTool(t, f.s, &user{ID: other, Name: "O"}, "create_rows", `{"page_id":"`+f.col+`","rows":[{"title":"x"}],"view_id":"all","embed":{"page_id":"`+private+`","embed_id":"pe"}}`)
+	var after int
+	f.s.db.QueryRow(`SELECT COUNT(*) FROM pages WHERE parent_id = ?`, f.col).Scan(&after)
+	if err == nil || after != n {
+		t.Errorf("a private document's embed was read: err %v, rows %d → %d", err, n, after)
+	}
+}

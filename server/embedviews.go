@@ -310,6 +310,12 @@ func (s *Server) changeEmbedViews(u *user, pageID, embedID string, e *embedState
 		props = map[string]any{}
 		b["props"] = props
 	}
+	// The block may have been changed by a content save since loadEmbed
+	// checked the database it shows: the views were checked against that
+	// database's schema, so they are stored only on an embed of it.
+	if c, _ := props["collectionId"].(string); c != e.colID {
+		return "", errNoEmbed{pageID, embedID}
+	}
 	local, _ := props["local"].(string)
 	var shape struct {
 		V int `json:"v"`
@@ -434,7 +440,7 @@ func (s *Server) mcpCreateEmbedView(u *user, pageID, embedID, copyOf string, spe
 		if err := applyViewSpec(view, sp, e.schema); err != nil {
 			return "", nil, "", err
 		}
-		return open, append(views, view), fmt.Sprintf("Created %v view %q (id %s) in embed %s.", view["type"], view["name"], view["id"], embedID), nil
+		return open, append(views, view), fmt.Sprintf("Created %v view (id %s) in embed %s.", view["type"], view["id"], embedID), nil
 	})
 }
 
@@ -456,7 +462,7 @@ func (s *Server) mcpUpdateEmbedView(u *user, pageID, embedID, viewID string, spe
 			if err := applyViewSpec(v, spec, e.schema); err != nil {
 				return "", nil, "", err
 			}
-			return open, views, fmt.Sprintf("Updated view %q (id %s) in embed %s.", v["name"], viewID, embedID), nil
+			return open, views, fmt.Sprintf("Updated view %s in embed %s.", viewID, embedID), nil
 		}
 		return "", nil, "", fmt.Errorf("view %q is not a view of embed %s — get_collection with embed_id lists them", viewID, embedID)
 	})
