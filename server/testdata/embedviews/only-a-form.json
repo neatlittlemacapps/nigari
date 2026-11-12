@@ -1,0 +1,20 @@
+{
+  "databaseViews": [
+    {
+      "id": "signup",
+      "name": "Sign-up",
+      "type": "form"
+    }
+  ],
+  "local": "",
+  "expect": {
+    "viewId": "*",
+    "views": [
+      {
+        "id": "*",
+        "name": "Table",
+        "type": "table"
+      }
+    ]
+  }
+}

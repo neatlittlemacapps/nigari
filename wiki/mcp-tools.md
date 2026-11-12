@@ -302,6 +302,20 @@ blocks, and a database page has none. You get an empty heading for the database
 followed by one `---` section per row. Ask for the table, or ask for the
 sub-tree; you cannot have both in one call.
 
+A document that has databases embedded in it ends its answer, after the
+Markdown and inside the untrusted block, with a list (not when you ask for
+`include_children`):
+
+```
+Embedded databases (use embed_id with get_collection, set_view and delete_view):
+- embed_id <id>: database "<title>" (<id>), views: "<name>" (<type>, id <id>, open), …
+```
+
+Each embed has its own views, kept in the document; the one marked `open` is the
+one the document shows. This is where you get the `embed_id` the database tools
+below take. An embed of a database you cannot read is listed as `- embed_id
+<id>: a database you cannot read`, without a title or views.
+
 Errors: `page "…" not found`.
 
 ### get_links
@@ -410,6 +424,7 @@ which is also what you get for a page you may not read.
 | `description` | string | no |
 | `tags` | array of string | no |
 | `view_id` | string | no |
+| `embed` | object | no: `{page_id, embed_id}` |
 
 Three things decide where the page lands. `parent_id` puts it under that page,
 and if that page is a **database**, the new page is a **row** in it. With no
@@ -451,6 +466,13 @@ view. That happens with filters no single value satisfies (*is not*, ranges,
 several values) or when your own `properties` contradict them. A `view_id`
 that is not a view of the database, or one given without a database as
 `parent_id`, is refused before anything is created.
+
+**`embed` makes the row in a view of a database embedded in a document.**
+`page_id` is the document and `embed_id` comes from `get_page`'s list of embeds.
+`view_id` then names one of that embed's own views (not a view of the database),
+and its filters pin the new row's values as above. An unknown embed, a view the
+embed does not have, or an embed of a different database than `parent_id` is
+refused before anything is created.
 
 Returns `Created page "Title" with id <id> (path: /p/<id>)`, or
 `Created page <id> from template <id>`, or for a database's template
@@ -708,9 +730,12 @@ database can appear in several documents. Use this instead of creating a
 separate intro page beside a database: a database page cannot have a body of
 its own.
 
-`view_id` is the view of that database the document shows; without it the
-document shows the database's first view. With a chart made by `set_view` this
-puts a chart into a document, the way a person does from the `/` menu.
+The embed has views of its own, stored in the document (see `set_view` with
+`embed_id`). With `view_id`, the embed gets a **copy** of that view of the
+database as its own view; without it, one table view. A form cannot be embedded
+and is refused. With a chart made by `set_view` this puts a chart into a
+document, the way a person does from the `/` menu. The answer names the new
+`embed_id`.
 
 Errors: `database "…" not found`; `page "…" is a document, not a database —
 embed only works with databases`; `view "…" is not a view of database "…"`.
@@ -760,6 +785,7 @@ name`; `options on "Name" must be a list`.
 | Parameter | Type | Required |
 | --- | --- | --- |
 | `page_id` | string | yes |
+| `embed_id` | string | no |
 
 Returns `{page_id, schema, views, views_locked}`: the full property schema **and** every view
 with its id. A chart view carries `chartKind`, `groupBy`, `groupPeriod`, `agg`,
@@ -771,6 +797,11 @@ person has locked the database's views, or `null`; while it is set, `set_view`
 and `delete_view` are refused. Call this before any other database tool:
 property ids, select option ids and view ids all come from here. Errors:
 `page "…" is not a database`.
+
+With `embed_id` (then `page_id` is the **document**) it answers for a database
+embedded there: `{page_id, embed_id, database_id, schema, views, open_view}`.
+The schema is the database's; the views are the embed's own, and `open_view` is
+the one the document shows. Get the `embed_id` from `get_page`.
 
 ### update_schema
 
@@ -942,6 +973,7 @@ view, not a chart; pass group_by instead`.
 | `page_id` | string | yes |
 | `rows` | array | yes |
 | `view_id` | string | no |
+| `embed` | object | no: `{page_id, embed_id}` |
 
 Up to **200** rows in one call, each `{title, icon?, properties?}`. For 40 rows
 this is one call rather than forty, each of which could fail and leave half a
@@ -959,6 +991,10 @@ listing.
 filters fill each row under its own `properties`, and the answer gains
 `"not_matching":[…]`, the ids of rows that will not show in that view. A view
 of another database is refused before the first row is created.
+
+`embed` works as on `create_page`: `view_id` then names a view of the embed in
+that document, whose filters fill each row. An unknown embed or view, or an
+embed of another database, is refused before the first row is created.
 
 Returns `{"created":n,"ids":[…]}`. Errors: `rows must be a list of {title,
 icon?, properties?}`; `rows is empty`; `at most 200 rows per call (got N) —
@@ -1030,6 +1066,8 @@ Create a view, or change one.
 | `show_empty` | boolean | chart |
 | `show_zero` | boolean | chart |
 | `chart_style` | object | chart |
+| `embed_id` | string | no: the views of an embedded database |
+| `copy_of` | string | creating, with `embed_id` |
 
 Types: `table`, `board`, `gallery`, `calendar`, `timeline`, `list`, `form`,
 `chart`.
@@ -1122,6 +1160,15 @@ in a document, pass its view id to `embed_database`. Saving a chart as a
 picture is drawn by the browser from the numbers `query_rows` already gives
 you, so there is no tool for it.
 
+**With `embed_id`** (then `page_id` is the document, `embed_id` from
+`get_page`) the call acts on that embed's own views. They belong to the document:
+changing them never changes the database's views, and the lock on the
+database's views does not apply to them. An embed cannot show a form. `copy_of`
+(creating only, with `embed_id`) is the id of one of the database's views to
+start from: the copy gets a new id, the other arguments change the copy, and the
+database's view stays as it was. Passing `copy_of` with `view_id` or without
+`embed_id` is refused.
+
 An unnamed view is named after its type, capitalised.
 
 Returns `Created <type> view "Name" (id …)` or `Updated view "Name" (id …)`.
@@ -1154,10 +1201,14 @@ order, how rows open, a chart's style) leaves no entry.
 | --- | --- | --- |
 | `page_id` | string | yes |
 | `view_id` | string | yes |
+| `embed_id` | string | no |
 
 The last remaining view cannot be deleted: a database needs something to show.
 Deleting is its own tool rather than an action word on `set_view`, so it is a
 deliberate choice and not a value an agent lands on by mistake.
+
+With `embed_id` (`page_id` is then the document) it deletes one of that embed's
+own views, never one of the database's. An embed keeps at least one view too.
 
 Errors: `cannot delete the last view — a database needs at least one`;
 `view "…" not found — call get_collection for the ids`.

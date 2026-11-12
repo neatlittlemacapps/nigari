@@ -1,0 +1,44 @@
+{
+  "databaseViews": [
+    {
+      "id": "all",
+      "name": "All",
+      "type": "table",
+      "filters": [
+        {
+          "property": "status",
+          "op": "is",
+          "value": "todo"
+        }
+      ]
+    },
+    {
+      "id": "board",
+      "name": "By status",
+      "type": "board",
+      "groupBy": "status"
+    },
+    {
+      "id": "signup",
+      "name": "Sign-up",
+      "type": "form"
+    }
+  ],
+  "local": "{\"v\": 2, \"viewId\": \"gone\", \"views\": [{\"id\": \"a\", \"name\": \"A\", \"type\": \"table\"}, {\"id\": \"b\", \"name\": \"B\", \"type\": \"board\", \"groupBy\": \"status\"}]}",
+  "expect": {
+    "viewId": "a",
+    "views": [
+      {
+        "id": "a",
+        "name": "A",
+        "type": "table"
+      },
+      {
+        "id": "b",
+        "name": "B",
+        "type": "board",
+        "groupBy": "status"
+      }
+    ]
+  }
+}

@@ -8,6 +8,7 @@ import { openPage, openPageAux } from './pageOpen';
 import CollectionView, { type EmbedState } from './components/CollectionView';
 import { addChartView, openSettingsOnce } from './chartInsert';
 import type { ChartKind } from './chartLayout';
+import { parseEmbedBlockLocal, serializeEmbedBlockLocal, type EmbedBlockLocal } from './embedViews';
 import { toast } from './toast';
 import { plural, t } from './i18n';
 import {
@@ -316,25 +317,9 @@ export const bookmarkSpec = createReactBlockSpec(
 // document AND a database separately, because a database page cannot have a
 // body of text. Now both live in one document.
 
-type EmbedLocal = { viewId: string; views: EmbedState['views'] };
-
-// Tolerant on purpose: the prop is free text in a document anybody (or any
-// agent) can write, and a malformed value must cost the embed its filters, not
-// the document its rendering.
-function parseEmbedLocal(raw: string): EmbedLocal {
-  try {
-    const v = raw ? JSON.parse(raw) : null;
-    if (v && typeof v === 'object') {
-      return {
-        viewId: typeof v.viewId === 'string' ? v.viewId : '',
-        views: v.views && typeof v.views === 'object' ? v.views : {},
-      };
-    }
-  } catch {
-    /* fall through */
-  }
-  return { viewId: '', views: {} };
-}
+type EmbedLocal = EmbedBlockLocal;
+const parseEmbedLocal = parseEmbedBlockLocal;
+const serializeEmbedLocal = serializeEmbedBlockLocal;
 
 export const databaseSpec = createReactBlockSpec(
   {
@@ -365,7 +350,7 @@ export const databaseSpec = createReactBlockSpec(
       const [unsaved, setUnsaved] = useState<EmbedLocal | null>(null);
       const local = unsaved ?? parseEmbedLocal(localRaw);
       const keep = (next: EmbedLocal) => {
-        if (editor.isEditable) editor.updateBlock(block, { props: { local: JSON.stringify(next) } } as never);
+        if (editor.isEditable) editor.updateBlock(block, { props: { local: serializeEmbedLocal(next) } } as never);
         else setUnsaved(next);
       };
       // A pick for a chart adds the chart view first, then shows it here with

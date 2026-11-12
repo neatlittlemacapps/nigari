@@ -658,3 +658,58 @@ func TestAnAgentRecoloursNoTagInAWorkspaceItMayNotEnter(t *testing.T) {
 		}
 	}
 }
+
+// Spec 014: an embed's views reach two pages, the document (page_id) and the
+// database it shows (inside the block), and a row made in an embed's view
+// names its document inside an argument. Each must keep the outsider shapes
+// out of the workspace they may not enter, whichever of the two is there.
+func TestAnEmbedCarriesNoAgentIntoAWorkspaceItMayNotEnter(t *testing.T) {
+	f := newScopeFixture(t)
+	embedIn := func(ws, colID string) string {
+		doc := f.s.makePage(t, ws, f.owner, "", "Doc", `{}`)
+		if _, err := f.s.db.Exec(`UPDATE pages SET content = ? WHERE id = ?`,
+			`[{"id":"e","type":"database","props":{"collectionId":"`+colID+`","local":""},"content":[],"children":[]}]`, doc); err != nil {
+			t.Fatal(err)
+		}
+		return doc
+	}
+	schema := `[{"id":"status","name":"Status","type":"select","options":[{"id":"a","name":"A"}]}]`
+	inTeam := f.s.makeCollection(t, f.team, f.owner, "Team tasks", schema)
+	inOther := f.s.makeCollection(t, f.other, f.owner, "Other tasks", schema)
+	for _, db := range []string{inTeam, inOther} {
+		if _, err := f.s.db.Exec(`UPDATE collections SET views = '[{"id":"t","name":"T","type":"table","filters":[{"property":"status","op":"is","value":"a"}]}]' WHERE page_id = ?`, db); err != nil {
+			t.Fatal(err)
+		}
+	}
+	docInOther := embedIn(f.other, inTeam) // the document is out of bounds
+	docInTeam := embedIn(f.team, inOther)  // the database it shows is
+	docOK := embedIn(f.team, inTeam)
+	for _, c := range f.outsiders(t) {
+		c.setup()
+		for _, doc := range []string{docInOther, docInTeam} {
+			for tool, args := range map[string]string{
+				"set_view":       `{"page_id":"` + doc + `","embed_id":"e","type":"table"}`,
+				"delete_view":    `{"page_id":"` + doc + `","embed_id":"e","view_id":"t"}`,
+				"get_collection": `{"page_id":"` + doc + `","embed_id":"e"}`,
+			} {
+				if out, err := callTool(t, f.s, c.u, tool, args); err == nil {
+					t.Errorf("%s: %s on an embed reached the workspace: %s", c.name, tool, out)
+				}
+			}
+		}
+		if out, err := callTool(t, f.s, c.u, "get_page", `{"page_id":"`+docInTeam+`"}`); err != nil || strings.Contains(out, "Other tasks") {
+			t.Errorf("%s: get_page named a database it may not enter: %v %s", c.name, err, out)
+		}
+		// A row made through an embed whose document is out of bounds.
+		if _, err := callTool(t, f.s, c.u, "create_rows", `{"page_id":"`+inTeam+`","rows":[{"title":"x"}],"view_id":"t","embed":{"page_id":"`+docInOther+`","embed_id":"e"}}`); err == nil {
+			t.Errorf("%s: create_rows read an embed in a workspace it may not enter", c.name)
+		}
+	}
+	// The same calls inside the credential's bounds work, so the refusals
+	// above are the gate and not a broken path.
+	open := &user{ID: f.owner, Name: "Test", TokenKind: tokenKindAPI, TokenScope: "write"}
+	f.setAgentAccess(t, f.other, "")
+	if _, err := callTool(t, f.s, open, "set_view", `{"page_id":"`+docOK+`","embed_id":"e","type":"table"}`); err != nil {
+		t.Errorf("an embed within bounds: %v", err)
+	}
+}

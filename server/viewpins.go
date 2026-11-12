@@ -256,6 +256,56 @@ func (s *Server) rowPinsForView(colID, viewID string, who viewer) (map[string]an
 	return pinsFromFilters(schema, filters, time.Now()), nil
 }
 
+// pinsForFilters is the one function every door ends in, whether the view
+// is a database's (rowPinsForView) or an embed's (spec 014), whose filters
+// travel in the document rather than in the database: the browser sends
+// them as viewFilters, an agent's embed is read by embedViewFilters.
+func (s *Server) pinsForFilters(colID string, filters []rowFilter) (map[string]any, error) {
+	schema, _, err := s.loadCollection(colID)
+	if err != nil {
+		return nil, err
+	}
+	return pinsFromFilters(schema, filters, time.Now()), nil
+}
+
+// rowView is the view an agent makes a row in, resolved before anything is
+// created: a database view by its id, or an embed's view (spec 014), whose
+// filters come from the document. nil is no view.
+type rowView struct {
+	id      string
+	filters []rowFilter
+}
+
+// resolveRowView reads the view an agent names for a new row of colID:
+// view_id alone is the database's view, with embed it is the embed's.
+func (s *Server) resolveRowView(u *user, colID, viewID string, embed *embedRef) (*rowView, error) {
+	if embed != nil {
+		filters, err := s.embedViewFilters(u, embed, colID, viewID)
+		if err != nil {
+			return nil, err
+		}
+		return &rowView{id: viewID, filters: filters}, nil
+	}
+	if viewID == "" {
+		return nil, nil
+	}
+	_, filters, _, err := s.viewOf(colID, viewID)
+	if err != nil {
+		return nil, err
+	}
+	return &rowView{id: viewID, filters: filters}, nil
+}
+
+// propsInRowView is propsInView for a resolved view: its pins under the
+// caller's explicit values.
+func (s *Server) propsInRowView(colID string, rv *rowView, explicit json.RawMessage) (json.RawMessage, error) {
+	pins, err := s.pinsForFilters(colID, rv.filters)
+	if err != nil {
+		return nil, err
+	}
+	return mergePins(pins, explicit)
+}
+
 // rowMatchesView reports whether a row passes every filter of the view, by
 // the SQL the rows query fills the view with, so the answer cannot disagree
 // with what the person then sees.
@@ -297,16 +347,37 @@ func (s *Server) rowMatchesFilters(rowID string, filters []rowFilter) (bool, err
 	}
 }
 
+// viewFiltersOf reads the viewFilters a browser sends for a row made in an
+// embed's view (spec 014, research R5): the filters as the person sees
+// them, since an embed's views live in the document and the server does not
+// read the live document. Sent together with viewId, it is refused: the two
+// would name two views.
+func viewFiltersOf(viewID string, raw *[]filterJSON) ([]rowFilter, error) {
+	if raw == nil {
+		return nil, nil
+	}
+	if viewID != "" {
+		return nil, fmt.Errorf("Send viewId or viewFilters, not both.")
+	}
+	out := []rowFilter{}
+	for _, f := range *raw {
+		if f.Property != "" {
+			out = append(out, f.rowFilter())
+		}
+	}
+	return out, nil
+}
+
 // viewMatchNote is what an agent's answer adds after creating a row in a
 // view: whether it matches, and if not, that it will not show there. It names
 // the view by id, not by name: a name is text a person wrote, and returning
 // it would need wrapUntrusted for no gain.
-func (s *Server) viewMatchNote(rowID, colID, viewID string) string {
-	_, filters, _, err := s.viewOf(colID, viewID)
-	if err != nil {
+func (s *Server) viewMatchNote(rowID, colID string, rv *rowView) string {
+	if rv == nil {
 		return ""
 	}
-	ok, err := s.rowMatchesFilters(rowID, s.viewFiltersNow(colID, filters))
+	viewID := rv.id
+	ok, err := s.rowMatchesFilters(rowID, s.viewFiltersNow(colID, rv.filters))
 	if err != nil {
 		return ""
 	}

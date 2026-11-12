@@ -1,0 +1,38 @@
+{
+  "databaseViews": [
+    {
+      "id": "all",
+      "name": "All",
+      "type": "table",
+      "filters": [
+        {
+          "property": "status",
+          "op": "is",
+          "value": "todo"
+        }
+      ]
+    },
+    {
+      "id": "board",
+      "name": "By status",
+      "type": "board",
+      "groupBy": "status"
+    },
+    {
+      "id": "signup",
+      "name": "Sign-up",
+      "type": "form"
+    }
+  ],
+  "local": "{\"v\": 2, \"viewId\": \"ok\", \"views\": [\"text\", {\"name\": \"No id\", \"type\": \"table\"}, {\"id\": \"ok\", \"name\": \"OK\", \"type\": \"table\"}, {\"id\": \"ok\", \"name\": \"Again\", \"type\": \"board\"}, {\"id\": \"odd\", \"name\": \"Odd\", \"type\": \"spreadsheet\"}, {\"id\": \"f\", \"name\": \"Form\", \"type\": \"form\"}, {\"id\": 7, \"name\": \"Number id\", \"type\": \"table\"}]}",
+  "expect": {
+    "viewId": "ok",
+    "views": [
+      {
+        "id": "ok",
+        "name": "OK",
+        "type": "table"
+      }
+    ]
+  }
+}

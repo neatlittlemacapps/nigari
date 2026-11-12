@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 )
 
 // Agent parity, part 2: databases.
@@ -864,7 +863,11 @@ func (s *Server) saveViews(u *user, pageID string, schema []map[string]any, befo
 // mcpCreateRows creates several rows in one call. "For 40 rows that is 40
 // calls" — and every single one of them can fail and leave half a state
 // behind.
-func (s *Server) mcpCreateRows(userID, pageID string, rows json.RawMessage, viewID string) (string, error) {
+//
+// embed (spec 014): view_id then names a view of that embed, and the rows
+// take the values its filters pin, read from the document.
+func (s *Server) mcpCreateRows(u *user, pageID string, rows json.RawMessage, viewID string, embed *embedRef) (string, error) {
+	userID := u.ID
 	var list []struct {
 		Title      string          `json:"title"`
 		Icon       string          `json:"icon"`
@@ -897,13 +900,15 @@ func (s *Server) mcpCreateRows(userID, pageID string, rows json.RawMessage, view
 	// nothing.
 	var pins map[string]any
 	var viewFilters []rowFilter
-	if viewID != "" {
-		_, filters, schema, err := s.viewOf(pageID, viewID)
-		if err != nil {
+	rv, err := s.resolveRowView(u, pageID, viewID, embed)
+	if err != nil {
+		return "", err
+	}
+	if rv != nil {
+		if pins, err = s.pinsForFilters(pageID, rv.filters); err != nil {
 			return "", err
 		}
-		pins = pinsFromFilters(schema, filters, time.Now())
-		viewFilters = s.viewFiltersNow(pageID, filters)
+		viewFilters = s.viewFiltersNow(pageID, rv.filters)
 	}
 	var pos float64
 	s.db.QueryRow(`SELECT COALESCE(MAX(position), 0) + 1 FROM pages WHERE parent_id = ?`, pageID).Scan(&pos)
@@ -922,7 +927,7 @@ func (s *Server) mcpCreateRows(userID, pageID string, rows json.RawMessage, view
 		}
 		pos++
 		props := r.Properties
-		if viewID != "" {
+		if rv != nil {
 			merged, err := mergePins(pins, r.Properties)
 			if err != nil {
 				return "", fmt.Errorf("created %d row(s), then row %q: %w", len(ids)+1, r.Title, err)
@@ -934,7 +939,7 @@ func (s *Server) mcpCreateRows(userID, pageID string, rows json.RawMessage, view
 				return "", fmt.Errorf("created %d row(s), then failed setting properties on %q: %w", len(ids)+1, r.Title, err)
 			}
 		}
-		if viewID != "" {
+		if rv != nil {
 			if ok, err := s.rowMatchesFilters(id, viewFilters); err == nil && !ok {
 				notMatching = append(notMatching, id)
 			}
@@ -945,7 +950,7 @@ func (s *Server) mcpCreateRows(userID, pageID string, rows json.RawMessage, view
 	s.pagesChanged()
 	s.rowsChanged(pageID)
 	answer := map[string]any{"created": len(ids), "ids": ids}
-	if viewID != "" {
+	if rv != nil {
 		answer["not_matching"] = notMatching
 	}
 	b, _ := json.Marshal(answer)

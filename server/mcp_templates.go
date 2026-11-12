@@ -71,7 +71,7 @@ func (s *Server) mcpListTemplates(u *user, databaseID string) (string, error) {
 
 // mcpCreateFromTemplate instantiates a template in its source workspace.
 // The destination must be writable; duplicatePage enforces this for all callers.
-func (s *Server) mcpCreateFromTemplate(u *user, templateID, title, parentID string, props json.RawMessage, viewID string) (string, error) {
+func (s *Server) mcpCreateFromTemplate(u *user, templateID, title, parentID string, props json.RawMessage, viewID string, embed *embedRef) (string, error) {
 	if templateID == "" {
 		return "", fmt.Errorf("template_id is required — call list with kind=\"templates\" for the ids")
 	}
@@ -96,8 +96,12 @@ func (s *Server) mcpCreateFromTemplate(u *user, templateID, title, parentID stri
 			return "", fmt.Errorf("database %q not found", owner)
 		}
 		// Template, then the view's pins, then props (spec 005, as over REST).
-		if viewID != "" {
-			merged, err := s.propsInView(owner, viewID, viewer{}, props)
+		rv, err := s.resolveRowView(u, owner, viewID, embed)
+		if err != nil {
+			return "", err
+		}
+		if rv != nil {
+			merged, err := s.propsInRowView(owner, rv, props)
 			if err != nil {
 				return "", err
 			}
@@ -112,12 +116,9 @@ func (s *Server) mcpCreateFromTemplate(u *user, templateID, title, parentID stri
 		}
 		s.fireWebhook("page.created", nid)
 		created := fmt.Sprintf("Created row %s in database %s from template %s", nid, owner, templateID)
-		if viewID != "" {
-			return created + s.viewMatchNote(nid, owner, viewID), nil
-		}
-		return created, nil
+		return created + s.viewMatchNote(nid, owner, rv), nil
 	}
-	if viewID != "" {
+	if viewID != "" || embed != nil {
 		return "", fmt.Errorf("view_id applies to a row of a database, and template %q is not a database template", templateID)
 	}
 	if isTemplate == 0 {

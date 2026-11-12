@@ -1,0 +1,14 @@
+{
+  "databaseViews": [],
+  "local": "",
+  "expect": {
+    "viewId": "*",
+    "views": [
+      {
+        "id": "*",
+        "name": "Table",
+        "type": "table"
+      }
+    ]
+  }
+}

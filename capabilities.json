@@ -20,6 +20,7 @@
     "pages.read": {
       "summary": "Read a page, its preview or its sub-tree as Markdown",
       "agent": "allowed",
+      "note": "get_page lists a document's embedded databases after the Markdown, with the embed_id each needs for get_collection, set_view and delete_view.",
       "rest": ["GET /api/pages/{id}", "GET /api/pages/{id}/preview", "GET /api/export/{id}"],
       "mcp": ["get_page", "get_permissions"],
       "wiki": "wiki/pages.md"
@@ -27,6 +28,7 @@
     "pages.create": {
       "summary": "Create a page or a database, optionally from a template",
       "agent": "allowed",
+      "note": "create_page takes embed {page_id, embed_id} with view_id to make a row in an embed's view.",
       "rest": ["POST /api/pages"],
       "mcp": ["create_page", "create_database"],
       "wiki": "wiki/pages.md"
@@ -34,6 +36,7 @@
     "pages.update": {
       "summary": "Change a page: content, title, icon, cover, tags, visibility, parent, workspace, favourite, row properties",
       "agent": "allowed",
+      "note": "embed_database names the embed_id of the new embed, which has views of its own.",
       "rest": ["PATCH /api/pages/{id}", "POST /api/pages/{id}/edits", "POST /api/favorites/{id}", "DELETE /api/favorites/{id}"],
       "mcp": ["update_page", "write_content", "set_properties", "save_as_template", "embed_database"],
       "wiki": "wiki/pages.md"
@@ -105,7 +108,7 @@
     "collections": {
       "summary": "Read and change a database: schema, views (charts among them), rows, and the counts and totals a chart shows",
       "agent": "allowed",
-      "note": "A chart's numbers come from one function on both doors (POST …/aggregate, query_rows group_by). Saving a chart as a picture is drawn in the browser from those same numbers, so it has no route and no tool.",
+      "note": "A chart's numbers come from one function on both doors (POST …/aggregate, query_rows group_by). Saving a chart as a picture is drawn in the browser from those same numbers, so it has no route and no tool. get_collection, set_view and delete_view take embed_id for the views an embedded database has in a document (set_view also copy_of), and create_rows takes embed.",
       "rest": ["GET /api/collections/{id}", "PUT /api/collections/{id}", "GET /api/collections/{id}/rows", "POST /api/collections/{id}/aggregate"],
       "mcp": ["get_collection", "update_schema", "set_view", "delete_view", "query_rows", "create_rows"],
       "wiki": "wiki/collections.md"
