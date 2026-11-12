@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { eventually, withFixture } from './fixture.mjs';
 
 // A database embedded in a document has views of its own (spec 014, US1, US2,
@@ -8,7 +9,7 @@ import { eventually, withFixture } from './fixture.mjs';
 // (SC-001). An embed written before this spec, in the old shape, shows what it
 // showed and becomes a list of views of its own only on its first change.
 
-await withFixture(async ({ page, api, base, workspace, path, read }) => {
+await withFixture(async ({ page, context, api, base, workspace, path, read }) => {
   page.setDefaultTimeout(15000);
   const collectionId = path.split('/').pop();
   const embedDoc = async (title, blocks) => {
@@ -97,6 +98,31 @@ await withFixture(async ({ page, api, base, workspace, path, read }) => {
   await eventually(async () => (await storedLocal(doc, 'emb')).views[3].name === 'Sprint board');
   assert.equal(await dbViews(), original, 'renaming the copy renamed the database view');
 
+  // The other Settings items act on the embed's view too (spec 014, US3): a
+  // hidden column and how rows open, on the copy that is open now.
+  const settingsMenu = page.getByRole('menu', { name: /view settings$/ });
+  const settingsSub = async (label) => {
+    await embed.getByRole('button', { name: 'Settings', exact: true }).click();
+    await settingsMenu.waitFor();
+    await settingsMenu.getByRole('menuitem', { name: new RegExp('^' + label) }).hover();
+    const sub = page.getByRole('menu').filter({ hasNot: page.getByRole('menuitem', { name: 'Rename view' }) }).last();
+    await sub.waitFor();
+    return sub;
+  };
+  let sub = await settingsSub('Property visibility');
+  await sub.getByRole('menuitemcheckbox').first().click();
+  await eventually(async () => ((await storedLocal(doc, 'emb')).views[3].hidden ?? []).length === 1);
+  await page.keyboard.press('Escape');
+  if (await settingsMenu.isVisible()) await page.keyboard.press('Escape');
+  await settingsMenu.waitFor({ state: 'hidden' });
+  sub = await settingsSub('Open rows in');
+  await sub.getByRole('menuitemradio', { name: 'Side peek' }).click();
+  await eventually(async () => (await storedLocal(doc, 'emb')).views[3].openIn === 'side_peek');
+  await page.keyboard.press('Escape');
+  if (await settingsMenu.isVisible()) await page.keyboard.press('Escape');
+  await settingsMenu.waitFor({ state: 'hidden' });
+  assert.equal(await dbViews(), original, 'a Settings item changed the database views');
+
   // ---- A filter saved for everyone goes into the embed only (US1) ----
   await tabs(embed).first().click();
   await embed.locator('.fs-controls button', { hasText: 'Filter' }).first().click();
@@ -180,6 +206,65 @@ await withFixture(async ({ page, api, base, workspace, path, read }) => {
   await eventually(async () => (await tabNames(embed)).length === 11);
   await eventually(async () => (await inside()).activeInStrip);
   assert.deepEqual(await inside(), { newInside: true, settingsInside: true, addInStrip: true, activeInStrip: true }, 'the view just added is out of sight');
+
+  // ---- Who is offered what ----
+  // A reader of the document switches and filters for themselves and changes
+  // nothing; an editor of the document who may only READ the database changes
+  // the embed's views but is not offered Edit properties (research R9).
+  const secondWs = await api('POST', '/api/workspaces', { name: 'Second workspace' });
+  const secondDb = await api('POST', '/api/pages', { title: 'Read-only database', type: 'collection', workspaceId: secondWs.id });
+  await api('PUT', `/api/collections/${secondDb.id}`, {
+    schema: [{ id: 'note', name: 'Note', type: 'text' }],
+    views: [{ id: 'grid', name: 'Grid', type: 'table' }],
+  });
+  const shared = await embedDoc('Shared plan', [
+    block('mine'),
+    { id: 'theirs', type: 'database', props: { collectionId: secondDb.id, local: '' }, content: [], children: [] },
+  ]);
+  const password = randomUUID();
+  await api('POST', '/api/users', { name: 'Dee Editor', email: 'dee@example.test', password, workspaces: [
+    { id: workspace.id, role: 'member' }, { id: secondWs.id, role: 'viewer' },
+  ] });
+  await api('POST', '/api/users', { name: 'Vera Viewer', email: 'vera@example.test', password, workspaces: [{ id: workspace.id, role: 'viewer' }] });
+  const asUser = async (email) => {
+    const c = await context.browser().newContext({ viewport: { width: 1200, height: 900 }, locale: 'en-US' });
+    assert.ok((await c.request.fetch(`${base}/api/login`, { method: 'POST', data: { email, password } })).ok(), `${email} could not sign in`);
+    const p = await c.newPage();
+    p.setDefaultTimeout(15000);
+    await p.goto(`${base}/p/${shared.id}`);
+    await p.locator('.bn-db-embed').first().locator('.view-tab').first().waitFor();
+    return { c, p };
+  };
+  const settingsItems = async (p, emb) => {
+    await emb.hover();
+    await emb.getByRole('button', { name: 'Settings', exact: true }).click();
+    const menu = p.getByRole('menu', { name: /view settings$/ });
+    await menu.waitFor();
+    const items = await menu.getByRole('menuitem').allInnerTexts();
+    await p.keyboard.press('Escape');
+    return items.map((i) => i.trim());
+  };
+
+  const dee = await asUser('dee@example.test');
+  const deeMine = dee.p.locator('.bn-db-embed').nth(0);
+  const deeTheirs = dee.p.locator('.bn-db-embed').nth(1);
+  assert((await settingsItems(dee.p, deeMine)).includes('Edit properties'), 'an editor of a database was not offered Edit properties');
+  const theirs = await settingsItems(dee.p, deeTheirs);
+  assert(theirs.includes('Rename view'), 'an editor of the document cannot change the embed of a database they only read');
+  assert(!theirs.includes('Edit properties'), `a viewer of the database was offered Edit properties: ${theirs}`);
+  await dee.c.close();
+
+  const vera = await asUser('vera@example.test');
+  const veraEmbed = vera.p.locator('.bn-db-embed').first();
+  assert.equal(await veraEmbed.locator('.view-add').count(), 0, 'a reader of the document was offered ＋');
+  assert.equal(await veraEmbed.getByRole('button', { name: 'Settings', exact: true }).count(), 0, 'a reader of the document was offered Settings');
+  await tabs(veraEmbed).nth(1).click();
+  await eventually(async () => (await tabs(veraEmbed).nth(1).getAttribute('class')).includes('active'));
+  await vera.p.waitForTimeout(800);
+  assert.equal(await storedLocal(shared, 'mine'), null, 'a reader switching tabs wrote the document');
+  await tabs(veraEmbed).nth(1).click({ button: 'right' });
+  assert.equal(await vera.p.getByRole('menu', { name: 'View actions' }).count(), 0, 'a reader was offered the tab menu');
+  await vera.c.close();
 
   console.log("Embed views: add, copy, rename, filter, move, remove all stay in the document; the database's views never moved.");
 });

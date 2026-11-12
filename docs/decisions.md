@@ -7,6 +7,41 @@ entries are not edited away.
 
 ---
 
+## 2026-11-12 — A database in a document: how its views are kept and shown (spec 014 PRs 2 and 3)
+
+The owner's model (2026-11-03) is in `specs/014-embed-own-views/`; these are
+the choices made while building it that the spec leaves open.
+
+- **The interface holds the embed's views as the block's `local` string and
+  asks `embedViews.ts` for the next one.** One place knows what an old embed
+  becomes: opening another tab of an old embed rewrites only its open view,
+  and the first change to a view writes the new shape. Rejected: converting
+  when a document opens (opening would write to the document and show up in
+  its history); a separate `viewSource.ts` as the plan named it (there is no
+  second source to hide once the list is one string; `saveViews` in
+  `CollectionView.tsx` is the one switch).
+- **The views lock is the database's and does not touch an embed.** An
+  embed's views are the document's, and the server's `set_view` with
+  `embed_id` never calls `checkViewsUnlocked`; the interface follows it, so
+  a locked database shows no lock marker in a document. Rejected: letting
+  the lock reach embeds (a person who may edit the document could not lay
+  out their own page because someone locked a database elsewhere).
+- **A new row in an embed's view sends the view's finished filters, not a
+  view id.** The server has no such view; the filters travel and it pins
+  from them (`pinsForFilters`). Unfinished conditions stay out, as in the
+  rows query, or a half-typed one would make the row "not match".
+- **The tab strip of an embed scrolls inside itself above phone width, and
+  its ＋ stays at its end.** From four views on the toolbar ran past the
+  embed and took New with it (found by `ux-ui-audit`, measured 45px outside
+  a 788px embed). Rejected: wrapping the toolbar to a second row (it would
+  push the text below the embed down every time a view is added).
+- **Left to the owner:** a copy of a database view keeps its name, so an
+  embed can show two tabs called "Table". The spec does not say; naming the
+  copy ("Copy of …", a string that already exists for templates) is one
+  line if wanted.
+
+---
+
 ## 2026-11-12 — Each release proposes itself to the Umbrel store
 
 Owner: "2", choosing automatic over moving the pin by hand. The store pinned
