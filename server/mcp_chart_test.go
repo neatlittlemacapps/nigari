@@ -107,7 +107,12 @@ func TestAgentsChartLikePeople(t *testing.T) {
 	}
 	var content string
 	s.db.QueryRow(`SELECT content FROM pages WHERE id = ?`, doc).Scan(&content)
-	if strings.Count(content, `"type":"database"`) != 1 || !strings.Contains(content, `\"viewId\":\"hours\"`) {
+	// Since spec 014 the embed shows its own copy of the chart (FR-008), so
+	// changing it in the document leaves the database's view alone: the
+	// chart's settings, under a new id, in the embed's views.
+	if strings.Count(content, `"type":"database"`) != 1 || !strings.Contains(content, `\"v\":2`) ||
+		!strings.Contains(content, `\"chartKind\":\"hbar\"`) || !strings.Contains(content, `\"name\":\"Hours\"`) ||
+		strings.Contains(content, `\"id\":\"hours\"`) {
 		t.Errorf("the document holds: %s", content)
 	}
 }

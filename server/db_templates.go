@@ -182,6 +182,8 @@ func (s *Server) handleRowFromTemplate(w http.ResponseWriter, r *http.Request) {
 		// the template, and what they typed beats both.
 		ViewID    string `json:"viewId"`
 		ViewScope string `json:"viewScope"`
+		// An embed's view (spec 014), as on POST /api/pages.
+		ViewFilters *[]filterJSON `json:"viewFilters"`
 	}
 	if err := decodeJSON(w, r, &body); err != nil {
 		httpError(w, 400, "invalid JSON")
@@ -191,6 +193,11 @@ func (s *Server) handleRowFromTemplate(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 400, "title is too long")
 		return
 	}
+	embedFilters, err := viewFiltersOf(body.ViewID, body.ViewFilters)
+	if err != nil {
+		httpErrorCode(w, 400, "view_not_in_database", err.Error())
+		return
+	}
 	if body.ViewID != "" {
 		merged, err := s.propsInView(id, body.ViewID, s.viewerOf(r, body.ViewScope), body.Props)
 		if err != nil {
@@ -198,6 +205,16 @@ func (s *Server) handleRowFromTemplate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		body.Props = merged
+	} else if embedFilters != nil {
+		pins, err := s.pinsForFilters(id, embedFilters)
+		if err != nil {
+			httpErrorCode(w, 400, "view_not_in_database", err.Error())
+			return
+		}
+		if body.Props, err = mergePins(pins, body.Props); err != nil {
+			httpError(w, 400, err.Error())
+			return
+		}
 	}
 	u := requestUser(r)
 	nid, err := s.rowFromTemplate(u.ID, id, body.TemplateID, body.Title, body.Props)
@@ -217,8 +234,13 @@ func (s *Server) handleRowFromTemplate(w http.ResponseWriter, r *http.Request) {
 	s.audit("human", u.ID, u.Name, "create_page", nid, p.WorkspaceID, p.Title)
 	s.rowChanged(nid)
 	s.fireWebhook("page.created", nid)
-	if body.ViewID != "" {
-		matches, err := s.rowMatchesView(nid, id, body.ViewID, s.viewerOf(r, body.ViewScope))
+	if body.ViewID != "" || embedFilters != nil {
+		var matches bool
+		if embedFilters != nil {
+			matches, err = s.rowMatchesFilters(nid, s.viewFiltersNow(id, embedFilters))
+		} else {
+			matches, err = s.rowMatchesView(nid, id, body.ViewID, s.viewerOf(r, body.ViewScope))
+		}
 		if err != nil {
 			httpError(w, 500, err.Error())
 			return

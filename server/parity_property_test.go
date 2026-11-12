@@ -308,3 +308,45 @@ func TestAgentParityHoldsForEveryCredentialShape(t *testing.T) {
 	}
 	t.Logf("%d cases: %d allowed, %d refused, both doors agreeing", cases, allowed, refused)
 }
+
+// Spec 014's pair (SC-005): an embed's views have no REST route of their own,
+// because they travel in the document, which the browser writes through
+// PATCH /api/pages/{id}. An agent writes them with set_view and embed_id.
+// The same view written through each door must read back the same through
+// get_collection, or an agent and a person would store different things for
+// one act, which is what this file exists to catch.
+func TestAnEmbedViewReadsTheSameThroughEitherDoor(t *testing.T) {
+	f := newEmbedFixture(t)
+	block := func(local string) string {
+		return `[{"id":"e","type":"database","props":{"collectionId":"` + f.col + `","local":` + jsonString(local) + `},"content":[],"children":[]}]`
+	}
+	start := encodeEmbedLocal("x", []map[string]any{{"id": "x", "name": "Table", "type": "table"}})
+	want := encodeEmbedLocal("x", []map[string]any{{"id": "x", "name": "Open", "type": "table",
+		"filters": []any{map[string]any{"property": "status", "op": "is", "value": "open"}},
+		"sort":    map[string]any{"property": "owner", "dir": "asc"}}})
+
+	byREST := f.s.makePage(t, f.ws, f.owner, "", "By REST", `{}`)
+	f.setContent(t, byREST, block(start))
+	if rec := requestAs(t, f.s, f.cookie, "PATCH", "/api/pages/"+byREST, `{"content":`+block(want)+`}`); rec.Code != 200 {
+		t.Fatalf("PATCH content: %d %s", rec.Code, rec.Body.String())
+	}
+	byMCP := f.s.makePage(t, f.ws, f.owner, "", "By MCP", `{}`)
+	f.setContent(t, byMCP, block(start))
+	if _, err := callTool(t, f.s, f.u, "set_view", `{"page_id":"`+byMCP+`","embed_id":"e","view_id":"x","name":"Open",
+		"filters":[{"property":"status","op":"is","value":"open"}],"sort":"owner:asc"}`); err != nil {
+		t.Fatal(err)
+	}
+	read := func(page string) string {
+		out, err := f.s.mcpGetEmbed(f.u, page, "e")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var got map[string]any
+		_ = json.Unmarshal([]byte(out), &got)
+		b, _ := json.Marshal(map[string]any{"views": got["views"], "open": got["open_view"]})
+		return string(b)
+	}
+	if a, b := read(byREST), read(byMCP); a != b {
+		t.Errorf("the two doors stored different views:\nREST %s\nMCP  %s", a, b)
+	}
+}

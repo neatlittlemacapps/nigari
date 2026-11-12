@@ -292,6 +292,10 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 		// Where the person is looking at the view: empty on the database's
 		// page, an embed scope in a document (viewprefs.go).
 		ViewScope string `json:"viewScope"`
+		// The filters of an embed's view the row is made in (spec 014): an
+		// embed's views live in the document, so the browser sends them as
+		// it shows them. Not together with viewId.
+		ViewFilters *[]filterJSON `json:"viewFilters"`
 	}
 	if err := decodeJSON(w, r, &body); err != nil {
 		httpError(w, 400, "invalid JSON")
@@ -310,6 +314,12 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 	}
 	u := requestUser(r)
 	userID := u.ID
+	embedFilters, err := viewFiltersOf(body.ViewID, body.ViewFilters)
+	if err != nil {
+		httpErrorCode(w, 400, "view_not_in_database", err.Error())
+		return
+	}
+	inView := body.ViewID != "" || embedFilters != nil
 
 	// A child inherits its parent's workspace; a root page uses the requested
 	// (or the user's default) workspace. Membership is enforced either way, and
@@ -334,8 +344,20 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			props = string(merged)
+		} else if embedFilters != nil {
+			pins, err := s.pinsForFilters(*body.ParentID, embedFilters)
+			if err != nil {
+				httpErrorCode(w, 400, "view_not_in_database", "A view only applies to a row made in a database.")
+				return
+			}
+			merged, err := mergePins(pins, json.RawMessage(props))
+			if err != nil {
+				httpError(w, 400, err.Error())
+				return
+			}
+			props = string(merged)
 		}
-	} else if body.ViewID != "" {
+	} else if inView {
 		httpErrorCode(w, 400, "view_not_in_database", "A view only applies to a row made in a database.")
 		return
 	} else {
@@ -359,7 +381,7 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 500, err.Error())
 		return
 	}
-	_, err := s.db.Exec(
+	_, err = s.db.Exec(
 		`INSERT INTO pages (id, parent_id, title, icon, content, position, created_at, updated_at, type, props, workspace_id, owner_id, visibility) VALUES (?, ?, ?, '', '[]', ?, ?, ?, ?, ?, ?, ?, 'workspace')`,
 		id, body.ParentID, body.Title, pos, ts, ts, body.Type, props, workspaceID, userID,
 	)
@@ -386,8 +408,13 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 	s.pagesChanged()
 	s.rowChanged(id)
 	s.fireWebhook("page.created", id)
-	if body.ViewID != "" {
-		matches, err := s.rowMatchesView(id, *body.ParentID, body.ViewID, s.viewerOf(r, body.ViewScope))
+	if inView {
+		var matches bool
+		if embedFilters != nil {
+			matches, err = s.rowMatchesFilters(id, s.viewFiltersNow(*body.ParentID, embedFilters))
+		} else {
+			matches, err = s.rowMatchesView(id, *body.ParentID, body.ViewID, s.viewerOf(r, body.ViewScope))
+		}
 		if err != nil {
 			httpError(w, 500, err.Error())
 			return

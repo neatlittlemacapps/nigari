@@ -378,9 +378,10 @@ func (s *Server) mcpSetFavorite(userID, pageID string, on bool) (string, error) 
 // "inline database". Only the reference is stored; the database stays one
 // object in one place and can appear in several documents.
 //
-// viewID (optional) is the view the document shows, stored as the block's
-// own view (local.viewId, #26): how an agent puts a chart into a document,
-// the way a person does from the / menu (spec 004, research R14).
+// viewID (optional) is the database view the document starts from: the
+// embed gets a copy of it as its one view of its own (spec 014, FR-008), how
+// an agent puts a chart into a document, the way a person does from the /
+// menu (spec 004, research R14).
 func (s *Server) mcpEmbedDatabase(u *user, pageID, databaseID, viewID string) (string, error) {
 	var typ, title string
 	if err := s.db.QueryRow(`SELECT type, title FROM pages WHERE id = ? AND trashed_at IS NULL`, databaseID).Scan(&typ, &title); err != nil {
@@ -392,25 +393,40 @@ func (s *Server) mcpEmbedDatabase(u *user, pageID, databaseID, viewID string) (s
 	if !s.canRead(u.ID, databaseID) || !s.credentialMayEnter(u, s.pageWorkspace(databaseID)) {
 		return "", fmt.Errorf("database %q not found", databaseID)
 	}
-	props := map[string]any{"collectionId": databaseID}
-	if viewID != "" {
-		_, views, err := s.loadCollection(databaseID)
-		if err != nil {
-			return "", err
+	// The embed's own views, in the new shape (spec 014): one copy of the
+	// view asked for (FR-008), with an id of its own, or one table (FR-002).
+	// The database's views are not touched either way.
+	_, dbViews, err := s.loadCollection(databaseID)
+	if err != nil {
+		return "", err
+	}
+	taken := map[string]bool{}
+	for _, v := range dbViews {
+		if id, _ := v["id"].(string); id != "" {
+			taken[id] = true
 		}
-		found := false
-		for _, v := range views {
+	}
+	view := defaultEmbedView(taken)
+	if viewID != "" {
+		var found map[string]any
+		for _, v := range dbViews {
 			if id, _ := v["id"].(string); id == viewID {
-				found = true
+				found = v
 			}
 		}
-		if !found {
+		if found == nil {
 			return "", errViewNotInDatabase{viewID, databaseID}
 		}
-		local, _ := json.Marshal(map[string]any{"viewId": viewID, "views": map[string]any{}})
-		props["local"] = string(local)
+		if t, _ := found["type"].(string); !embedViewType(t) {
+			return "", fmt.Errorf("view %q is a form: a form collects rows and stays on the database, a document cannot show it", viewID)
+		}
+		view = cloneView(found)
+		view["id"] = newEmbedViewID(taken)
 	}
-	blockJSON, err := json.Marshal(map[string]any{"id": newID(), "type": "database", "props": props,
+	embedID := newID()
+	props := map[string]any{"collectionId": databaseID,
+		"local": encodeEmbedLocal(view["id"].(string), []map[string]any{view})}
+	blockJSON, err := json.Marshal(map[string]any{"id": embedID, "type": "database", "props": props,
 		"content": []any{}, "children": []any{}})
 	if err != nil {
 		return "", err
@@ -422,7 +438,8 @@ func (s *Server) mcpEmbedDatabase(u *user, pageID, databaseID, viewID string) (s
 	}
 	s.resetYjsDoc(pageID)
 	s.pagesChanged()
-	return fmt.Sprintf("Embedded database %q into page %s. The database itself stays where it is — this is a view, not a copy.", title, pageID), nil
+	s.fireWebhook("page.updated", pageID)
+	return fmt.Sprintf("Embedded database %q into page %s (embed_id %s). The database itself stays where it is — this is a view, not a copy. The embed has views of its own (view id %s): change them with set_view and embed_id; the database's views stay as they are.", title, pageID, embedID, view["id"]), nil
 }
 
 // mcpWorkspaceScope returns the workspaces a reading tool should run over:
