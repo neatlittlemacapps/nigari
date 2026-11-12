@@ -48,6 +48,16 @@ await withFixture(async ({ page, api, base, workspace, path, read }) => {
   await eventually(async () => (await page.locator('.bn-db-embed .db-table tbody tr').filter({ hasText: /row/ }).count()) === 1);
   assert.equal(await storedLocal(doc, 'emb'), null, 'looking at an embed wrote to the document');
 
+  // A new row made in the embed's view takes what its filters fix (the table
+  // is filtered to Status is To do), sent as the view's filters because the
+  // view lives in the document, not in the database (spec 014, R5).
+  const rowsBefore = (await api('GET', `/api/collections/${collectionId}/rows?limit=100`)).total;
+  await embed.getByRole('button', { name: 'New', exact: true }).click();
+  await eventually(async () => (await api('GET', `/api/collections/${collectionId}/rows?limit=100`)).total === rowsBefore + 1);
+  const newRow = (await api('GET', `/api/collections/${collectionId}/rows?limit=100`)).rows.find((r) => r.title === '');
+  assert.equal(newRow?.props?.status, 'todo', 'a row made in the embed did not take the value its filter fixes');
+  await eventually(async () => (await page.locator('.bn-db-embed .db-table tbody tr').count()) >= 2);
+
   // Opening the Board tab writes the open view, in the shape the block had.
   await tabs(embed).nth(1).click();
   await eventually(async () => (await storedLocal(doc, 'emb'))?.viewId === 'board');

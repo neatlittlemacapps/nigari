@@ -226,7 +226,8 @@ export default function ViewSettingsMenu({
           )}
           {views.length > 1 && <MenuSeparator />}
           <ViewActionItems view={view} views={views} onRename={onRename} onMove={onMove} onRemove={onRemove} rename={false} />
-          <MenuSeparator />
+          {/* Nothing follows for an embed whose person may not write the database. */}
+          {(canEditDatabase || !embedded) && <MenuSeparator />}
         </>
       )}
       {(canEditDatabase || !embedded) && (

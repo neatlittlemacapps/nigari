@@ -272,7 +272,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const addRowFromTemplate = async (templateId: string) => {
     setTplOpen(false);
     try {
-      const row = await api.rowFromTemplate(collectionId, { templateId, viewId: rowViewId(), viewScope: rowViewScope(), viewFilters: rowViewFilters() });
+      const row = await api.rowFromTemplate(collectionId, { templateId, viewId: rowViewId(), viewFilters: rowViewFilters() });
       onPagesChanged();
       announceIfHidden(row);
     } catch {
@@ -348,6 +348,11 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // The views this component shows: the database's, or in a document the
   // embed's own.
   const views = embedRead ? embedRead.views : config?.views;
+  // The latest list, for a handler that waits for a dialog (renameView): the
+  // embed may have changed meanwhile, and the list captured before would put
+  // the old one back.
+  const viewsRef = useRef(views);
+  viewsRef.current = views;
   const savedView = views?.find((v) => v.id === viewId) ?? views?.[0];
   // The view as everyone sees it…
   const sharedView = savedView;
@@ -597,7 +602,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     // English in every language and turned up in search and exports.
     // In the view the person is looking at (spec 005): the server fills in
     // what its filters pin down, under presetProps (a board column's value).
-    const row = await api.createPage(collectionId, '', 'doc', presetProps, undefined, rowViewId(), rowViewScope(), rowViewFilters());
+    const row = await api.createPage(collectionId, '', 'doc', presetProps, undefined, rowViewId(), undefined, rowViewFilters());
     onPagesChanged();
     announceIfHidden(row);
   };
@@ -610,8 +615,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // The filters of the embed's view as the person sees it, their own and quick
   // picks included (spec 013, FR-005; spec 014, research R5): the server pins
   // the row's values from them.
-  const rowViewFilters = () => (embed && view ? (view.filters ?? []) : undefined);
-  const rowViewScope = () => undefined;
+  // Only the finished ones, as the rows query sends them: a half-typed filter
+  // narrows nothing, so it must not make the new row 'not match' either.
+  const rowViewFilters = () => (embed && view ? serverFilters : undefined);
   // A row the view's filters still leave out (Estimate > 3, "contains") would
   // vanish without a word; say so and offer the way to it.
   const announceIfHidden = (row: { id: string; matchesView?: boolean }) => {
@@ -799,7 +805,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     setViewMenuFor(null);
     const n = name?.trim();
     if (!n || n === v.name) return;
-    saveViews(views!.map((x) => (x.id === v.id ? { ...x, name: n } : x)));
+    saveViews(viewsRef.current!.map((x) => (x.id === v.id ? { ...x, name: n } : x)));
   };
 
   // A collection with no view has nothing to render, so the last one stays;
