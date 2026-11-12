@@ -7,6 +7,28 @@ entries are not edited away.
 
 ---
 
+## 2026-11-12 — A newer Umbrel store pull request closes the older ones
+
+The release job opens one pull request per release on `yokogaki-umbrel`, and
+left an older one open "until the owner merges or closes it". All of them
+change the same three lines (version, release notes, image pin), so merging
+one made every other open one conflict: the store's #3 (2.1.25) could not be
+merged after #2 (2.1.24) was.
+
+- **The job closes every other open `nigari-<version>` pull request on the
+  store when it opens its own**, with a comment pointing at the new one.
+  Their branches are left alone. The newest always carries the latest version,
+  so nothing is lost by closing the older ones.
+- Rejected: one standing branch rewritten each release (a force-push to a
+  branch the owner may be reviewing, and the pull request's history lost);
+  rebasing the older ones (the same three lines, so a rebase is a rewrite);
+  leaving it to the owner to merge in order (the owner merges from a phone,
+  and the next release was already open by then).
+- Only branches named `nigari-` and a version are touched, so a pull request
+  someone else opens on the store is never closed.
+
+---
+
 ## 2026-11-12 — A database in a document: how its views are kept and shown (spec 014 PRs 2 and 3)
 
 The owner's model (2026-11-03) is in `specs/014-embed-own-views/`; these are
