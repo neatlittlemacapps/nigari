@@ -860,7 +860,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // A copy of one of the database's views as a view of this embed (spec 014,
   // FR-006/7): its own id and nothing shared with the original, opened at once.
   const addCopy = (dbView: ViewDef) => {
-    const copy = copyDatabaseView(dbView, new Set(views!.map((x) => x.id)));
+    const copy = copyDatabaseView(dbView, new Set(views!.map((x) => x.id)), t('Copy of {name}', { name: dbView.name }));
     saveViews([...views!, copy], copy.id);
   };
 

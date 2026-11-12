@@ -138,9 +138,11 @@ export function newEmbedLocal(view: ViewDef): string {
 }
 
 /** A copy of one of the database's views, for the embed: a new id, nothing
- *  shared with the database's view (FR-007). */
-export function copyDatabaseView(dbView: ViewDef, taken: Set<string>): ViewDef {
-  return { ...clone(dbView), id: newEmbedViewId(taken) };
+ *  shared with the database's view (FR-007). `name` is the copy's, so two tabs
+ *  of one embed are not both called "Table" (the caller passes the translated
+ *  "Copy of {name}"); without it the copy keeps the name it was copied from. */
+export function copyDatabaseView(dbView: ViewDef, taken: Set<string>, name?: string): ViewDef {
+  return { ...clone(dbView), id: newEmbedViewId(taken), ...(name ? { name } : {}) };
 }
 
 /** The views of the database an embed can copy from: every one but a form. */

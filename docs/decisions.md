@@ -35,10 +35,12 @@ the choices made while building it that the spec leaves open.
   embed and took New with it (found by `ux-ui-audit`, measured 45px outside
   a 788px embed). Rejected: wrapping the toolbar to a second row (it would
   push the text below the embed down every time a view is added).
-- **Left to the owner:** a copy of a database view keeps its name, so an
-  embed can show two tabs called "Table". The spec does not say; naming the
-  copy ("Copy of …", a string that already exists for templates) is one
-  line if wanted.
+- **A copy of a database view is named "Copy of {name}"** (owner,
+  2026-11-12, asked because a copy kept its name and an embed could show two
+  tabs called "Table"). The interface uses the existing "Copy of {name}"
+  string; an agent's `copy_of` does the same unless it passes a name. An
+  embed made by `embed_database` with a `view_id` keeps the view's own name:
+  it is the embed's only view, not a second one beside the original.
 
 ---
 
