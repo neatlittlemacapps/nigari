@@ -249,11 +249,11 @@ func (s *Server) viewFor(colID, viewID string, who viewer) (name string, filters
 // view: the values to store, under whatever the caller passes explicitly.
 // who is the person making the row, or the zero viewer for an agent.
 func (s *Server) rowPinsForView(colID, viewID string, who viewer) (map[string]any, error) {
-	_, filters, _, err := s.viewFor(colID, viewID, who)
+	_, filters, schema, err := s.viewFor(colID, viewID, who)
 	if err != nil {
 		return nil, err
 	}
-	return s.pinsForFilters(colID, filters)
+	return pinsFromFilters(schema, filters, time.Now()), nil
 }
 
 // pinsForFilters is the one function every door ends in, whether the view

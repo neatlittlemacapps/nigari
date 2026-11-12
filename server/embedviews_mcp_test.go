@@ -403,3 +403,67 @@ func TestRESTRowsTakeTheEmbedViewsFilters(t *testing.T) {
 		t.Errorf("from-template with both: %d", rec.Code)
 	}
 }
+
+// An agent's change to an embed is recorded in the activity log as an agent's,
+// like any other write from outside the editor (go-server rule): set_view and
+// delete_view audit themselves for a database's views, and an embed's are the
+// document's, so the generic entry must stand for them.
+func TestAnAgentsEmbedViewChangeIsInTheActivityLog(t *testing.T) {
+	f := newEmbedFixture(t)
+	for _, c := range []struct{ tool, args string }{
+		{"set_view", `{"page_id":"` + f.doc + `","embed_id":"emb1","type":"list"}`},
+		{"delete_view", `{"page_id":"` + f.doc + `","embed_id":"emb1","view_id":"all"}`},
+	} {
+		var before int
+		f.s.db.QueryRow(`SELECT COUNT(*) FROM audit_log WHERE actor_type = 'agent' AND page_id = ? AND action = ?`, f.doc, c.tool).Scan(&before)
+		if _, err := callTool(t, f.s, f.u, c.tool, c.args); err != nil {
+			t.Fatalf("%s: %v", c.tool, err)
+		}
+		var after int
+		f.s.db.QueryRow(`SELECT COUNT(*) FROM audit_log WHERE actor_type = 'agent' AND page_id = ? AND action = ?`, f.doc, c.tool).Scan(&after)
+		if after != before+1 {
+			t.Errorf("%s on an embed left %d agent entries, want %d", c.tool, after, before+1)
+		}
+	}
+}
+
+// The views lock is the database's. An embed's views are the document's, so a
+// locked database does not stop an agent changing them (and the database's own
+// views stay refused).
+func TestAnEmbedsViewsIgnoreTheDatabasesLock(t *testing.T) {
+	f := newEmbedFixture(t)
+	if _, err := f.s.db.Exec(`UPDATE collections SET views_locked_by = ?, views_locked_at = ? WHERE page_id = ?`, f.owner, now(), f.col); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := callTool(t, f.s, f.u, "set_view", `{"page_id":"`+f.col+`","type":"table","name":"On the database"}`); err == nil {
+		t.Fatal("the lock no longer refuses a database view, so this test proves nothing")
+	}
+	if _, err := callTool(t, f.s, f.u, "set_view", `{"page_id":"`+f.doc+`","embed_id":"emb1","type":"table"}`); err != nil {
+		t.Errorf("a locked database stopped a change to an embed's own views: %v", err)
+	}
+}
+
+// Two changes to one embed, the second made from a read taken before the
+// first: the second must not write back a list that lacks the first's view.
+func TestTwoChangesToOneEmbedBothSurvive(t *testing.T) {
+	f := newEmbedFixture(t)
+	stale, err := f.s.loadEmbed(f.u, f.doc, "emb1") // read before the other change
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := callTool(t, f.s, f.u, "set_view", `{"page_id":"`+f.doc+`","embed_id":"emb1","type":"list","name":"First"}`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.s.changeEmbedViews(f.u, f.doc, "emb1", stale, func(open string, views []map[string]any) (string, []map[string]any, string, error) {
+		return open, append(views, map[string]any{"id": "second", "name": "Second", "type": "table"}), "ok", nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, v := range f.embedViews(t) {
+		names = append(names, v["name"].(string))
+	}
+	if got := strings.Join(names, ","); !strings.Contains(got, "First") || !strings.Contains(got, "Second") {
+		t.Errorf("a change was lost: %s", got)
+	}
+}

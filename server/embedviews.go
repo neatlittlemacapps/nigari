@@ -264,50 +264,89 @@ func (s *Server) loadEmbed(u *user, pageID, embedID string) (*embedState, error)
 	return &embedState{colID: colID, schema: schema, dbViews: dbViews, viewID: viewID, views: views}, nil
 }
 
-// writeEmbedViews replaces one embed's `local` in the document, and nothing
-// else, the way every write from outside the editor goes: the old state into
-// history first, the content with a new document generation (docgen.go), the
-// live state reset so open editors reload it, then the side effects.
-func (s *Server) writeEmbedViews(u *user, pageID, embedID, viewID string, views []map[string]any) error {
+// embedMutation changes an embed's views: given the views and open view as
+// they are NOW, it answers the views and open view to store, and the
+// sentence for the agent. It must not touch the database (it runs inside the
+// write's transaction, on the only connection), and it is pure enough to run
+// twice: once to refuse early, once on the content as it is when written.
+type embedMutation func(open string, views []map[string]any) (newOpen string, newViews []map[string]any, msg string, err error)
+
+// changeEmbedViews applies a mutation to one embed's `local` in the document,
+// and nothing else, the way every write from outside the editor goes: the old
+// state into history first, the content with a new document generation
+// (docgen.go), the live state reset so open editors reload it, then the side
+// effects.
+//
+// The mutation runs on the content read INSIDE the transaction, not on what
+// loadEmbed read earlier: two calls on one embed (or an agent and a REST
+// content save) would otherwise write back a list built from before the
+// other's change. dbViews are the database's views, for an embed still in the
+// old shape; they are read by the caller, as the transaction cannot query.
+func (s *Server) changeEmbedViews(u *user, pageID, embedID string, e *embedState, mutate embedMutation) (string, error) {
+	// Refused early, so a refused call leaves no history entry behind.
+	if _, _, _, err := mutate(e.viewID, cloneViews(e.views)); err != nil {
+		return "", err
+	}
 	s.snapshotRevision(pageID, u.ID, u.Name)
 	tx, err := s.db.Begin()
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer tx.Rollback()
 	var content string
 	if err := tx.QueryRow(`SELECT content FROM pages WHERE id = ? AND trashed_at IS NULL`, pageID).Scan(&content); err != nil {
-		return fmt.Errorf("page %q not found", pageID)
+		return "", fmt.Errorf("page %q not found", pageID)
 	}
 	var blocks []any
 	if err := json.Unmarshal([]byte(content), &blocks); err != nil {
-		return errNoEmbed{pageID, embedID}
+		return "", errNoEmbed{pageID, embedID}
 	}
 	b := findBlock(blocks, embedID)
 	if b == nil || b["type"] != "database" {
-		return errNoEmbed{pageID, embedID}
+		return "", errNoEmbed{pageID, embedID}
 	}
 	props, _ := b["props"].(map[string]any)
 	if props == nil {
 		props = map[string]any{}
 		b["props"] = props
 	}
-	props["local"] = encodeEmbedLocal(viewID, views)
+	local, _ := props["local"].(string)
+	var shape struct {
+		V int `json:"v"`
+	}
+	_ = json.Unmarshal([]byte(local), &shape)
+	open, views := readEmbedLocal(local, e.dbViews)
+	open, views, msg, err := mutate(open, views)
+	if err != nil {
+		return "", err
+	}
+	props["local"] = encodeEmbedLocal(open, views)
 	merged, err := json.Marshal(blocks)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if _, err := tx.Exec(`UPDATE pages SET content = ?, updated_at = ?, `+bumpDocGen+` WHERE id = ?`, string(merged), now(), pageID); err != nil {
-		return err
+		return "", err
 	}
 	if err := tx.Commit(); err != nil {
-		return err
+		return "", err
 	}
 	s.resetYjsDoc(pageID)
 	s.reindexPage(pageID)
 	s.pagesChanged()
 	s.fireWebhook("page.updated", pageID)
-	return nil
+	if shape.V != 2 {
+		msg += embedConvertedNote
+	}
+	return msg + embedChangedNote, nil
+}
+
+func cloneViews(views []map[string]any) []map[string]any {
+	out := make([]map[string]any, len(views))
+	for i, v := range views {
+		out[i] = cloneView(v)
+	}
+	return out
 }
 
 // --- The agent's doors (set_view, delete_view, get_collection with embed_id)
@@ -315,6 +354,10 @@ func (s *Server) writeEmbedViews(u *user, pageID, embedID, viewID string, views 
 // embedChangedNote ends every answer that changed an embed, so an agent never
 // believes it changed the database.
 const embedChangedNote = " Only this embed changed; the database's own views are as they were."
+
+// embedConvertedNote is added when the change was an old embed's first: it
+// now holds its own copies of the database's views (R2).
+const embedConvertedNote = " This embed was still in its first shape: it now holds its own copies of the database's views and no longer follows later changes to them."
 
 // mcpGetEmbed answers get_collection with embed_id: the database's schema
 // with the embed's views and open view.
@@ -338,55 +381,61 @@ func (s *Server) mcpGetEmbed(u *user, pageID, embedID string) (string, error) {
 // is checked by applyViewSpec against the database's schema, the rules a
 // database view gets, so an agent cannot store in an embed what set_view
 // would refuse on the database.
+//
+// The first change to an embed still in the old shape writes it in the new
+// one, and with it the copies of the database's views it showed (R2): from
+// then on the embed no longer follows later changes to those views. That is
+// the point of an embed having views of its own, and the answer says so.
 func (s *Server) mcpCreateEmbedView(u *user, pageID, embedID, copyOf string, spec viewSpec) (string, error) {
 	e, err := s.loadEmbed(u, pageID, embedID)
 	if err != nil {
 		return "", err
 	}
-	taken := map[string]bool{}
-	for _, v := range append(append([]map[string]any{}, e.views...), e.dbViews...) {
-		if id, _ := v["id"].(string); id != "" {
-			taken[id] = true
-		}
-	}
-	var view map[string]any
-	if copyOf != "" {
-		for _, dv := range e.dbViews {
-			if id, _ := dv["id"].(string); id == copyOf {
-				view = cloneView(dv)
-			}
-		}
-		if view == nil {
-			return "", fmt.Errorf("copy_of %q is not a view of database %q — get_collection on the database lists its views", copyOf, e.colID)
-		}
-		if t, _ := view["type"].(string); !embedViewType(t) {
-			return "", fmt.Errorf("view %q is a form: a form collects rows and stays on the database, a document cannot show it", copyOf)
-		}
-		if spec.Type != "" && spec.Type != view["type"] {
-			return "", fmt.Errorf("a copy keeps its view's type (%v) — leave type out, or create a new view without copy_of", view["type"])
-		}
-		view["id"] = newEmbedViewID(taken)
-	} else {
+	if copyOf == "" {
 		if spec.Type == "form" {
 			return "", fmt.Errorf("a form cannot be shown in a document: it collects rows and stays on the database")
 		}
 		if !embedViewType(spec.Type) {
 			return "", fmt.Errorf("unknown view type %q — use table, board, gallery, calendar, timeline, list or chart", spec.Type)
 		}
-		if strings.TrimSpace(spec.Name) == "" {
-			spec.Name = strings.ToUpper(spec.Type[:1]) + spec.Type[1:]
+	}
+	return s.changeEmbedViews(u, pageID, embedID, e, func(open string, views []map[string]any) (string, []map[string]any, string, error) {
+		taken := map[string]bool{}
+		for _, v := range append(append([]map[string]any{}, views...), e.dbViews...) {
+			if id, _ := v["id"].(string); id != "" {
+				taken[id] = true
+			}
 		}
-		view = map[string]any{"id": newEmbedViewID(taken), "type": spec.Type}
-	}
-	spec.Type = ""
-	if err := applyViewSpec(view, spec, e.schema); err != nil {
-		return "", err
-	}
-	views := append(e.views, view)
-	if err := s.writeEmbedViews(u, pageID, embedID, e.viewID, views); err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("Created %v view %q (id %s) in embed %s.%s", view["type"], view["name"], view["id"], embedID, embedChangedNote), nil
+		sp := spec
+		var view map[string]any
+		if copyOf != "" {
+			for _, dv := range e.dbViews {
+				if id, _ := dv["id"].(string); id == copyOf {
+					view = cloneView(dv)
+				}
+			}
+			if view == nil {
+				return "", nil, "", fmt.Errorf("copy_of %q is not a view of database %q — get_collection on the database lists its views", copyOf, e.colID)
+			}
+			if t, _ := view["type"].(string); !embedViewType(t) {
+				return "", nil, "", fmt.Errorf("view %q is a form: a form collects rows and stays on the database, a document cannot show it", copyOf)
+			}
+			if sp.Type != "" && sp.Type != view["type"] {
+				return "", nil, "", fmt.Errorf("a copy keeps its view's type (%v) — leave type out, or create a new view without copy_of", view["type"])
+			}
+			view["id"] = newEmbedViewID(taken)
+		} else {
+			if strings.TrimSpace(sp.Name) == "" {
+				sp.Name = strings.ToUpper(sp.Type[:1]) + sp.Type[1:]
+			}
+			view = map[string]any{"id": newEmbedViewID(taken), "type": sp.Type}
+		}
+		sp.Type = ""
+		if err := applyViewSpec(view, sp, e.schema); err != nil {
+			return "", nil, "", err
+		}
+		return open, append(views, view), fmt.Sprintf("Created %v view %q (id %s) in embed %s.", view["type"], view["name"], view["id"], embedID), nil
+	})
 }
 
 // mcpUpdateEmbedView changes one of an embed's views, merging like
@@ -399,19 +448,18 @@ func (s *Server) mcpUpdateEmbedView(u *user, pageID, embedID, viewID string, spe
 	if err != nil {
 		return "", err
 	}
-	for _, v := range e.views {
-		if id, _ := v["id"].(string); id != viewID {
-			continue
+	return s.changeEmbedViews(u, pageID, embedID, e, func(open string, views []map[string]any) (string, []map[string]any, string, error) {
+		for _, v := range views {
+			if id, _ := v["id"].(string); id != viewID {
+				continue
+			}
+			if err := applyViewSpec(v, spec, e.schema); err != nil {
+				return "", nil, "", err
+			}
+			return open, views, fmt.Sprintf("Updated view %q (id %s) in embed %s.", v["name"], viewID, embedID), nil
 		}
-		if err := applyViewSpec(v, spec, e.schema); err != nil {
-			return "", err
-		}
-		if err := s.writeEmbedViews(u, pageID, embedID, e.viewID, e.views); err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("Updated view %q (id %s) in embed %s.%s", v["name"], viewID, embedID, embedChangedNote), nil
-	}
-	return "", fmt.Errorf("view %q is not a view of embed %s — get_collection with embed_id lists them", viewID, embedID)
+		return "", nil, "", fmt.Errorf("view %q is not a view of embed %s — get_collection with embed_id lists them", viewID, embedID)
+	})
 }
 
 // mcpDeleteEmbedView removes one of an embed's views. The last one stays: an
@@ -421,29 +469,27 @@ func (s *Server) mcpDeleteEmbedView(u *user, pageID, embedID, viewID string) (st
 	if err != nil {
 		return "", err
 	}
-	keep := []map[string]any{}
-	found := false
-	for _, v := range e.views {
-		if id, _ := v["id"].(string); id == viewID {
-			found = true
-			continue
+	return s.changeEmbedViews(u, pageID, embedID, e, func(open string, views []map[string]any) (string, []map[string]any, string, error) {
+		keep := []map[string]any{}
+		found := false
+		for _, v := range views {
+			if id, _ := v["id"].(string); id == viewID {
+				found = true
+				continue
+			}
+			keep = append(keep, v)
 		}
-		keep = append(keep, v)
-	}
-	if !found {
-		return "", fmt.Errorf("view %q is not a view of embed %s — get_collection with embed_id lists them", viewID, embedID)
-	}
-	if len(keep) == 0 {
-		return "", fmt.Errorf("an embed keeps at least one view — add another before deleting this one")
-	}
-	open := e.viewID
-	if open == viewID {
-		open, _ = keep[0]["id"].(string)
-	}
-	if err := s.writeEmbedViews(u, pageID, embedID, open, keep); err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("Deleted view %s from embed %s.%s", viewID, embedID, embedChangedNote), nil
+		if !found {
+			return "", nil, "", fmt.Errorf("view %q is not a view of embed %s — get_collection with embed_id lists them", viewID, embedID)
+		}
+		if len(keep) == 0 {
+			return "", nil, "", fmt.Errorf("an embed keeps at least one view — add another before deleting this one")
+		}
+		if open == viewID {
+			open, _ = keep[0]["id"].(string)
+		}
+		return open, keep, fmt.Sprintf("Deleted view %s from embed %s.", viewID, embedID), nil
+	})
 }
 
 // embedListing is what get_page adds after a document's Markdown: its embeds,
@@ -490,7 +536,8 @@ func (s *Server) embedListing(u *user, content []byte) string {
 		open, views := readEmbedLocal(local, dbViews)
 		names := make([]string, 0, len(views))
 		for _, v := range views {
-			n := fmt.Sprintf("%q (%v, id %v", v["name"], v["type"], v["id"])
+			name, _ := v["name"].(string)
+			n := fmt.Sprintf("%q (%v, id %v", name, v["type"], v["id"])
 			if v["id"] == open {
 				n += ", open"
 			}

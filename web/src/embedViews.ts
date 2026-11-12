@@ -97,3 +97,58 @@ export function readEmbedLocal(raw: string, dbViews: ViewDef[], defaultName = 'T
 export function encodeEmbedLocal(viewId: string, views: ViewDef[]): string {
   return JSON.stringify({ v: 2, viewId, views });
 }
+
+// ---- What the interface does with an embed until it draws its own views ----
+//
+// Spec 014 PR 3 draws an embed's own views. Until then the interface still
+// shows the database's views with the embed's filter and sort laid over the
+// open one, as before, but a block may already hold the new shape (an agent's
+// embed_database and set_view with embed_id write it). Such a block must not
+// be damaged: the list stays a list, and a filter set here is laid back onto
+// the view it belongs to. Without this, the old-shape write below would turn
+// the list into an object and the embed would lose every view.
+
+type Filters = ViewDef['filters'];
+type SortDef = ViewDef['sort'];
+
+export interface EmbedBlockLocal {
+  viewId: string;
+  /** Per view id: the filters and sort the interface lays over it. */
+  views: Record<string, { filters?: Filters; sort?: SortDef }>;
+  /** Set when the block holds the new shape: its own list of views. */
+  v2?: ViewDef[];
+}
+
+export function parseEmbedBlockLocal(raw: string): EmbedBlockLocal {
+  try {
+    const v = raw ? JSON.parse(raw) : null;
+    if (isObject(v)) {
+      if (v.v === 2) {
+        const own = readEmbedLocal(raw, []);
+        const views: EmbedBlockLocal['views'] = {};
+        for (const view of own.views) views[view.id] = { filters: view.filters, sort: view.sort };
+        return { viewId: own.viewId, views, v2: own.views };
+      }
+      return {
+        viewId: typeof v.viewId === 'string' ? v.viewId : '',
+        views: isObject(v.views) ? (v.views as EmbedBlockLocal['views']) : {},
+      };
+    }
+  } catch {
+    /* fall through */
+  }
+  return { viewId: '', views: {} };
+}
+
+export function serializeEmbedBlockLocal(next: EmbedBlockLocal): string {
+  if (!next.v2) return JSON.stringify({ viewId: next.viewId, views: next.views });
+  const views = next.v2.map((view) => {
+    const own = next.views[view.id];
+    if (!own) return view;
+    const merged: ViewDef = { ...view };
+    if (own.filters !== undefined) merged.filters = own.filters;
+    if (own.sort !== undefined) merged.sort = own.sort;
+    return merged;
+  });
+  return encodeEmbedLocal(next.viewId, views);
+}

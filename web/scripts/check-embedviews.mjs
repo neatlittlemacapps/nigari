@@ -78,6 +78,22 @@ try {
   check('a new id is not a taken one', taken.has(ev.newEmbedViewId(taken)), false);
   check('a new id is spelled like the interface\'s', /^v[0-9a-z]{7}$/.test(ev.newEmbedViewId()), true);
 
+  // ---- A block in the new shape survives the interface's edits ----
+  const v2 = ev.encodeEmbedLocal('b', [
+    { id: 'a', name: 'A', type: 'table' },
+    { id: 'b', name: 'B', type: 'board', groupBy: 'status' },
+  ]);
+  const parsed = ev.parseEmbedBlockLocal(v2);
+  check('a new-shape block opens its open view', parsed.viewId, 'b');
+  const filter = [{ property: 'status', op: 'is', value: 'open' }];
+  const edited = ev.serializeEmbedBlockLocal({ ...parsed, views: { ...parsed.views, b: { ...parsed.views.b, filters: filter } } });
+  check('a filter set in the interface stays on its view and the list stays a list',
+    JSON.parse(edited), { v: 2, viewId: 'b', views: [{ id: 'a', name: 'A', type: 'table' }, { id: 'b', name: 'B', type: 'board', groupBy: 'status', filters: filter }] });
+  check('switching view keeps both views', JSON.parse(ev.serializeEmbedBlockLocal({ ...parsed, viewId: 'a' })).views.length, 2);
+  check('an old-shape block is written as before',
+    JSON.parse(ev.serializeEmbedBlockLocal(ev.parseEmbedBlockLocal('{"viewId":"x","views":{"x":{"filters":[]}}}'))), { viewId: 'x', views: { x: { filters: [] } } });
+  check('an empty block', ev.parseEmbedBlockLocal(''), { viewId: '', views: {} });
+
   const failed = out.filter((r) => r.got !== r.want);
   for (const r of failed) console.error(`  FAIL  ${r.name}\n        got  ${r.got}\n        want ${r.want}`);
   console.log(`\n  embed views: ${out.length - failed.length} passed, ${failed.length} failed`);

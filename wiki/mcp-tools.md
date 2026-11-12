@@ -303,7 +303,8 @@ followed by one `---` section per row. Ask for the table, or ask for the
 sub-tree; you cannot have both in one call.
 
 A document that has databases embedded in it ends its answer, after the
-Markdown and inside the untrusted block, with a list:
+Markdown and inside the untrusted block, with a list (not when you ask for
+`include_children`):
 
 ```
 Embedded databases (use embed_id with get_collection, set_view and delete_view):
