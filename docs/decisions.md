@@ -28,6 +28,32 @@ forgotten.
 
 ---
 
+## 2026-11-12 — One branch per pull request; no work that collides with an open one
+
+Owner: "ok", after asking "why do we keep working on the same branch. Is that
+normal?" and after the conflict between #586 and #587.
+
+- **One branch per pull request, named after the work.** Since handoff #14
+  every cloud session was handed `claude/handoff-14` and reused it for every
+  pull request, resetting it to `main` after each merge. The name said
+  nothing, and a new job started while a pull request was open would pile
+  onto it. The owner allowed, once for all sessions, a new branch per pull
+  request even when a session is handed a fixed one. Rejected: the owner
+  starting every session on a fresh branch (more work for the owner, same
+  result).
+- **The handoff file goes to `main`.** It lived only on the work branch.
+- **A suggested task names the open pull request it must wait for**, and
+  **before a pull request is offered, sessions and open pull requests are
+  checked for the same files.** #586 (BoardView.tsx out of CollectionView.tsx)
+  was a task Claude suggested without "start after #587 merges"; another
+  session built it, it merged first, and #587's lanes were ported by hand.
+  Rejected: a lock file or a label per file (nobody would keep it true);
+  forbidding refactors while a feature is open (the refactor was wanted).
+
+Written into `.claude/skills/steward/SKILL.md`.
+
+---
+
 ## 2026-11-09 — nigari's own mark and icons, from one folder of artwork (#322)
 
 The owner sent the artwork on 2026-11-06: the mark, a light and a dark tile,
