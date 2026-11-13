@@ -24,18 +24,22 @@ third set.
   out says why in the list (owner: "B"). Properties first, in spec 015 (the
   row's page and the table's column heading); pages, rows, views and the
   rest in a later spec (#604).
-- **A menu's first level holds at most 7 entries, a submenu counting as
-  one; related actions go into a submenu** (owner: "not all ends up on one
-  big level 1"; the number 7 is Claude's default, from the longest menus
-  today, 14 and 12).
+- **Actions are grouped by what they relate to; a group of more than 3
+  related actions gets its own submenu**, a group of 3 or fewer stays on the
+  first level behind a separator, and a choice among values is a submenu
+  (owner: "not all ends up on one big level 1", then "I would not limit to
+  7 specifically. I would try to assess the number of related items. If
+  those go beyond 3 for example, they might earn their own menu.").
 - **Guidelines**: a **Content actions** row in `.specify/memory/surfaces.md`
   (every later plan answers it) and a paragraph under Menus in
   `.claude/rules/frontend.md`; `check-content-actions.mjs` comes with spec
   015's build.
 - **Turned down**: a spec for every content type before #582 (A: #582 waits
   on a large refactor of menus that work); only a registry row and a report
-  of differences (C: writes the problem down without fixing it); a submenu
-  for every pair of actions (two clicks for common ones).
+  of differences (C: writes the problem down without fixing it); a first
+  level of at most 7 entries (Claude's first proposal, replaced by the
+  owner: the size of a group decides, not a cap); a submenu for every pair
+  of actions (two clicks for common ones).
 
 ---
 

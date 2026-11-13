@@ -70,10 +70,14 @@ source (`codegraph explore` on `RowProperties`, `ColHead`, `SchemaEditor`,
   listed once and every menu of a property is built from that list, starting
   with this spec (the row's page and the table's column heading); pages,
   rows and views follow in their own spec (owner, "B", 2026-11-13).
-- Q (owner): not everything on one long first level → A: related actions
-  go into a submenu where that makes sense; a menu's first level holds at
-  most 7 entries, a submenu counting as one (Claude's default, from the
-  longest menus today: 14 and 12 functions).
+- Q (owner): not everything on one long first level → A: actions are
+  grouped by what they relate to; a group of more than 3 related actions
+  earns its own submenu, a smaller group stays on the first level set apart
+  by a separator, and a choice among values (a setting) is a submenu. No
+  fixed number for the first level (owner: "I would not limit to 7
+  specifically. I would try to assess the number of related items. If those
+  go beyond 3 for example, they might earn their own menu."). This replaces
+  Claude's first proposal, a first level of at most 7 entries.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -116,7 +120,7 @@ change its type, and see the database's table show the same change.
 7. **Given** a table's column heading, **When** someone who may change the
    database opens its menu, **Then** it offers the same property actions
    (Rename, Edit property, Duplicate property, Delete property) and, for
-   that view only, Move ▸ (left, right) and Hide in view. The row's page
+   that view only, Move left, Move right and Hide in view. The row's page
    leaves out the view's actions; nothing else differs.
 
 ---
@@ -244,9 +248,10 @@ the row pages, then read it back with `get_collection`.
 - **FR-012**: A property's actions MUST be listed once, and every menu that
   acts on a property (the row's page, the column heading) MUST be built from
   that list; a menu that leaves an action out says why next to the list.
-- **FR-013**: A menu's first level MUST hold at most 7 entries (a submenu
-  counts as one); related actions go into a submenu (the column heading's
-  Move left and Move right become Move ▸).
+- **FR-013**: A menu's actions MUST be grouped by what they relate to; a
+  group of more than 3 related actions goes into its own submenu, a group of
+  3 or fewer stays on the first level behind a separator; a choice among
+  values is a submenu (Property visibility ▸).
 
 ### Key Entities
 

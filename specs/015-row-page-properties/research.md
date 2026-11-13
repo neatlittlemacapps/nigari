@@ -172,20 +172,24 @@ property menu of its own.
 here); only a registry row and a report (writes the problem down without
 fixing it).
 
-## R12. Submenus, and the first level's size
+## R12. Submenus by the size of a group
 
-**Decision**: a menu's first level holds at most 7 entries; a submenu
-counts as one. Related actions go into a submenu: Property visibility ▸
-(three values), the column heading's Move ▸ (left, right). The list in R11
-names each action's group, and the check counts the first level of every
-menu built from a list.
+**Decision**: the list in R11 gives each action a group (what it relates
+to). A group of more than 3 related actions earns its own submenu; a group
+of 3 or fewer stays on the first level, set apart by a separator; a choice
+among values (a setting) is always a submenu. The check counts each group.
+For properties: Property visibility ▸ (a setting with three values); the
+column heading's Move left and Move right stay on the first level (a group
+of 2), beside Hide in view.
 
-**Why**: owner: "not all ends up on one big level 1". 7 is Claude's default
-(stated as such in the spec): the longest menus today hold 14 (account) and
-12 (page ⋯) functions, and the property menu needs 5.
+**Why**: owner: "I would not limit to 7 specifically. I would try to assess
+the number of related items. If those go beyond 3 for example, they might
+earn their own menu." The size of a group says whether it deserves a level
+of its own; a cap on the whole first level does not.
 
-**Turned down**: a submenu for every pair (two clicks for common actions);
-no number at all (nothing for a check to hold).
+**Turned down**: a first level of at most 7 entries (Claude's first
+proposal, replaced by the owner); a submenu for every pair (two clicks for
+common actions).
 
 ## R10. One pull request
 

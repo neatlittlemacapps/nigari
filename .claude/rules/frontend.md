@@ -32,9 +32,10 @@ paths:
   hand-built menu or two functions on one icon. **What a menu offers** comes from its
   content's action list in `web/src/actions/` (spec 015: one list per kind of
   content, every menu of that content built from it, a left-out action
-  carries its reason). A first level holds at most 7 entries, a submenu
-  counting as one; related actions go into a submenu. Add a new action to
-  the list, not to one menu. Not in the layer yet: toasts;
+  carries its reason). Group actions by what they relate to: a group of
+  more than 3 related actions gets its own submenu, a smaller group stays
+  on the first level behind a separator, and a choice among values is a
+  submenu. Add a new action to the list, not to one menu. Not in the layer yet: toasts;
   reuse `dialog.tsx` (confirm/prompt), `modal.ts`, `toast.ts` and `keys.ts`. BlockNote for the editor, Yjs for live
   documents.
 - **Keyboard.** Shortcuts register in `keys.ts`; focus movement goes through

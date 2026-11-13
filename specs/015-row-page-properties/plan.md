@@ -24,8 +24,8 @@ properties".
   (R9).
 - **No menu wild growth**: a property's actions are listed once
   (`actions/propertyActions.ts`); the row's page and the column heading
-  both build their menu from it; a first level holds at most 7 entries,
-  related actions in a submenu; a check and a new registry row,
+  both build their menu from it; a group of more than 3 related actions
+  gets its own submenu; a check and a new registry row,
   **Content actions**, hold later work to it (R11, R12).
 
 One pull request (R10).
@@ -148,10 +148,10 @@ Re-checked after design: unchanged.
 | Aggregation (`server/aggregate.go`) | No change: no property type. Hiding on the row's page does not touch charts or counts | backend |
 | Stored data (`server/upgrade_steps.go`) | No upgrade step: `pageVisibility` is optional and absent means shown, as `colOrder` (spec 012 R3); nothing stored is rewritten | backend |
 | Outside names (env vars, cookies, storage keys, …) | No change: no new name outside the code; the fold uses no browser storage | backend |
-| Menu icons (`ui/Menu`, `menuIcons.ts`, `check-menu-icons.mjs`) | A new menu on the row's page built with `ui/Menu`, from the property action list (R11); the column heading's Move left/right go into Move ▸ (R12). Two new functions: `editProperty` (SlidersHorizontal), `rowPageVisibility` (EyeDashed), the three choices as `MenuValues`. `rename`, `duplicate`, `delete` reused with their meanings (R3) | ui |
+| Menu icons (`ui/Menu`, `menuIcons.ts`, `check-menu-icons.mjs`) | A new menu on the row's page built with `ui/Menu`, from the property action list (R11); the column heading's Move left and Move right stay on the first level, a group of 2 (R12). Two new functions: `editProperty` (SlidersHorizontal), `rowPageVisibility` (EyeDashed), the three choices as `MenuValues`. `rename`, `duplicate`, `delete` reused with their meanings (R3) | ui |
 | View lock (`checkViewsUnlocked`, `auditViewChanges`) | No new path writes views except delete, which uses `SchemaEditor`'s rule moved to `propertyDelete.ts`: while locked, the schema alone, and the server's `property_in_locked_view` refusal shown (R6) | backend |
 | Cross-origin requests (`server/crossorigin.go`) | No change: no new route or socket; the `PUT` is judged by `ServeHTTP` as today | backend |
-| Content actions (`web/src/actions/`, `check-content-actions.mjs`) | Introduced here (R11, R12): `actions/propertyActions.ts` lists a property's actions; the row's page and the column heading build their menus from it; both first levels within 7 (row's page 5, column heading 6 with Move ▸). Pages, rows, views and the rest get their lists in their own spec (#604) | ui |
+| Content actions (`web/src/actions/`, `check-content-actions.mjs`) | Introduced here (R11, R12): `actions/propertyActions.ts` lists a property's actions; the row's page and the column heading build their menus from it; no group over 3 on either (Property visibility is a setting, so a submenu). Pages, rows, views and the rest get their lists in their own spec (#604) | ui |
 | Embedded views (`embedViews.ts`, `embedviews.go`) | No change: row-page visibility is not a view setting; an embed's views do not read it. Edit properties from an embed keeps spec 014's confirmation | ui |
 
 **Parity statement**: everything the menu changes is a schema change an
@@ -163,9 +163,10 @@ agent makes with `update_schema`, with the same check.
 `.specify/memory/surfaces.md` in this PR: "An action on a kind of content
 (page, row, property, view, block, workspace) is listed once in its
 `web/src/actions/` list, and every menu acting on that content is built from
-it; a menu that leaves an action out says why in the list. A menu's first
-level holds at most 7 entries, a submenu counting as one; related actions go
-into a submenu. `check-content-actions.mjs` enforces it for every type that
+it; a menu that leaves an action out says why in the list. Actions are grouped by
+what they relate to: a group of more than 3 related actions gets its own
+submenu, a smaller one stays on the first level behind a separator, and a
+choice among values is a submenu. `check-content-actions.mjs` enforces it for every type that
 has a list (properties since spec 015)".
 
 ## Project Structure
