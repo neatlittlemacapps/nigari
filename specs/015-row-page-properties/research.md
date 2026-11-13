@@ -25,8 +25,9 @@ property); per person (owner, Q2).
 ## R2. One rule for the value, on both doors
 
 **Decision**: `checkPropertyVisibility(schema)` in `server/propvisibility.go`,
-called by `handlePutCollection` when a schema is sent and by
-`mcpUpdateSchema` on the merged schema. Anything but the two values (or
+called by `handlePutCollection` when a schema is sent, by
+`mcpUpdateSchema` on the merged schema, and by `mcpCreateDatabase`
+(`create_database` takes a schema too; found while writing the tasks). Anything but the two values (or
 absent) is refused: REST `400 invalid_property_visibility`, MCP an error
 naming the property and the allowed values.
 
