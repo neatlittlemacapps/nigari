@@ -1,6 +1,6 @@
 # active-memory handoff: nigari (formerly salt.md fork): agentic setup and feature roadmap
 
-**Handoff #20** · 2026-11-12 · Lineage:
+**Handoff #21** · 2026-11-13 · Lineage:
 - **#1 (2026-10-25):** agentic setup (rules, gate, Spec Kit, parity manifest); four feature branches merged; 25 issues; three specs.
 - **#2 (2026-10-26):** find-and-replace edits (#13, PR #48); specs 001/002 planned; #47 fixed; surfaces registry, board sync, ruleset (PR #49).
 - **#3 (2026-10-26):** board derives its columns (PR #74); spec 002 tasks (#50–#73); storage benchmarks; fixes #75, #76; Codespaces (PR #77).
@@ -21,15 +21,18 @@
 - **#18 (2026-11-05/06):** Umbrel packaging done: audit; cross-origin hole fixed (another app's page could write and read the live socket) + `NIGARI_TRUST_PROXY` (PR #579 → v2.1.15, issue #578); store `yokogaki` published at `neatlittlemacapps/yokogaki-umbrel`, pinned to 2.1.15 (PR #580); owner's icon in the store (PR #581); owner added the store on their Umbrel.
 - **#19 (2026-11-06 → 11-12):** #322 logo (#583 → v2.1.18); spec 013 PR 2 personal filter/sort (#584 → v2.1.19); spec 013 PR 3 quick filters + lanes (#587 → v2.1.21), conflict with #586 (BoardView refactor from Claude's suggested task) resolved; spec 013 finished (#477 closed).
 - **#20 (2026-11-12):** one branch per pull request + overlap rules in the steward skill, handoff now on `main` (#588 → v2.1.22); each release opens a pull request on the Umbrel store (#589 → v2.1.23); first one, neatlittlemacapps/yokogaki-umbrel#1, moves the store 2.1.15 → 2.1.23.
+- **#21 (2026-11-12/13):** spec 014 built and merged: PR 1 #524 (earlier), PR 2 model + server + agents (#592), PR 3 interface (#596); two review-found bugs fixed before merge; Claude's `/code-review` + a fresh-agent security review + `ux-ui-audit`; "Copy of" naming chosen by the owner (follow-up PR #597); the Umbrel store pull requests conflicted with each other (store #3 after #2), fixed in #598; handoff now #21.
 
-> **Read first (2026-11-12):** nothing is in progress in nigari. No
-> running helper, no scheduled check-ins. Open: this handoff's own small
-> pull request (branch `claude/handoff-20`) and, on the store,
-> neatlittlemacapps/yokogaki-umbrel#1 (owner merges it). Still check
-> `list_sessions`, `git ls-remote --heads origin` and open PRs first
-> (correction 107), and fetch `origin/main` before reading this file from a
-> local checkout (correction 117). The next job is spec 014 PR 2, on a
-> **new branch** `claude/spec-014-pr2` from `main` (rule 31).
+> **Read first (2026-11-13):** nothing is running; no helper, no scheduled
+> check-ins left to act on (the one-shot ones fired and disabled themselves).
+> Three small pull requests wait for the owner to tap merge: #597 (Copy of
+> naming), #598 (the Umbrel store job closes older store PRs) and this
+> handoff's own. Owner step on the store: close the conflicting 2.1.25 pull
+> request on `yokogaki-umbrel`. Still check `list_sessions`,
+> `git ls-remote --heads origin` and open PRs first (correction 107), and
+> fetch `origin/main` before reading this file from a local checkout
+> (correction 117). Spec 014 is finished; the next job is the board by
+> Priority (section 11), each piece on a **new branch** from `main` (rule 31).
 
 ## 0. Instructions for Claude (read first)
 
@@ -50,7 +53,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - **Also:** "I want you to be able to do as much as possible yourself"; "ensure you have good board and issue hygiene".
 - **Why nigari exists (user, 2026-10-29/30):** "we are too far gone from the original salt to ever contribute back"; "mainly its me discovering how far I can get"; "I think the core is to pay extra attention to UX as well."
 - **CodeGraph (user, 2026-11-01):** "My goal is that Claude can use a continuously up-to-date code graph to understand the architecture, dependencies, function calls and relationships across the entire codebase before making coding changes." / "CodeGraph should be an active coding tool, not merely an installed MCP server."
-- **Order of work now** (2026-11-06): Umbrel is done. (0) **#322 nigari's own logo everywhere** (the owner supplied the artwork; short plan first, section 11). Then the board, as before (2026-11-03, after #523): work goes by the board's Priority (rule 24); only a `bug` + `breaking` issue jumps to P1 (rule 19). (1) **Spec 014 plan** (`/speckit-plan`, then tasks and taskstoissues under #426); (2) **spec 013 build** (45 tasks #478–#522, parent #477) by a helper stream (stream B) per the steward skill, Claude reviews and audits; (3) open bugs by priority: #476, #524, #525, #526, #527, #529, #530, #531, #532; (4) backlog #370, #322, #323, #326, #379.
+- **Order of work now** (2026-11-13): the board by Priority (rule 24); only a `bug` + `breaking` issue jumps to P1 (rule 19). Done: Umbrel, #322 logo, spec 012, 013, 014. Open bugs by priority: #476, #525–#527, #529–#532, #572, #574, and the new #591, #594, #595; backlog #370, #323, #326, #379. A feature that brings a new concept still starts with the spec flow (`/speckit-specify` …).
 
 ## 2. About the user (as relevant to this work)
 - GitHub `neatlittlemacapps` (id 60575307), display name "Frank De Graeve"; email neatlittlemacapps@gmail.com; owns `neatlittlemacapps/nigari` (renamed from `neatlittlemacapps/salt.md` on 2026-10-30), still a GitHub fork of `saltmd/salt.md` (AGPL-3.0); CLA signed upstream. Fork stays attached for now ("I'll leave it for now").
@@ -106,6 +109,8 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 30. Execution (owner, 2026-11-05, word for word): "Plan with opus execute with sonnet". Claude plans and reviews; mechanical execution steps go to a Sonnet helper (`Agent` with `model: "sonnet"`), whose diff Claude reviews before it is committed or pushed.
 31. Branches (owner, 2026-11-12, "ok" to Claude's proposal): one branch per pull request, named after the work, from the newest `main`, even when the session is handed a fixed branch; the handoff file goes to `main`. A suggested task touching an open PR's files says "Start after PR #N merges."; before offering a PR, check `list_sessions` and open PRs for the same files. In `.claude/skills/steward/SKILL.md` and `docs/decisions.md`.
 32. Umbrel store updates (owner, 2026-11-12, "2" = automatic): each release's `umbrel-store` job opens a pull request on `neatlittlemacapps/yokogaki-umbrel`; the owner merges the ones they want on their Umbrel. Never push to the store's `main` directly. nigari's own `umbrel/` copy keeps its 2.1.15 pin on purpose (a commit to `main` is a release; updating it would release forever).
+33. Changes to a check are the owner's decision (`.claude/rules/claude-code.md`): when `check-wiki.mjs` failed on the two new MCP arguments `embed_id` and `embed`, Claude asked and the owner chose "Option A" (add them to `ALLOWED_NON_TOOLS`, which replaces the earlier "never widen it"). Same rule for any check.
+34. A copy of a database view is named "Copy of {name}" (owner, 2026-11-12: "Sure. Copy of"), in the interface and for an agent's `copy_of` (unless it passes a name). An embed made by `embed_database` with a `view_id` keeps the view's own name.
 ## 5. Corrections log
 | # | Claude did | The user wanted |
 |---|---|---|
@@ -230,6 +235,11 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 136 | (self) Suggested a BoardView refactor task (#586) without saying "start after #587 merges"; it touched the same file and #587 conflicted (owner: "How did this happen? How to avoid?") | A suggested task that touches an open PR's files says "start after PR #N merges"; check sessions and open PRs before offering a PR (accepted 2026-11-12: rule 31) |
 | 137 | (self) Wrote a check log to `/home/user/check2.log`, outside the repo and the scratchpad (deleted at once) | Logs go in the scratchpad directory |
 | 138 | (self) Resolving the #588/#589 conflict in `docs/decisions.md` joined two entries without the `---` separator | Keep both entries, each followed by `---`; read the seam after resolving |
+| 139 | (self) Pushed one more commit (Copy of naming) onto PR #596's branch after the PR had been offered with green CI; the owner merged first and the commit missed the merge | After a PR is offered, a further change goes on a new branch from `main` (#597), not the offered branch |
+| 140 | (self) Committed `web/tests/dbg3.mjs`, a debugging script a `git stash pop` had put back | Check `git status` before `git add -A`; debug scripts live in the scratchpad or are deleted at once |
+| 141 | (self) The release job (#589) left older Umbrel store pull requests open; they change the same three lines, so the store's #3 conflicted after #2 was merged | The job closes the other open `nigari-<version>` pull requests when it opens its own (#598) |
+| 142 | (self) Edited `CollectionView.tsx` for a mutation check while a screenshot helper was running; five wiki shots went stale mid-run | No source edits while a shot helper runs; restore after a mutation check, rebuild, then retake |
+| 143 | (self) `embeds.mjs` reloaded in a loop right after an edit; it passed by luck because the keepalive save on `pagehide` is lost about 2 times in 12 even on `main` | Wait for the save before reloading; the real bug is #594 |
 
 ## 6. Decisions
 | Decision | Why |
@@ -315,6 +325,12 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Registry row **Cross-origin requests** (since 2026-11-05) | Rule 5 |
 | One branch per pull request, named after the work; handoff on `main` | Owner "ok" (2026-11-12); rule 31 |
 | Umbrel store moves by a pull request per release, opened by `release.yml` job `umbrel-store` with secret `UMBREL_STORE_TOKEN` (fine-grained, `yokogaki-umbrel` only, Contents + Pull requests read/write) | Owner "2" (2026-11-12); rule 32 |
+| Spec 014 built in three PRs: #524 (property delete asks), #592 (model, server, agents), #596 (interface); no upgrade step, an old embed is read as a copy of the database's views and written new on its first change | Spec 014 research R2, R13 |
+| An embed's views ignore the database's views lock; Edit properties only for someone who may write the database (workspace role not viewer); saving it from a document asks first | Spec 014 R9, FR-012; `docs/decisions.md` 2026-11-12 |
+| `embed_id`, `embed` added to `ALLOWED_NON_TOOLS` in `check-wiki.mjs` | Owner "Option A" |
+| Copy of a database view named "Copy of {name}" | Owner "Sure. Copy of" |
+| A newer Umbrel store pull request closes the older ones (job `umbrel-store`) | Store #3 conflicted after #2; PR #598 |
+| Review of #592 and #596: Claude's `/code-review`, a fresh Opus agent for the security review (the `/security-review` skill could not expand `origin/HEAD`), `ux-ui-audit` run by hand with Playwright | Rule 16; the skill failed |
 
 ## 7. Changed / rejected
 - Earlier chats: decisions page in workspace → `docs/decisions.md`; fixed surfaces list → registry; force-push rebase → merge `main`; hand-moved cards → derived Status; committed catalogue baselines → reference per run; hand-drawn SVG charts → Chart.js; owner as commit author → Claude.
@@ -350,10 +366,13 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - Embed Settings option B1 (all view settings on shared views) / B2 (minus rename/move/remove) → embed-owned views (owner's model).
 - Umbrel brief "leave all changes uncommitted" → local branch (B) → pushed with the owner's "Ok". Store draft id `neatlittlemacapps` → `yokogaki`. Store repo name `umbrel-apps` (Claude's suggestion) → `yokogaki-umbrel` (owner). Store pin 2.1.14 → 2.1.15.
 - ❌ Umbrel's own login on with a path allowlist (option B). ❌ The WebSocket library's origin check (Host-only). ❌ A CSRF token in every request. ❌ Bypassing `/api/desktop/exchange` entirely (only no/null Origin passes).
+- `ALLOWED_NON_TOOLS` "never widen" → widened for `embed_id` and `embed` only (owner "Option A", 2026-11-12).
+- Spec 014 `viewSource.ts` (T021) → `saveViews` in `CollectionView.tsx` plus the pure functions in `embedViews.ts`. Copy of a database view keeping its name → "Copy of {name}".
+- ❌ Converting an old embed when a document opens (it would write on opening). ❌ One standing store branch rewritten each release. ❌ Wrapping an embed's toolbar to a second row.
 - ❌ Bugs-first option B. ❌ `nl.machine.json`. ❌ 3+ parallel streams.
 - ❌ Committing the CodeGraph index (25 MB, machine-specific). ❌ A repository `.mcp.json` for CodeGraph. ❌ An external database/R2/salt.md integration/custom graph engine (user's constraint).
 - ❌ Community Go/security/Flutter/mobile/AWS plugins. ❌ GitHub Pages docs site now (later as #326); own domain.
-- ❌ Spec 004 leftovers (backlog #279–#282); DuckDB, Mantine as app library, shadcn/ui, Storybook, uPlot, Recharts, ECharts; widening `ALLOWED_NON_TOOLS`; looser pixel tolerance; baselines by a CI bot; down migrations, Litestream, upgrade-on-read.
+- ❌ Spec 004 leftovers (backlog #279–#282); DuckDB, Mantine as app library, shadcn/ui, Storybook, uPlot, Recharts, ECharts; looser pixel tolerance; baselines by a CI bot; down migrations, Litestream, upgrade-on-read.
 
 ## 8. Data & facts (exact)
 
@@ -468,7 +487,10 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 **Open issues** (2026-11-05; #322, #477, #496–#522 closed since)
 | # | Title |
 |---|---|
-| 371 | Embed has its own views (spec 014), priority:1, in-progress (feature still open) |
+| 371 | Embed has its own views (spec 014): all 36 task issues #534–#569 are closed (PRs #573, #592, #596); the feature issue itself is still open |
+| 591 | `embed_database` names a page's title before checking the caller may read it (bug, low) |
+| 594 | A filter changed within 400 ms before a reload is sometimes lost (keepalive save on pagehide; about 2 in 12 on main) (bug) |
+| 595 | `smart-dates.mjs` fails on main: reads a filter from the view that personal edits no longer write (bug, tests only) |
 | 476 | Saving views ignores a failed schema load (bug) |
 | 525 | Catalogue Select keyboard step failed on main again (bug) |
 | 526 | German comment in CollectionView.tsx passes check-i18n (bug) |
@@ -480,14 +502,14 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 572 | Shared confirm dialog: no initial focus, focus escapes, no name, danger drawn like Cancel (bug; fix: route through `ui/AlertDialog`) |
 | 574 | A menu opened just before its database's config reloads is not closed by Escape (bug) |
 | 370, 323, 326, 379 | backlog |
-- Closed in #17: #524, #571, #534–#537, #478–#495. Closed in #18: #578 (Umbrel). #322 has its store icon only (PR #581 "Part of #322").
+- Closed in #21: #538–#553 (PR #592), #554–#569 (PR #596). Closed in #17: #524, #571, #534–#537, #478–#495. Closed in #18: #578 (Umbrel). #322 has its store icon only (PR #581 "Part of #322").
 
 ## 9. People, terms & names
 - **People:** the user (`neatlittlemacapps`, Frank De Graeve); upstream maintainer "Jeremia" (`jeremiaa`).
 - **Terms:** surface = registry row; gap = person can, agent can't; budget = count that only goes down; gate = `scripts/agent-gate.sh`; stream = a parallel work line; conductor = Claude; steward skill = `.claude/skills/steward/SKILL.md`; upgrade step = a numbered goose step; column head = a column's first block; Each row = chart grouping `__row`; code graph = CodeGraph index.
 - **Repo:** `neatlittlemacapps/nigari`.
-- **Sessions:** this conductor `session_01GhcW37HJ35bLUDWA4gX12z`; previous conductors `session_01GhcW345K7zwmfiPaw1Eoz3` ("Nigari handoff continuation"), `session_01GhcW33CqnUj9FDCkkAFdFE` ("17 Nigari"); helper stream B for spec 013 `session_01GhcW33DagCpbrFHHXQVrFu` (stopped; work merged in #576); older: `session_01GhcW351E6Ld6xR87qCbfon`, `session_01GhcW34o8KcL5EYGzn6ddSJ`, `session_01GhcW33zUfch6tMG6ga8nJc`.
-- **Branches:** main `3762f43` (merge of #589). This handoff: `claude/handoff-20` → PR to `main`. Merged, deletable by the owner: `claude/handoff-14` (retired by rule 31), `claude/steward-branch-per-pr`, `claude/umbrel-store-bump`. #586's branch `claude/serene-archimedes-87plg8` merged. Merged, to be deleted by the owner (Branches page → 🗑): `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views`. Old: `claude/pensive-turing-plu40r`.
+- **Sessions:** this conductor `session_01GhcW33Tb3hX27V7cFY9Www` (handoff #21); the one before it `session_01GhcW37HJ35bLUDWA4gX12z`; previous conductors `session_01GhcW345K7zwmfiPaw1Eoz3` ("Nigari handoff continuation"), `session_01GhcW33CqnUj9FDCkkAFdFE` ("17 Nigari"); helper stream B for spec 013 `session_01GhcW33DagCpbrFHHXQVrFu` (stopped; work merged in #576); older: `session_01GhcW351E6Ld6xR87qCbfon`, `session_01GhcW34o8KcL5EYGzn6ddSJ`, `session_01GhcW33zUfch6tMG6ga8nJc`.
+- **Branches:** main `b36846a` (merge of #596) plus the PRs below. Open PR branches: `claude/copy-of-view-name` (#597), `claude/store-pr-supersedes` (#598), `claude/handoff-21` (this file). Merged, deletable by the owner: `claude/handoff-14`, `claude/spec-012-views`, `claude/spec-013-build`, `claude/spec-014-pr3`, `claude/steward-branch-per-pr`, `claude/umbrel-store-bump`, `claude/spec-014-pr2`. Never delete remote branches (classifier).
 - **Key files:** `web/src/components/ChartFigure.tsx`, `ChartView.tsx`, `web/src/chartTheme.ts` (`groupColourTokens(drawn, palette, groupProp, series)`), `web/src/columnEnter.ts` (`columnEnterAction`, `columnEnter`), `web/src/blocks.tsx` (`columnsSpec`), `web/src/keys.ts`, `web/src/components/Editor.tsx` (`column.enter` shortcut), `web/scripts/shoot-wiki.mjs` (`text` step), `.claude/hooks/codegraph.sh`, `.claude/rules/codegraph.md`, `server/upgrade.go`, `server/backup.go`, `docs/decisions.md`, `web/src/menuIcons.ts`, `web/src/ui/Menu.tsx` (+ `Menu.css`), `web/scripts/check-menu-icons.mjs`, `web/src/components/SidebarMenus.tsx`, `CollectionMenus.tsx`, `UserMenu.tsx`, `web/src/keys.ts` (`menuOwnsKey`), `web/src/dialog.tsx`.
 - **Terms (new):** option B = menus rebuilt on Base UI; menu function = the verb an item does (one icon each); hand-built button = a raw `<button>` counted by the rawButtons budget.
 
@@ -504,27 +526,33 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Spec 013 PR 3 quick filters + lanes | merged, v2.1.21 | PR #587 | spec 013 finished |
 | One branch per PR (steward skill) | merged, v2.1.22 | PR #588 | |
 | Umbrel store auto-PR | merged, v2.1.23 | PR #589 | first run worked |
-| Store to 2.1.23 | open, owner merges | neatlittlemacapps/yokogaki-umbrel#1 | then Umbrel offers the update in ~5 min; untested jump 2.1.15 → 2.1.23 |
-| Handoff #20 | PR open | branch `claude/handoff-20` | owner merges |
-| Spec 014 PR 2/3 | not started | `specs/014-embed-own-views/tasks.md` | next |
-| Open PRs / helpers / check-ins | none | — | clean stop |
+| Store to 2.1.23 and 2.1.24 | merged | `yokogaki-umbrel` #1, #2 | 2.1.25 (#3) conflicts, see below |
+| Handoff #20 | merged | PR #590 | |
+| Spec 014 PR 2 (model, server, agents) | merged | PR #592 | converter in Go and TS, `embed_id`/`copy_of`/`embed` args, `viewFilters`, review-found fixes |
+| Spec 014 PR 3 (interface) | merged | PR #596 | `saveViews`, ＋ "Views on …", Settings in embeds, confirmation, toolbar scroll |
+| Copy of naming | PR open, owner merges | PR #597, branch `claude/copy-of-view-name` | #596 merged without this commit |
+| Store job closes older store PRs | PR open, owner merges | PR #598, branch `claude/store-pr-supersedes` | merging it is a release |
+| Store pull request 2.1.25 | conflicts, owner closes it | `yokogaki-umbrel` #3 | after #598 the next release opens a fresh one |
+| Handoff #21 | PR open | branch `claude/handoff-21` | owner merges |
+| Open PRs / helpers / check-ins | #597, #598 and this handoff; no helper; no live check-in | — | clean stop after they merge |
 
 ## 11. Next steps
-1. **Next action:** ask whether neatlittlemacapps/yokogaki-umbrel#1 is merged and the Umbrel updated to 2.1.23 (help if not); then spec 014 PR 2 on new branch `claude/spec-014-pr2` (T005–T020, #538–#553): label `in-progress`, CodeGraph on the embed block and spec 013's `view_prefs` scope `embed:…`, Sonnet executes mechanical steps (rule 30), Claude reviews, `/code-review`, `ux-ui-audit`, ask before the PR.
-2. Then spec 014 PR 3 (#554–#569); bugs by priority (#572, #574 and the older ones).
-3. When the owner sends them: the empty-screen animation (`brand/mark-animation.svg`) and situational icons.
+1. **Next action:** ask whether #597, #598 and the handoff PR are merged and the 2.1.25 store PR closed (help if not); then close the spec 014 feature issue #371 (all 36 tasks done) and check the epic #426's other sub-issues on the board.
+2. Then the board by Priority: read the `priority:N` labels; the open bugs (#591 low, #594, #595 and the older ones) each get their own small PR on a new branch from `main` (rule 31); a feature that brings a new concept starts with `/speckit-specify`.
+3. When the owner sends them: the empty-screen animation (`brand/mark-animation.svg`) and situational icons (#322).
 
 ## 12. Open questions ⚠️
-- Has the owner merged neatlittlemacapps/yokogaki-umbrel#1, and did the Umbrel update from 2.1.15 to 2.1.23 cleanly? (not confirmed)
-- Has the owner installed nigari from the yokogaki store, and does the icon show? (not confirmed)
-- Remove the stray `https://github.com/neatlittlemacapps/nigari` store from the owner's Umbrel? Claude offered to work out a command (Umbrel runs in Docker); not answered.
+- Has the owner merged #597, #598 and the handoff PR, and closed `yokogaki-umbrel` #3 (2.1.25)? (not confirmed)
+- Did the Umbrel update to a later version after #2 (2.1.24) merge cleanly? (not confirmed)
+- Remove the stray `https://github.com/neatlittlemacapps/nigari` store from the owner's Umbrel? Offered earlier; not answered.
 - File an issue for the older, minor login CSRF through the desktop code exchange (sandboxed iframe over plain HTTP; not made worse by #579)? Asked twice, not answered.
-- Unanswered from earlier: Dutch strings of the lock (stated in PR #576). (Filter/Sort now stay on locked databases since #584.)
+- Dutch strings of the lock (stated in PR #576): not answered.
 - #572 and #574 have no board priority yet.
-- Delete the stray label `surface:performance` and merged branches `claude/fix-571`, `claude/spec-013-build`, `claude/spec-012-views`, `claude/handoff-14`, `claude/steward-branch-per-pr`, `claude/umbrel-store-bump` (owner).
+- Peek panels do not pass `canWriteWorkspace`, so an embed inside a peek offers Edit properties to a viewer of the database's workspace (the server refuses and says why): file as an issue? Not asked yet.
+- Delete the stray label `surface:performance` and the merged branches listed in section 9 (owner).
 
 ## 13. Re-attach checklist
-Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on `main` of `neatlittlemacapps/nigari` once its PR merges (until then on branch `claude/handoff-20`). Start the new Claude Code session on **`neatlittlemacapps/nigari`**; whatever branch it is handed, work goes on a new branch per pull request (rule 31).
+Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on `main` of `neatlittlemacapps/nigari` once its PR merges (until then on branch `claude/handoff-21`). Start the new Claude Code session on **`neatlittlemacapps/nigari`**; whatever branch it is handed, work goes on a new branch per pull request (rule 31).
 
 ---
-<sub>Audit: 13/13 sections · 32 rules · 138 corrections · ~630 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
+<sub>Audit: 13/13 sections · 34 rules · 143 corrections · ~650 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
