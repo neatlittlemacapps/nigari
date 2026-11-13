@@ -9,7 +9,7 @@ description: "Tasks for a row's page managing its database's properties"
 
 **Tests**: required. Go tests for the check on every door and its refusal, one parity pair; two pure checks; one new browser spec, one kept passing (`property-confirm.mjs`).
 
-**Issues**: none yet
+**Issues**: parent #582; T001–T029 are #605–#633, in order
 
 **Delivery**: one pull request (research R10), in the phase order below.
 
@@ -60,7 +60,7 @@ description: "Tasks for a row's page managing its database's properties"
 
 - [ ] T011 [US1] [ui] Move `RowProperties` out of `web/src/components/Editor.tsx` into `web/src/components/RowProperties.tsx` (same props, same caller `PageHeader`)
 - [ ] T012 [US1] [ui] New `web/src/rowProperties.ts` (pure): `applyPropertyChange(schema, id, patch)`, `duplicateProperty(schema, id, copyName)` (new unique id, inserted after, settings copied, no values), `addProperty(schema, type, name)` (unique id and name as the dialog makes them) (R5)
-- [ ] T013 [P] [US1] [test] New `web/scripts/check-rowproperties.mjs` for T012 (and T018's placement), added to `npm run check`
+- [ ] T013 [P] [US1] [test] New `web/scripts/check-rowproperties.mjs` for T012 (and T020's placement), added to `npm run check`
 - [ ] T026 [US1] [ui] New `web/src/actions/propertyActions.ts`: every action on a property (function, label, group, who may use it, where it applies: `rowPage`, `view`), with the reason for each place that leaves one out (R11); groups become submenus (R12)
 - [ ] T027 [P] [US1] [test] New `web/scripts/check-content-actions.mjs`, added to `npm run check`: every menu item in `RowProperties.tsx` and `TableColumnHead.tsx` comes from the property list; every action the list gives a place is in that place's menu; no first level over 7 entries (a submenu counts as one)
 - [ ] T014 [US1] [ui] Two menu functions in `web/src/menuIcons.ts`: `editProperty` (SlidersHorizontal), `rowPageVisibility` (EyeDashed); `check-menu-icons.mjs` passes (R3)
