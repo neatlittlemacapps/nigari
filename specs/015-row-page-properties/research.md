@@ -149,6 +149,44 @@ the same keys; renaming and editing already work. A parity pair in
 agent's duplicate lands last; the interface puts it after the original. The
 order is not a capability, so this is not a gap.
 
+## R11. A property's actions, listed once
+
+**Decision**: `web/src/actions/propertyActions.ts` lists every action on a
+property: its function (menu icon), its label, who may use it (a writer of
+the database), and where it applies (`row page`, `view`). `RowProperties`
+and `ColHead` render their menus from it; a place that leaves an action out
+names it in the list with its reason (the row's page has no view, so no Move
+or Hide in view). `web/scripts/check-content-actions.mjs` fails when a menu
+of a content type has an item not in its list, or a list leaves something
+out without a reason. A new surfaces registry row, **Content actions**,
+makes every later plan answer for it, and pages, rows and views get their
+lists in their own spec (#604).
+
+**Why**: owner (Clarifications): the code graph shows where menus are, not
+what belongs in them, and the same content already offers different actions
+in different places (a page's ⋯ and its sidebar row share 2 of their 12 and
+11 functions). Starting with properties stops this spec from adding a third
+property menu of its own.
+
+**Turned down**: a spec for every content type first (owner chose to start
+here); only a registry row and a report (writes the problem down without
+fixing it).
+
+## R12. Submenus, and the first level's size
+
+**Decision**: a menu's first level holds at most 7 entries; a submenu
+counts as one. Related actions go into a submenu: Property visibility ▸
+(three values), the column heading's Move ▸ (left, right). The list in R11
+names each action's group, and the check counts the first level of every
+menu built from a list.
+
+**Why**: owner: "not all ends up on one big level 1". 7 is Claude's default
+(stated as such in the spec): the longest menus today hold 14 (account) and
+12 (page ⋯) functions, and the property menu needs 5.
+
+**Turned down**: a submenu for every pair (two clicks for common actions);
+no number at all (nothing for a check to hold).
+
 ## R10. One pull request
 
 **Decision**: one PR: the server check and agent docs are small, and the

@@ -64,6 +64,16 @@ source (`codegraph explore` on `RowProperties`, `ColHead`, `SchemaEditor`,
   as in the table and the Edit properties dialog; the row belongs to the
   database itself, unlike an embed in a document (owner, "A",
   recommendation).
+- Q (owner): does the code graph keep track of which actions belong to which
+  kind of content, to avoid wild growth of menus? → A: No; it knows where
+  menus are, not what belongs in them. A property's actions are therefore
+  listed once and every menu of a property is built from that list, starting
+  with this spec (the row's page and the table's column heading); pages,
+  rows and views follow in their own spec (owner, "B", 2026-11-13).
+- Q (owner): not everything on one long first level → A: related actions
+  go into a submenu where that makes sense; a menu's first level holds at
+  most 7 entries, a submenu counting as one (Claude's default, from the
+  longest menus today: 14 and 12 functions).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -103,6 +113,11 @@ change its type, and see the database's table show the same change.
 6. **Given** someone who may only read the database, **When** they look at a
    row's page, **Then** the names are plain labels: no menu, no Add a
    property.
+7. **Given** a table's column heading, **When** someone who may change the
+   database opens its menu, **Then** it offers the same property actions
+   (Rename, Edit property, Duplicate property, Delete property) and, for
+   that view only, Move ▸ (left, right) and Hide in view. The row's page
+   leaves out the view's actions; nothing else differs.
 
 ---
 
@@ -226,6 +241,12 @@ the row pages, then read it back with `get_collection`.
 - **FR-010**: A reader MUST see no menu and no Add a property; a hidden
   property stays hidden for a reader, who can still unfold it to read it.
 - **FR-011**: Every new string MUST be in German, Spanish and Dutch.
+- **FR-012**: A property's actions MUST be listed once, and every menu that
+  acts on a property (the row's page, the column heading) MUST be built from
+  that list; a menu that leaves an action out says why next to the list.
+- **FR-013**: A menu's first level MUST hold at most 7 entries (a submenu
+  counts as one); related actions go into a submenu (the column heading's
+  Move left and Move right become Move ▸).
 
 ### Key Entities
 

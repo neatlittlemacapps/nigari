@@ -22,6 +22,11 @@ properties".
   row-page action applies one change to the freshly fetched schema (R5).
 - **Agents**: no new tool; `update_schema` documents the key; one parity pair
   (R9).
+- **No menu wild growth**: a property's actions are listed once
+  (`actions/propertyActions.ts`); the row's page and the column heading
+  both build their menu from it; a first level holds at most 7 entries,
+  related actions in a submenu; a check and a new registry row,
+  **Content actions**, hold later work to it (R11, R12).
 
 One pull request (R10).
 
@@ -115,8 +120,8 @@ the checkout (2026-11-13).
   specs stay lean (no data-model, contracts or quickstart: one optional key,
   no new route or tool, nothing a quickstart would add to the tasks).
 - V. English source: ✅ strings through `t()`, de/es/nl.
-- VI. Every surface: ✅ table below. No new registry row: row-page
-  visibility matters to this feature only.
+- VI. Every surface: ✅ table below. A new registry row, **Content
+  actions** (R11), added in this PR.
 - VII. Measured: ✅ no new hot-path query.
 
 Re-checked after design: unchanged.
@@ -143,9 +148,10 @@ Re-checked after design: unchanged.
 | Aggregation (`server/aggregate.go`) | No change: no property type. Hiding on the row's page does not touch charts or counts | backend |
 | Stored data (`server/upgrade_steps.go`) | No upgrade step: `pageVisibility` is optional and absent means shown, as `colOrder` (spec 012 R3); nothing stored is rewritten | backend |
 | Outside names (env vars, cookies, storage keys, …) | No change: no new name outside the code; the fold uses no browser storage | backend |
-| Menu icons (`ui/Menu`, `menuIcons.ts`, `check-menu-icons.mjs`) | A new menu on the row's page built with `ui/Menu`. Two new functions: `editProperty` (SlidersHorizontal), `rowPageVisibility` (EyeDashed), the three choices as `MenuValues`. `rename`, `duplicate`, `delete` reused with their meanings (R3) | ui |
+| Menu icons (`ui/Menu`, `menuIcons.ts`, `check-menu-icons.mjs`) | A new menu on the row's page built with `ui/Menu`, from the property action list (R11); the column heading's Move left/right go into Move ▸ (R12). Two new functions: `editProperty` (SlidersHorizontal), `rowPageVisibility` (EyeDashed), the three choices as `MenuValues`. `rename`, `duplicate`, `delete` reused with their meanings (R3) | ui |
 | View lock (`checkViewsUnlocked`, `auditViewChanges`) | No new path writes views except delete, which uses `SchemaEditor`'s rule moved to `propertyDelete.ts`: while locked, the schema alone, and the server's `property_in_locked_view` refusal shown (R6) | backend |
 | Cross-origin requests (`server/crossorigin.go`) | No change: no new route or socket; the `PUT` is judged by `ServeHTTP` as today | backend |
+| Content actions (`web/src/actions/`, `check-content-actions.mjs`) | Introduced here (R11, R12): `actions/propertyActions.ts` lists a property's actions; the row's page and the column heading build their menus from it; both first levels within 7 (row's page 5, column heading 6 with Move ▸). Pages, rows, views and the rest get their lists in their own spec (#604) | ui |
 | Embedded views (`embedViews.ts`, `embedviews.go`) | No change: row-page visibility is not a view setting; an embed's views do not read it. Edit properties from an embed keeps spec 014's confirmation | ui |
 
 **Parity statement**: everything the menu changes is a schema change an
@@ -153,7 +159,14 @@ agent makes with `update_schema`, with the same check.
 
 **Manifest**: no new route or tool; one parity pair; `gapBudget` stays 10.
 
-**Registry**: no new row.
+**Registry**: a new row, **Content actions**, added to
+`.specify/memory/surfaces.md` in this PR: "An action on a kind of content
+(page, row, property, view, block, workspace) is listed once in its
+`web/src/actions/` list, and every menu acting on that content is built from
+it; a menu that leaves an action out says why in the list. A menu's first
+level holds at most 7 entries, a submenu counting as one; related actions go
+into a submenu. `check-content-actions.mjs` enforces it for every type that
+has a list (properties since spec 015)".
 
 ## Project Structure
 
@@ -184,6 +197,9 @@ web/src/rowProperties.ts (new), web/scripts/check-rowproperties.mjs (new)
 web/src/propertyDelete.ts (new), web/scripts/check-propertydelete.mjs (new)
 web/src/components/PropertyFields.tsx (new)   # out of SchemaEditor
 web/src/components/RowProperties.tsx (new)    # out of Editor.tsx
+web/src/actions/propertyActions.ts (new), web/scripts/check-content-actions.mjs (new)
+web/src/components/TableColumnHead.tsx         # menu from the property list
+.specify/memory/surfaces.md, .claude/rules/frontend.md, docs/decisions.md
 web/src/components/SchemaEditor.tsx, Editor.tsx
 web/src/menuIcons.ts, web/src/serverErrors.ts, web/src/types.ts (PropDef.pageVisibility)
 web/src/locales/{de,es,nl}.json

@@ -61,8 +61,11 @@ description: "Tasks for a row's page managing its database's properties"
 - [ ] T011 [US1] [ui] Move `RowProperties` out of `web/src/components/Editor.tsx` into `web/src/components/RowProperties.tsx` (same props, same caller `PageHeader`)
 - [ ] T012 [US1] [ui] New `web/src/rowProperties.ts` (pure): `applyPropertyChange(schema, id, patch)`, `duplicateProperty(schema, id, copyName)` (new unique id, inserted after, settings copied, no values), `addProperty(schema, type, name)` (unique id and name as the dialog makes them) (R5)
 - [ ] T013 [P] [US1] [test] New `web/scripts/check-rowproperties.mjs` for T012 (and T018's placement), added to `npm run check`
+- [ ] T026 [US1] [ui] New `web/src/actions/propertyActions.ts`: every action on a property (function, label, group, who may use it, where it applies: `rowPage`, `view`), with the reason for each place that leaves one out (R11); groups become submenus (R12)
+- [ ] T027 [P] [US1] [test] New `web/scripts/check-content-actions.mjs`, added to `npm run check`: every menu item in `RowProperties.tsx` and `TableColumnHead.tsx` comes from the property list; every action the list gives a place is in that place's menu; no first level over 7 entries (a submenu counts as one)
 - [ ] T014 [US1] [ui] Two menu functions in `web/src/menuIcons.ts`: `editProperty` (SlidersHorizontal), `rowPageVisibility` (EyeDashed); `check-menu-icons.mjs` passes (R3)
 - [ ] T015 [US1] [ui] In `RowProperties.tsx`, for a writer: each name is a `Button` opening a controlled `ui/Menu` (click, right-click, keyboard; focus returns to the name) with Rename (`rename`, inline field: Enter saves, Escape cancels, empty not saved), Edit property (`editProperty`), Duplicate property (`duplicate`, "Copy of {name}"), Delete property (`delete`, T008's message, danger). Every action fetches the config, applies its change (T012) and saves the schema alone; delete also sends `tidyViewsAfterSchema` views unless the views are locked; a refusal shows the server's sentence and reloads the config (R5, R6, R8). A reader sees plain labels
+- [ ] T028 [US1] [ui] `ColHead` (`web/src/components/TableColumnHead.tsx`) builds its menu from the property list: Rename, Edit property (the T016 panel), Duplicate property, Delete property for a writer of the database, plus Move ▸ (left, right) and Hide in view for the view; `CollectionView` passes the schema actions (the same fetch-apply-save as T015). The title column keeps no menu
 - [ ] T016 [US1] [ui] Edit property panel: `ui/Popover` anchored to the name, holding `PropertyFields` for that property; saved when it closes, a type change saved at once; Delete property at its foot (R4)
 - [ ] T017 [P] [US1] [i18n] The US1 strings (Edit property, Duplicate property, Delete property where new, Rename field label) in de/es/nl, informal
 
@@ -97,7 +100,8 @@ Covered by T001–T004: the key over `update_schema` and `create_database`, the 
 
 ## Phase 7: Polish & cross-cutting
 
-- [ ] T023 [test] New `web/tests/row-properties.mjs`, registered in `web/tests/package.json`: menu by click and by keyboard; rename; edit (type change, an option added); duplicate (name and position); delete with its confirmation; add; each visibility value and the fold; a reader sees no menu and can unfold; the same in a side peek. Mutation-checked
+- [ ] T023 [test] New `web/tests/row-properties.mjs`, registered in `web/tests/package.json`: menu by click and by keyboard; the column heading offers the same property actions and Move ▸; rename; edit (type change, an option added); duplicate (name and position); delete with its confirmation; add; each visibility value and the fold; a reader sees no menu and can unfold; the same in a side peek. Mutation-checked
+- [x] T029 [ui] Guidelines (done with the spec, so later plans answer the row at once): the **Content actions** row in `.specify/memory/surfaces.md` (text in plan.md, Registry); a **Menus** paragraph in `.claude/rules/frontend.md` (one list per content type in `web/src/actions/`, first level at most 7, related actions in a submenu); an entry in `docs/decisions.md` with the options turned down (research R11, R12)
 - [ ] T024 [wiki] `wiki/collections.md` "Rows are pages": the menu, the panel, visibility and the fold; `wiki/mcp-tools.md`: `pageVisibility` on `update_schema` and `create_database`; `docs/what-it-does.md`: one line. Stale shots from `check-wiki.mjs` retaken
 - [ ] T025 [test] Before the PR: `codegraph sync`, then `codegraph callers` on `RowProperties`, `PropertyFields`, `tidyViewsAfterSchema`, `deletePropertyMessage`, `checkPropertyVisibility`, compared with the plan; `scripts/agent-gate.sh` green; `/code-review`, `ux-ui-audit` (light, dark, desktop, phone) and the PR names what each found
 
@@ -106,6 +110,7 @@ Covered by T001–T004: the key over `update_schema` and `create_database`, the 
 ## Dependencies
 
 - Phase 1 and Phase 2 are independent of each other; both before Phase 3.
+- T026 before T015 and T028 (both menus read the list); T027 after both.
 - US1 (Phase 3) before US2 and US3: they live in the component T011 moves and use T012.
 - US2 and US3 are independent of each other.
 - Phase 7 last.
