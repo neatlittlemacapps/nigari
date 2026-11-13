@@ -151,20 +151,24 @@ workspace. Your data is not gone: it is still in the old volume. Pick one:
 
   ```sh
   docker stop nigari
+  docker rm nigari
   docker run --rm -v salt-data:/from -v nigari-data:/to alpine cp -a /from/. /to/
   ```
 
-  Start nigari with `nigari-data`, check your workspace is there, and only then
-  remove the old volume with `docker volume rm`.
+  Removing the container keeps both volumes. Start nigari again with the
+  `docker run` command above (it says `nigari-data`), check your workspace is
+  there, and only then remove the old volume with `docker volume rm`.
 
 **Docker Compose** puts the folder's name in front of a volume's name (a
-checkout in `nigari/` gives `nigari_nigari-data`). Stop it with
-`docker compose stop`; `docker volume ls` shows the exact names. Copy from the
-old one to the new one, both with that prefix, before `docker compose up -d`.
+checkout in `nigari/` gives `nigari_nigari-data`). Run `docker compose down`
+first (it keeps volumes); `docker volume ls` shows the exact names. Copy from
+the old one to the new one, both with that prefix, then `docker compose up -d`.
 
-Started on an empty workspace by mistake? Stop nigari, remove the new, empty
-volume (`docker volume rm nigari-data`), then copy as above. Do not copy over
-it: the empty workspace's own database files would be mixed with yours.
+Started on an empty workspace by mistake? Remove the container
+(`docker stop nigari` and `docker rm nigari`, or `docker compose down`), then
+the new, empty volume (`docker volume rm nigari-data`, with the Compose prefix
+if you use Compose), then copy as above. Do not copy over it: the empty
+workspace's own database files would be mixed with yours.
 
 ### Run on Umbrel
 
