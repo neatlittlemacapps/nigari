@@ -5,10 +5,11 @@ services:
     # image: ghcr.io/neatlittlemacapps/nigari:latest
     ports:
       - "8420:8420"
-    # The volume keeps salt.md's name on purpose: renamed, it would be a new,
-    # empty volume, and the workspace would look lost (spec 011, R14).
+    # Earlier versions called this volume salt-data. A renamed volume is a new,
+    # empty one: move the data over before running this file again
+    # (wiki/self-hosting.md, "An install that uses salt-data").
     volumes:
-      - salt-data:/data
+      - nigari-data:/data
     # A container cannot see how much of the host it is meant to get, so
     # without a limit nigari assumes a small machine and indexes fewer large
     # PDFs than it could. Raise this to what you actually want to give it —
@@ -26,4 +27,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  salt-data:
+  nigari-data:

@@ -32,11 +32,12 @@ service, and running it again upgrades it. No `curl` on the machine?
 Or with Docker:
 
 ```sh
-docker run -d -p 8420:8420 -v salt-data:/data ghcr.io/neatlittlemacapps/nigari:latest
+docker run -d -p 8420:8420 -v nigari-data:/data ghcr.io/neatlittlemacapps/nigari:latest
 ```
 
-The volume keeps salt.md's name, `salt-data`, so an install from before the
-rename finds its data; a new name would be a new, empty volume.
+Already running it with a volume called `salt-data`? Keep that name in the
+command, or move the data over first: see
+[An install that uses `salt-data`](wiki/self-hosting.md#an-install-that-uses-salt-data).
 
 Or download the binary yourself: every release on the
 [Releases page](https://github.com/neatlittlemacapps/nigari/releases/latest)
