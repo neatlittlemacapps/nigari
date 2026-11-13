@@ -99,6 +99,8 @@ try {
   const copy = ev.copyDatabaseView(dbViews[1], takenIds);
   check('a copy has an id of its own', copy.id !== 'board' && !takenIds.has(copy.id), true);
   check('a copy keeps everything else', { ...copy, id: '' }, { id: '', name: 'By status', type: 'board', groupBy: 'status' });
+  const named = ev.copyDatabaseView(dbViews[1], takenIds, 'Copy of By status');
+  check('a copy takes the name it is given', [named.name, named.groupBy, dbViews[1].name], ['Copy of By status', 'status', 'By status']);
   copy.name = 'Changed';
   check('a copy shares nothing with the database view', dbViews[1].name, 'By status');
   const three = [{ id: 'a', name: 'A', type: 'table' }, { id: 'b', name: 'B', type: 'table' }, { id: 'c', name: 'C', type: 'table' }];

@@ -430,6 +430,13 @@ func (s *Server) mcpCreateEmbedView(u *user, pageID, embedID, copyOf string, spe
 				return "", nil, "", fmt.Errorf("a copy keeps its view's type (%v) — leave type out, or create a new view without copy_of", view["type"])
 			}
 			view["id"] = newEmbedViewID(taken)
+			// Named after what it was copied from, as the interface names it
+			// (owner, 2026-11-12), unless the agent gives it a name: two tabs
+			// of one embed must not both read "Table". applyViewSpec below
+			// lays a name given in spec over this one.
+			if name, _ := view["name"].(string); name != "" {
+				view["name"] = "Copy of " + name
+			}
 		} else {
 			if strings.TrimSpace(sp.Name) == "" {
 				sp.Name = strings.ToUpper(sp.Type[:1]) + sp.Type[1:]

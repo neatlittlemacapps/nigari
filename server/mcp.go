@@ -445,7 +445,7 @@ var mcpTools = []map[string]any{
 				"page_id":            map[string]any{"type": "string"},
 				"view_id":            map[string]any{"type": "string", "description": "Omit to create a new view, pass it to change an existing one."},
 				"embed_id":           map[string]any{"type": "string", "description": embedIDHint},
-				"copy_of":            map[string]any{"type": "string", "description": "Creating with embed_id only: the id of one of the database's views to start from; the other arguments then change the copy. The database's view is not changed."},
+				"copy_of":            map[string]any{"type": "string", "description": "Creating with embed_id only: the id of one of the database's views to start from; the other arguments then change the copy. The copy is named \"Copy of <name>\" unless you pass name. The database's view is not changed."},
 				"name":               map[string]any{"type": "string"},
 				"type":               map[string]any{"type": "string", "description": "Creating only: table | board | gallery | calendar | timeline | list | form | chart"},
 				"group_by":           map[string]any{"type": "string", "description": "board: the property to group columns by. chart: the property to group by (select, multiselect, person, checkbox, date or relation), or \"__row\" for one bar per row valued by aggregate_property (aggregate sum, not count). Pass \"\" to clear."},
