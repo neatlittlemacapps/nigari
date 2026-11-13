@@ -176,11 +176,20 @@ jobs:
           git checkout -b "${branch}"
           git commit -qam "nigari ${ver}"
           git push -f origin "${branch}"
-          # One open pull request per release; an older one stays until the
-          # owner merges or closes it, and the newest one supersedes it.
           if [ -z "$(gh pr list --repo "${STORE}" --head "${branch}" --json number --jq '.[].number')" ]; then
             gh pr create --repo "${STORE}" --base main --head "${branch}" \
               --title "nigari ${ver}" \
               --body "Moves the store to nigari ${ver} (${digest}). Release notes: https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${ver}. Merge it and Umbrel offers the update within about 5 minutes."
           fi
+          # Every one of these pull requests edits the same three lines (version,
+          # release notes, image pin), so two open at once cannot both be merged:
+          # the owner merges one and the other conflicts (found 2026-11-12, the
+          # store's #3 after its #2). The newest therefore supersedes the older
+          # ones: they are closed with a pointer, and their branches left alone.
+          # Only the branches this job makes (nigari-<version>) are touched.
+          gh pr list --repo "${STORE}" --state open --json number,headRefName \
+            --jq ".[] | select(.headRefName | test(\"^nigari-[0-9.]+$\")) | select(.headRefName != \"${branch}\") | .number" |
+            while read -r old; do
+              gh pr close "${old}" --repo "${STORE}" --comment "Superseded by nigari ${ver}: these pull requests change the same lines, so only the newest can be merged."
+            done
           echo "Opened a pull request on ${STORE} for ${ver}." >> "$GITHUB_STEP_SUMMARY"
