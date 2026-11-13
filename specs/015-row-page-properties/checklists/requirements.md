@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,5 +31,5 @@
 
 ## Notes
 
-- Three [NEEDS CLARIFICATION] markers wait for the owner: Edit property's shape (US1.3), whose visibility it is (US3.1), and whether a change from a row's page asks first (Edge Cases).
+- Three questions answered by the owner on 2026-11-13 ("AAA"); recorded under Clarifications.
 - Context names `RowProperties`, `SchemaEditor`, `update_schema`: what the graph found, kept as context for the plan, not as requirements.

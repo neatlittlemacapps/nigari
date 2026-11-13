@@ -53,7 +53,17 @@ source (`codegraph explore` on `RowProperties`, `ColHead`, `SchemaEditor`,
 
 ## Clarifications
 
-_None yet: three questions are marked below._
+### Session 2026-11-13
+
+- Q: What does Edit property open? → A: A small panel for that one property,
+  beside its name, as in Notion; not the full Edit properties dialog (owner,
+  "A", recommendation).
+- Q: Whose is a property's visibility? → A: The database's: one setting for
+  everyone and every row, as in Notion (owner, "A", recommendation).
+- Q: Does a change made from a row's page ask first? → A: Only deleting asks,
+  as in the table and the Edit properties dialog; the row belongs to the
+  database itself, unlike an embed in a document (owner, "A",
+  recommendation).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -82,9 +92,8 @@ change its type, and see the database's table show the same change.
 3. **Given** that menu, **When** they choose Edit property, **Then** they can
    change the property's name, type and the settings its type has (a select's
    options, a number's display, a relation's database…) for that property
-   alone. [NEEDS CLARIFICATION: a small panel beside the name for this one
-   property, as in Notion, or the existing Edit properties dialog opened at
-   this property?]
+   alone, in a small panel beside the name (not the full Edit properties
+   dialog).
 4. **Given** that menu, **When** they choose Duplicate property, **Then** a
    copy named "Copy of {name}" with the same type and settings appears right
    under it, empty on every row.
@@ -131,9 +140,8 @@ filled.
 
 1. **Given** the menu's Property visibility, **When** they choose *Always
    show*, *Hide when empty* or *Always hide*, **Then** every row's page of
-   the database follows it, for everyone. [NEEDS CLARIFICATION: is a
-   property's visibility one setting for the whole database (everyone, every
-   row), or does each person choose their own?]
+   the database follows it, for everyone: one setting per property, not one
+   per person.
 2. **Given** hidden properties on a row's page, **Then** under the list a
    line reads "N more properties" (N counting what is hidden on this row);
    **When** it is clicked, the hidden ones appear, each marked as hidden,
@@ -183,9 +191,9 @@ the row pages, then read it back with `get_collection`.
   the Edit properties dialog today; the other page shows the change when it
   next loads the database.
 - A row's page in a peek behaves the same as a full page.
-- [NEEDS CLARIFICATION: does a change made from a row's page ask first,
-  like every property change saved from a document (spec 014), or only
-  deleting asks, as in the table and the Edit properties dialog?]
+- A change made from a row's page asks first only when it deletes (FR-005);
+  a rename, an edit, a duplicate, a visibility change or a new property is
+  saved at once, as in the table and the Edit properties dialog.
 
 ## Requirements *(mandatory)*
 
