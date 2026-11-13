@@ -1478,9 +1478,13 @@ function WorkspaceAvatar({ ws }: { ws?: Workspace }) {
   if (ws?.image) return <img className="ws-img" src={ws.image} alt="" />;
   // Not only an emoji: a workspace icon takes the same four forms a page icon
   // does, and printing it raw showed "lucide:Rocket" as text.
-  if (ws?.icon) return <span className="ws-emoji"><PageIcon icon={ws.icon} size={16} /></span>;
   const name = ws?.name ?? 'nigari';
-  return <span className={'ws-letter ' + tagColorClass(name)}>{name.charAt(0).toUpperCase()}</span>;
+  // The initial is also what an icon that does not draw falls back to, as the
+  // cut-off ones the server stored before #593 ("lucide:R") do, instead of
+  // leaving the switcher blank.
+  const letter = <span className={'ws-letter ' + tagColorClass(name)}>{name.charAt(0).toUpperCase()}</span>;
+  if (ws?.icon) return <span className="ws-emoji"><PageIcon icon={ws.icon} size={16} fallback={letter} /></span>;
+  return letter;
 }
 
 // WorkspaceImageModal: pick an emoji or upload a logo image for the workspace.

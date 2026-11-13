@@ -46,7 +46,7 @@ func TestAWorkspaceIconKeepsTheFormsThePickerMakes(t *testing.T) {
 	// never fetches from elsewhere.
 	s.db.Exec(`UPDATE workspaces SET icon = '🚀' WHERE id = ?`, ws)
 	for _, bad := range []string{
-		"https://example.test/pixel.png", "http://example.test/x", "data:image/png;base64,AAAA", "/api/pages", "/files/../nigari.db", "lucide:", "lucide:has space", "mdi:" + strings.Repeat("a", 70),
+		"https://example.test/pixel.png", "HTTPS://example.test/x", "http://example.test/x", "data:image/png;base64,AAAA", "Data:image/png;base64,AAAA", "/api/pages", "/files/../nigari.db", "/files/..", "/files/.", "LUCIDE:Rocket:x", "lucide:", "lucide:has space", "mdi:" + strings.Repeat("a", 70),
 	} {
 		rec := requestAs(t, s, cookie, "PATCH", "/api/workspaces/"+ws, `{"icon":"`+bad+`"}`)
 		if rec.Code != 400 || !strings.Contains(rec.Body.String(), "bad_icon") || stored() != "🚀" {
@@ -55,6 +55,16 @@ func TestAWorkspaceIconKeepsTheFormsThePickerMakes(t *testing.T) {
 		if _, err := callTool(t, s, u, "workspace", `{"workspace_id":"`+ws+`","icon":"`+bad+`"}`); err == nil || stored() != "🚀" {
 			t.Errorf("MCP %q: accepted (%v), stored %q", bad, err, stored())
 		}
+	}
+
+	// The workspace image follows the same rule for an upload's address.
+	for _, bad := range []string{"/files/..", "/files/a b", "/files/../../etc/x"} {
+		if rec := requestAs(t, s, cookie, "PATCH", "/api/workspaces/"+ws, `{"image":"`+bad+`"}`); rec.Code != 400 {
+			t.Errorf("image %q: %d, want 400", bad, rec.Code)
+		}
+	}
+	if rec := requestAs(t, s, cookie, "PATCH", "/api/workspaces/"+ws, `{"image":"/files/0123456789abcdef.png"}`); rec.Code != 200 {
+		t.Errorf("an uploaded image: %d", rec.Code)
 	}
 
 	// Clearing it still works.

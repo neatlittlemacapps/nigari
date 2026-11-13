@@ -554,11 +554,13 @@ func (s *Server) handleListWorkspaces(w http.ResponseWriter, r *http.Request) {
 
 // errBadWorkspaceIcon is the refusal for an icon that is none of the forms
 // below. REST answers it 400 bad_icon.
-var errBadWorkspaceIcon = errors.New("An icon is an emoji, a lucide: or mdi: icon, or a picture uploaded to nigari")
+var errBadWorkspaceIcon = errors.New("An icon is an emoji, a lucide: or mdi: icon, or a picture uploaded to nigari.")
 
 var (
-	workspaceIconRef  = regexp.MustCompile(`^(lucide|mdi):[A-Za-z0-9-]{1,64}(:(#[0-9a-fA-F]{3,8}|fill))?$`)
-	workspaceIconFile = regexp.MustCompile(`^/files/[A-Za-z0-9._-]{1,128}$`)
+	workspaceIconRef = regexp.MustCompile(`^(lucide|mdi):[A-Za-z0-9-]{1,64}(:(#[0-9a-fA-F]{3,8}|fill))?$`)
+	// An upload is named by newID() and an extension (handleUpload), so a name
+	// has no dot but the one before the extension: "/files/.." is no upload.
+	workspaceUploadPath = regexp.MustCompile(`^/files/[A-Za-z0-9_-]{1,64}(\.[A-Za-z0-9]{1,16})?$`)
 )
 
 // cleanWorkspaceIcon is the one rule for a workspace's icon, applied by the
@@ -578,10 +580,14 @@ func cleanWorkspaceIcon(icon string) (string, error) {
 	switch {
 	case ic == "":
 		return "", nil
-	case workspaceIconRef.MatchString(ic), workspaceIconFile.MatchString(ic):
+	case workspaceIconRef.MatchString(ic), workspaceUploadPath.MatchString(ic):
 		return ic, nil
-	case strings.HasPrefix(ic, "lucide:"), strings.HasPrefix(ic, "mdi:"), strings.HasPrefix(ic, "/"),
-		strings.HasPrefix(ic, "http"), strings.HasPrefix(ic, "data:"):
+	}
+	// Case does not matter for what looks like an address or a reference, or
+	// "HTTPS://x" would be cut to eight characters and kept.
+	switch low := strings.ToLower(ic); {
+	case strings.HasPrefix(low, "lucide:"), strings.HasPrefix(low, "mdi:"), strings.HasPrefix(low, "/"),
+		strings.HasPrefix(low, "http"), strings.HasPrefix(low, "data:"):
 		return "", errBadWorkspaceIcon
 	}
 	if r := []rune(ic); len(r) > 8 { // an emoji or two, not arbitrary text
@@ -663,7 +669,7 @@ func (s *Server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 	if body.Icon != nil {
 		icon, err := cleanWorkspaceIcon(*body.Icon)
 		if err != nil {
-			httpErrorCode(w, 400, "bad_icon", err.Error()+".")
+			httpErrorCode(w, 400, "bad_icon", err.Error())
 			return
 		}
 		sets = append(sets, "icon = ?")
@@ -673,7 +679,7 @@ func (s *Server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 		img := strings.TrimSpace(*body.Image)
 		// Only accept an internal upload path or clearing it — never an external
 		// URL (which would leak requests / act as a tracking beacon).
-		if img != "" && !strings.HasPrefix(img, "/files/") {
+		if img != "" && !workspaceUploadPath.MatchString(img) {
 			httpError(w, 400, "image must be an uploaded file")
 			return
 		}
