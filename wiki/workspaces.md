@@ -122,8 +122,10 @@ over MCP a name is capped at 80 characters, when creating as well as when
 renaming.
 
 **Picture**: *Pick an emoji or upload a logo (a company or project logo, say).*
-An emoji and a logo are one identity, not two: setting the emoji clears the
-image and uploading an image clears the emoji. **Remove** clears both and the
+The picker beside *Emoji* offers the same icons a page has: an emoji, a Lucide
+or Material icon (with a colour if you like), or a picture you upload in its
+*Upload* tab. An emoji, an icon and a logo are one identity, not three: setting
+one clears the others. **Remove** clears both and the
 switcher falls back to the coloured initial. The picture is shown in the
 switcher and on cards. Only an uploaded file is accepted: pasting an external
 image address is refused, because a remote picture would turn every sidebar into

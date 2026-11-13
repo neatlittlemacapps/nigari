@@ -4,8 +4,10 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -550,8 +552,47 @@ func (s *Server) handleListWorkspaces(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, list)
 }
 
-// handleUpdateWorkspace lets a workspace admin rename it or set its icon (emoji)
-// / image (an uploaded logo URL). Empty-string fields clear that attribute.
+// errBadWorkspaceIcon is the refusal for an icon that is none of the forms
+// below. REST answers it 400 bad_icon.
+var errBadWorkspaceIcon = errors.New("An icon is an emoji, a lucide: or mdi: icon, or a picture uploaded to nigari")
+
+var (
+	workspaceIconRef  = regexp.MustCompile(`^(lucide|mdi):[A-Za-z0-9-]{1,64}(:(#[0-9a-fA-F]{3,8}|fill))?$`)
+	workspaceIconFile = regexp.MustCompile(`^/files/[A-Za-z0-9._-]{1,128}$`)
+)
+
+// cleanWorkspaceIcon is the one rule for a workspace's icon, applied by the
+// route and by the MCP tool alike. It takes the four forms a page icon has and
+// the workspace picture dialog's picker produces: an emoji, "lucide:Name",
+// "mdi:Name" (each with an optional colour) and a picture uploaded to nigari
+// ("/files/..."). It used to cut every icon to eight characters, an emoji or
+// two, which turned "lucide:Rocket" into "lucide:R" and an uploaded picture
+// into "/files/a": the sidebar then drew nothing (#593).
+//
+// An external address or a data URL is refused, not cut: like the workspace
+// image, an icon never makes the sidebar fetch from elsewhere (a tracking
+// beacon). Anything else is a short text, an emoji or two, kept at eight
+// characters as before. Empty stays empty (it clears the icon).
+func cleanWorkspaceIcon(icon string) (string, error) {
+	ic := strings.TrimSpace(icon)
+	switch {
+	case ic == "":
+		return "", nil
+	case workspaceIconRef.MatchString(ic), workspaceIconFile.MatchString(ic):
+		return ic, nil
+	case strings.HasPrefix(ic, "lucide:"), strings.HasPrefix(ic, "mdi:"), strings.HasPrefix(ic, "/"),
+		strings.HasPrefix(ic, "http"), strings.HasPrefix(ic, "data:"):
+		return "", errBadWorkspaceIcon
+	}
+	if r := []rune(ic); len(r) > 8 { // an emoji or two, not arbitrary text
+		ic = string(r[:8])
+	}
+	return ic, nil
+}
+
+// handleUpdateWorkspace lets a workspace admin rename it or set its icon (an
+// emoji, a lucide: or mdi: icon, an uploaded picture) / image (an uploaded logo
+// URL). Empty-string fields clear that attribute.
 func (s *Server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 	wsID := r.PathValue("id")
 	if !s.tokenReachesWorkspace(r, wsID) {
@@ -620,9 +661,10 @@ func (s *Server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 		args = append(args, v)
 	}
 	if body.Icon != nil {
-		icon := strings.TrimSpace(*body.Icon)
-		if r := []rune(icon); len(r) > 8 { // an emoji or two, not arbitrary text
-			icon = string(r[:8])
+		icon, err := cleanWorkspaceIcon(*body.Icon)
+		if err != nil {
+			httpErrorCode(w, 400, "bad_icon", err.Error()+".")
+			return
 		}
 		sets = append(sets, "icon = ?")
 		args = append(args, icon)
