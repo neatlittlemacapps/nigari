@@ -205,10 +205,11 @@ func (s *Server) mcpGetLinks(u *user, pageID, wsID string, kinds []string, inclu
 // was simply missing: an agent could make a workspace and then never correct
 // the name it had chosen.
 //
-// The guards are the ones the interface applies, deliberately repeated rather
-// than referenced: workspace admins only, a name that is not blank, and an icon
-// of at most a couple of characters — the field is for an emoji, not for text
-// somebody smuggles into the sidebar.
+// The guards are the ones the interface applies: workspace admins only, a name
+// that is not blank (repeated here rather than referenced), and an icon by
+// cleanWorkspaceIcon, the function the route uses too (an emoji, a lucide: or
+// mdi: icon, or an uploaded picture; never text somebody smuggles into the
+// sidebar).
 func (s *Server) mcpWorkspace(u *user, wsID, name, icon, from, tag, color string) (string, error) {
 	// Recolouring a tag lives here because the colour belongs to the
 	// workspace, and the tool list is kept small on purpose (mcp_merged.go).
@@ -267,9 +268,9 @@ func (s *Server) mcpWorkspace(u *user, wsID, name, icon, from, tag, color string
 		args = append(args, n)
 	}
 	if icon != "" {
-		ic := strings.TrimSpace(icon)
-		if r := []rune(ic); len(r) > 8 { // an emoji or two, not arbitrary text
-			ic = string(r[:8])
+		ic, err := cleanWorkspaceIcon(icon)
+		if err != nil {
+			return "", err
 		}
 		sets = append(sets, "icon = ?")
 		args = append(args, ic)

@@ -479,7 +479,7 @@ var mcpTools = []map[string]any{
 				"workspace_id":   map[string]any{"type": "string", "description": "Omit to create a new workspace, pass it to change an existing one."},
 				"from_workspace": map[string]any{"type": "string", "description": "Creating only: copy this workspace's structure (rules, databases, schemas, views) into the new one. No rows, no documents."},
 				"name":           map[string]any{"type": "string", "description": "The name. Required when creating."},
-				"icon":           map[string]any{"type": "string", "description": "Changing only: an emoji for the sidebar."},
+				"icon":           map[string]any{"type": "string", "description": "Changing only: the sidebar icon: an emoji, \"lucide:Name\", \"mdi:Name\" (optionally with a colour, \"lucide:Name:#e03131\") or a picture uploaded to nigari (\"/files/…\"). An external address is refused."},
 				"tag":            map[string]any{"type": "string", "description": "Recolour this tag (with or without #) in workspace_id. Tags are shared by the whole workspace."},
 				"color":          map[string]any{"type": "string", "description": "With tag: gray, brown, orange, yellow, green, blue, purple, pink, red, or \"default\" to reset."},
 			}},

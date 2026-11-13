@@ -1381,8 +1381,12 @@ Create a workspace, change one, or recolour one of its tags.
 
 Creating makes you the workspace's **admin**. Changing needs you to be one
 already, and accepts a new `name` (80 characters at most) or an `icon`. The
-icon field is for an emoji and is cut to 8 characters, so nobody smuggles text
-into the sidebar.
+icon is the sidebar's picture: an emoji, `lucide:Name` or `mdi:Name` (each with an
+optional colour, `lucide:Name:#e03131`), or a picture uploaded to nigari
+(`/files/…`), the same four forms a page icon has. Other text is cut to 8
+characters, so nobody smuggles text into the sidebar, and an address elsewhere
+or a `data:` URL is refused. The workspace picture dialog follows the
+same rule.
 
 `from_workspace` starts from an existing workspace's **structure** instead of
 from nothing: its rules, its databases, their property schemas with the option
