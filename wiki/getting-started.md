@@ -63,7 +63,7 @@ like from the outside.
 
 ```sh
 docker run -d --name nigari --restart unless-stopped \
-  -p 8420:8420 -v salt-data:/data --memory=4g \
+  -p 8420:8420 -v nigari-data:/data --memory=4g \
   ghcr.io/neatlittlemacapps/nigari:latest
 ```
 

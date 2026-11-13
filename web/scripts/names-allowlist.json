@@ -29,7 +29,7 @@
   },
   "README.md": {
     "count": 14,
-    "reason": "\"Built on salt.md\": where nigari comes from and the origin notice (FR-002), and the salt-data volume"
+    "reason": "\"Built on salt.md\": where nigari comes from and the origin notice (FR-002), and the note for an install still on the salt-data volume"
   },
   "SECURITY.md": {
     "count": 5,
@@ -41,15 +41,15 @@
   },
   "deploy/nigari.container": {
     "count": 2,
-    "reason": "the Docker/Podman volume keeps salt.md's name: renamed, it would be a new, empty volume (spec 011, R14)"
+    "reason": "names the volume salt-data that earlier versions used, so an existing install moves its data before running this file (#577)"
   },
   "desktop/src/main.js": {
     "count": 1,
     "reason": "says the app is new to the OS since the rename"
   },
   "docker-compose.yml": {
-    "count": 3,
-    "reason": "the Docker/Podman volume keeps salt.md's name: renamed, it would be a new, empty volume (spec 011, R14)"
+    "count": 2,
+    "reason": "names the volume salt-data that earlier versions used, so an existing install moves its data before running this file (#577)"
   },
   "install.sh": {
     "count": 39,
@@ -178,10 +178,6 @@
   "wiki/desktop-app.md": {
     "count": 3,
     "reason": "describes moving from salt.md to nigari: the old names a person still meets"
-  },
-  "wiki/getting-started.md": {
-    "count": 1,
-    "reason": "the Docker/Podman volume keeps salt.md's name: renamed, it would be a new, empty volume (spec 011, R14)"
   },
   "wiki/import-export.md": {
     "count": 3,

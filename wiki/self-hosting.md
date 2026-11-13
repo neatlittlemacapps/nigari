@@ -69,7 +69,7 @@ Windows is not covered by the script (it stops with "Unsupported OS"), but a
 
 ```sh
 docker run -d --name nigari --restart unless-stopped \
-  -p 8420:8420 -v salt-data:/data --memory=4g \
+  -p 8420:8420 -v nigari-data:/data --memory=4g \
   ghcr.io/neatlittlemacapps/nigari:latest
 ```
 
@@ -88,7 +88,7 @@ The memory limit requires cgroup v2.
 
 ```sh
 podman run -d --name nigari \
-  -p 127.0.0.1:8420:8420 -v salt-data:/data --memory=4g \
+  -p 127.0.0.1:8420:8420 -v nigari-data:/data --memory=4g \
   ghcr.io/neatlittlemacapps/nigari:latest
 ```
 
@@ -102,7 +102,7 @@ why the limit matters.
 For startup and crash recovery, use the supplied `deploy/nigari.container`.
 This requires a Podman installation with Quadlet. If the quick-start container
 is running, stop and remove it first (`podman stop --time 20 nigari`, then
-`podman rm nigari`); the service reuses its `salt-data` volume.
+`podman rm nigari`); the service reuses its `nigari-data` volume.
 
 From a checkout, without overwriting an existing `nigari.container`:
 
@@ -131,10 +131,40 @@ docker compose up -d
 By default it **builds the image from the source in that directory** (`build: .`).
 To use the published image instead, uncomment the `image:` line and comment out
 `build:`. The rest of the file sets `mem_limit: 4g`, the named volume
-`salt-data` mounted at `/data`, `NIGARI_ADDR` and `NIGARI_DATA`, and
+`nigari-data` mounted at `/data`, `NIGARI_ADDR` and `NIGARI_DATA`, and
 `restart: unless-stopped`. Two entries are commented out and waiting for you:
 `NIGARI_MEMORY_MB`, and the pair `NIGARI_TLS_CERT` / `NIGARI_TLS_KEY` for serving
 HTTPS directly; you supply the mount for the certificate files yourself.
+
+### An install that uses `salt-data`
+
+Earlier versions of the commands above, `docker-compose.yml` and
+`deploy/nigari.container` called the volume `salt-data`. They now say
+`nigari-data`. Docker and Podman treat a volume with a new name as a new, empty
+one, so an existing install that simply runs the new command starts on an empty
+workspace. Your data is not gone: it is still in the old volume. Pick one:
+
+- **Keep the old name** in your own command, or in your copy of the compose or
+  Quadlet file. Nothing else changes.
+- **Move the data to the new name**, once. Stop nigari first, then copy (use
+  `podman` in place of `docker` for Podman):
+
+  ```sh
+  docker stop nigari
+  docker run --rm -v salt-data:/from -v nigari-data:/to alpine cp -a /from/. /to/
+  ```
+
+  Start nigari with `nigari-data`, check your workspace is there, and only then
+  remove the old volume with `docker volume rm`.
+
+**Docker Compose** puts the folder's name in front of a volume's name (a
+checkout in `nigari/` gives `nigari_nigari-data`). Stop it with
+`docker compose stop`; `docker volume ls` shows the exact names. Copy from the
+old one to the new one, both with that prefix, before `docker compose up -d`.
+
+Started on an empty workspace by mistake? Stop nigari, remove the new, empty
+volume (`docker volume rm nigari-data`), then copy as above. Do not copy over
+it: the empty workspace's own database files would be mixed with yours.
 
 ### Run on Umbrel
 
@@ -807,9 +837,10 @@ without a word stop the start with a sentence instead.
 - **The desktop app** is a new app to your computer; it asks for the server
   address once.
 
-**What keeps its old name on purpose**: the Docker and Podman volume
-`salt-data`. A volume with a new name would be a new, empty one. And calendar
-events keep their ids, so a subscribed calendar keeps the alerts you added.
+**What keeps its old name on purpose**: calendar events keep their ids, so a
+subscribed calendar keeps the alerts you added. The Docker and Podman volume
+kept its old name for a while after the rename and is `nigari-data` now: see
+[An install that uses `salt-data`](#an-install-that-uses-salt-data).
 
 **Docker Compose**: the service is called `nigari` now, so `docker compose up -d`
 would leave the old `salt` container running beside it on the same volume. Use

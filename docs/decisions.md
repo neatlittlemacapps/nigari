@@ -7,6 +7,37 @@ entries are not edited away.
 
 ---
 
+## 2026-11-13 — The Docker and Podman volume is called `nigari-data`
+
+Reverses one line of the 2026-10-29 rename entry below ("The compose and Quadlet
+volume keeps the name `salt-data`"). The owner read `-v salt-data:/data` in the
+README and asked why the product's own install command still said salt (#577).
+An explanation under the command did not stop the question; a new user would
+ask the same.
+
+- **`nigari-data` in the README, the wiki, `docker-compose.yml` and
+  `deploy/nigari.container`** (owner: option B). The wiki's self-hosting page
+  gains "An install that uses `salt-data`": keep the old name in your own
+  command, or copy the data across once (stop, copy, check, then remove the old
+  volume), with the Compose prefix (`nigari_salt-data`) spelled out, and what
+  to do after starting on an empty volume by mistake (remove it before
+  copying, so the empty database's files are not mixed with yours).
+- **The copy was tried, not assumed** (2026-11-13, image 2.1.28): an account
+  made on `salt-data`, the documented stop and `alpine cp -a`, then nigari on
+  `nigari-data` signs that account in (200), files still owned by uid 1000.
+- **The cost, accepted**: an install that reruns the new compose or Quadlet
+  file without reading the note starts on an empty workspace. Its data is
+  untouched in `salt-data`. Installs made from the README since v2.0.0 are the
+  ones affected; Umbrel and the binary installs use no named volume.
+- **Turned down**: keeping `salt-data` (A: the question keeps coming); renaming
+  only the typed `docker run` lines and keeping it in the compose and Quadlet
+  files (C: "salt" stays in the files people read); compose's `name: salt-data`
+  under a new key (turned down in spec 011 too: it still names the old volume);
+  having nigari find the old volume itself (a container cannot see other
+  volumes).
+
+---
+
 ## 2026-11-12 — A newer Umbrel store pull request closes the older ones
 
 The release job opens one pull request per release on `yokogaki-umbrel`, and
