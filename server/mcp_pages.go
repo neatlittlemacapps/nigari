@@ -387,11 +387,14 @@ func (s *Server) mcpEmbedDatabase(u *user, pageID, databaseID, viewID string) (s
 	if err := s.db.QueryRow(`SELECT type, title FROM pages WHERE id = ? AND trashed_at IS NULL`, databaseID).Scan(&typ, &title); err != nil {
 		return "", fmt.Errorf("database %q not found", databaseID)
 	}
-	if typ != "collection" {
-		return "", fmt.Errorf("page %q is a document, not a database — embed only works with databases", title)
-	}
+	// Access first: the sentence below names the page's title, so a caller who
+	// may not read the page must get the answer a missing one gets, or a write
+	// token learns the title of any page whose id it knows (#591).
 	if !s.canRead(u.ID, databaseID) || !s.credentialMayEnter(u, s.pageWorkspace(databaseID)) {
 		return "", fmt.Errorf("database %q not found", databaseID)
+	}
+	if typ != "collection" {
+		return "", fmt.Errorf("page %q is a document, not a database — embed only works with databases", title)
 	}
 	// The embed's own views, in the new shape (spec 014): one copy of the
 	// view asked for (FR-008), with an id of its own, or one table (FR-002).
