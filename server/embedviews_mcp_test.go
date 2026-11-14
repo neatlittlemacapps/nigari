@@ -514,3 +514,28 @@ func TestACopyOfADatabaseViewIsNamedCopyOf(t *testing.T) {
 		t.Error("copying renamed or changed the database's view")
 	}
 }
+
+// embed_database named a page's title in "is a document, not a database"
+// before it checked the caller may read the page, so a write token learned the
+// title of any page whose id it knew, in a workspace it may not enter (#591).
+// A readable document still gets the helpful sentence; an unreadable one gets
+// the answer a missing page gets, from every credential shape that must stay
+// out.
+func TestEmbedDatabaseDoesNotNameAPageTheCallerMayNotRead(t *testing.T) {
+	f := newScopeFixture(t)
+	target := f.s.makePage(t, f.team, f.owner, "", "Embed target", `{}`)
+	secret := f.s.makePage(t, f.other, f.owner, "", "Payroll for 2027", `{}`)
+	owner := &user{ID: f.owner, Name: "Test"}
+
+	// Readable: the sentence that says what to do.
+	if _, err := callTool(t, f.s, owner, "embed_database", `{"page_id":"`+target+`","database_id":"`+target+`"}`); err == nil || !strings.Contains(err.Error(), "is a document, not a database") {
+		t.Errorf("a readable document: %v", err)
+	}
+	for _, c := range f.outsiders(t) {
+		c.setup()
+		_, err := callTool(t, f.s, c.u, "embed_database", `{"page_id":"`+target+`","database_id":"`+secret+`"}`)
+		if err == nil || strings.Contains(err.Error(), "Payroll") || !strings.Contains(err.Error(), "not found") {
+			t.Errorf("%s: the answer for a page it may not enter: %v", c.name, err)
+		}
+	}
+}
