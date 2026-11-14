@@ -80,10 +80,14 @@ export type MenuProps = {
    *  opened by a right-click or Shift+F10 on a row gives focus back to the row:
    *  its ⋯ shows only on hover, and a hidden button cannot take focus. */
   returnFocus?: RefObject<HTMLElement | null>;
+  /** Called once the menu has finished closing and focus has gone back: the
+   *  moment a field an item opened can take focus without losing it to the
+   *  trigger (spec 015: + Add a property opens the new property's name). */
+  onClosed?: () => void;
   className?: string;
 };
 
-export function Menu({ trigger, label, children, open, onOpenChange, anchorPoint, side = 'bottom', align = 'end', narrow, returnFocus, className }: MenuProps) {
+export function Menu({ trigger, label, children, open, onOpenChange, anchorPoint, side = 'bottom', align = 'end', narrow, returnFocus, onClosed, className }: MenuProps) {
   const sheet = useNarrow(narrow === 'sheet');
   // One virtual anchor per point: a new object on every render would make
   // Base UI re-register its reference and restart positioning each time the
@@ -101,6 +105,7 @@ export function Menu({ trigger, label, children, open, onOpenChange, anchorPoint
       open={open}
       onOpenChange={onOpenChange ? (o) => onOpenChange(o) : undefined}
       onOpenChangeComplete={(o) => {
+        if (!o) onClosed?.();
         if (o || !pending.current) return;
         const run = pending.current;
         pending.current = null;

@@ -244,6 +244,10 @@ export interface PropDef {
   // member, which is how a person property has always behaved.
   personMultiple?: boolean;
   personPool?: string[];
+  // On a row opened as a page (spec 015): hidden there while the row has no
+  // value, or always folded under "N more properties". Absent is shown; tables,
+  // boards and the other views do not read it.
+  pageVisibility?: 'hide_empty' | 'hide';
 }
 
 export type FilterOp =

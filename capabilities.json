@@ -108,7 +108,7 @@
     "collections": {
       "summary": "Read and change a database: schema, views (charts among them), rows, and the counts and totals a chart shows",
       "agent": "allowed",
-      "note": "A chart's numbers come from one function on both doors (POST …/aggregate, query_rows group_by). Saving a chart as a picture is drawn in the browser from those same numbers, so it has no route and no tool. get_collection, set_view and delete_view take embed_id for the views an embedded database has in a document (set_view also copy_of), and create_rows takes embed.",
+      "note": "A chart's numbers come from one function on both doors (POST …/aggregate, query_rows group_by). Saving a chart as a picture is drawn in the browser from those same numbers, so it has no route and no tool. get_collection, set_view and delete_view take embed_id for the views an embedded database has in a document (set_view also copy_of), and create_rows takes embed. A property's visibility on a row's page (pageVisibility, spec 015) is part of the schema: PUT …/{id} and update_schema (and create_database) check it with one function.",
       "rest": ["GET /api/collections/{id}", "PUT /api/collections/{id}", "GET /api/collections/{id}/rows", "POST /api/collections/{id}/aggregate"],
       "mcp": ["get_collection", "update_schema", "set_view", "delete_view", "query_rows", "create_rows"],
       "wiki": "wiki/collections.md"

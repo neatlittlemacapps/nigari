@@ -562,7 +562,6 @@
   "Open to every new user": "Abierto a cada nuevo usuario",
   "Open-source licences": "Licencias de código abierto",
   "Option name": "Nombre de la opción",
-  "Options not saved": "Opciones no guardadas",
   "Or connect an agent in one step. Paste this into your terminal:": "O conecta un agente en un paso. Pega esto en tu terminal:",
   "Or like one you already have": "O como uno que ya tienes",
   "Or the classic way: SMTP": "O de la forma clásica: SMTP",
@@ -1332,5 +1331,24 @@
   "Change the properties of {database}?": "¿Cambiar las propiedades de «{database}»?",
   "This changes the database and every view of it, everywhere.": "Esto cambia la base de datos y todas sus vistas, en todas partes.",
   "Views on {name}": "Vistas de {name}",
-  "This icon cannot be used: an icon is an emoji, a built-in icon, or a picture uploaded to nigari.": "No se puede usar este icono: un icono es un emoji, un icono integrado o una imagen subida a nigari."
+  "This icon cannot be used: an icon is an emoji, a built-in icon, or a picture uploaded to nigari.": "No se puede usar este icono: un icono es un emoji, un icono integrado o una imagen subida a nigari.",
+  "Add a property": "Añadir una propiedad",
+  "Always hide": "Ocultar siempre",
+  "Always show": "Mostrar siempre",
+  "Duplicate property": "Duplicar propiedad",
+  "Edit property": "Editar propiedad",
+  "Hidden on row pages": "Oculta en las páginas de filas",
+  "Hide when empty": "Ocultar si está vacía",
+  "Property name": "Nombre de la propiedad",
+  "This property could not be saved: it can be shown, hidden while empty, or always hidden on a row’s page.": "No se pudo guardar esta propiedad: puede mostrarse, ocultarse mientras está vacía o ocultarse siempre en la página de una fila.",
+  "Type": "Tipo",
+  "{name} property": "Propiedad {name}",
+  "Hide {n} properties": {
+    "one": "Ocultar {n} propiedad",
+    "other": "Ocultar {n} propiedades"
+  },
+  "{n} more properties": {
+    "one": "{n} propiedad más",
+    "other": "{n} propiedades más"
+  }
 }

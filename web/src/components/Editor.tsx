@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import type { PeekMode } from '../peek';
 import {
   useCreateBlockNote,
@@ -12,10 +12,9 @@ import { en as coreEn } from '@blocknote/core/locales';
 import { BlockNoteView } from '@blocknote/mantine';
 import { api, ApiError, materializeQuery } from '../api';
 import { toast } from '../toast';
-import type { Backlink, CollectionConfig, Page, PageMeta, PropOption, User } from '../types';
+import type { Backlink, Page, PageMeta, User } from '../types';
 import { NigariProvider } from '../collab';
 import { plural, t } from '../i18n';
-import PropertyValue from './PropertyValue';
 import { nigariSchema } from '../pageLink';
 import IconPicker from './IconPicker';
 import { PageIcon } from '../pageIcon';
@@ -24,6 +23,9 @@ import { exitsDown, exitsStart, focusedKey, focusItem, focusKey, navItem, nothin
 import { readPageScroll, writePageScroll } from '../pageUiState';
 import { useShortcut } from '../keys';
 import CollectionView from './CollectionView';
+// A row's property panel loads with its database's config, which it waits
+// for anyway before it draws (spec 015: the main bundle's cap).
+const RowProperties = lazy(() => import('./RowProperties'));
 import { HistoryModal } from './PageHistory';
 import CommentsPanel, {
   COMMENTS_CHANGED,
@@ -454,87 +456,6 @@ function TagChip({
         </div>
       )}
     </span>
-  );
-}
-
-// RowProperties renders a database row's typed properties as a Notion-style
-// panel under the title (label · value), so a row's page shows its Status,
-// Priority, etc. as real fields — not as text dumped into the body. Shown only
-// when the page is a child of a collection. Reuses the same PropertyValue cells
-// (and inline option editing) as the table/board.
-function RowProperties({
-  pageId,
-  parentId,
-  initialProps,
-  canEdit,
-}: {
-  pageId: string;
-  parentId: string;
-  initialProps: Record<string, unknown>;
-  canEdit: boolean;
-}) {
-  const [config, setConfig] = useState<CollectionConfig | null>(null);
-  const [props, setProps] = useState<Record<string, unknown>>(initialProps ?? {});
-
-  useEffect(() => {
-    setProps(initialProps ?? {});
-  }, [pageId, initialProps]);
-
-  useEffect(() => {
-    let alive = true;
-    api
-      .getCollection(parentId)
-      .then((c) => alive && setConfig(c))
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [parentId]);
-
-  if (!config || config.schema.length === 0) return null;
-
-  const setProp = async (propId: string, value: unknown) => {
-    setProps((p) => ({ ...p, [propId]: value }));
-    try {
-      await api.updatePage(pageId, { propsPatch: { [propId]: value } });
-    } catch {
-      toast(t('Property not saved'));
-    }
-  };
-  const setOptions = async (propId: string, options: PropOption[]) => {
-    const next: CollectionConfig = {
-      ...config,
-      schema: config.schema.map((p) => (p.id === propId ? { ...p, options } : p)),
-    };
-    setConfig(next);
-    try {
-      // The schema alone: this copy of the views is as old as the open page.
-      await api.putCollection(parentId, { schema: next.schema });
-    } catch {
-      toast(t('Options not saved'));
-    }
-  };
-
-  return (
-    <div className="row-props">
-      {config.schema.map((p) => (
-        <div key={p.id} className="row-prop">
-          <div className="row-prop-label" title={p.name}>
-            {p.name}
-          </div>
-          <div className="row-prop-value">
-            <PropertyValue
-              def={p}
-              value={props[p.id]}
-              onChange={canEdit ? (v) => setProp(p.id, v) : undefined}
-              onOptionsChange={canEdit ? (o) => setOptions(p.id, o) : undefined}
-              readOnly={!canEdit}
-              showEmpty
-            />
-          </div>
-        </div>
-      ))}
-    </div>
   );
 }
 
@@ -1506,12 +1427,20 @@ function PageHeader({
           </div>
         )}
         {(page.templateOf || (page.parentId && pagesById.get(page.parentId)?.type === 'collection')) && (
+          <Suspense fallback={null}>
           <RowProperties
             pageId={pageId}
             parentId={(page.templateOf || page.parentId)!}
             initialProps={page.props}
             canEdit={canEdit}
+            databaseName={pagesById.get((page.templateOf || page.parentId)!)?.title || t('Untitled')}
+            titleOf={(id) => pagesById.get(id)?.title}
+            targets={[...pagesById.values()]
+              // A template is a snapshot, not a database rows can point at.
+              .filter((x) => x.type === 'collection' && !x.trashed && !x.isTemplate)
+              .map((x) => ({ id: x.id, title: x.title }))}
           />
+          </Suspense>
         )}
       </div>
       {children}

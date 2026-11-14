@@ -769,6 +769,12 @@ converted for you; stored raw they used to crash the page on opening. An id you
 do not give is derived from the name, so a property called "Due date" gets the
 id `due-date`.
 
+A property may also carry `pageVisibility`: `"hide_empty"` hides it on a row's
+page while the row has no value, `"hide"` always folds it away there, and
+`"show"` puts it back (the default, stored as no key). Tables and other views
+are not affected, and `get_page` and `query_rows` still return every value. Any
+other value is refused.
+
 Omit the schema entirely and you get one property (a `Status` select with the
 options To do, In progress and Done) and **two** views: a Board grouped by
 `Status`, and a Table. Two views matter for what you can do next: `delete_view`
@@ -834,6 +840,12 @@ points matter here:
   discarded, and one comparison cannot say that.
 - A **checklist** value is a list of sub-tasks, `[{"text":"…","done":false}]`,
   and shows its own progress. Do not add a second percentage column beside it.
+
+A property may carry `pageVisibility`: `"hide_empty"` (hidden on a row's page
+while the row has no value), `"hide"` (always folded away there) or `"show"` to
+put it back (the default, stored as no key). Tables and other views are not
+affected, and `get_page` and `query_rows` still return every value. Any other
+value is refused.
 
 Returns `Schema updated: added …; changed …; removed … (row values kept,
 re-adding the property brings them back)`. Errors: `nothing to do: pass

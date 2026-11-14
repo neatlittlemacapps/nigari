@@ -5315,6 +5315,68 @@ body.is-col-resizing {
   font-size: 14px;
 }
 
+/* Spec 015: a property's name is the button that opens its menu, for someone
+   who may change the database; it keeps the label's look until hovered. */
+.row-prop-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-50);
+}
+.row-prop-label .row-prop-name,
+.row-prop-label .ui-button.row-prop-name {
+  max-width: 100%;
+  /* The label's own look (before spec 015 it was plain text): a small
+     button's type and size would otherwise win. */
+  font-family: inherit;
+  letter-spacing: inherit;
+  text-transform: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-md);
+  font-weight: inherit;
+  justify-content: flex-start;
+}
+.row-prop-label button.row-prop-name {
+  margin: calc(-1 * var(--space-50)) 0 0 calc(-1 * var(--space-100));
+  padding-inline: var(--space-100);
+}
+.row-prop-rename {
+  width: 100%;
+}
+.row-prop--hidden .row-prop-name {
+  opacity: 0.8;
+}
+.row-prop-hidden-mark {
+  flex: none;
+  color: var(--color-text-muted);
+}
+.row-props-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-100);
+  margin-left: calc(-1 * var(--space-100));
+}
+.row-props-foot .ui-button {
+  color: var(--color-text-muted);
+  gap: var(--space-50);
+}
+.row-props-add-form,
+.row-prop-panel-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-100);
+}
+.row-prop-panel .schema-options,
+.row-prop-panel .schema-config {
+  margin-top: var(--space-150);
+}
+.row-prop-panel-delete {
+  margin-top: var(--space-200);
+  align-self: flex-start;
+}
+
 /* ---- Workspace image / icon in the switcher ---- */
 .ws-img { width: 18px; height: 18px; border-radius: 4px; object-fit: cover; flex: none; vertical-align: -4px; }
 .ws-emoji { font-size: 15px; line-height: 1; }

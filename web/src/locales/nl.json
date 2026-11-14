@@ -541,7 +541,6 @@
   "Open the page carrying this file": "De pagina met dit bestand openen",
   "Open to every new user": "Open voor elke nieuwe gebruiker",
   "Open-source licences": "Open-sourcelicenties",
-  "Options not saved": "Opties niet opgeslagen",
   "Or connect an agent in one step. Paste this into your terminal:": "Of verbind een agent in één stap. Plak dit in je terminal:",
   "Or like one you already have": "Of zoals een die je al hebt",
   "Or the classic way: SMTP": "Of de klassieke manier: SMTP",
@@ -1332,5 +1331,24 @@
   "Change the properties of {database}?": "De eigenschappen van “{database}” wijzigen?",
   "This changes the database and every view of it, everywhere.": "Dit wijzigt de database en elke weergave ervan, overal.",
   "Views on {name}": "Weergaven van {name}",
-  "This icon cannot be used: an icon is an emoji, a built-in icon, or a picture uploaded to nigari.": "Dit pictogram kan niet worden gebruikt: een pictogram is een emoji, een ingebouwd pictogram of een afbeelding die naar nigari is geüpload."
+  "This icon cannot be used: an icon is an emoji, a built-in icon, or a picture uploaded to nigari.": "Dit pictogram kan niet worden gebruikt: een pictogram is een emoji, een ingebouwd pictogram of een afbeelding die naar nigari is geüpload.",
+  "Add a property": "Een eigenschap toevoegen",
+  "Always hide": "Altijd verbergen",
+  "Always show": "Altijd tonen",
+  "Duplicate property": "Eigenschap dupliceren",
+  "Edit property": "Eigenschap bewerken",
+  "Hidden on row pages": "Verborgen op rijpagina's",
+  "Hide when empty": "Verbergen als leeg",
+  "Property name": "Naam van de eigenschap",
+  "This property could not be saved: it can be shown, hidden while empty, or always hidden on a row’s page.": "Deze eigenschap kon niet worden opgeslagen: ze kan worden getoond, verborgen zolang ze leeg is, of altijd verborgen op de pagina van een rij.",
+  "Type": "Type",
+  "{name} property": "Eigenschap {name}",
+  "Hide {n} properties": {
+    "one": "{n} eigenschap verbergen",
+    "other": "{n} eigenschappen verbergen"
+  },
+  "{n} more properties": {
+    "one": "{n} eigenschap meer",
+    "other": "{n} eigenschappen meer"
+  }
 }
