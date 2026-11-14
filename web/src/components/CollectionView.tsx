@@ -11,7 +11,8 @@ import Portal from './Portal';
 import { anchoredMenuStyle } from '../anchoredMenu';
 import { sortComparator } from '../viewSort';
 import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } from '../columnDrag';
-import { ColHead } from './TableColumnHead';
+import { ColHead, type PropertyChanges } from './TableColumnHead';
+import { useColumnPropertyChanges } from './useColumnPropertyChanges';
 import { tagColorClass } from '../tags';
 import { compare, firstWeekday, formatDay, formatMonth, isReadableDay, isUnfinishedRelativeDay, resolveSmartDate, toDayString, today, weekdayNames } from '../format';
 import { plural, t } from '../i18n';
@@ -709,6 +710,22 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     }
   };
 
+  // A table heading's property actions (spec 015): the hook is called before
+  // the loading return, as hooks must be.
+  const columnChanges = useColumnPropertyChanges({
+    collectionId,
+    databaseName: pages.get(collectionId)?.title || t('Untitled'),
+    schema,
+    titleOf: (id) => pages.get(id)?.title,
+    targets: [...pages.values()]
+      // A template is a snapshot, not a database rows can point at.
+      .filter((p) => p.type === 'collection' && !p.trashed && !p.isTemplate)
+      .map((p) => ({ id: p.id, title: p.title })),
+    embedded: !!embed,
+    onSaved: setConfig,
+    onRefused: loadConfig,
+  });
+
   if (!config || !view) return <div className="editor-loading" />;
 
   // The views lock (spec 013, viewlock.go on the server). While it is on,
@@ -1230,6 +1247,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
               : undefined
           }
           onHideColumn={mayChangeViews && view.type === 'table' ? (id) => updateView({ hidden: [...(view.hidden ?? []), id] }) : undefined}
+          // The property's own actions (spec 015): for someone who may change
+          // the database, as Edit properties in Settings is offered.
+          propertyChanges={(embed ? !!embed.canSave && embed.canEditDatabase !== false : canEdit) ? columnChanges.changesFor : undefined}
           onNavigate={onNavigate}
           onOpenInNewTab={onOpenInNewTab}
           onSetProp={setRowProp}
@@ -1237,6 +1257,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         />
       )}
       </RowOpenContext.Provider>
+      {columnChanges.panel}
       {schemaOpen && (
         <SchemaEditor
           config={config}
@@ -2039,6 +2060,7 @@ function TableView({
   onSetColWidths,
   onSetColumns,
   onHideColumn,
+  propertyChanges,
   onNavigate,
   onOpenInNewTab,
   onSetProp,
@@ -2056,6 +2078,9 @@ function TableView({
    *  the columns do not move (a reader, a view that is not a table). */
   onSetColumns?: (visible: string[]) => void;
   onHideColumn?: (id: string) => void;
+  /** A property's own actions in its heading's menu (spec 015). Absent for
+   *  someone who may not change the database. */
+  propertyChanges?: (p: PropDef) => PropertyChanges;
   onNavigate: (id: string) => void;
   onOpenInNewTab?: (id: string) => void;
   onSetProp: (rowId: string, propId: string, value: unknown) => void;
@@ -2241,6 +2266,7 @@ function TableView({
                   label={p.name}
                   onResize={onSetColWidths ? startResize(p.id) : undefined}
                   onReset={resetCol(p.id)}
+                  changes={propertyChanges?.(p)}
                   moves={
                     onSetColumns && onHideColumn
                       ? {

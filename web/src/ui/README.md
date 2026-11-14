@@ -156,7 +156,10 @@ content brings its own bar and close button).
 ## Popover
 
 **Props**
-- `trigger`: the element that opens it (usually a `Button` or `IconButton`).
+- `trigger?`: the element that opens it (usually a `Button` or `IconButton`).
+- `anchor?`, `returnFocus?`: for a panel another control opens (a menu item): what it is
+  placed against and where focus goes on close. Use with `open`/`onOpenChange` and no
+  `trigger` (spec 015: a property's Edit property panel beside its name).
 - `label`: the panel's accessible name.
 - `closeLabel`: the name of its hidden close button.
 - `open?`, `onOpenChange?`: controlled use; omit both and the trigger opens and closes it.

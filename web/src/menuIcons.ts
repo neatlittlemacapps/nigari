@@ -40,6 +40,7 @@ import {
   ExternalLink,
   Eye,
   EyeClosed,
+  EyeDashed,
   EyeOff,
   File,
   FileCode,
@@ -98,6 +99,7 @@ import {
   Settings2,
   ShieldAlert,
   ShieldCheck,
+  SlidersHorizontal,
   Smile,
   SquareDashed,
   SquarePlus,
@@ -195,6 +197,11 @@ export const MENU_ICONS = {
   // popover the Settings menu replaces.
   showAllProperties: ScanEye,
   hideAllProperties: EyeClosed,
+  // A property's menu (spec 015): edit this one property in a panel (not the
+  // whole Edit properties dialog), and whether it shows on a row's page. The
+  // second is not propertyVisibility: that is which columns one view shows.
+  editProperty: SlidersHorizontal,
+  rowPageVisibility: EyeDashed,
   // Gone from here, not into the trash: Remove view, and the block menu's
   // Delete. Different from moveToTrash on purpose (Clarifications).
   delete: CircleMinus,

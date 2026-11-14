@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactElement, ReactNode, RefObject } from 'react';
 import { Popover as BasePopover } from '@base-ui/react/popover';
 import './Popover.css';
 
@@ -17,8 +17,16 @@ import './Popover.css';
 // counts it as part of the panel, so picking an option does not close it.
 
 export type PopoverProps = {
-  /** The control that opens the panel, rendered as the trigger. */
-  trigger: ReactElement;
+  /** The control that opens the panel, rendered as the trigger. Omit it for a
+   *  panel another control opens (a menu item): then pass `anchor`, and
+   *  control it with `open`. */
+  trigger?: ReactElement;
+  /** What the panel is placed against when it has no trigger: a row page's
+   *  property name opens a menu on click, and the menu's Edit property opens
+   *  this panel beside the same name (spec 015). */
+  anchor?: RefObject<Element | null>;
+  /** Where focus goes when the panel closes, when it has no trigger. */
+  returnFocus?: RefObject<HTMLElement | null>;
   /** The panel's accessible name, already translated. */
   label: string;
   /** The hidden close button's name, already translated. */
@@ -32,13 +40,13 @@ export type PopoverProps = {
   className?: string;
 };
 
-export function Popover({ trigger, label, closeLabel, children, open, onOpenChange, side = 'bottom', align = 'end', className }: PopoverProps) {
+export function Popover({ trigger, anchor, returnFocus, label, closeLabel, children, open, onOpenChange, side = 'bottom', align = 'end', className }: PopoverProps) {
   return (
     <BasePopover.Root open={open} onOpenChange={onOpenChange ? (o) => onOpenChange(o) : undefined} modal="trap-focus">
-      <BasePopover.Trigger render={trigger} />
+      {trigger && <BasePopover.Trigger render={trigger} />}
       <BasePopover.Portal>
-        <BasePopover.Positioner className="ui-popover-positioner" side={side} align={align} sideOffset={6} collisionPadding={8}>
-          <BasePopover.Popup className={'ui-popover' + (className ? ' ' + className : '')} aria-label={label}>
+        <BasePopover.Positioner className="ui-popover-positioner" side={side} align={align} sideOffset={6} collisionPadding={8} anchor={trigger ? undefined : anchor}>
+          <BasePopover.Popup className={'ui-popover' + (className ? ' ' + className : '')} aria-label={label} finalFocus={trigger ? undefined : returnFocus}>
             {children}
             <BasePopover.Close className="ui-popover-close">{closeLabel}</BasePopover.Close>
           </BasePopover.Popup>
