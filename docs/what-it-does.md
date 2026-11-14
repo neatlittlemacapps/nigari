@@ -74,6 +74,8 @@ them by accident, people and agents alike, while its rows stay editable; only a
 person can unlock them. Every change to a view (created, renamed, re-filtered,
 removed, locked) is in the activity log, saying whether a person or an agent
 made it.
+On a row's page you can rename, edit, duplicate, delete and add properties, and
+hide them there, always or only while they are empty.
 
 ### Finding things
 

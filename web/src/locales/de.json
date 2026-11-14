@@ -541,7 +541,6 @@
   "Open the page carrying this file": "Die Seite öffnen, auf der diese Datei liegt",
   "Open to every new user": "Für alle neuen Nutzer öffnen",
   "Open-source licences": "Open-Source-Lizenzen",
-  "Options not saved": "Optionen nicht gespeichert",
   "Or connect an agent in one step. Paste this into your terminal:": "Oder in einem Schritt einen Agenten verbinden. Das hier ins Terminal einfügen:",
   "Or like one you already have": "Oder wie einer, den du schon hast",
   "Or the classic way: SMTP": "Oder klassisch: SMTP",
@@ -1332,5 +1331,24 @@
   "Change the properties of {database}?": "Die Eigenschaften von „{database}“ ändern?",
   "This changes the database and every view of it, everywhere.": "Das ändert die Datenbank und jede ihrer Ansichten, überall.",
   "Views on {name}": "Ansichten von {name}",
-  "This icon cannot be used: an icon is an emoji, a built-in icon, or a picture uploaded to nigari.": "Dieses Symbol kann nicht verwendet werden: Ein Symbol ist ein Emoji, ein eingebautes Symbol oder ein in nigari hochgeladenes Bild."
+  "This icon cannot be used: an icon is an emoji, a built-in icon, or a picture uploaded to nigari.": "Dieses Symbol kann nicht verwendet werden: Ein Symbol ist ein Emoji, ein eingebautes Symbol oder ein in nigari hochgeladenes Bild.",
+  "Add a property": "Eigenschaft hinzufügen",
+  "Always hide": "Immer ausblenden",
+  "Always show": "Immer anzeigen",
+  "Duplicate property": "Eigenschaft duplizieren",
+  "Edit property": "Eigenschaft bearbeiten",
+  "Hidden on row pages": "Auf Zeilenseiten ausgeblendet",
+  "Hide when empty": "Ausblenden, wenn leer",
+  "Property name": "Name der Eigenschaft",
+  "This property could not be saved: it can be shown, hidden while empty, or always hidden on a row’s page.": "Diese Eigenschaft konnte nicht gespeichert werden: Auf der Seite einer Zeile kann sie angezeigt, ausgeblendet, solange sie leer ist, oder immer ausgeblendet werden.",
+  "Type": "Typ",
+  "{name} property": "Eigenschaft {name}",
+  "Hide {n} properties": {
+    "one": "{n} Eigenschaft ausblenden",
+    "other": "{n} Eigenschaften ausblenden"
+  },
+  "{n} more properties": {
+    "one": "{n} weitere Eigenschaft",
+    "other": "{n} weitere Eigenschaften"
+  }
 }

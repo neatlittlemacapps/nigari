@@ -132,8 +132,9 @@ Workspace admins still see everything. See [Permissions](permissions.md).
 Open a row and its properties sit between the title and the body, one per line:
 the property name on the left, the value on the right. The panel shows **every**
 property in the schema, including ones hidden in the view you came from, and
-including the empty ones; this is the place to fill a field in rather than hunt
-for its column.
+including the empty ones, unless a property is set to be hidden on row pages
+(see *Changing properties from a row* below); this is the place to fill a field
+in rather than hunt for its column.
 
 The cells are the same editors the table uses, so they behave the same way:
 click a select to open its list, type in the box to create an option, use the
@@ -141,6 +142,48 @@ click a select to open its list, type in the box to create an option, use the
 option here changes the **schema**, which means it changes for everybody looking
 at that collection, not just for this row. The same is true of the chips on a
 board card, which is where most people will do it without noticing.
+
+### Changing properties from a row
+
+On a row opened as a page, anyone who may change the database can click a
+property's name to open its menu. Right-clicking the name works too, and so does
+tabbing to it and pressing Enter. The menu offers **Rename**, **Edit property**,
+**Property visibility**, **Duplicate property** and **Delete property**.
+
+- **Rename** edits the name in place. Enter saves, Escape cancels. The name
+  changes for the whole database.
+- **Edit property** opens a small panel beside the name with that one property's
+  name, type and settings: a select's options, a number's display, a relation's
+  database and so on. These are the same fields as **Edit properties** in a
+  view's Settings. Changes are saved when the panel closes; a change of type is
+  saved at once.
+- **Duplicate property** adds "Copy of …" right under it, with the same type and
+  settings and no values.
+- **Delete property** asks first, as it does everywhere. The question names the
+  property and the database.
+
+**+ Add a property**, under the list, adds a property to the database. You pick
+a name and a type.
+
+**Property visibility** is *Always show* (the default), *Hide when empty* or
+*Always hide*. It is one setting for the database: it applies to every row's
+page, for everyone. Hidden properties fold into a line, "N more properties",
+under the list. Click it to show them, marked as hidden, until you click "Hide N
+properties" or open another page. That is not remembered. A *Hide when empty*
+property that is empty when the page opens stays folded while you work on the
+page, so a field does not jump away as you clear it.
+
+Tables, boards and the other views are not affected by Property visibility. A
+view hides its own columns with **Hide in view**. A table's column heading
+offers the same property actions (**Rename**, **Edit property**, **Duplicate
+property** and **Delete property**) next to its own **Move left**, **Move
+right** and **Hide in view**.
+
+In a document (an embedded database), a change to a property asks first,
+because it changes the database everywhere.
+
+Someone who may only read the database sees the names as plain labels, but can
+still open the "N more properties" line.
 
 ## How rows open
 

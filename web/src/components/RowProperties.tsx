@@ -56,7 +56,11 @@ export default function RowProperties({
   // Which Hide-when-empty properties were empty when this page opened (R7).
   const [emptyAtStart, setEmptyAtStart] = useState<Set<string> | null>(null);
   const [unfolded, setUnfolded] = useState(false);
+  // The menu stays mounted after it closes: an item that opens a dialog
+  // (Delete property) runs once the menu has finished closing (ui/Menu's
+  // AfterClose), which an unmounted menu never does.
   const [menuFor, setMenuFor] = useState<{ id: string; at: MenuPoint } | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState<{ id: string; draft: string } | null>(null);
   const [editing, setEditing] = useState<PropDef | null>(null);
   const [adding, setAdding] = useState<{ name: string; type: PropType } | null>(null);
@@ -128,7 +132,9 @@ export default function RowProperties({
 
   const openMenu = (id: string) => {
     const r = names.current.get(id)?.getBoundingClientRect();
-    if (r) setMenuFor({ id, at: { x: r.left, y: r.bottom } });
+    if (!r) return;
+    setMenuFor({ id, at: { x: r.left, y: r.bottom } });
+    setMenuOpen(true);
   };
 
   const remove = async (p: PropDef) => {
@@ -177,11 +183,12 @@ export default function RowProperties({
             size="sm"
             className="row-prop-name"
             aria-haspopup="menu"
-            aria-expanded={menuFor?.id === p.id ? true : undefined}
+            aria-expanded={menuOpen && menuFor?.id === p.id ? true : undefined}
             onClick={() => openMenu(p.id)}
             onContextMenu={(e) => {
               e.preventDefault();
               setMenuFor({ id: p.id, at: { x: e.clientX, y: e.clientY } });
+              setMenuOpen(true);
             }}
           >
             {p.name}
@@ -269,8 +276,8 @@ export default function RowProperties({
       {menuProp && (
         <Menu
           label={t('{name} property', { name: menuProp.name })}
-          open
-          onOpenChange={(o) => !o && setMenuFor(null)}
+          open={menuOpen}
+          onOpenChange={(o) => !o && setMenuOpen(false)}
           anchorPoint={menuFor!.at}
           returnFocus={{ current: names.current.get(menuProp.id) ?? null }}
         >
