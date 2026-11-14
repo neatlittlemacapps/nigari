@@ -74,6 +74,30 @@ ask the same.
 
 ---
 
+## 2026-11-14 — A personal view edit that the browser fails to send is sent again on the next open (#594)
+
+A filter or sort edit waits 400 ms before it is sent, and when the page leaves
+first it is sent with `keepalive`. Measured on `main`: after a reload straight
+after an edit the server received no request at all in 7 of 14 reloads (its own
+log showed none), so the person's own filter came back as the shared one.
+
+- **The edit is also written to the browser's storage when the page leaves**
+  (`nigari-view-outbox`, `viewStateOutbox.ts`) and the next open of that
+  database in this browser shows it and sends it again; sending the same state
+  twice changes nothing, so the entry does not need to know whether the first
+  request arrived. An entry lives one minute: it is for the reload or the link
+  that follows the edit, and a person who signs in as someone else on the same
+  browser must not hand them a filter.
+- Rejected: `navigator.sendBeacon` (POST only, and the state's route is PUT);
+  sending every keystroke at once (a request per character of a filter
+  value); a longer wait before leaving (the person feels it); fixing it in the
+  browser's networking (not ours).
+- A regression test makes the loss happen in the page (`personal-view-outbox.mjs`)
+  because a request made while the page unloads is not visible to the test
+  driver.
+
+---
+
 ## 2026-11-12 — A newer Umbrel store pull request closes the older ones
 
 The release job opens one pull request per release on `yokogaki-umbrel`, and

@@ -3,6 +3,7 @@ import { api } from './api';
 import { t } from './i18n';
 import { toast } from './toast';
 import type { PersonalViewState } from './viewState';
+import { outboxKey } from './viewStateOutbox';
 
 // How long a filter or sort edit waits before it is sent: typing a filter
 // value is many edits, and each PUT carries the whole state.
@@ -12,8 +13,9 @@ const SAVE_DELAY = 400;
  *  when the database opens, changed here at once and stored a moment later.
  *
  *  Here and not in CollectionView, which is over 1,400 lines (frontend
- *  rules). Nothing is kept in the browser's storage: the state lives on the
- *  account, so it follows the person to another device (research R2).
+ *  rules). The state lives on the account, so it follows the person to another
+ *  device (research R2). The browser's storage holds only what a page that is
+ *  going away still owes the server, for a minute (viewStateOutbox.ts, #594).
  *
  *  Until the first answer the view draws as shared (research R2): the rows
  *  are not held back by this request. Someone with their own filter sees the
@@ -38,7 +40,19 @@ export function usePersonalViews(collectionId: string) {
   // after the page is gone. An ordinary request is cancelled with the page,
   // and the edit of the last 400 ms was lost (found by embeds.mjs: a reload
   // right after removing a filter brought the filter back).
+  //
+  // The browser does not always finish that request: after a reload straight
+  // after an edit it never reached the server about half the time (#594). So
+  // the same edit is also noted in the browser's storage, and the next open of
+  // this database sends it again (below).
   const flushWaiting = useCallback(() => {
+    if (pending.current.size) {
+      try {
+        window.localStorage.setItem(outboxKey(collectionId), JSON.stringify({ at: Date.now(), items: [...pending.current].map(([k, p]) => [k, p.state]) }));
+      } catch {
+        // Storage switched off or full: the keepalive request is what there is.
+      }
+    }
     for (const [scope, p] of pending.current) {
       window.clearTimeout(p.timer);
       const done = p.state ? api.putViewState(collectionId, scope, p.state, true) : api.deleteViewState(collectionId, scope, true);
@@ -84,6 +98,15 @@ export function usePersonalViews(collectionId: string) {
       })
       // Not signed in the usual way, or the request failed: the shared view.
       .catch(() => {});
+    // What the last page left unsent here (viewStateOutbox.ts) is sent again by
+    // code loaded only when a note exists.
+    try {
+      if (window.localStorage.getItem(outboxKey(collectionId))) {
+        void import('./viewStateReplay').then((m) => m.replayOutbox(collectionId, touched.current, setStates, () => live));
+      }
+    } catch {
+      /* storage switched off */
+    }
     return () => {
       live = false;
       // Leaving the database (another page, another database here): what is

@@ -47,11 +47,11 @@ await withFixture(async ({ page, api, base, workspace, path, read }) => {
   // It is kept: since spec 013 on the person's account first (a personal
   // change, personal-view.mjs), until they save it for everyone into the
   // document. A reload right after the edit must not lose it.
-  // The person's state is stored a moment after the edit; wait for that, then
-  // reload. A reload straight after the edit loses the save about one time in
-  // six (#594), which this test is not about. The state arrives a moment
-  // after the first rows (spec 013, R2), so it is waited for, not read at once.
-  await eventually(async () => Object.keys((await api('GET', `/api/collections/${collectionId}/personal`)).states).length > 0);
+  // Reload straight after the edit: the browser does not always finish the
+  // request sent while the page leaves, and the edit is sent again on the next
+  // open from the browser's storage (#594, personal-view-outbox.mjs). The state
+  // then arrives a moment after the first rows (spec 013, R2: the view draws as
+  // shared until it does), so it is waited for, not read at once.
   await page.reload();
   await rowsIn('.bn-db-embed').first().waitFor();
   await eventually(async () => (await rowsIn('.bn-db-embed').count()) === 2);
