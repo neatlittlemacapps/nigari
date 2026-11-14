@@ -5322,8 +5322,14 @@ body.is-col-resizing {
   align-items: center;
   gap: var(--space-50);
 }
-.row-prop-label .row-prop-name {
+.row-prop-label .row-prop-name,
+.row-prop-label .ui-button.row-prop-name {
   max-width: 100%;
+  /* The label's own look (before spec 015 it was plain text): a small
+     button's type and size would otherwise win. */
+  font-family: inherit;
+  letter-spacing: inherit;
+  text-transform: none;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
