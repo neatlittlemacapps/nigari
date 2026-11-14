@@ -1,6 +1,6 @@
 # active-memory handoff: nigari (formerly salt.md fork): agentic setup and feature roadmap
 
-**Handoff #21** · 2026-11-13 · Lineage:
+**Handoff #22** · 2026-11-13 · Lineage:
 - **#1 (2026-10-25):** agentic setup (rules, gate, Spec Kit, parity manifest); four feature branches merged; 25 issues; three specs.
 - **#2 (2026-10-26):** find-and-replace edits (#13, PR #48); specs 001/002 planned; #47 fixed; surfaces registry, board sync, ruleset (PR #49).
 - **#3 (2026-10-26):** board derives its columns (PR #74); spec 002 tasks (#50–#73); storage benchmarks; fixes #75, #76; Codespaces (PR #77).
@@ -22,17 +22,17 @@
 - **#19 (2026-11-06 → 11-12):** #322 logo (#583 → v2.1.18); spec 013 PR 2 personal filter/sort (#584 → v2.1.19); spec 013 PR 3 quick filters + lanes (#587 → v2.1.21), conflict with #586 (BoardView refactor from Claude's suggested task) resolved; spec 013 finished (#477 closed).
 - **#20 (2026-11-12):** one branch per pull request + overlap rules in the steward skill, handoff now on `main` (#588 → v2.1.22); each release opens a pull request on the Umbrel store (#589 → v2.1.23); first one, neatlittlemacapps/yokogaki-umbrel#1, moves the store 2.1.15 → 2.1.23.
 - **#21 (2026-11-12/13):** spec 014 built and merged: PR 1 #524 (earlier), PR 2 model + server + agents (#592), PR 3 interface (#596); two review-found bugs fixed before merge; Claude's `/code-review` + a fresh-agent security review + `ux-ui-audit`; "Copy of" naming chosen by the owner (follow-up PR #597); the Umbrel store pull requests conflicted with each other (store #3 after #2), fixed in #598; handoff now #21.
+- **#22 (2026-11-13):** #597 (Copy of), #598 (store job closes older store PRs) and handoff #21 (#599) merged; the owner closed the conflicting store PR 2.1.25; P1 bug #593 (workspace icon) root-caused and fixed on branch `claude/workspace-icon` (pull request not opened yet); #577 is the other P1.
 
-> **Read first (2026-11-13):** nothing is running; no helper, no scheduled
-> check-ins left to act on (the one-shot ones fired and disabled themselves).
-> Three small pull requests wait for the owner to tap merge: #597 (Copy of
-> naming), #598 (the Umbrel store job closes older store PRs) and this
-> handoff's own. Owner step on the store: close the conflicting 2.1.25 pull
-> request on `yokogaki-umbrel`. Still check `list_sessions`,
+> **Read first (2026-11-13):** nothing is running; no helper, no live
+> check-ins. Everything from #21 is merged (#597, #598, #599) and the owner
+> closed the 2.1.25 store pull request. One branch waits: `claude/workspace-icon`
+> (fix for #593, gate green, **no pull request yet**: ask, then open it).
+> Next is #577 (the other P1). Still check `list_sessions`,
 > `git ls-remote --heads origin` and open PRs first (correction 107), and
 > fetch `origin/main` before reading this file from a local checkout
-> (correction 117). Spec 014 is finished; the next job is the board by
-> Priority (section 11), each piece on a **new branch** from `main` (rule 31).
+> (correction 117). Every piece of work goes on a **new branch** from `main`
+> (rule 31).
 
 ## 0. Instructions for Claude (read first)
 
@@ -53,7 +53,7 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - **Also:** "I want you to be able to do as much as possible yourself"; "ensure you have good board and issue hygiene".
 - **Why nigari exists (user, 2026-10-29/30):** "we are too far gone from the original salt to ever contribute back"; "mainly its me discovering how far I can get"; "I think the core is to pay extra attention to UX as well."
 - **CodeGraph (user, 2026-11-01):** "My goal is that Claude can use a continuously up-to-date code graph to understand the architecture, dependencies, function calls and relationships across the entire codebase before making coding changes." / "CodeGraph should be an active coding tool, not merely an installed MCP server."
-- **Order of work now** (2026-11-13): the board by Priority (rule 24); only a `bug` + `breaking` issue jumps to P1 (rule 19). Done: Umbrel, #322 logo, spec 012, 013, 014. Open bugs by priority: #476, #525–#527, #529–#532, #572, #574, and the new #591, #594, #595; backlog #370, #323, #326, #379. A feature that brings a new concept still starts with the spec flow (`/speckit-specify` …).
+- **Order of work now** (2026-11-13): the board by Priority (rule 24); only a `bug` + `breaking` issue jumps to P1 (rule 19). Done: Umbrel, #322 logo, spec 012, 013, 014. P1 bugs first: #593 (fixed on `claude/workspace-icon`, PR to open) and #577. Then the other open bugs: #476, #525–#527, #529–#532, #572, #574, #591, #594, #595; backlog #370, #323, #326, #379. A feature that brings a new concept still starts with the spec flow (`/speckit-specify` …).
 
 ## 2. About the user (as relevant to this work)
 - GitHub `neatlittlemacapps` (id 60575307), display name "Frank De Graeve"; email neatlittlemacapps@gmail.com; owns `neatlittlemacapps/nigari` (renamed from `neatlittlemacapps/salt.md` on 2026-10-30), still a GitHub fork of `saltmd/salt.md` (AGPL-3.0); CLA signed upstream. Fork stays attached for now ("I'll leave it for now").
@@ -331,6 +331,8 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Copy of a database view named "Copy of {name}" | Owner "Sure. Copy of" |
 | A newer Umbrel store pull request closes the older ones (job `umbrel-store`) | Store #3 conflicted after #2; PR #598 |
 | Review of #592 and #596: Claude's `/code-review`, a fresh Opus agent for the security review (the `/security-review` skill could not expand `origin/HEAD`), `ux-ui-audit` run by hand with Playwright | Rule 16; the skill failed |
+| A workspace's icon is decided by one function, `cleanWorkspaceIcon`, for REST and MCP: emoji (other text cut to 8 characters, as before), `lucide:Name[:colour]`, `mdi:Name[:colour]`, or `/files/<id>[.ext]`; an external address, `data:` URL or half-written reference is refused (`bad_icon`); the workspace image uses the same upload rule | #593 root cause: every icon was cut to 8 characters, so `lucide:Rocket` became `lucide:R` and drew nothing |
+| Icons already cut off in the database are not migrated; the switcher falls back to the workspace's initial for an icon that does not draw | Cheap, visible; the admin picks again |
 
 ## 7. Changed / rejected
 - Earlier chats: decisions page in workspace → `docs/decisions.md`; fixed surfaces list → registry; force-push rebase → merge `main`; hand-moved cards → derived Status; committed catalogue baselines → reference per run; hand-drawn SVG charts → Chart.js; owner as commit author → Claude.
@@ -488,6 +490,8 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | # | Title |
 |---|---|
 | 371 | Embed has its own views (spec 014): all 36 task issues #534–#569 are closed (PRs #573, #592, #596); the feature issue itself is still open |
+| 593 | Workspace icon change breaks (priority:1, bug): fixed on `claude/workspace-icon`, issue still open until its PR merges; label in-progress set |
+| 577 | Docker install mentions salt: README says `-v salt-data:/data`; check README and code (priority:1, bug) — next |
 | 591 | `embed_database` names a page's title before checking the caller may read it (bug, low) |
 | 594 | A filter changed within 400 ms before a reload is sometimes lost (keepalive save on pagehide; about 2 in 12 on main) (bug) |
 | 595 | `smart-dates.mjs` fails on main: reads a filter from the view that personal edits no longer write (bug, tests only) |
@@ -508,8 +512,8 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 - **People:** the user (`neatlittlemacapps`, Frank De Graeve); upstream maintainer "Jeremia" (`jeremiaa`).
 - **Terms:** surface = registry row; gap = person can, agent can't; budget = count that only goes down; gate = `scripts/agent-gate.sh`; stream = a parallel work line; conductor = Claude; steward skill = `.claude/skills/steward/SKILL.md`; upgrade step = a numbered goose step; column head = a column's first block; Each row = chart grouping `__row`; code graph = CodeGraph index.
 - **Repo:** `neatlittlemacapps/nigari`.
-- **Sessions:** this conductor `session_01GhcW33Tb3hX27V7cFY9Www` (handoff #21); the one before it `session_01GhcW37HJ35bLUDWA4gX12z`; previous conductors `session_01GhcW345K7zwmfiPaw1Eoz3` ("Nigari handoff continuation"), `session_01GhcW33CqnUj9FDCkkAFdFE` ("17 Nigari"); helper stream B for spec 013 `session_01GhcW33DagCpbrFHHXQVrFu` (stopped; work merged in #576); older: `session_01GhcW351E6Ld6xR87qCbfon`, `session_01GhcW34o8KcL5EYGzn6ddSJ`, `session_01GhcW33zUfch6tMG6ga8nJc`.
-- **Branches:** main `b36846a` (merge of #596) plus the PRs below. Open PR branches: `claude/copy-of-view-name` (#597), `claude/store-pr-supersedes` (#598), `claude/handoff-21` (this file). Merged, deletable by the owner: `claude/handoff-14`, `claude/spec-012-views`, `claude/spec-013-build`, `claude/spec-014-pr3`, `claude/steward-branch-per-pr`, `claude/umbrel-store-bump`, `claude/spec-014-pr2`. Never delete remote branches (classifier).
+- **Sessions:** this conductor `session_01GhcW33Tb3hX27V7cFY9Www` (handoff #22; also wrote #21); the one before it `session_01GhcW37HJ35bLUDWA4gX12z`; previous conductors `session_01GhcW345K7zwmfiPaw1Eoz3` ("Nigari handoff continuation"), `session_01GhcW33CqnUj9FDCkkAFdFE` ("17 Nigari"); helper stream B for spec 013 `session_01GhcW33DagCpbrFHHXQVrFu` (stopped; work merged in #576); older: `session_01GhcW351E6Ld6xR87qCbfon`, `session_01GhcW34o8KcL5EYGzn6ddSJ`, `session_01GhcW33zUfch6tMG6ga8nJc`.
+- **Branches:** main = merge of #599 (check `git log origin/main`). Open work branch: `claude/workspace-icon` (pushed, no PR). Merged, deletable by the owner: `claude/handoff-14`, `claude/spec-012-views`, `claude/spec-013-build`, `claude/spec-014-pr2`, `claude/spec-014-pr3`, `claude/copy-of-view-name`, `claude/store-pr-supersedes`, `claude/handoff-21`, `claude/steward-branch-per-pr`, `claude/umbrel-store-bump`. Never delete remote branches (classifier). The store clone for read-only checks is `/home/user/neatlittlemacapps/yokogaki-umbrel` (this session only).
 - **Key files:** `web/src/components/ChartFigure.tsx`, `ChartView.tsx`, `web/src/chartTheme.ts` (`groupColourTokens(drawn, palette, groupProp, series)`), `web/src/columnEnter.ts` (`columnEnterAction`, `columnEnter`), `web/src/blocks.tsx` (`columnsSpec`), `web/src/keys.ts`, `web/src/components/Editor.tsx` (`column.enter` shortcut), `web/scripts/shoot-wiki.mjs` (`text` step), `.claude/hooks/codegraph.sh`, `.claude/rules/codegraph.md`, `server/upgrade.go`, `server/backup.go`, `docs/decisions.md`, `web/src/menuIcons.ts`, `web/src/ui/Menu.tsx` (+ `Menu.css`), `web/scripts/check-menu-icons.mjs`, `web/src/components/SidebarMenus.tsx`, `CollectionMenus.tsx`, `UserMenu.tsx`, `web/src/keys.ts` (`menuOwnsKey`), `web/src/dialog.tsx`.
 - **Terms (new):** option B = menus rebuilt on Base UI; menu function = the verb an item does (one icon each); hand-built button = a raw `<button>` counted by the rawButtons budget.
 
@@ -530,29 +534,32 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Handoff #20 | merged | PR #590 | |
 | Spec 014 PR 2 (model, server, agents) | merged | PR #592 | converter in Go and TS, `embed_id`/`copy_of`/`embed` args, `viewFilters`, review-found fixes |
 | Spec 014 PR 3 (interface) | merged | PR #596 | `saveViews`, ＋ "Views on …", Settings in embeds, confirmation, toolbar scroll |
-| Copy of naming | PR open, owner merges | PR #597, branch `claude/copy-of-view-name` | #596 merged without this commit |
-| Store job closes older store PRs | PR open, owner merges | PR #598, branch `claude/store-pr-supersedes` | merging it is a release |
-| Store pull request 2.1.25 | conflicts, owner closes it | `yokogaki-umbrel` #3 | after #598 the next release opens a fresh one |
-| Handoff #21 | PR open | branch `claude/handoff-21` | owner merges |
-| Open PRs / helpers / check-ins | #597, #598 and this handoff; no helper; no live check-in | — | clean stop after they merge |
+| Copy of naming | merged | PR #597 | |
+| Store job closes older store PRs | merged | PR #598 | merging it is a release |
+| Store pull request 2.1.25 | closed by the owner | `yokogaki-umbrel` #3 | the next release opens a fresh one |
+| Handoff #21 | merged | PR #599 | |
+| #593 workspace icon | fixed on branch, PR not opened | `claude/workspace-icon` (commits 8d2b419, a0c3e2d); gate green | `cleanWorkspaceIcon` in `server/workspaces.go`; `web/tests/workspace-icon.mjs`; Go test `workspace_icon_test.go`; wiki + 5 shots; `/code-review` medium done (5 of 7 fixed, 2 skipped: test order, icon grammar copy); `/security-review` not run (no gate changed) |
+| #577 Docker install mentions salt | not started | issue #577 | P1 |
+| Open PRs / helpers / check-ins | none; one pushed branch without a PR | — | |
 
 ## 11. Next steps
-1. **Next action:** ask whether #597, #598 and the handoff PR are merged and the 2.1.25 store PR closed (help if not); then close the spec 014 feature issue #371 (all 36 tasks done) and check the epic #426's other sub-issues on the board.
-2. Then the board by Priority: read the `priority:N` labels; the open bugs (#591 low, #594, #595 and the older ones) each get their own small PR on a new branch from `main` (rule 31); a feature that brings a new concept starts with `/speckit-specify`.
-3. When the owner sends them: the empty-screen animation (`brand/mark-animation.svg`) and situational icons (#322).
+1. **Next action:** open the pull request for `claude/workspace-icon` (Closes #593; the PR names `/code-review` medium, no `/security-review` and why, the cause, the existing-rows fallback), subscribe, `send_later` ~50 min; then #577 on a new branch: README `salt-data` → `nigari-data`, check install docs, `install.sh`, Docker docs, compose files, code and wiki for other `salt` names (`check-names.mjs` allowlist), and whether an existing `salt-data` volume needs a note (Outside names rule, spec 011).
+2. Close the spec 014 feature issue #371 (all 36 tasks done) and check epic #426's other sub-issues on the board.
+3. Then the board by Priority; open bugs each get their own small PR on a new branch from `main` (rule 31); a feature that brings a new concept starts with `/speckit-specify`.
+4. When the owner sends them: the empty-screen animation (`brand/mark-animation.svg`) and situational icons (#322).
 
 ## 12. Open questions ⚠️
-- Has the owner merged #597, #598 and the handoff PR, and closed `yokogaki-umbrel` #3 (2.1.25)? (not confirmed)
-- Did the Umbrel update to a later version after #2 (2.1.24) merge cleanly? (not confirmed)
+- Did the Umbrel update to a later version after #2 (2.1.24) merged? (not confirmed)
 - Remove the stray `https://github.com/neatlittlemacapps/nigari` store from the owner's Umbrel? Offered earlier; not answered.
 - File an issue for the older, minor login CSRF through the desktop code exchange (sandboxed iframe over plain HTTP; not made worse by #579)? Asked twice, not answered.
 - Dutch strings of the lock (stated in PR #576): not answered.
 - #572 and #574 have no board priority yet.
 - Peek panels do not pass `canWriteWorkspace`, so an embed inside a peek offers Edit properties to a viewer of the database's workspace (the server refuses and says why): file as an issue? Not asked yet.
-- Delete the stray label `surface:performance` and the merged branches listed in section 9 (owner).
+- The starter page "Welcome to nigari" still shows a 🧂 (salt shaker) emoji on a fresh instance: part of #577 or its own issue? Not asked yet.
+- Delete the stray label `surface:performance` and the merged branches in section 9 (owner).
 
 ## 13. Re-attach checklist
-Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on `main` of `neatlittlemacapps/nigari` once its PR merges (until then on branch `claude/handoff-21`). Start the new Claude Code session on **`neatlittlemacapps/nigari`**; whatever branch it is handed, work goes on a new branch per pull request (rule 31).
+Nothing to attach. This file is `docs/handoffs/handoff-nigari.md` on `main` of `neatlittlemacapps/nigari` once its PR merges (until then on branch `claude/handoff-22`). Start the new Claude Code session on **`neatlittlemacapps/nigari`**; whatever branch it is handed, work goes on a new branch per pull request (rule 31).
 
 ---
-<sub>Audit: 13/13 sections · 34 rules · 143 corrections · ~650 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>
+<sub>Audit: 13/13 sections · 34 rules · 143 corrections · ~660 data points · secrets removed: none found (test accounts invented and documented) · generated by active-memory</sub>

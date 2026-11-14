@@ -11,6 +11,7 @@ import { Check, ExternalLink, Link2 as LinkIcon, Plus, Trash2 } from 'lucide-rea
 import { PageIcon } from '../pageIcon';
 import { t } from '../i18n';
 import { Button } from '../ui/Button';
+import { isUnset } from '../isUnset';
 
 interface Props {
   def: PropDef;
@@ -46,9 +47,8 @@ function EmptyValue({ show, dash }: { show?: boolean; dash?: boolean }) {
 // cardLayout's isBlank, which also counts filler such as "n/a" or "-" as
 // blank so a board card can hide it; here that would print "Empty" over a
 // value somebody did type.
-function isUnset(v: unknown): boolean {
-  return v === null || v === undefined || v === '' || (Array.isArray(v) && v.length === 0);
-}
+// isUnset (rowProperties.ts) is the one rule for "no value": this muted
+// "Empty" and a row page's Hide when empty (spec 015) both use it.
 
 // EmptyEdit is an empty field that opens its editor when clicked: a real
 // button, so it is reachable by keyboard and named for a screen reader, and

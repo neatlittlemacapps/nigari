@@ -1,7 +1,9 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { t } from '../i18n';
 import { Button } from '../ui/Button';
-import { Menu, MenuItem, MenuSeparator, type MenuPoint } from '../ui/Menu';
+import { Input } from '../ui/Field';
+import { Menu, type MenuPoint } from '../ui/Menu';
+import { PropertyActionItems } from './PropertyActionItems';
 
 // A table column's heading (spec 012, US2): the label, the grip on its right
 // edge that resizes the column, and, for a property column someone may edit,
@@ -12,6 +14,11 @@ import { Menu, MenuItem, MenuSeparator, type MenuPoint } from '../ui/Menu';
 // browser will hit-test against: the handle painted in exactly the right place,
 // the pointer went to the <th> underneath, and dragging did nothing at all
 // while looking entirely correct.
+//
+// Its menu is the property's menu (spec 015): drawn from the one property
+// action list (actions/propertyActions.ts) like a row page's, with this
+// view's own actions (move, hide) beside the property's (rename, edit,
+// duplicate, delete) for someone who may change the database.
 //
 // The menu is opened by the label's click and by a right-click, never by a
 // press: Base UI's own menu trigger opens on mousedown, which would open the
@@ -28,11 +35,21 @@ export interface ColumnMoves {
   onHide: () => void;
 }
 
+/** The property's own actions, for someone who may change the database. */
+export interface PropertyChanges {
+  onRename: (name: string) => void;
+  /** Opens the Edit property panel beside this heading. */
+  onEdit: (heading: HTMLElement) => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+}
+
 export function ColHead({
   label,
   onResize,
   onReset,
   moves,
+  changes,
 }: {
   label: string;
   /** Absent: no grip, the width cannot be changed (a reader, or the views
@@ -42,9 +59,13 @@ export function ColHead({
   /** Absent for the title column and for a reader who cannot edit: then the
    *  heading is a label and a grip, as before. */
   moves?: ColumnMoves;
+  /** Absent: the property itself cannot be changed from here (a reader of
+   *  the database, the title column). */
+  changes?: PropertyChanges;
 }) {
   const labelRef = useRef<HTMLButtonElement>(null);
   const [menuAt, setMenuAt] = useState<MenuPoint | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
 
   const grip = onResize && (
     <span
@@ -54,7 +75,35 @@ export function ColHead({
       onDoubleClick={onReset}
     />
   );
-  if (!moves) {
+  if (renaming !== null && changes) {
+    const finish = (save: boolean) => {
+      const name = renaming.trim();
+      setRenaming(null);
+      if (save && name && name !== label) changes.onRename(name);
+      requestAnimationFrame(() => labelRef.current?.focus());
+    };
+    return (
+      <span className="th-inner">
+        <Input
+          autoFocus
+          className="th-rename"
+          aria-label={t('Property name')}
+          value={renaming}
+          onChange={(e) => setRenaming(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') finish(true);
+            if (e.key === 'Escape') {
+              e.stopPropagation();
+              finish(false);
+            }
+          }}
+          onBlur={() => finish(true)}
+        />
+        {grip}
+      </span>
+    );
+  }
+  if (!moves && !changes) {
     return (
       <span className="th-inner">
         {label}
@@ -77,9 +126,9 @@ export function ColHead({
         className="th-label"
         aria-haspopup="menu"
         aria-expanded={menuAt ? true : undefined}
-        onPointerDown={moves.onStartDrag}
+        onPointerDown={moves?.onStartDrag}
         onClick={() => {
-          if (moves.consumeClick()) return;
+          if (moves?.consumeClick()) return;
           openUnderLabel();
         }}
         onContextMenu={(e) => {
@@ -87,7 +136,7 @@ export function ColHead({
           // A long press on a phone fires contextmenu too, while the same
           // press is arming a drag: the two fought. A tap opens the menu there.
           if ((e.nativeEvent as PointerEvent).pointerType === 'touch') return;
-          moves.consumeClick();
+          moves?.consumeClick();
           setMenuAt({ x: e.clientX, y: e.clientY });
         }}
       >
@@ -101,20 +150,18 @@ export function ColHead({
         anchorPoint={menuAt}
         returnFocus={labelRef}
       >
-        {moves.onMoveLeft && (
-          <MenuItem fn="moveLeft" onClick={moves.onMoveLeft}>
-            {t('Move left')}
-          </MenuItem>
-        )}
-        {moves.onMoveRight && (
-          <MenuItem fn="moveRight" onClick={moves.onMoveRight}>
-            {t('Move right')}
-          </MenuItem>
-        )}
-        {(moves.onMoveLeft || moves.onMoveRight) && <MenuSeparator />}
-        <MenuItem fn="hideInView" onClick={moves.onHide}>
-          {t('Hide in view')}
-        </MenuItem>
+        <PropertyActionItems
+          place="view"
+          handlers={{
+            rename: changes && (() => setRenaming(label)),
+            editProperty: changes && (() => labelRef.current && changes.onEdit(labelRef.current)),
+            duplicate: changes?.onDuplicate,
+            moveLeft: moves?.onMoveLeft,
+            moveRight: moves?.onMoveRight,
+            hideInView: moves?.onHide,
+            delete: changes?.onDelete,
+          }}
+        />
       </Menu>
     </span>
   );

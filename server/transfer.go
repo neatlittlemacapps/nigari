@@ -486,8 +486,9 @@ func (s *Server) importWorkspaceFS(u *user, fsys fs.FS, opt importOptions) (*imp
 				return nil, err
 			}
 			if typ == "collection" {
+				// A row page's visibility as every door checks it (spec 015).
 				if _, err := tx.Exec(`INSERT INTO collections (page_id, schema, views) VALUES (?, ?, ?)`,
-					idMap[p.ID], defaultJSON(p.Schema, "[]"), defaultJSON(p.Views, "[]")); err != nil {
+					idMap[p.ID], importedSchemaVisibility(defaultJSON(p.Schema, "[]")), defaultJSON(p.Views, "[]")); err != nil {
 					return nil, err
 				}
 			}

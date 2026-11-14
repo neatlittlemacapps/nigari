@@ -327,6 +327,11 @@ func (s *Server) mcpUpdateSchema(pageID string, props json.RawMessage, remove []
 		}
 		schema = keep
 	}
+	// The rule PUT /api/collections applies to a row page's visibility
+	// (spec 015), checked on the merged schema.
+	if _, err := checkPropertyVisibility(schema); err != nil {
+		return "", err
+	}
 	// The rule PUT /api/collections applies: a property a locked view uses
 	// stays (spec 013, checkLockedViewsKeepProperties).
 	if err := s.checkLockedViewsKeepProperties(pageID, removedNames, views); err != nil {
