@@ -38,6 +38,10 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
     case 'cross_origin':
       return t("This request did not come from nigari's own page, so it was refused. Behind a proxy, pass on the address you opened nigari by (Host or X-Forwarded-Host).");
 
+    // ---- a property's visibility on a row's page (spec 015) ----
+    case 'invalid_property_visibility':
+      return t('This property could not be saved: it can be shown, hidden while empty, or always hidden on a row’s page.');
+
     // ---- a workspace's icon (#593) ----
     case 'bad_icon':
       return t('This icon cannot be used: an icon is an emoji, a built-in icon, or a picture uploaded to nigari.');
