@@ -72,6 +72,19 @@ or in the logs of every proxy along the way. A client that cannot sign in will
 ask for a token instead. That is the signal to use the other way, and plenty of
 good clients are still in that group.
 
+**An agent that runs on a server uses a token.** Signing in ends with your
+browser sending the agent back an approval, at an address the agent gives. That
+address must be on the computer the agent runs on (`localhost`) or use `https`;
+nigari refuses anything else, because over plain `http` the approval could be
+read on the way. An agent on your own computer (Claude Code, Codex, a Hermes you
+run locally) signs in fine. One on a server, such as a Hermes gateway reached
+through its own web address, usually announces a plain `http` address and is
+refused with *http is only allowed for loopback addresses*: give it a token
+instead.
+
+**Hermes Agent** reads `~/.hermes/config.yaml`: the snippet goes under
+`mcp_servers`, with `auth: oauth` to sign in. Type `/reload-mcp` afterwards.
+
 ### Signing in
 
 The client only needs the plain `/mcp` address. It gets a `401` back that says

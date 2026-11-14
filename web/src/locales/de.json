@@ -45,7 +45,7 @@
   "A personal space is not handed out from outside. Only its owner invites anyone there.": "Ein persönlicher Bereich wird nicht von außen vergeben. Nur sein Eigentümer lädt dort ein.",
   "A rules proposal is waiting for review": "Ein Regel-Vorschlag wartet auf Prüfung",
   "A skill with the playbook, this workspace and its rules. It installs a short block into the repository so the next session knows it too, without being told again.": "Ein Skill mit dem Playbook, diesem Workspace und seinen Regeln. Er schreibt einen kurzen Block ins Repository, damit die nächste Sitzung es auch weiß, ohne dass du es noch einmal sagst.",
-  "A standard mcpServers entry in the agent configuration.": "Standard-mcpServers-Eintrag in der Agent-Konfiguration.",
+  "Add it to ~/.hermes/config.yaml, then type /reload-mcp. A Hermes running on a server (its gateway) uses a token: signing in has to return to the computer it runs on.": "Füge es in ~/.hermes/config.yaml ein und tippe dann /reload-mcp. Ein Hermes, der auf einem Server läuft (sein Gateway), nutzt ein Token: Die Anmeldung muss zu dem Computer zurückkehren, auf dem er läuft.",
   "A template is a snapshot: using one copies it, and from then on the two have nothing to do with each other.": "Eine Vorlage ist eine Momentaufnahme: Verwenden kopiert sie, und danach haben die beiden nichts mehr miteinander zu tun.",
   "A title page of its own": "Eine eigene Titelseite",
   "A workspace made later stays out until you say otherwise.": "Ein später angelegter Workspace bleibt außen vor, bis du es änderst.",

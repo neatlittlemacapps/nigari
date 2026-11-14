@@ -39,6 +39,11 @@ const mcpURL = (url: string, token: string) => (token ? `${url}/mcp/${token}` : 
 
 const mcpJSON = (url: string, token: string) =>
   JSON.stringify({ mcpServers: { nigari: { url: mcpURL(url, token) } } }, null, 2);
+// Hermes Agent reads YAML, under mcp_servers in ~/.hermes/config.yaml, and
+// signs in only when told to (auth: oauth). It was given the JSON above, which
+// it does not read (#637).
+const hermesYAML = (url: string, token: string) =>
+  `mcp_servers:\n  nigari:\n    url: "${mcpURL(url, token)}"` + (token ? '' : '\n    auth: oauth');
 
 // Real logos from selfh.st/icons, bundled locally (web/public/agents/).
 // mono = black logo → inverted in dark mode.
@@ -63,7 +68,7 @@ const agentHint = (id: string): string =>
     codex: t('Add it to ~/.codex/config.toml.'),
     cursor: t('In .cursor/mcp.json (project) or ~/.cursor/mcp.json (global).'),
     openclaw: t('Register it as an MCP server in the OpenClaw configuration.'),
-    hermes: t('A standard mcpServers entry in the agent configuration.'),
+    hermes: t('Add it to ~/.hermes/config.yaml, then type /reload-mcp. A Hermes running on a server (its gateway) uses a token: signing in has to return to the computer it runs on.'),
     gemini: t('Add it to ~/.gemini/settings.json.'),
     other: t('Any MCP-capable client (streamable HTTP).'),
   })[id] ?? '';
@@ -116,7 +121,7 @@ url = "${mcpURL(url, token)}"`,
     id: 'hermes',
     name: 'Hermes Agent',
     logo: img('hermes-agent.png'),
-    snippet: (url, token) => mcpJSON(url, token),
+    snippet: (url, token) => hermesYAML(url, token),
   },
   {
     id: 'gemini',
