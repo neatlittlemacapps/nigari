@@ -81,7 +81,12 @@ await withFixture(async ({ page, api, base, path }) => {
   await page.keyboard.press('Enter');
   const menu = page.getByRole('menu', { name: 'Status column' });
   await menu.waitFor();
-  assert.deepEqual(await menu.getByRole('menuitem').allTextContents(), ['Move left', 'Move right', 'Hide in view']);
+  // Spec 015 put the property's own actions beside the view's: the heading's
+  // menu is built from the one property action list (propertyActions.ts), so
+  // it is no longer the view's three alone.
+  assert.deepEqual(await menu.getByRole('menuitem').allTextContents(), [
+    'Rename', 'Edit property', 'Duplicate property', 'Move left', 'Move right', 'Hide in view', 'Delete property',
+  ]);
   await page.keyboard.press('ArrowDown');
   await eventually(async () => (await menu.getByRole('menuitem', { name: 'Move right' }).evaluate((el) => el === document.activeElement)) ||
     (await page.keyboard.press('ArrowDown'), false));
@@ -90,10 +95,10 @@ await withFixture(async ({ page, api, base, path }) => {
   await eventually(async () => await label('Status').evaluate((el) => el === document.activeElement));
   // The first column has no Move left, the last no Move right.
   await label('Owner').click();
-  assert.deepEqual(await page.getByRole('menu', { name: 'Owner column' }).getByRole('menuitem').allTextContents(), ['Move right', 'Hide in view']);
+  assert.deepEqual(await page.getByRole('menu', { name: 'Owner column' }).getByRole('menuitem').allTextContents(), ['Rename', 'Edit property', 'Duplicate property', 'Move right', 'Hide in view', 'Delete property']);
   await page.keyboard.press('Escape');
   await label('Due').click({ button: 'right' });
-  assert.deepEqual(await page.getByRole('menu', { name: 'Due column' }).getByRole('menuitem').allTextContents(), ['Move left', 'Hide in view']);
+  assert.deepEqual(await page.getByRole('menu', { name: 'Due column' }).getByRole('menuitem').allTextContents(), ['Rename', 'Edit property', 'Duplicate property', 'Move left', 'Hide in view', 'Delete property']);
   await page.keyboard.press('Escape');
 
   // ---- An edge drag still resizes ----

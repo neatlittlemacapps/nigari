@@ -26,7 +26,8 @@ export function EditPropertyPanel({
   schema: PropDef[];
   targets: { id: string; title: string }[];
   anchor: RefObject<HTMLElement | null>;
-  onSave: (p: PropDef) => void;
+  /** Answers whether it was saved (from a document the person may decline). */
+  onSave: (p: PropDef) => Promise<boolean>;
   onDelete: (p: PropDef) => void;
   onClose: () => void;
 }) {
@@ -35,11 +36,13 @@ export function EditPropertyPanel({
   const withDraft = schema.map((x) => (x.id === draft.id ? draft : x));
   const targetSchemas = useTargetSchemas(withDraft);
 
+  // An emptied name keeps the one it had, as Rename does.
+  const named = (d: PropDef): PropDef => (d.name.trim() ? { ...d, name: d.name.trim() } : { ...d, name: saved.name });
+
   const close = () => {
     // Nothing changed since the last save: nothing to send.
-    // An emptied name keeps the one it had, as Rename does.
-    const next = draft.name.trim() ? { ...draft, name: draft.name.trim() } : { ...draft, name: saved.name };
-    if (JSON.stringify(next) !== JSON.stringify(saved)) onSave(next);
+    const next = named(draft);
+    if (JSON.stringify(next) !== JSON.stringify(saved)) void onSave(next);
     onClose();
   };
 
@@ -51,7 +54,19 @@ export function EditPropertyPanel({
       open
       anchor={anchor}
       returnFocus={anchor}
-      onOpenChange={(o) => !o && close()}
+      trapFocus={false}
+      onOpenChange={(o, details) => {
+        if (o) return;
+        // A select option's editor (PropertyFields) opens in a portal of its
+        // own, outside this panel: a press there edits the option, it does
+        // not leave the panel.
+        const target = details.event?.target;
+        if (target instanceof Element && target.closest('.schema-option-editor, .schema-option-backdrop')) {
+          details.cancel();
+          return;
+        }
+        close();
+      }}
       className="row-prop-panel"
     >
       <div className="row-prop-panel-head">
@@ -65,21 +80,25 @@ export function EditPropertyPanel({
           value={draft.type}
           className="prop-select"
           label={t('Type')}
-          onChange={(type) => {
-            const next = changePropertyType(draft, type);
+          onChange={async (type) => {
+            const next = changePropertyType(named(draft), type);
             setDraft(next);
-            setSaved(next);
-            onSave(next);
+            // Saved at once; declined (from a document) or refused, the
+            // draft goes back to the stored type.
+            if (await onSave(next)) setSaved(next);
+            else setDraft((d) => ({ ...d, type: saved.type, options: saved.options, rollupAgg: saved.rollupAgg }));
           }}
         />
       </div>
-      <PropertyFields p={draft} schema={withDraft} targets={targets} targetSchemas={targetSchemas} onPatch={(patch) => setDraft({ ...draft, ...patch })} />
+      <PropertyFields p={draft} schema={withDraft} targets={targets} targetSchemas={targetSchemas} onPatch={(patch) => setDraft((d) => ({ ...d, ...patch }))} />
       <Button
         variant="danger"
         size="sm"
         className="row-prop-panel-delete"
         onClick={() => {
-          onClose();
+          // The panel's edits are saved first, so Cancel on the question
+          // keeps them (they were made, and the property stays).
+          close();
           onDelete(property);
         }}
       >

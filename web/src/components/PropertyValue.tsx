@@ -11,7 +11,7 @@ import { Check, ExternalLink, Link2 as LinkIcon, Plus, Trash2 } from 'lucide-rea
 import { PageIcon } from '../pageIcon';
 import { t } from '../i18n';
 import { Button } from '../ui/Button';
-import { isUnset } from '../rowProperties';
+import { isUnset } from '../isUnset';
 
 interface Props {
   def: PropDef;

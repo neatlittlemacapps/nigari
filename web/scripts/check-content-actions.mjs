@@ -15,7 +15,8 @@
 //   2. a group holds more than 3 related actions and is not a submenu, or a
 //      submenu is not a choice among values or such a group;
 //   3. the renderer (PropertyActionItems.tsx) does not draw an action of the
-//      list with its function written as a literal;
+//      list with its function written as a literal (a choice is drawn by the
+//      one file named for it in CHOICE_FILES, passed in by its place);
 //   4. a menu of the content (RowProperties.tsx, TableColumnHead.tsx) has
 //      items of its own instead of the renderer's, or does not use it for
 //      its place.
@@ -34,18 +35,22 @@ const web = join(here, '..');
 const src = join(web, 'src');
 const tmp = mkdtempSync(join(tmpdir(), 'nigari-contentactions-'));
 const bundle = join(tmp, 'propertyActions.mjs');
+const reasonsBundle = join(tmp, 'propertyActionReasons.mjs');
 
 const PLACES = ['rowPage', 'view'];
 const MENUS = { rowPage: 'components/RowProperties.tsx', view: 'components/TableColumnHead.tsx' };
+// A choice only one place has is drawn by a file of its own, which that place
+// passes to the renderer; it must still name its function as a literal.
+const CHOICE_FILES = { rowPageVisibility: 'components/RowPageVisibilityMenu.tsx' };
 
 /** Rules 1 and 2 on a list; answers the failures. */
-function listFailures(actions, menuSections, SUBMENU_ABOVE) {
+function listFailures(actions, menuSections, SUBMENU_ABOVE, reasons) {
   const fails = [];
   for (const a of actions) {
     for (const place of PLACES) {
       const applies = a.places.includes(place);
-      const reason = (a.leftOut?.[place] ?? '').trim();
-      if (!applies && !reason) fails.push(`${a.id}: not in ${place} and no reason given in leftOut`);
+      const reason = (reasons[a.id]?.[place] ?? '').trim();
+      if (!applies && !reason) fails.push(`${a.id}: not in ${place} and no reason in propertyActionReasons.ts`);
       if (applies && reason) fails.push(`${a.id}: in ${place} and also left out there`);
     }
   }
@@ -70,22 +75,28 @@ try {
       [join(src, 'actions/propertyActions.ts'), '--bundle', '--format=esm', '--outfile=' + bundle],
       { stdio: ['ignore', 'ignore', 'pipe'] },
     );
+    execFileSync(
+      join(web, 'node_modules/esbuild/bin/esbuild'),
+      [join(src, 'actions/propertyActionReasons.ts'), '--bundle', '--format=esm', '--outfile=' + reasonsBundle],
+      { stdio: ['ignore', 'ignore', 'pipe'] },
+    );
   } catch (e) {
     console.error(String(e.stderr ?? e));
     process.exit(1);
   }
   const { PROPERTY_ACTIONS, menuSections, SUBMENU_ABOVE } = await import(bundle);
+  const { PROPERTY_LEFT_OUT } = await import(reasonsBundle);
 
   // ---- self-test: each of these must fail ----
-  const ok = (id, group, places = ['rowPage', 'view'], extra = {}) => ({ id, fn: id, group, places, leftOut: {}, ...extra });
+  const ok = (id, group, places = ['rowPage', 'view'], extra = {}) => ({ id, fn: id, group, places, ...extra });
   const selfTests = [
-    ['no reason', [ok('a', 'g', ['rowPage'])]],
-    ['both', [ok('a', 'g', ['rowPage', 'view'], { leftOut: { view: 'why' } })]],
-    ['four on one level', [ok('a', 'g'), ok('b', 'g'), ok('c', 'g'), ok('d', 'g')]],
-    ['a choice with company', [ok('a', 'g', undefined, { choice: true }), ok('b', 'g')]],
+    ['no reason', [ok('a', 'g', ['rowPage'])], {}],
+    ['both', [ok('a', 'g', ['rowPage', 'view'])], { a: { view: 'why' } }],
+    ['four on one level', [ok('a', 'g'), ok('b', 'g'), ok('c', 'g'), ok('d', 'g')], {}],
+    ['a choice with company', [ok('a', 'g', undefined, { choice: true }), ok('b', 'g')], {}],
   ];
-  for (const [name, list] of selfTests) {
-    if (listFailures(list, menuSections, SUBMENU_ABOVE).length === 0) {
+  for (const [name, list, reasons] of selfTests) {
+    if (listFailures(list, menuSections, SUBMENU_ABOVE, reasons).length === 0) {
       console.error(`  ✗ self-test "${name}" passed; the check is broken`);
       process.exit(1);
     }
@@ -95,13 +106,18 @@ try {
     process.exit(1);
   }
 
-  const failures = listFailures(PROPERTY_ACTIONS, menuSections, SUBMENU_ABOVE);
+  const failures = listFailures(PROPERTY_ACTIONS, menuSections, SUBMENU_ABOVE, PROPERTY_LEFT_OUT);
+  for (const id of Object.keys(PROPERTY_LEFT_OUT)) {
+    if (!PROPERTY_ACTIONS.some((a) => a.id === id)) failures.push(`propertyActionReasons.ts: ${id} is not an action`);
+  }
 
   // ---- rule 3: the renderer draws every action ----
   const renderer = readFileSync(join(src, 'components/PropertyActionItems.tsx'), 'utf8');
   for (const a of PROPERTY_ACTIONS) {
     if (!renderer.includes(`case '${a.id}'`)) failures.push(`PropertyActionItems.tsx: no case for ${a.id}`);
-    if (!new RegExp(`fn="${a.fn}"`).test(renderer)) failures.push(`PropertyActionItems.tsx: ${a.id} is not drawn with fn="${a.fn}"`);
+    const drawnIn = a.choice ? CHOICE_FILES[a.id] : 'components/PropertyActionItems.tsx';
+    if (!drawnIn) failures.push(`${a.id} is a choice with no file in CHOICE_FILES`);
+    else if (!new RegExp(`fn="${a.fn}"`).test(readFileSync(join(src, drawnIn), 'utf8'))) failures.push(`${drawnIn}: ${a.id} is not drawn with fn="${a.fn}"`);
   }
 
   // ---- rule 4: the menus use the renderer, and only it ----

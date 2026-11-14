@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import type { PeekMode } from '../peek';
 import {
   useCreateBlockNote,
@@ -23,7 +23,9 @@ import { exitsDown, exitsStart, focusedKey, focusItem, focusKey, navItem, nothin
 import { readPageScroll, writePageScroll } from '../pageUiState';
 import { useShortcut } from '../keys';
 import CollectionView from './CollectionView';
-import RowProperties from './RowProperties';
+// A row's property panel loads with its database's config, which it waits
+// for anyway before it draws (spec 015: the main bundle's cap).
+const RowProperties = lazy(() => import('./RowProperties'));
 import { HistoryModal } from './PageHistory';
 import CommentsPanel, {
   COMMENTS_CHANGED,
@@ -1425,6 +1427,7 @@ function PageHeader({
           </div>
         )}
         {(page.templateOf || (page.parentId && pagesById.get(page.parentId)?.type === 'collection')) && (
+          <Suspense fallback={null}>
           <RowProperties
             pageId={pageId}
             parentId={(page.templateOf || page.parentId)!}
@@ -1437,6 +1440,7 @@ function PageHeader({
               .filter((x) => x.type === 'collection' && !x.trashed && !x.isTemplate)
               .map((x) => ({ id: x.id, title: x.title }))}
           />
+          </Suspense>
         )}
       </div>
       {children}

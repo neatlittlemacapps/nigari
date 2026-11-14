@@ -9,11 +9,8 @@
 
 import type { PropDef, PropType } from './types';
 
-/** The one rule for "this field has no value": the row page's muted "Empty"
- *  (#269) and *Hide when empty* both use it. */
-export function isUnset(v: unknown): boolean {
-  return v === null || v === undefined || v === '' || (Array.isArray(v) && v.length === 0);
-}
+import { isUnset } from './isUnset';
+export { isUnset };
 
 let idCounter = 0;
 /** A readable property or option id from its name (the Edit properties

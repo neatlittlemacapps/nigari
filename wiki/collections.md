@@ -163,7 +163,8 @@ tabbing to it and pressing Enter. The menu offers **Rename**, **Edit property**,
   property and the database.
 
 **+ Add a property**, under the list, adds a property to the database. You pick
-a name and a type.
+a type; the property gets the type's name, and its name opens so you can type
+the one you want (Enter saves).
 
 **Property visibility** is *Always show* (the default), *Hide when empty* or
 *Always hide*. It is one setting for the database: it applies to every row's

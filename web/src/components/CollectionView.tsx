@@ -37,7 +37,9 @@ import { AddViewMenu, ViewActionItems } from './CollectionMenus';
 import { Menu, MenuItem, MenuLabel, MenuSeparator, MenuValues, MenuValueSubmenu, type MenuPoint } from '../ui/Menu';
 import { readViewId, readViewScroll, writeViewId, writeViewScroll } from '../pageUiState';
 import { AgentDot } from './AgentBadge';
-import SchemaEditor from './SchemaEditor';
+// Loaded when opened (spec 015: the main bundle's cap; the same as the lazy
+// dialogs of spec 010): the dialog carries every type's settings.
+const SchemaEditor = lazy(() => import('./SchemaEditor'));
 import GalleryView from './GalleryView';
 import ListView from './ListView';
 import BoardView from './BoardView';
@@ -1259,6 +1261,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       </RowOpenContext.Provider>
       {columnChanges.panel}
       {schemaOpen && (
+        <Suspense fallback={null}>
         <SchemaEditor
           config={config}
           databaseName={pages.get(collectionId)?.title || t('Untitled')}
@@ -1270,21 +1273,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           // From a document the dialog changes the database, and every view of
           // it, everywhere: say so before it is saved (spec 014, FR-012).
           // Cancelling returns to the dialog with the edits kept.
-          onSave={
-            embed
-              ? async (next) => {
-                  const ok = await confirm(
-                    t('Change the properties of {database}?', { database: pages.get(collectionId)?.title || t('Untitled') }) +
-                      '\n' +
-                      t('This changes the database and every view of it, everywhere.'),
-                    { confirmText: t('Change properties') },
-                  );
-                  return ok ? saveConfig(next) : false;
-                }
-              : saveConfig
-          }
+          onSave={embed ? async (next) => ((await columnChanges.askFromDocument()) ? saveConfig(next) : false) : saveConfig}
           onClose={() => setSchemaOpen(false)}
         />
+        </Suspense>
       )}
     </div>
   );

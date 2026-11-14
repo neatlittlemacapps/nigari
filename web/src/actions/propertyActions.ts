@@ -7,7 +7,8 @@
 // heading menu (move, hide) and the Edit properties dialog (rename, type,
 // delete), and the row's page was about to grow a third set. Every menu that
 // acts on a property is now drawn by PropertyActionItems from this list, and
-// a place that leaves an action out says why here. check-content-actions.mjs
+// a place that leaves an action out says why (propertyActionReasons.ts, read
+// by the check only, so the app does not carry the sentences). check-content-actions.mjs
 // holds the list, the renderer and the menus to it.
 //
 // Groups: related actions sit together, set apart by a separator. A group of
@@ -28,25 +29,17 @@ export type PropertyAction = {
   /** A choice among values: drawn as a submenu whatever its group's size. */
   choice?: boolean;
   places: PropertyPlace[];
-  /** For each place NOT in `places`: why the action is not there. */
-  leftOut: Partial<Record<PropertyPlace, string>>;
 };
 
-const NO_VIEW_ON_A_ROW_PAGE =
-  'A row’s page shows no view: its properties follow the schema’s order, and it hides them with Property visibility.';
-
 export const PROPERTY_ACTIONS: readonly PropertyAction[] = [
-  { id: 'rename', fn: 'rename', group: 'name', places: ['rowPage', 'view'], leftOut: {} },
-  { id: 'editProperty', fn: 'editProperty', group: 'name', places: ['rowPage', 'view'], leftOut: {} },
-  {
-    id: 'rowPageVisibility', fn: 'rowPageVisibility', group: 'rowPage', choice: true, places: ['rowPage'],
-    leftOut: { view: 'A view shows its columns its own way (Hide in view, its Settings); the row page’s setting does not apply to it, so it is set where it shows.' },
-  },
-  { id: 'duplicate', fn: 'duplicate', group: 'copy', places: ['rowPage', 'view'], leftOut: {} },
-  { id: 'moveLeft', fn: 'moveLeft', group: 'view', places: ['view'], leftOut: { rowPage: NO_VIEW_ON_A_ROW_PAGE } },
-  { id: 'moveRight', fn: 'moveRight', group: 'view', places: ['view'], leftOut: { rowPage: NO_VIEW_ON_A_ROW_PAGE } },
-  { id: 'hideInView', fn: 'hideInView', group: 'view', places: ['view'], leftOut: { rowPage: NO_VIEW_ON_A_ROW_PAGE } },
-  { id: 'delete', fn: 'delete', group: 'danger', places: ['rowPage', 'view'], leftOut: {} },
+  { id: 'rename', fn: 'rename', group: 'name', places: ['rowPage', 'view'] },
+  { id: 'editProperty', fn: 'editProperty', group: 'name', places: ['rowPage', 'view'] },
+  { id: 'rowPageVisibility', fn: 'rowPageVisibility', group: 'rowPage', choice: true, places: ['rowPage'] },
+  { id: 'duplicate', fn: 'duplicate', group: 'copy', places: ['rowPage', 'view'] },
+  { id: 'moveLeft', fn: 'moveLeft', group: 'view', places: ['view'] },
+  { id: 'moveRight', fn: 'moveRight', group: 'view', places: ['view'] },
+  { id: 'hideInView', fn: 'hideInView', group: 'view', places: ['view'] },
+  { id: 'delete', fn: 'delete', group: 'danger', places: ['rowPage', 'view'] },
 ];
 
 /** More related actions than this in one group earn a submenu of their own. */

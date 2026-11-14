@@ -73,12 +73,20 @@ await withFixture(async ({ page, api, base, workspace, path, read }) => {
   await eventually(async () => (await prop(copy.id)).type === 'select');
   await panel.getByPlaceholder('+ Option').fill('Later');
   await panel.getByPlaceholder('+ Option').press('Enter');
+  // An option's own editor opens outside the panel; using it must not close
+  // the panel (review finding).
+  await panel.getByRole('button', { name: 'Later', exact: true }).click();
+  const optionName = page.getByRole('textbox', { name: 'Option name' });
+  await optionName.fill('Later on');
+  await page.keyboard.press('Escape');
+  await optionName.waitFor({ state: 'hidden' });
+  assert(await panel.isVisible(), 'editing an option closed the panel');
   await panel.getByRole('textbox', { name: 'Property name' }).fill('Phase');
   assert.equal((await prop(copy.id)).name, 'Copy of Tags', 'the panel saved before it closed');
   await page.keyboard.press('Escape');
   await panel.waitFor({ state: 'hidden' });
   await eventually(async () => (await prop(copy.id)).name === 'Phase');
-  assert((await prop(copy.id)).options.some((o) => o.name === 'Later'), 'the new option was not saved');
+  assert((await prop(copy.id)).options.some((o) => o.name === 'Later on'), 'the new option was not saved');
 
   // ---- delete asks, naming the property and the database ----
   await name('Phase').click();
@@ -92,12 +100,16 @@ await withFixture(async ({ page, api, base, workspace, path, read }) => {
   await ask.getByRole('button', { name: 'Delete property', exact: true }).click();
   await eventually(async () => !(await schemaNames()).includes('Phase'));
 
-  // ---- add a property ----
+  // ---- add a property: pick a type, it is made with the type's name, its
+  // name opens for editing ----
   await props.getByRole('button', { name: 'Add a property' }).click();
-  const add = page.getByRole('dialog', { name: 'Add a property' });
-  await add.getByRole('textbox', { name: 'Property name' }).fill('Due');
-  await add.getByRole('combobox', { name: 'Type' }).selectOption('date');
-  await add.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByRole('menu', { name: 'Add a property' }).getByRole('menuitem', { name: 'Date', exact: true }).click();
+  await eventually(async () => (await read()).schema.some((p) => p.name === 'Date' && p.type === 'date'));
+  const newName = props.getByRole('textbox', { name: 'Property name' });
+  await newName.waitFor();
+  assert.equal(await newName.inputValue(), 'Date');
+  await newName.fill('Due');
+  await newName.press('Enter');
   await eventually(async () => (await read()).schema.some((p) => p.name === 'Due' && p.type === 'date'));
   await name('Due').waitFor();
 

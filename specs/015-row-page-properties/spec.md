@@ -137,11 +137,13 @@ type, name it, and fill in its value on that row.
 
 1. **Given** a row's page and someone who may change the database, **When**
    they choose **+ Add a property** under the properties, **Then** they pick
-   a type and a name, and the property is added to the database, last in
-   order, with its value field ready on this row.
+   a type, the property is added to the database, last in order, named after
+   its type, and its name opens for editing (as in Notion; changed during the
+   build from "a type and a name" in a panel, to keep the main bundle under
+   its cap).
 2. **Given** a name another property already has, **When** they add it,
-   **Then** the property is still added, with the name made unique the way
-   the Edit properties dialog does it.
+   **Then** the property is still added under that name, with an id of its
+   own, as the Edit properties dialog does it.
 
 ---
 

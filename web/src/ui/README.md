@@ -163,6 +163,9 @@ content brings its own bar and close button).
 - `label`: the panel's accessible name.
 - `closeLabel`: the name of its hidden close button.
 - `open?`, `onOpenChange?`: controlled use; omit both and the trigger opens and closes it.
+  `onOpenChange` gets Base UI's details: `details.cancel()` keeps it open (a press in an
+  editor the panel portals out).
+- `trapFocus?` (`true`): `false` for a panel whose own editors open outside it.
 - `side?` (`bottom`), `align?` (`end`).
 - `className?`
 

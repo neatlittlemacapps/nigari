@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { ChevronDown, ChevronUp, EyeDashed, Plus } from 'lucide-react';
 import { api } from '../api';
 import { toast } from '../toast';
@@ -8,11 +8,10 @@ import type { CollectionConfig, PropDef, PropOption, PropType } from '../types';
 import PropertyValue from './PropertyValue';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Field';
-import { Menu, type MenuPoint } from '../ui/Menu';
-import { Popover } from '../ui/Popover';
+import { Menu, MenuValueItem, MenuValues, type MenuPoint } from '../ui/Menu';
 import { PropertyActionItems } from './PropertyActionItems';
-import { PropertyTypeSelect } from './PropertyFields';
-import { EditPropertyPanel } from './EditPropertyPanel';
+import { RowPageVisibilityMenu } from './RowPageVisibilityMenu';
+import { TYPES } from './propertyTypes';
 import { deletePropertyMessage } from '../propertyDelete';
 import { changeSchema } from '../propertyChange';
 import { addProperty, applyPropertyChange, duplicateProperty, emptyAtOpen, visibleOnRowPage } from '../rowProperties';
@@ -31,6 +30,10 @@ import { addProperty, applyPropertyChange, duplicateProperty, emptyAtOpen, visib
 // Every change starts from the schema as stored a moment ago and saves the
 // schema alone (rowProperties.ts, research R5): this page's copy is as old as
 // the page, and saving it would undo what was changed elsewhere since.
+
+// The panel and the type settings it carries load when it opens (spec 015:
+// the main bundle's cap).
+const EditPropertyPanel = lazy(() => import('./EditPropertyPanel').then((m) => ({ default: m.EditPropertyPanel })));
 
 export default function RowProperties({
   pageId,
@@ -63,10 +66,26 @@ export default function RowProperties({
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState<{ id: string; draft: string } | null>(null);
   const [editing, setEditing] = useState<PropDef | null>(null);
-  const [adding, setAdding] = useState<{ name: string; type: PropType } | null>(null);
   const names = useRef(new Map<string, HTMLButtonElement>());
   const anchor = useRef<HTMLElement | null>(null);
-  const addButton = useRef<HTMLButtonElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  // + Add a property: the new property's name opens once both its save and
+  // the type menu's close are done; opened earlier, the closing menu took
+  // focus back to its button and the field closed under the cursor.
+  const added = useRef<{ id?: string; name?: string; closed: boolean }>({ closed: true });
+  const openAdded = () => {
+    const a = added.current;
+    if (a.id && a.closed) {
+      setRenaming({ id: a.id, draft: a.name ?? '' });
+      added.current = { closed: true };
+    }
+  };
+  // Changes go to the server one after another (review finding): two quick
+  // ones (an option made in a cell, then another) would otherwise each send a
+  // list that lacks the other's. While some are still waiting, a finished
+  // one does not replace what is on screen; the last one does.
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const waiting = useRef(0);
 
   useEffect(() => {
     setProps(initialProps ?? {});
@@ -103,7 +122,11 @@ export default function RowProperties({
 
   if (!config) return null;
   const schema = config.schema;
-  const { shown, folded } = visibleOnRowPage(schema, emptyAtStart ?? new Set());
+  // Worked out in this render the first time, so an empty Hide-when-empty
+  // property is never drawn and then folded a frame later; the effect above
+  // keeps the answer for the rest of the visit.
+  const atStart = emptyAtStart ?? emptyAtOpen(schema, initialProps ?? {});
+  const { shown, folded } = visibleOnRowPage(schema, atStart);
   if (schema.length === 0 && !canEdit) return null;
 
   const setProp = async (propId: string, value: unknown) => {
@@ -117,18 +140,40 @@ export default function RowProperties({
 
   /** One change to the stored schema (propertyChange.ts). A refusal says
    *  why and reloads. */
-  const change = async (next: (stored: PropDef[]) => PropDef[], tidyViews = false): Promise<boolean> => {
-    try {
-      setConfig(await changeSchema(parentId, next, tidyViews));
-      return true;
-    } catch (e) {
-      toast((e as Error).message);
-      void load();
-      return false;
-    }
+  const change = (next: (stored: PropDef[]) => PropDef[], tidyViews = false): Promise<boolean> => {
+    waiting.current++;
+    const run = queue.current.then(async () => {
+      try {
+        const saved = await changeSchema(parentId, next, tidyViews);
+        if (--waiting.current === 0) setConfig(saved);
+        return true;
+      } catch (e) {
+        waiting.current--;
+        toast((e as Error).message);
+        void load();
+        return false;
+      }
+    });
+    queue.current = run;
+    return run;
   };
 
-  const setOptions = (propId: string, options: PropOption[]) => void change((s) => applyPropertyChange(s, propId, { options }));
+  // An option made or recoloured in a cell shows at once, before the save
+  // returns, as it did before this panel saved through change().
+  const setOptions = (propId: string, options: PropOption[]) => {
+    setConfig((c) => c && { ...c, schema: applyPropertyChange(c.schema, propId, { options }) });
+    void change((s) => applyPropertyChange(s, propId, { options }));
+  };
+
+  // After a property leaves the list (hidden, deleted), focus would fall to
+  // the top of the page with the name that had it: move it to the list's
+  // foot instead.
+  const keepFocus = () =>
+    requestAnimationFrame(() => {
+      const a = document.activeElement;
+      if (a && a !== document.body && a.isConnected) return;
+      root.current?.querySelector<HTMLElement>('.row-props-foot button, .row-prop-name')?.focus();
+    });
 
   const openMenu = (id: string) => {
     const r = names.current.get(id)?.getBoundingClientRect();
@@ -140,7 +185,7 @@ export default function RowProperties({
   const remove = async (p: PropDef) => {
     const other = p.relationCollection ? titleOf(p.relationCollection) : undefined;
     const ok = await confirm(deletePropertyMessage(t, p, databaseName, other), { confirmText: t('Delete property'), danger: true });
-    if (ok) await change((s) => s.filter((x) => x.id !== p.id), true);
+    if (ok && (await change((s) => s.filter((x) => x.id !== p.id), true))) keepFocus();
   };
 
   const finishRename = (save: boolean) => {
@@ -150,6 +195,19 @@ export default function RowProperties({
     const name = r.draft.trim();
     if (save && name) void change((s) => applyPropertyChange(s, r.id, { name }));
     requestAnimationFrame(() => names.current.get(r.id)?.focus());
+  };
+
+  // A new property, named after its type, its name open for editing.
+  const add = async (type: PropType, name: string) => {
+    let id = '';
+    const ok = await change((s) => {
+      const next = addProperty(s, type, name);
+      id = next[next.length - 1].id;
+      return next;
+    });
+    if (!ok || !id) return;
+    added.current = { ...added.current, id, name };
+    openAdded();
   };
 
   const menuProp = menuFor ? schema.find((p) => p.id === menuFor.id) : undefined;
@@ -214,54 +272,41 @@ export default function RowProperties({
   );
 
   return (
-    <div className="row-props">
+    <div className="row-props" ref={root}>
       {shown.map((p) => row(p, false))}
       {unfolded && folded.map((p) => row(p, true))}
       {(canEdit || folded.length > 0) && (
         <div className="row-props-foot">
           {canEdit && (
-            <Popover
+            <Menu
               label={t('Add a property')}
-              closeLabel={t('Close')}
               align="start"
-              open={!!adding}
-              onOpenChange={(o) => setAdding(o ? { name: '', type: 'text' } : null)}
+              onOpenChange={(o) => {
+                if (o) added.current = { closed: false };
+              }}
+              onClosed={() => {
+                added.current = { ...added.current, closed: true };
+                openAdded();
+              }}
               trigger={
-                <Button ref={addButton} variant="ghost" size="sm" className="row-props-add">
+                <Button variant="ghost" size="sm" className="row-props-add">
                   <Plus size={14} aria-hidden="true" />
                   {t('Add a property')}
                 </Button>
               }
             >
-              {adding && (
-                <form
-                  className="row-props-add-form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const a = adding;
-                    setAdding(null);
-                    void change((s) => addProperty(s, a.type, a.name));
-                  }}
-                >
-                  <Input
-                    autoFocus
-                    aria-label={t('Property name')}
-                    placeholder={t('Property name')}
-                    value={adding.name}
-                    onChange={(e) => setAdding({ ...adding, name: e.target.value })}
-                  />
-                  <PropertyTypeSelect
-                    value={adding.type}
-                    className="prop-select"
-                    label={t('Type')}
-                    onChange={(type) => setAdding({ ...adding, type })}
-                  />
-                  <Button type="submit" variant="primary" size="sm">
-                    {t('Add')}
-                  </Button>
-                </form>
-              )}
-            </Popover>
+              {/* As in Notion: pick a type, the property is made with the
+                  type's name, and its name opens for editing at once. A menu
+                  of values, not a panel: the popover would have put its
+                  library in the main bundle (spec 015, the bundle's cap). */}
+              <MenuValues reason="the property types a new property can have" label={t('Type')}>
+                {TYPES.map((x) => (
+                  <MenuValueItem key={x.value} onClick={() => void add(x.value, x.label)}>
+                    {x.label}
+                  </MenuValueItem>
+                ))}
+              </MenuValues>
+            </Menu>
           )}
           {folded.length > 0 && (
             <Button variant="ghost" size="sm" className="row-props-fold" aria-expanded={unfolded} onClick={() => setUnfolded((u) => !u)}>
@@ -289,10 +334,14 @@ export default function RowProperties({
                 anchor.current = names.current.get(menuProp.id) ?? null;
                 setEditing({ ...menuProp });
               },
-              rowPageVisibility: {
-                value: menuProp.pageVisibility,
-                onChange: (v) => void change((s) => applyPropertyChange(s, menuProp.id, { pageVisibility: v })),
-              },
+              rowPageVisibility: (
+                <RowPageVisibilityMenu
+                  value={menuProp.pageVisibility}
+                  onChange={(v) =>
+                    void change((s) => applyPropertyChange(s, menuProp.id, { pageVisibility: v })).then((ok) => ok && keepFocus())
+                  }
+                />
+              ),
               duplicate: () =>
                 void change((s) => duplicateProperty(s, menuProp.id, t('Copy of {name}', { name: menuProp.name }))),
               delete: () => void remove(menuProp),
@@ -301,16 +350,18 @@ export default function RowProperties({
         </Menu>
       )}
       {editing && (
+        <Suspense fallback={null}>
         <EditPropertyPanel
           key={editing.id}
           property={editing}
           schema={schema}
           targets={targets}
           anchor={anchor}
-          onSave={(p) => void change((s) => s.map((x) => (x.id === p.id ? p : x)))}
+          onSave={(p) => change((s) => s.map((x) => (x.id === p.id ? p : x)))}
           onDelete={(p) => void remove(p)}
           onClose={() => setEditing(null)}
         />
+        </Suspense>
       )}
     </div>
   );

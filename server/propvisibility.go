@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 )
@@ -51,4 +52,38 @@ func checkPropertyVisibility(schema []map[string]any) (removed bool, err error) 
 		}
 	}
 	return removed, nil
+}
+
+// importedSchemaVisibility is the rule for a schema that arrives in a
+// workspace archive (transfer.go): a pageVisibility no row page can draw is
+// dropped, so the property is shown, rather than refusing the whole import.
+// Stored as it came, it would have made every later save of that database
+// refused, update_schema's and the interface's alike, because both check the
+// whole schema they write (review finding, spec 015). A schema that is not a
+// list of properties is left as it was: the import never judged that.
+func importedSchemaVisibility(raw string) string {
+	var schema []map[string]any
+	if json.Unmarshal([]byte(raw), &schema) != nil {
+		return raw
+	}
+	touched := false
+	for _, p := range schema {
+		if _, has := p[pageVisibilityKey]; !has {
+			continue
+		}
+		touched = true
+		// One property at a time, so a bad value drops only its own key; the
+		// check also turns "show" into no key.
+		if _, err := checkPropertyVisibility([]map[string]any{p}); err != nil {
+			delete(p, pageVisibilityKey)
+		}
+	}
+	if !touched {
+		return raw
+	}
+	b, err := json.Marshal(schema)
+	if err != nil {
+		return raw
+	}
+	return string(b)
 }

@@ -1,7 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
-import { MenuItem, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuSubmenu } from '../ui/Menu';
+import { MenuItem, MenuSeparator } from '../ui/Menu';
 import { t } from '../i18n';
-import type { PropDef } from '../types';
 import { menuSections, type PropertyAction, type PropertyPlace } from '../actions/propertyActions';
 
 // The items of a property's menu, wherever the menu is (spec 015, R11): drawn
@@ -17,7 +16,8 @@ import { menuSections, type PropertyAction, type PropertyPlace } from '../action
 export type PropertyActionHandlers = {
   rename?: () => void;
   editProperty?: () => void;
-  rowPageVisibility?: { value: PropDef['pageVisibility']; onChange: (v: PropDef['pageVisibility']) => void };
+  /** The row page's visibility submenu (RowPageVisibilityMenu). */
+  rowPageVisibility?: ReactNode;
   duplicate?: () => void;
   moveLeft?: () => void;
   moveRight?: () => void;
@@ -25,38 +25,16 @@ export type PropertyActionHandlers = {
   delete?: () => void;
 };
 
-const VISIBILITY = ['show', 'hide_empty', 'hide'] as const;
-
-function visibilityLabel(v: (typeof VISIBILITY)[number]): string {
-  return v === 'hide_empty' ? t('Hide when empty') : v === 'hide' ? t('Always hide') : t('Always show');
-}
-
 function item(a: PropertyAction, h: PropertyActionHandlers): ReactNode {
   switch (a.id) {
     case 'rename':
       return h.rename && <MenuItem fn="rename" onClick={h.rename}>{t('Rename')}</MenuItem>;
     case 'editProperty':
       return h.editProperty && <MenuItem fn="editProperty" onClick={h.editProperty}>{t('Edit property')}</MenuItem>;
-    case 'rowPageVisibility': {
-      const v = h.rowPageVisibility;
-      if (!v) return null;
-      const current = v.value ?? 'show';
-      return (
-        <MenuSubmenu fn="rowPageVisibility" label={t('Property visibility')} value={visibilityLabel(current)}>
-          <MenuRadioGroup
-            label={t('Property visibility')}
-            value={current}
-            onValueChange={(next) => v.onChange(next === 'show' ? undefined : (next as PropDef['pageVisibility']))}
-          >
-            {VISIBILITY.map((x) => (
-              <MenuRadioItem key={x} value={x}>
-                {visibilityLabel(x)}
-              </MenuRadioItem>
-            ))}
-          </MenuRadioGroup>
-        </MenuSubmenu>
-      );
-    }
+    case 'rowPageVisibility':
+      // A choice drawn by the one place that has it (RowPageVisibilityMenu,
+      // loaded with the row's page), so the table's menus do not carry it.
+      return h.rowPageVisibility;
     case 'duplicate':
       return h.duplicate && <MenuItem fn="duplicate" onClick={h.duplicate}>{t('Duplicate property')}</MenuItem>;
     case 'moveLeft':
