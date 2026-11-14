@@ -100,8 +100,12 @@ await withFixture(async ({ page, context, api, base, workspace, path, read }) =>
   await page.locator('.fs-date input[type="text"]').fill('today-5d');
   await eventually(async () => (await rows.count()) === 1);
 
-  // The word is what is saved, so a reload keeps filtering by it.
-  await eventually(async () => (await read()).views[0].filters[0].value === 'today-5d');
+  // The word is what is kept, so a reload keeps filtering by it. Since spec 013
+  // a filter set on a database's page is the person's own, stored on their
+  // account under the view's id and not in the view (#595: this read the view).
+  const personal = async () => (await api('GET', `/api/collections/${collectionId}/personal`)).states;
+  await eventually(async () => (await personal()).table?.filters?.[0]?.value === 'today-5d');
+  assert.equal((await read()).views[0].filters, undefined, 'the shared view was changed by a personal filter');
   await page.reload();
   await eventually(async () => (await rows.count()) === 1);
 
