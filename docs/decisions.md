@@ -7,6 +7,42 @@ entries are not edited away.
 
 ---
 
+## 2026-11-13 — Each kind of content lists its actions once; menus are built from the list
+
+The owner asked whether the code graph keeps track of which actions belong to
+which kind of content, to avoid menus growing wild. It does not: it shows
+where menus are and which functions they hold, not what belongs in them, and
+`check-menu-icons.mjs` only keeps one icon per function. The same content
+already offers different actions in different places: a page's ⋯ and its
+sidebar row name 12 and 11 functions and share 2 (Move to trash, Export
+Markdown); a property has a column-heading menu (move, hide), the Edit
+properties dialog (rename, type, delete), and spec 015 was about to add a
+third set.
+
+- **One action list per kind of content in `web/src/actions/`**; every menu
+  acting on that content is built from it, and a place that leaves an action
+  out says why in the list (owner: "B"). Properties first, in spec 015 (the
+  row's page and the table's column heading); pages, rows, views and the
+  rest in a later spec (#604).
+- **Actions are grouped by what they relate to; a group of more than 3
+  related actions gets its own submenu**, a group of 3 or fewer stays on the
+  first level behind a separator, and a choice among values is a submenu
+  (owner: "not all ends up on one big level 1", then "I would not limit to
+  7 specifically. I would try to assess the number of related items. If
+  those go beyond 3 for example, they might earn their own menu.").
+- **Guidelines**: a **Content actions** row in `.specify/memory/surfaces.md`
+  (every later plan answers it) and a paragraph under Menus in
+  `.claude/rules/frontend.md`; `check-content-actions.mjs` comes with spec
+  015's build.
+- **Turned down**: a spec for every content type before #582 (A: #582 waits
+  on a large refactor of menus that work); only a registry row and a report
+  of differences (C: writes the problem down without fixing it); a first
+  level of at most 7 entries (Claude's first proposal, replaced by the
+  owner: the size of a group decides, not a cap); a submenu for every pair
+  of actions (two clicks for common ones).
+
+---
+
 ## 2026-11-13 — The Docker and Podman volume is called `nigari-data`
 
 Reverses one line of the 2026-10-29 rename entry below ("The compose and Quadlet

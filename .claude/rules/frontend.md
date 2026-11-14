@@ -29,7 +29,13 @@ paths:
   outside `web/src/ui/`, and those counts only go down. **Menus** are
   `ui/Menu` (spec 010): an item names its function (`fn="…"`) and takes its
   icon from `web/src/menuIcons.ts`; `check-menu-icons.mjs` refuses a
-  hand-built menu or two functions on one icon. Not in the layer yet: toasts;
+  hand-built menu or two functions on one icon. **What a menu offers** comes from its
+  content's action list in `web/src/actions/` (spec 015: one list per kind of
+  content, every menu of that content built from it, a left-out action
+  carries its reason). Group actions by what they relate to: a group of
+  more than 3 related actions gets its own submenu, a smaller group stays
+  on the first level behind a separator, and a choice among values is a
+  submenu. Add a new action to the list, not to one menu. Not in the layer yet: toasts;
   reuse `dialog.tsx` (confirm/prompt), `modal.ts`, `toast.ts` and `keys.ts`. BlockNote for the editor, Yjs for live
   documents.
 - **Keyboard.** Shortcuts register in `keys.ts`; focus movement goes through
