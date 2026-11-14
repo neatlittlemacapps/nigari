@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { api } from '../api';
 import type { FontPref } from '../App';
 import type { PageMeta, User, Workspace } from '../types';
@@ -17,7 +17,9 @@ import TrashSection from './TrashSection';
 import { compare } from '../format';
 import { plural, t } from '../i18n';
 import { openPage, openPageAux } from '../pageOpen';
-import AgentConnectModal from './AgentConnect';
+// Loaded when opened, as the other dialogs that are not needed to draw a
+// page (spec 010's lazy dialogs; #635: the main bundle is at its cap).
+const AgentConnectModal = lazy(() => import('./AgentConnect'));
 import BreakGlassLog from './BreakGlassLog';
 import TemplateGallery from './TemplateGallery';
 import BlueprintLibrary from './BlueprintLibrary';
@@ -1449,7 +1451,9 @@ export default function Sidebar({
           />
         )}
         {agentOpen && (
-          <AgentConnectModal workspaces={workspaces} currentWs={currentWs} onClose={() => setAgentOpen(false)} />
+          <Suspense fallback={null}>
+            <AgentConnectModal workspaces={workspaces} currentWs={currentWs} onClose={() => setAgentOpen(false)} />
+          </Suspense>
         )}
         {galleryOpen && (
           <TemplateGallery
