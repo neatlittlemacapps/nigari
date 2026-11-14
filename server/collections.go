@@ -123,6 +123,28 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 		body.Views = views
 		_ = json.Unmarshal(views, &savedViews)
 	}
+	// A row page's visibility (spec 015): one rule for every door that writes
+	// a schema, so a script cannot store a value no page knows how to draw.
+	if hasSchema {
+		var sent []map[string]any
+		if err := json.Unmarshal(body.Schema, &sent); err != nil {
+			httpError(w, 400, "schema must be a list of properties")
+			return
+		}
+		removed, err := checkPropertyVisibility(sent)
+		if err != nil {
+			httpErrorCode(w, 400, "invalid_property_visibility", err.Error())
+			return
+		}
+		if removed {
+			b, err := json.Marshal(sent)
+			if err != nil {
+				httpError(w, 500, err.Error())
+				return
+			}
+			body.Schema = b
+		}
+	}
 	// A property a locked view uses cannot be removed (spec 013, conductor
 	// review): the views it would leave are the stored ones, since a locked
 	// save cannot change them.

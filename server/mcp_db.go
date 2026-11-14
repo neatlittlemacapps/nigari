@@ -266,6 +266,11 @@ func (s *Server) mcpCreateDatabase(u *user, title, parentID, wsID string, schema
 		if err != nil {
 			return "", err
 		}
+		// A row page's visibility, as every door that writes a schema checks it
+		// (spec 015).
+		if _, err := checkPropertyVisibility(defs); err != nil {
+			return "", err
+		}
 		b, err := json.Marshal(defs)
 		if err != nil {
 			return "", err
