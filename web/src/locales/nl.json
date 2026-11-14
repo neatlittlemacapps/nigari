@@ -45,7 +45,7 @@
   "A personal space is not handed out from outside. Only its owner invites anyone there.": "Een persoonlijke ruimte wordt niet van buitenaf toegekend. Alleen de eigenaar nodigt daar iemand uit.",
   "A rules proposal is waiting for review": "Een voorstel voor regels wacht op beoordeling",
   "A skill with the playbook, this workspace and its rules. It installs a short block into the repository so the next session knows it too, without being told again.": "Een skill met het draaiboek, deze werkruimte en haar regels. Hij zet een kort blok in de repository, zodat de volgende sessie het ook weet zonder dat je het opnieuw hoeft te zeggen.",
-  "A standard mcpServers entry in the agent configuration.": "Een standaard mcpServers-item in de agentconfiguratie.",
+  "Add it to ~/.hermes/config.yaml, then type /reload-mcp. A Hermes running on a server (its gateway) uses a token: signing in has to return to the computer it runs on.": "Voeg het toe aan ~/.hermes/config.yaml en typ daarna /reload-mcp. Een Hermes die op een server draait (zijn gateway) gebruikt een token: het aanmelden moet terugkeren naar de computer waarop hij draait.",
   "A template is a snapshot: using one copies it, and from then on the two have nothing to do with each other.": "Een sjabloon is een momentopname: als je er een gebruikt, wordt hij gekopieerd en daarna hebben de twee niets meer met elkaar te maken.",
   "A title page of its own": "Een eigen titelpagina",
   "A workspace made later stays out until you say otherwise.": "Een later gemaakte werkruimte blijft buiten beeld totdat je anders aangeeft.",
