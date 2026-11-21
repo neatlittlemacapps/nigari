@@ -2638,6 +2638,11 @@ body:has(.icon-picker) .bn-side-menu {
   max-width: 100%;
 }
 
+/* The button's percentage limit needs a wrapper that fits the cell. */
+.db-table td .relation-value {
+  max-width: 100%;
+}
+
 .db-table td .relation-open {
   display: block;
   max-width: 100%;
