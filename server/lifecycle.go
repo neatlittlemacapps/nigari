@@ -220,6 +220,14 @@ func (s *Server) handleDuplicatePage(w http.ResponseWriter, r *http.Request) {
 		httpError(w, 500, err.Error())
 		return
 	}
+	// A duplicated row lands right below its source (spec 022). Not for a
+	// template's copy: that is a new page made from it, not a second row.
+	if r.URL.Query().Get("fromTemplate") != "1" && r.URL.Query().Get("asTemplate") != "1" {
+		if err := s.placeCopyAfter(u, pageID, newRoot); err != nil {
+			httpError(w, 500, err.Error())
+			return
+		}
+	}
 	writeJSON(w, map[string]string{"id": newRoot})
 }
 

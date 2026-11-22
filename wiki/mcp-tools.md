@@ -425,11 +425,18 @@ which is also what you get for a page you may not read.
 | `tags` | array of string | no |
 | `view_id` | string | no |
 | `embed` | object | no: `{page_id, embed_id}` |
+| `after` | string | no: a sibling's id; the page goes right after it |
+| `before` | string | no: a sibling's id; the page goes right before it |
 
 Three things decide where the page lands. `parent_id` puts it under that page,
 and if that page is a **database**, the new page is a **row** in it. With no
 parent, `workspace_id` decides; with neither, it lands in your default
 workspace, which may not be the one you meant.
+
+Among its siblings a new page goes to the end, unless `after` or `before` names
+a sibling (a page with the same parent; for a row, another row of the same
+database). Then it goes right next to it, as the **+** beside a table row does.
+An id that is not a sibling is refused before anything is created.
 
 `icon` takes an emoji, `lucide:Name`, `mdi:Name`, or an image URL. `cover` takes
 only two forms: `gradient:linear-gradient(120deg,#a8edea,#5b86e5)` or an
@@ -505,6 +512,19 @@ Metadata and place, in one tool. Only the fields you pass change.
 | `workspace_id` | string | no |
 | `favorite` | boolean | no |
 | `full_width` | boolean | no: the document uses the whole window width (`true`) or the normal column (`false`) |
+| `after` | string | no: a sibling's id; the page goes right after it |
+| `before` | string | no: a sibling's id; the page goes right before it |
+| `view_id` | string | no: with `after`/`before` on a row, the view you are ordering in |
+
+**Putting a page in order.** `after` or `before` (not both) puts the page right
+next to a sibling: another page with the same parent, or, for a database row,
+another row of that database. For a database that is its **rows' order**, the
+one every view without a sort shows, the same order a person sets by dragging a
+row's handle in a table. It removes no view's sort: change that with
+`set_view`. With `parent_id` in the same call the page moves first, then takes
+its place among its new siblings. Only the moved page is written, and its "last
+edited" time stays as it was. `view_id`, if given, must be one of the
+database's views; the move is the database's order either way.
 
 The move happens first, then the favourite, then the metadata, so a failed move
 does not leave a half-renamed page behind. `workspace_id` takes precedence over
@@ -521,7 +541,9 @@ applies to documents only. Setting it writes an `agent` entry to the activity
 log, like any property change. `get_page` reports it back.
 
 Errors: `nothing to update: pass at least one of title, icon, cover,
-description, visibility, tags, parent_id, workspace_id, favorite or full_width`;
+description, visibility, tags, parent_id, workspace_id, after, before, favorite or full_width`;
+`pass exactly one of after or before`; `"<id>" is not a sibling of this page`
+(not the same parent, in the trash, or a page you cannot read);
 `page settings apply to documents only`; `a page cannot be its own parent`; `cannot move a page into its own subtree`;
 `a page can only be re-parented within its own workspace`;
 `visibility must be "workspace" or "private"`.
@@ -607,7 +629,9 @@ for `edit`, `edit N matched 0 times…`, `edit N matched K times…`,
 | --- | --- | --- |
 | `page_id` | string | yes |
 
-A deep copy of the page and its sub-tree, placed next to the original.
+A deep copy of the page and its sub-tree, placed next to the original. For a
+row of a database the copy goes **right after** the row it was copied from, in
+the rows' order, as the row menu's Duplicate does.
 
 **It copies only the parts you may read.** A private sub-page belonging to
 somebody else is left out, and everything below it goes with it. That is not a

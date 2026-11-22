@@ -64,6 +64,10 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
     case 'view_not_in_database':
       return t('This view does not belong to this database, so the row was not created.');
 
+    // ---- putting a row or page next to a sibling (spec 022) ----
+    case 'anchor_not_sibling':
+      return t('This row could not be moved there: the row it was placed next to is gone or in another list. Reload and try again.');
+
     // ---- how a view opens its rows (spec 007) ----
     case 'invalid_view_open_in':
       return t('This way of opening pages is not available for this view, so the view was not saved.');

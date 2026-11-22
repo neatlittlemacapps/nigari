@@ -63,6 +63,11 @@ var parityActs = []parityAct{
 	{"share", "POST", "/api/pages/%s/share", `{}`, "set_sharing", `{"page_id":"%s","public":true}`, false},
 	{"history", "GET", "/api/pages/%s/revisions", "", "revisions", `{"page_id":"%s"}`, false},
 	{"duplicate", "POST", "/api/pages/%s/duplicate", "", "duplicate_page", `{"page_id":"%s"}`, false},
+	// Putting a page next to a sibling (spec 022): one function, placePage,
+	// behind the page's write gate on both doors. The page is placed next to
+	// itself, which passes every gate and writes nothing, so what is compared
+	// is who may move it.
+	{"place", "POST", "/api/pages/%s/place", `{"after":"%s"}`, "update_page", `{"page_id":"%[1]s","after":"%[1]s"}`, false},
 	{"backlinks", "GET", "/api/pages/%s/backlinks", "", "get_links", `{"page_id":"%s"}`, false},
 	{"note", "POST", "/api/pages/%s/notes", `{"body":"A note"}`, "note", `{"page_id":"%s","text":"A note"}`, false},
 	// Every parity page's body is the one paragraph "x" (see the loop below),

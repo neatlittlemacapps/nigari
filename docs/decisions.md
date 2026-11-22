@@ -7,6 +7,36 @@ entries are not edited away.
 
 ---
 
+## 2026-11-22 — Spec 022 PR 1: a row is placed by its neighbour, one order per database
+
+- **One order per database** (owner, Q1). A row's place is its page's
+  `position`, shared by every view without a sort. A view keeping its own
+  order, with a "change everywhere" choice, is #870 (owner: later). Room is
+  kept for it: `orderScope` decides whose order a move writes, and both doors
+  already accept and check a view id.
+- **By neighbour, not by number.** `POST /api/pages/{id}/place` and the MCP
+  `update_page`/`create_page` take `after` or `before` a sibling's id; the
+  server finds the row on the other side and writes the midpoint. Turned down:
+  the browser sending a raw `position` (the sidebar's way), because next to a
+  filter's hidden rows the browser cannot know the database's neighbours, and
+  an agent has no positions at all. Turned down: renumbering every row on each
+  move (one write per row). Ties and gaps too small are renumbered 1…n inside
+  the same transaction, the rare path.
+- **A move is not an edit.** `updated_at` stays, so "last edited" does not
+  change because a row was dragged.
+- **One activity entry per act.** The REST door logs `reorder_page`; an
+  agent's call is logged by `mcpCall` like every tool call. `placePage`
+  logging too would have recorded each agent move twice.
+- **The + and Duplicate land next to their row.** Create checks the anchor
+  before inserting, so a refused anchor leaves no page behind; a duplicated
+  database row goes right after its source by both doors.
+- **No new index** (constitution VII). 10,000 rows: p95 6.9 ms, inside the
+  8 ms write budget, once the neighbour read became two short reads instead
+  of reading every sibling (25.5 ms).
+- **"Move to" another database** is not part of this (owner, Q2): #869.
+
+---
+
 ## 2026-11-21 — Spec 021 PR 2: a block dragged sideways makes a column, up to four
 
 - **Where a sideways drop is offered** (owner, Q1 and Q2). At the left or right

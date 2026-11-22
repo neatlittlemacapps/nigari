@@ -29,26 +29,26 @@ description: "Tasks for the table row handle, + and row menu, in two pull reques
 
 ### Phase 1: Foundational (the move)
 
-- [ ] T001 [backend] `server/order.go` (new): `placePage(u, actorType, id, anchorID, side, viewID)` (R1): gates, anchor check (`anchor_not_sibling`), neighbour read, midpoint, renumbering on a tie or a gap too small, no `updated_at` change, `audit(…, "reorder_page")`, `pagesChanged`, `rowChanged`, `fireWebhook`. `orderScope(colID, viewID)` answers the database (room for #870)
-- [ ] T002 [test] `server/order_test.go` (new): before and after, first and last place, a tie renumbered, a page next to itself writes nothing, `updated_at` unchanged, the audit entry; refused: trashed, foreign or missing anchor, no write access, a credential outside the workspace, a workspace closed to agents. Mutation-check the anchor check
+- [x] T001 [backend] `server/order.go` (new): `placePage(u, actorType, id, anchorID, side, viewID)` (R1): gates, anchor check (`anchor_not_sibling`), neighbour read, midpoint, renumbering on a tie or a gap too small, no `updated_at` change, `audit(…, "reorder_page")`, `pagesChanged`, `rowChanged`, `fireWebhook`. `orderScope(colID, viewID)` answers the database (room for #870)
+- [x] T002 [test] `server/order_test.go` (new): before and after, first and last place, a tie renumbered, a page next to itself writes nothing, `updated_at` unchanged, the audit entry; refused: trashed, foreign or missing anchor, no write access, a credential outside the workspace, a workspace closed to agents. Mutation-check the anchor check
 
 **Checkpoint**: the move exists and is tested; no door calls it yet.
 
 ### Phase 2: The doors (US6, and the server half of US1, US3, US4)
 
-- [ ] T003 [US1] [backend] `POST /api/pages/{id}/place` in `server/server.go` behind `auth`; body as in contracts/place.md
-- [ ] T004 [P] [US4] [backend] `handleCreatePage` takes `after` / `before` and places the new row in the same request
-- [ ] T005 [P] [US3] [backend] `handleDuplicatePage`: a duplicated database row lands right after its source; `after` / `before` honoured
-- [ ] T006 [US6] [mcp] `update_page` (`after`, `before`, `view_id`; after `parent_id` when both) and `create_page` (`after`, `before`) through `placePage`, actor `agent`; descriptions as in contracts/place.md
-- [ ] T007 [US6] [test] `callTool` tests for both tools, read scope and a workspace closed to agents refused; `credential_audit_test.go` gets the new arguments
-- [ ] T008 [US6] [mcp] `capabilities.json`: `pages.order` `allowed`, its routes and `update_page`; `gapBudget` 10 → 9; the REST/MCP pair in `parityActs` (`parity_property_test.go`)
-- [ ] T009 [P] [i18n] `anchor_not_sibling` in `web/src/serverErrors.ts`, de/es/nl
-- [ ] T010 [perf] Benchmark a move in the seeded workspace's largest database (`bench_world_test.go`), against the write budget; `EXPLAIN QUERY PLAN` of the neighbour read. An index only if over budget (R9). Numbers in the PR
+- [x] T003 [US1] [backend] `POST /api/pages/{id}/place` in `server/server.go` behind `auth`; body as in contracts/place.md
+- [x] T004 [P] [US4] [backend] `handleCreatePage` takes `after` / `before` and places the new row in the same request
+- [x] T005 [P] [US3] [backend] `handleDuplicatePage`: a duplicated database row lands right after its source; `after` / `before` honoured
+- [x] T006 [US6] [mcp] `update_page` (`after`, `before`, `view_id`; after `parent_id` when both) and `create_page` (`after`, `before`) through `placePage`, actor `agent`; descriptions as in contracts/place.md
+- [x] T007 [US6] [test] `callTool` tests for both tools, read scope and a workspace closed to agents refused; `credential_audit_test.go` gets the new arguments
+- [x] T008 [US6] [mcp] `capabilities.json`: `pages.order` `allowed`, its routes and `update_page`; `gapBudget` 10 → 9; the REST/MCP pair in `parityActs` (`parity_property_test.go`)
+- [x] T009 [P] [i18n] `anchor_not_sibling` in `web/src/serverErrors.ts`, de/es/nl
+- [x] T010 [perf] Benchmark a move in the seeded workspace's largest database (`bench_world_test.go`), against the write budget; `EXPLAIN QUERY PLAN` of the neighbour read. An index only if over budget (R9). Numbers in the PR
 
 ### Phase 3: PR 1 polish
 
-- [ ] T011 [wiki] `wiki/mcp-tools.md` (`update_page`, `create_page`), `wiki/pages.md` (ordering siblings), `docs/what-it-does.md`; `check-wiki.mjs` passes
-- [ ] T012 [test] Reviews: `/code-review` on the diff, `/security-review` (a new write door with a gate); `codegraph sync`, then `codegraph callers placePage` (the route, create, duplicate, `mcpCall`). `docs/decisions.md` entry (one order per database, by neighbour, #870 kept open). `scripts/agent-gate.sh` green
+- [x] T011 [wiki] `wiki/mcp-tools.md` (`update_page`, `create_page`), `wiki/pages.md` (ordering siblings), `docs/what-it-does.md`; `check-wiki.mjs` passes
+- [x] T012 [test] Reviews: `/code-review` on the diff, `/security-review` (a new write door with a gate); `codegraph sync`, then `codegraph callers placePage` (the route, create, duplicate, `mcpCall`). `docs/decisions.md` entry (one order per database, by neighbour, #870 kept open). `scripts/agent-gate.sh` green
 
 ---
 

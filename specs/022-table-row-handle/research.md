@@ -4,11 +4,11 @@ Decisions for spec 022, from the code graph and the source (2026-11-22).
 
 ## R1. Where a row is placed: one server function, by neighbour
 
-**Decision**: one domain function, `placePage(u, id, anchorID, side)` in a new
-`server/order.go`, puts a page just before or after a sibling. It reads the
-anchor and the sibling next to it on that side (`ORDER BY position,
-created_at`), and writes the moved page's `position` as the midpoint. It runs
-in one transaction on `s.db`.
+**Decision**: one domain function, `placePage(u, id, anchorID, side, viewID)`
+in a new `server/order.go`, puts a page just before or after a sibling. It
+reads the anchor and the sibling next to it on that side (`ORDER BY position,
+created_at, id`, two short reads, not the whole list), and writes the moved
+page's `position` as the midpoint. It runs in one transaction on `s.db`.
 
 - **Ties or a gap too small** (the two neighbours share a position, or the
   midpoint equals one of them): the siblings are renumbered 1, 2, 3, … in the
@@ -18,9 +18,12 @@ in one transaction on `s.db`.
 - **Writes**: the one row, plus the renumbering when it happens. `updated_at`
   is **not** touched: a move is not an edit, and the row menu's "last edited"
   must not change because someone dragged the row.
-- **Side effects**: `audit(actorType, …, "reorder_page", …)` with the anchor
-  in `detail`, `pagesChanged()`, `rowChanged(id)` (the other open tables
-  reload, as for a property change), `fireWebhook("page.updated", id)`.
+- **Side effects**: `pagesChanged()`, `rowChanged(id)` (the other open tables
+  reload, as for a property change), `fireWebhook("page.updated", id)`, after
+  the commit. The activity entry is the door's: the REST route writes
+  `reorder_page` (side, anchor, view); an agent's call is already logged once
+  by `mcpCall`, so `placePage` writing its own would log every agent move
+  twice (found while testing).
 - **Checks**: `canWrite` on the page, then `credentialMayEnter`; the anchor
   must be a live sibling (same parent, not trashed, readable), else
   `400 anchor_not_sibling`. A page placed next to itself writes nothing.
@@ -44,7 +47,7 @@ MCP both accept a `view_id`, validated and logged now, used by #870 later.
 ## R2. The door for people: `POST /api/pages/{id}/place`
 
 **Decision**: a new route, body `{"after": "<id>"}` or `{"before": "<id>"}`,
-plus `viewId` / `viewScope` (R1, and for the activity log). It answers the
+plus an optional `viewId` (R1, validated, and in the activity log). It answers the
 page's new position. `PATCH /api/pages/{id}` keeps its `position` field for
 the sidebar, unchanged.
 
@@ -140,10 +143,13 @@ shortcut sheet lists them; `check-keys.mjs` is extended.
 
 ## R8. Where the handle sits
 
-**Decision (to show the owner as a picture before building)**: inside the
-title cell, at its left edge, in the sticky title column: it stays in view
-while the table scrolls sideways, and inside a document it does not collide
-with the embed block's own handle in the document's left margin. Notion puts
+**Decision (to show the owner as a picture before building)**: in a narrow
+leading gutter cell of its own, sticky at the row's left, ahead of every
+column: it stays in view while the table scrolls sideways, does not move when
+another column is put first (the checkbox-first change in the other thread),
+and inside a document it does not collide with the embed block's own handle in
+the document's left margin. First drafted inside the title cell; changed
+because the title column is not always the first one. Notion puts
 it outside the table on the left; nigari's tables in documents have the
 document's handle there.
 
@@ -156,6 +162,13 @@ the seeded workspace's largest database (`bench_world_test.go`) measures the
 move; only if it is over the write budget in
 `specs/002-storage-engine/research.md` does an index `(parent_id, position,
 created_at)` follow, as an upgrade step with its fixture (Stored data).
+
+**Measured** (`BenchmarkStoragePlaceRow`, 10,000 rows, random row and
+anchor): p50 5.1 ms, p95 6.9 ms, inside the 8 ms write budget. The first
+version read every sibling per move and was 25.5 ms at p95; reading only the
+anchor and the one neighbour (`LIMIT 2` past the anchor) fixed it. `EXPLAIN
+QUERY PLAN`: `SEARCH pages USING INDEX idx_pages_parent (parent_id=?)` plus a
+temp B-tree for the ORDER BY. No index added.
 
 **Why**: an index is a stored-data change with an upgrade step; it is added
 when a number asks for it (constitution VII), not before.

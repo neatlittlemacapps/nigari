@@ -76,7 +76,7 @@ phone). PR 1 does not depend on either.
 
 | Surface | Changes | Owner |
 |---------|---------|-------|
-| Domain logic and gates (`canRead`/`canWrite`, `credentialMayEnter`, validation, `audit`, `fireWebhook`) | New `placePage` (`server/order.go`): `canWrite` then `credentialMayEnter` on the page, the anchor a live readable sibling, `audit(…, "reorder_page")`, `fireWebhook("page.updated")`, `rowChanged`. Create and duplicate call it after their insert. | backend |
+| Domain logic and gates (`canRead`/`canWrite`, `credentialMayEnter`, validation, `audit`, `fireWebhook`) | New `placePage` (`server/order.go`): `canWrite` then `credentialMayEnter` on the page, the anchor a live readable sibling, `reorder_page` in the activity log from the REST door (an agent's call is logged by `mcpCall`), `fireWebhook("page.updated")`, `rowChanged`. Create and duplicate call it after their insert. | backend |
 | Schema and queries (`server/db.go`, indexes, `ensureColumn`) | One read of the anchor's neighbour on `idx_pages_parent`; the renumbering of `handleReindexSiblings` reused. No new index unless R9's benchmark asks. | backend |
 | REST routes (`server/server.go`, middleware) | `POST /api/pages/{id}/place` behind `auth`. `POST /api/pages` and `POST /api/pages/{id}/duplicate` accept `after`/`before`. | backend |
 | MCP tools (`server/mcp*.go`, descriptions, `wrapUntrusted`, read-scope refusal) | `update_page`: `after`, `before` (a sibling's id), `view_id`; `create_page`: `after`, `before`. Descriptions say they order siblings and change no view's sort. Read scope refused by `mcpCall`; the anchor is checked in `placePage`. | mcp |
@@ -97,7 +97,7 @@ phone). PR 1 does not depend on either.
 | Menu icons | New functions `openIn`, `openInSidePeek`, `openInCenterPeek`, `addRowBelow`, each with an icon of its own; reused: `open`, `openInNewTab`, `editProperty`, `commentsPanel`, `favorite`, `copyLink`, `duplicate`, `moveToTrash`. | ui |
 | View lock | No change: no view is written by a move; a sort removed by a drag is personal state, which the lock leaves open (R4). | backend |
 | Cross-origin requests | No change: the new route is a POST, judged by `ServeHTTP`. | backend |
-| Embedded views | A drag in an embed's own view removes the embed scope's sort (personal), and moves the row in the database's order; `viewScope` carries the embed. | ui |
+| Embedded views | A drag in an embed's own view removes the embed scope's sort (personal), and moves the row in the database's order; the drag sends the embed's view as `viewId`. | ui |
 | Content actions | New list `web/src/actions/rowActions.ts` (places `table`, `boardCard`); the table's row menu and the board's card menu are both built from it; left-out actions carry reasons; `check-content-actions.mjs` covers rows. | ui |
 
 **New concepts**: None for the registry. A row's manual order is the page order that exists; the row actions list follows the Content actions row.

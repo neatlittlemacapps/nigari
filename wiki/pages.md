@@ -356,6 +356,13 @@ the target means *before it*, the lower third *after it*, and the middle
 *inside it*. A drop inside also expands the target so you can see where the
 page went.
 
+**Next to a sibling, for agents and scripts.** `POST /api/pages/{id}/place`
+with `{"after": "<id>"}` or `{"before": "<id>"}` puts a page right next to
+another page with the same parent; agents do the same with `update_page`
+(`after`, `before`). For a database's rows this is the rows' own order, which
+every view without a sort shows. Only the moved page is written, and its "last
+edited" time does not change. The activity log records it as a reorder.
+
 **By menu.** The sidebar ⋯ offers **Move to top level** (only when the page has
 a parent to leave) and, when you belong to more than one workspace,
 **Move to workspace** with the others listed.

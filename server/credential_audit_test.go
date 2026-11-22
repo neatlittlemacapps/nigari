@@ -713,3 +713,29 @@ func TestAnEmbedCarriesNoAgentIntoAWorkspaceItMayNotEnter(t *testing.T) {
 		t.Errorf("an embed within bounds: %v", err)
 	}
 }
+
+// G-spec 022. update_page with after/before names a second page, the anchor,
+// which the central gate in mcpCall does not look at. placePage checks it
+// itself: a page of another workspace (the top level has no parent to tell
+// them apart) or somebody else's private page is no anchor, so an agent learns
+// nothing about it and moves nothing next to it. (A workspace admin may read
+// private pages, so the mover here is a plain member.)
+func TestAnAgentPlacesNoPageNextToOneItMayNotSee(t *testing.T) {
+	f := newScopeFixture(t)
+	member, cookie := signedIn(t, f.s, "member@example.test")
+	f.s.addMember(t, f.team, member, "member")
+	f.s.addMember(t, f.other, member, "member")
+	mine := f.s.makePage(t, f.team, member, "", "Mine", `{}`)
+	elsewhere := f.s.makePage(t, f.other, member, "", "Elsewhere", `{}`)
+	secret := f.s.makePage(t, f.team, f.owner, "", "Secret", `{}`)
+	f.s.db.Exec(`UPDATE pages SET visibility = 'private' WHERE id = ?`, secret)
+	u := &user{ID: member, Name: "Member", TokenKind: tokenKindAPI, TokenScope: "write"}
+	for name, anchor := range map[string]string{"a page of another workspace": elsewhere, "the owner's private page": secret} {
+		if _, err := callTool(t, f.s, u, "update_page", `{"page_id":"`+mine+`","after":"`+anchor+`"}`); err == nil {
+			t.Errorf("%s was accepted as an anchor", name)
+		}
+		if rec := requestAs(t, f.s, cookie, "POST", "/api/pages/"+mine+"/place", `{"after":"`+anchor+`"}`); rec.Code != 400 {
+			t.Errorf("%s over REST: %d, want 400", name, rec.Code)
+		}
+	}
+}

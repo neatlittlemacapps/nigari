@@ -296,9 +296,18 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 		// embed's views live in the document, so the browser sends them as
 		// it shows them. Not together with viewId.
 		ViewFilters *[]filterJSON `json:"viewFilters"`
+		// Where the new page goes among its siblings (spec 022): just after
+		// or before one of them, as the + beside a table row asks. Without
+		// either it goes to the end, as before.
+		After  string `json:"after"`
+		Before string `json:"before"`
 	}
 	if err := decodeJSON(w, r, &body); err != nil {
 		httpError(w, 400, "invalid JSON")
+		return
+	}
+	if body.After != "" && body.Before != "" {
+		writePlaceError(w, errPlaceSide)
 		return
 	}
 	if len([]rune(body.Title)) > maxTitleLen {
@@ -374,6 +383,18 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	anchor, side, placed := "", "", body.After != "" || body.Before != ""
+	if placed {
+		anchor, side, _ = placeSide(body.After, body.Before)
+		var parent sql.NullString
+		if body.ParentID != nil {
+			parent = sql.NullString{String: *body.ParentID, Valid: true}
+		}
+		if err := s.checkAnchor(u, parent, workspaceID, anchor); err != nil {
+			writePlaceError(w, err)
+			return
+		}
+	}
 	id := newID()
 	ts := now()
 	var pos float64
@@ -411,6 +432,17 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httpError(w, 500, err.Error())
 		return
+	}
+	if placed {
+		// The anchor was checked before the insert, so this only fails on a
+		// database error or a view the row was not made in.
+		if _, _, err := s.placePage(u, id, anchor, side, body.ViewID); err != nil {
+			writePlaceError(w, err)
+			return
+		}
+		if p2, err := s.getPage(id); err == nil {
+			p = p2
+		}
 	}
 	s.audit("human", userID, requestUser(r).Name, "create_page", id, workspaceID, body.Title)
 	s.pagesChanged()
