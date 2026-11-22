@@ -2813,6 +2813,40 @@ body.is-col-resizing {
   max-width: 420px;
 }
 
+/* The leading checkbox column (TableView): as wide as its box. Its name is
+   the heading's tooltip and is read out, but not drawn. */
+.db-table .db-check-col {
+  min-width: 40px;
+  width: 40px;
+  max-width: 40px;
+  padding: 7px 0;
+  text-align: center;
+  vertical-align: middle;
+}
+.db-table th.db-check-col {
+  color: var(--muted);
+}
+.db-table th.db-check-col svg {
+  display: block;
+  margin: 0 auto;
+}
+.db-check-name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.db-table td.db-check-col input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  vertical-align: middle;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
 .db-title-link {
   font-weight: 500;
   color: var(--fg);
@@ -2865,6 +2899,40 @@ body.is-col-resizing {
 }
 
 /* "+ Add view" button + its (portaled) menu. */
+/* The phone's view picker (CollectionMenus ViewPicker): the open view's
+   name in one button that gives way to the toolbar's actions, never the
+   other way round. */
+.view-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 6px 10px 6px 12px;
+  border-radius: 999px;
+  background: var(--active);
+  color: var(--fg);
+  font-size: 14px;
+  font-weight: 600;
+}
+.view-picker:hover {
+  background: var(--hover);
+}
+.view-picker-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.view-picker-chev {
+  flex: none;
+  color: var(--muted);
+}
+.view-picker .view-tab-ic {
+  flex: none;
+  display: inline-flex;
+}
+
 .view-add {
   padding: 5px 8px;
   border-radius: 7px;
@@ -4830,6 +4898,18 @@ body.is-col-resizing {
 
   .collection-toolbar > * {
     flex-shrink: 0;
+  }
+
+  /* With the view picker the row fits without scrolling: the picker shrinks
+     (its name ellipsised) and the actions keep their size. */
+  .collection-toolbar.has-view-picker {
+    overflow-x: visible;
+    overflow-y: visible;
+    gap: 8px;
+  }
+  .collection-toolbar.has-view-picker > .view-picker {
+    flex-shrink: 1;
+    min-width: 0;
   }
 
   /* The views lock's marker first on a phone (spec 013): the toolbar scrolls
@@ -7333,6 +7413,34 @@ a,
   cursor: pointer;
 }
 
+/* Everything after the leading checkbox: the icon, title and properties. */
+.list-row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The leading checkbox (ListView): a 44px tap area around a 20px box. */
+.list-row-check {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  min-height: 44px;
+  margin: -9px 0;
+  cursor: pointer;
+}
+.list-row-check input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
 .list-row:last-child {
   border-bottom: none;
 }
@@ -7376,12 +7484,13 @@ a,
 
 /* On narrow screens the title is what counts; properties slide below it. */
 @media (max-width: 768px) {
-  .list-row {
+  .list-row-body {
     flex-wrap: wrap;
     row-gap: 4px;
   }
   .list-row-title {
-    flex: 1 1 100%;
+    /* Beside its icon, then the properties wrap below. */
+    flex: 1 1 calc(100% - 32px);
     white-space: normal;
   }
   .list-row-icon {

@@ -45,9 +45,13 @@ property with the **Group** button, or with `set_view` and `group_by`.
 ### `table`
 
 The plainest view, and the only one that shows every visible property including
-the ones that are empty. The first column is always **Name** and links to the
+the ones that are empty. The first column is **Name** and links to the
 row; after it comes one column per visible property, in this view's order
-(the schema's order until you move one, see below). Cells are
+(the schema's order until you move one, see below). The one exception is a
+checkbox: the first checkbox the view shows comes before **Name**, in a column
+only as wide as its box, so you can tick rows off down the side of the table
+without scrolling sideways (its foot counts the ticked rows). Any further
+checkboxes stay where they are. Cells are
 editable where you stand: type into a number, tick a checkbox, pick a select
 option. Editing a select option's name or colour from a cell changes the schema,
 so it changes that option in every view and on every row.
@@ -210,7 +214,9 @@ away again.
 One line per row and deliberately not a narrow table: no header row, no column
 grid, nothing scrolls sideways. The icon and title lead, the tags follow, and
 then the first three visible properties trail quietly behind, still editable,
-so a select can be changed from the line. Which three depends on schema order
+so a select can be changed from the line. If the view shows a checkbox, the
+first one leads each line instead, with a tap area big enough for a thumb:
+ticking it saves at once and does not open the row. Which three depends on schema order
 and on what you have hidden; hide a column and the next one moves up. Anyone who
 wants to compare values down a column takes the table instead.
 
@@ -496,6 +502,12 @@ the right, in this order:
 **Filter**, **Sort** and **Group** light up in the accent colour as soon as
 anything is set, so you can see that a view is filtered without opening the
 popover.
+
+On a phone (about 640 px and below) the view tabs become one button that
+names the open view: tap it for a list of every view, with **Add view** at its
+foot. **Filter** and **Sort** shrink to their icons, so they, **Settings** and
+**＋ New** all stay on screen beside it. Renaming, moving and removing a view
+are in **Settings** there.
 
 On a narrow screen (about 640 px and below) those popovers dock to the bottom of
 the window instead of hanging under their button, and take up to about three

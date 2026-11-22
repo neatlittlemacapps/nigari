@@ -35,8 +35,8 @@ import PropertyValue, { idList, loadRelationOptions, type RelOption } from './Pr
 import { openCollectionRow, openPageAux, RowOpenContext, useOpenRow } from '../pageOpen';
 import ViewSettingsMenu from './ViewSettingsMenu';
 import ViewsLockMarker, { setViewsLocked } from './ViewsLockMarker';
-import { AddViewMenu, ViewActionItems } from './CollectionMenus';
-import { Menu, MenuItem, MenuLabel, MenuSeparator, MenuValues, MenuValueSubmenu, type MenuPoint } from '../ui/Menu';
+import { AddViewMenu, ViewActionItems, ViewPicker } from './CollectionMenus';
+import { Menu, MenuItem, MenuLabel, MenuSeparator, MenuValues, MenuValueSubmenu, useNarrowScreen, type MenuPoint } from '../ui/Menu';
 import { Button } from '../ui/Button';
 import { ToggleGroup } from '../ui/ToggleGroup';
 import { readViewId, readViewScroll, writeViewId, writeViewScroll } from '../pageUiState';
@@ -58,7 +58,7 @@ import { PageIcon } from '../pageIcon';
 import { groupFilterMatch, isGroupOp } from '../statusFilter';
 import StatusGroupFilter from './StatusGroupFilter';
 import { toast } from '../toast';
-import { Table2, Columns3, LayoutGrid, CalendarDays, List, Plus, Filter as FilterIcon, ArrowUpDown, Calendar, ClipboardList, Check, Send, Share2, Globe, ChartPie, GanttChartSquare, ChevronDown, LayoutTemplate, Copy, X } from 'lucide-react';
+import { Table2, Columns3, LayoutGrid, CalendarDays, List, Plus, Filter as FilterIcon, ArrowUpDown, Calendar, ClipboardList, Check, Send, Share2, Globe, ChartPie, GanttChartSquare, ChevronDown, LayoutTemplate, Copy, SquareCheck, X } from 'lucide-react';
 
 /** A collection shown inside a document rather than as its own page.
  *
@@ -217,6 +217,8 @@ function applyView(rows: Row[], view: ViewDef, schema: PropDef[]): Row[] {
 }
 
 export default function CollectionView({ collectionId, pages, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged, onEditTemplate, embed, canEdit = true }: Props) {
+  // At phone width the views are one menu instead of a row of tabs.
+  const narrowScreen = useNarrowScreen();
   const [config, setConfig] = useState<CollectionConfig | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   // A full page remembers its view across tab switches and reloads (see
@@ -967,7 +969,29 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const viewFiltered = (view.filters ?? []).some((f) => filterIsArmed(f, isDateProp(f.property)));
 
   const viewSwitcher = (
-    <div className="collection-toolbar">
+    <div className={'collection-toolbar' + (narrowScreen ? ' has-view-picker' : '')}>
+      {narrowScreen ? (
+        // On a phone the views are one menu (owner, 2026-11-22): a row of tabs
+        // filled the toolbar and pushed every action off screen.
+        <ViewPicker
+          views={views!}
+          current={view}
+          icon={tabIcon}
+          onPick={pickView}
+          add={
+            mayChangeViews
+              ? {
+                  types: viewTypes,
+                  label: viewTypeLabel,
+                  onAdd: addView,
+                  copy: embed
+                    ? { databaseName: pages.get(collectionId)?.title || t('Untitled'), views: copyableViews(config.views), onCopy: addCopy }
+                    : undefined,
+                }
+              : undefined
+          }
+        />
+      ) : (
       <div className="view-tabs">
         {views!.map((v) => (
           <span key={v.id} className="view-tab-wrap">
@@ -1011,6 +1035,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           />
         )}
       </div>
+      )}
       {/* Beside the tabs, not inside them: on a phone the tab strip scrolls
           and the marker sat off screen at its end (ux audit); there it is
           drawn first instead (styles.css). */}
@@ -1689,6 +1714,7 @@ function FilterSortControls({
   onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState<'filter' | 'sort' | 'group' | null>(null);
+  const narrow = useNarrowScreen();
   // The cleanup matters: unmounted with a popover open (the view switched to a
   // form, which has no filter controls), it would otherwise leave the embed's
   // toolbar held open and its "Filtered" marker hidden.
@@ -1806,24 +1832,47 @@ function FilterSortControls({
     );
   }
 
+  // On a phone Filter and Sort are icons, so that they, Settings and New fit
+  // beside the view picker on one row; their tint still says when they are on.
+  const filterLabel = t('Filter') + (filters.length ? ` (${filters.length})` : '');
   return (
     <div className="fs-controls" ref={controlsRef}>
-      <Button
-        size="sm"
-        tone={filters.length ? 'primary' : 'neutral'}
-        icon={<FilterIcon size={14} />}
-        onClick={() => setOpen(open === 'filter' ? null : 'filter')}
-      >
-        Filter{filters.length ? ` (${filters.length})` : ''}
-      </Button>
-      <Button
-        size="sm"
-        tone={sort ? 'primary' : 'neutral'}
-        icon={<ArrowUpDown size={14} />}
-        onClick={() => setOpen(open === 'sort' ? null : 'sort')}
-      >
-        {t('Sort')}
-      </Button>
+      {narrow ? (
+        <Button
+          size="sm"
+          tone={filters.length ? 'primary' : 'neutral'}
+          icon={<FilterIcon size={14} />}
+          label={filterLabel}
+          onClick={() => setOpen(open === 'filter' ? null : 'filter')}
+        />
+      ) : (
+        <Button
+          size="sm"
+          tone={filters.length ? 'primary' : 'neutral'}
+          icon={<FilterIcon size={14} />}
+          onClick={() => setOpen(open === 'filter' ? null : 'filter')}
+        >
+          {filterLabel}
+        </Button>
+      )}
+      {narrow ? (
+        <Button
+          size="sm"
+          tone={sort ? 'primary' : 'neutral'}
+          icon={<ArrowUpDown size={14} />}
+          label={t('Sort')}
+          onClick={() => setOpen(open === 'sort' ? null : 'sort')}
+        />
+      ) : (
+        <Button
+          size="sm"
+          tone={sort ? 'primary' : 'neutral'}
+          icon={<ArrowUpDown size={14} />}
+          onClick={() => setOpen(open === 'sort' ? null : 'sort')}
+        >
+          {t('Sort')}
+        </Button>
+      )}
       {/* Only a board has columns to group into. The setting existed before
           this button did — it just took whatever select property came first,
           which is why nobody could put their tasks into one column per
@@ -2130,6 +2179,10 @@ function TableView({
   // not among them and cannot move.
   const ids = schema.map((p) => p.id);
   const idsKey = ids.join('\u0000');
+  // The first checkbox the view shows leads the row, as narrow as its box
+  // (owner, 2026-11-22): it is ticked down the side of the table, so it must
+  // not sit off screen at the far end on a phone. The others stay in place.
+  const lead = schema.find((p) => p.type === 'checkbox');
   const theadRef = useRef<HTMLTableSectionElement>(null);
   // After a Move, focus goes back to the header that moved (FR-005); after
   // Hide in view, to its neighbour. The header is re-rendered in its new
@@ -2285,6 +2338,12 @@ function TableView({
       <table className="db-table">
         <thead ref={theadRef}>
           <tr>
+            {lead && (
+              <th className="db-check-col" title={lead.name}>
+                <SquareCheck size={14} aria-hidden />
+                <span className="db-check-name">{lead.name}</span>
+              </th>
+            )}
             <th className="db-title-col" style={colStyle(TITLE_COL)}>
               <ColHead
                 label={t('Name')}
@@ -2292,7 +2351,7 @@ function TableView({
                 onReset={resetCol(TITLE_COL)}
               />
             </th>
-            {schema.map((p, i) => (
+            {schema.map((p, i) => p === lead ? null : (
               <th key={p.id} data-col-id={p.id} className={headClass(i, p.id)} style={colStyle(p.id)}>
                 <ColHead
                   label={p.name}
@@ -2321,6 +2380,16 @@ function TableView({
         <tbody>
           {ordered.map(({ row: r, depth, hasKids }) => (
             <tr key={r.id}>
+              {lead && (
+                <td className="db-check-col">
+                  <input
+                    type="checkbox"
+                    checked={r.props[lead.id] === true}
+                    aria-label={`${lead.name}: ${r.title || t('Untitled')}`}
+                    onChange={(e) => onSetProp(r.id, lead.id, e.target.checked)}
+                  />
+                </td>
+              )}
               <td className="db-title-col" style={colStyle(TITLE_COL)}>
                 <span className="db-title-inner" style={depth ? { paddingLeft: depth * 20 } : undefined}>
                   {subItemProp ? (
@@ -2358,7 +2427,7 @@ function TableView({
                   </span>
                 )}
               </td>
-              {schema.map((p) => (
+              {schema.map((p) => p === lead ? null : (
                 <td key={p.id} style={colStyle(p.id)}>
                   <PropertyValue
                     def={p}
@@ -2387,10 +2456,16 @@ function TableView({
                   string with an expression inside it, and one word without an
                   umlaut is below the line rule's threshold. It was found by
                   reading the code for the wiki. */}
+              {lead && (
+                // How many are ticked, in the box's own narrow column.
+                <td className="db-check-col db-calc-cell" title={lead.name}>
+                  {rows.filter((r) => r.props[lead.id] === true).length}
+                </td>
+              )}
               <td className="db-title-col db-calc-cell">
                 {plural(rows.length, '{n} row', '{n} rows')}
               </td>
-              {schema.map((p) => (
+              {schema.map((p) => p === lead ? null : (
                 <td key={p.id} className="db-calc-cell">
                   {footer(p)}
                 </td>

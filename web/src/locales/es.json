@@ -1393,5 +1393,7 @@
   "This layout shows rows by date, and the database has no date property. Someone who can edit the database can add one.": "Este diseño muestra las filas por fecha y la base de datos no tiene ninguna propiedad de fecha. Alguien que pueda editar la base de datos puede añadirla.",
   "Added the date property {name}. Change the dates in Settings.": "Se añadió la propiedad de fecha {name}. Cambia las fechas en Ajustes.",
   "Drop to make a new column here": "Suelta para crear aquí una columna nueva",
-  "Drop to put the two blocks side by side": "Suelta para poner los dos bloques uno al lado del otro"
+  "Drop to put the two blocks side by side": "Suelta para poner los dos bloques uno al lado del otro",
+  "Filter": "Filtrar",
+  "Views": "Vistas"
 }
