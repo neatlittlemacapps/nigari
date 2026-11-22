@@ -13,7 +13,7 @@ description: "Tasks for the table row handle, + and row menu, in two pull reques
 - Playwright `row-handle.mjs` (new).
 - Every new test is mutation-checked (it fails with its fix taken out).
 
-**Issues**: parent #370; tasks get sub-issues (`/speckit-taskstoissues`)
+**Issues**: parent #370; tasks T001–T035 are #871–#905
 
 **Delivery**: two pull requests, each from its own branch off `main`.
 - PR 1: server and agents (US6, and the server half of US1, US3 Duplicate, US4).
