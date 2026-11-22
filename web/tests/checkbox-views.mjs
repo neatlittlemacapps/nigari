@@ -26,7 +26,20 @@ await withFixture(async ({ page, api, base, path }) => {
   assert.equal(await page.locator('.view-picker').count(), 0, 'desktop keeps the tabs');
   const firstHead = page.locator('.db-table thead th').first();
   assert.match(await firstHead.getAttribute('class'), /db-check-col/, 'the checkbox leads the table');
-  assert.equal(await page.locator('.db-table thead th', { hasText: 'Applied' }).count(), 1, 'the checkbox column is drawn once');
+  assert.equal(await page.locator('.db-table thead').getByRole('button', { name: 'Applied', exact: true }).count(), 1, 'the checkbox column is drawn once, its menu named after it');
+  // Its heading keeps the column's menu (Hide in view among it).
+  await page.locator('.db-table thead').getByRole('button', { name: 'Applied', exact: true }).click();
+  assert.equal(await page.getByRole('menuitem', { name: 'Hide in view' }).count(), 1, 'the lead column can be hidden from its heading');
+  await page.keyboard.press('Escape');
+  // The other columns move among themselves; the box keeps its stored place.
+  await page.locator('.db-table thead').getByRole('button', { name: 'Labels', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Move left' }).click();
+  await eventually(async () => {
+    const order = (await api('GET', path)).views.find((v) => v.id === 'table').colOrder ?? [];
+    return order.join() === 'labels,status,ok';
+  });
+  const heads = await page.locator('.db-table thead th').evaluateAll((ths) => ths.map((th) => th.className.includes('db-check-col') ? 'ok' : (th.dataset.colId ?? 'name')));
+  assert.deepEqual(heads, ['ok', 'name', 'labels', 'status'], 'drawn: box, name, then the moved columns');
   const view = page.url();
   await page.getByRole('checkbox', { name: 'Applied: First row' }).click();
   await eventually(ticked);

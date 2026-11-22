@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { t } from '../i18n';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Field';
@@ -50,8 +50,12 @@ export function ColHead({
   onReset,
   moves,
   changes,
+  icon,
 }: {
   label: string;
+  /** Drawn instead of the label, which is then the tooltip and the name read
+   *  out: the table's narrow leading checkbox column (tableLead.ts). */
+  icon?: ReactNode;
   /** Absent: no grip, the width cannot be changed (a reader, or the views
    *  are locked, spec 013). */
   onResize?: (e: ReactPointerEvent<HTMLSpanElement>) => void;
@@ -105,8 +109,15 @@ export function ColHead({
   }
   if (!moves && !changes) {
     return (
-      <span className="th-inner">
-        {label}
+      <span className="th-inner" title={icon ? label : undefined}>
+        {icon ? (
+          <>
+            <span aria-hidden>{icon}</span>
+            <span className="th-hidden-name">{label}</span>
+          </>
+        ) : (
+          label
+        )}
         {grip}
       </span>
     );
@@ -117,31 +128,34 @@ export function ColHead({
     if (r) setMenuAt({ x: r.left, y: r.bottom });
   };
 
+  // The label's behaviour, the same whether it shows the name or an icon.
+  const labelEvents = {
+    'aria-haspopup': 'menu' as const,
+    'aria-expanded': menuAt ? true : undefined,
+    onPointerDown: moves?.onStartDrag,
+    onClick: () => {
+      if (moves?.consumeClick()) return;
+      openUnderLabel();
+    },
+    onContextMenu: (e: ReactMouseEvent) => {
+      e.preventDefault();
+      // A long press on a phone fires contextmenu too, while the same
+      // press is arming a drag: the two fought. A tap opens the menu there.
+      if ((e.nativeEvent as PointerEvent).pointerType === 'touch') return;
+      moves?.consumeClick();
+      setMenuAt({ x: e.clientX, y: e.clientY });
+    },
+  };
+
   return (
     <span className="th-inner">
-      <Button
-        ref={labelRef}
-        emphasis="low"
-        size="sm"
-        className="th-label"
-        aria-haspopup="menu"
-        aria-expanded={menuAt ? true : undefined}
-        onPointerDown={moves?.onStartDrag}
-        onClick={() => {
-          if (moves?.consumeClick()) return;
-          openUnderLabel();
-        }}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          // A long press on a phone fires contextmenu too, while the same
-          // press is arming a drag: the two fought. A tap opens the menu there.
-          if ((e.nativeEvent as PointerEvent).pointerType === 'touch') return;
-          moves?.consumeClick();
-          setMenuAt({ x: e.clientX, y: e.clientY });
-        }}
-      >
-        {label}
-      </Button>
+      {icon ? (
+        <Button ref={labelRef} emphasis="low" size="sm" className="th-label" icon={icon} label={label} {...labelEvents} />
+      ) : (
+        <Button ref={labelRef} emphasis="low" size="sm" className="th-label" {...labelEvents}>
+          {label}
+        </Button>
+      )}
       {grip}
       <Menu
         label={t('{name} column', { name: label })}

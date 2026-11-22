@@ -1,5 +1,6 @@
 import type { PropDef, PropOption } from '../types';
 import PropertyValue from './PropertyValue';
+import { LeadCheckBox } from './TableCheckColumn';
 import { tagColorClass } from '../tags';
 import { PageIcon } from '../pageIcon';
 import { t } from '../i18n';
@@ -61,14 +62,9 @@ export default function ListView({
           {check && (
             // The cell around the box takes the tap, so a near miss ticks
             // instead of opening the row.
-            <label className="list-row-check" onClick={(e) => e.stopPropagation()}>
-              <input
-                type="checkbox"
-                checked={r.props?.[check.id] === true}
-                aria-label={`${check.name}: ${r.title || t('Untitled')}`}
-                onChange={(e) => onSetProp(r.id, check.id, e.target.checked)}
-              />
-            </label>
+            <span className="list-row-check" onClick={(e) => e.stopPropagation()} onAuxClick={(e) => e.stopPropagation()}>
+              <LeadCheckBox prop={check} title={r.title} value={r.props?.[check.id]} onChange={(v) => onSetProp(r.id, check.id, v)} />
+            </span>
           )}
           <span className="list-row-body">
           <span className="list-row-icon">

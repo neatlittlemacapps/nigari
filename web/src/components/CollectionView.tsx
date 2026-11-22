@@ -12,6 +12,8 @@ import { anchoredMenuStyle } from '../anchoredMenu';
 import { sortComparator } from '../viewSort';
 import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } from '../columnDrag';
 import { ColHead, type PropertyChanges } from './TableColumnHead';
+import { LeadCheckBox, LeadCheckFoot, LeadCheckHead } from './TableCheckColumn';
+import { leadCheckbox, movableColumns, withLead } from '../tableLead';
 import { useColumnPropertyChanges } from './useColumnPropertyChanges';
 import { tagColorClass } from '../tags';
 import { compare, firstWeekday, formatDay, formatMonth, isReadableDay, isUnfinishedRelativeDay, resolveSmartDate, toDayString, today, weekdayNames } from '../format';
@@ -58,7 +60,7 @@ import { PageIcon } from '../pageIcon';
 import { groupFilterMatch, isGroupOp } from '../statusFilter';
 import StatusGroupFilter from './StatusGroupFilter';
 import { toast } from '../toast';
-import { Table2, Columns3, LayoutGrid, CalendarDays, List, Plus, Filter as FilterIcon, ArrowUpDown, Calendar, ClipboardList, Check, Send, Share2, Globe, ChartPie, GanttChartSquare, ChevronDown, LayoutTemplate, Copy, SquareCheck, X } from 'lucide-react';
+import { Table2, Columns3, LayoutGrid, CalendarDays, List, Plus, Filter as FilterIcon, ArrowUpDown, Calendar, ClipboardList, Check, Send, Share2, Globe, ChartPie, GanttChartSquare, ChevronDown, LayoutTemplate, Copy, X } from 'lucide-react';
 
 /** A collection shown inside a document rather than as its own page.
  *
@@ -1837,14 +1839,24 @@ function FilterSortControls({
   const filterLabel = t('Filter') + (filters.length ? ` (${filters.length})` : '');
   return (
     <div className="fs-controls" ref={controlsRef}>
-      {narrow ? (
+      {narrow && !filters.length ? (
         <Button
           size="sm"
-          tone={filters.length ? 'primary' : 'neutral'}
           icon={<FilterIcon size={14} />}
           label={filterLabel}
           onClick={() => setOpen(open === 'filter' ? null : 'filter')}
         />
+      ) : narrow ? (
+        // The count stays in sight on a phone; the word goes.
+        <Button
+          size="sm"
+          tone="primary"
+          icon={<FilterIcon size={14} />}
+          aria-label={filterLabel}
+          onClick={() => setOpen(open === 'filter' ? null : 'filter')}
+        >
+          {String(filters.length)}
+        </Button>
       ) : (
         <Button
           size="sm"
@@ -2177,12 +2189,14 @@ function TableView({
 
   // Moving a column (spec 012, US2). The ids drawn, in order; the title is
   // not among them and cannot move.
-  const ids = schema.map((p) => p.id);
-  const idsKey = ids.join('\u0000');
   // The first checkbox the view shows leads the row, as narrow as its box
-  // (owner, 2026-11-22): it is ticked down the side of the table, so it must
-  // not sit off screen at the far end on a phone. The others stay in place.
-  const lead = schema.find((p) => p.type === 'checkbox');
+  // (tableLead.ts): it keeps its stored place, and the others move among
+  // themselves around it.
+  const lead = leadCheckbox(schema);
+  const allIds = schema.map((p) => p.id);
+  const cols = lead ? schema.filter((p) => p !== lead) : schema;
+  const ids = movableColumns(allIds, lead?.id);
+  const idsKey = ids.join('\u0000');
   const theadRef = useRef<HTMLTableSectionElement>(null);
   // After a Move, focus goes back to the header that moved (FR-005); after
   // Hide in view, to its neighbour. The header is re-rendered in its new
@@ -2198,7 +2212,7 @@ function TableView({
   const setColumns = (next: string[], focus: string) => {
     if (!onSetColumns || next.join('\u0000') === idsKey) return;
     focusAfter.current = focus;
-    onSetColumns(next);
+    onSetColumns(withLead(next, lead?.id, allIds));
   };
   const { drag: colDrag, startDrag: startColDrag, consumeClick: consumeColClick } = useColumnDrag((id, gap) =>
     setColumns(moveToGap(ids, id, gap), id),
@@ -2339,10 +2353,11 @@ function TableView({
         <thead ref={theadRef}>
           <tr>
             {lead && (
-              <th className="db-check-col" title={lead.name}>
-                <SquareCheck size={14} aria-hidden />
-                <span className="db-check-name">{lead.name}</span>
-              </th>
+              <LeadCheckHead
+                prop={lead}
+                changes={propertyChanges?.(lead)}
+                onHide={onSetColumns && onHideColumn ? () => onHideColumn(lead.id) : undefined}
+              />
             )}
             <th className="db-title-col" style={colStyle(TITLE_COL)}>
               <ColHead
@@ -2351,7 +2366,7 @@ function TableView({
                 onReset={resetCol(TITLE_COL)}
               />
             </th>
-            {schema.map((p, i) => p === lead ? null : (
+            {cols.map((p, i) => (
               <th key={p.id} data-col-id={p.id} className={headClass(i, p.id)} style={colStyle(p.id)}>
                 <ColHead
                   label={p.name}
@@ -2382,12 +2397,7 @@ function TableView({
             <tr key={r.id}>
               {lead && (
                 <td className="db-check-col">
-                  <input
-                    type="checkbox"
-                    checked={r.props[lead.id] === true}
-                    aria-label={`${lead.name}: ${r.title || t('Untitled')}`}
-                    onChange={(e) => onSetProp(r.id, lead.id, e.target.checked)}
-                  />
+                  <LeadCheckBox prop={lead} title={r.title} value={r.props[lead.id]} onChange={(v) => onSetProp(r.id, lead.id, v)} />
                 </td>
               )}
               <td className="db-title-col" style={colStyle(TITLE_COL)}>
@@ -2427,7 +2437,7 @@ function TableView({
                   </span>
                 )}
               </td>
-              {schema.map((p) => p === lead ? null : (
+              {cols.map((p) => (
                 <td key={p.id} style={colStyle(p.id)}>
                   <PropertyValue
                     def={p}
@@ -2456,16 +2466,11 @@ function TableView({
                   string with an expression inside it, and one word without an
                   umlaut is below the line rule's threshold. It was found by
                   reading the code for the wiki. */}
-              {lead && (
-                // How many are ticked, in the box's own narrow column.
-                <td className="db-check-col db-calc-cell" title={lead.name}>
-                  {rows.filter((r) => r.props[lead.id] === true).length}
-                </td>
-              )}
+              {lead && <LeadCheckFoot prop={lead} rows={rows} />}
               <td className="db-title-col db-calc-cell">
                 {plural(rows.length, '{n} row', '{n} rows')}
               </td>
-              {schema.map((p) => p === lead ? null : (
+              {cols.map((p) => (
                 <td key={p.id} className="db-calc-cell">
                   {footer(p)}
                 </td>

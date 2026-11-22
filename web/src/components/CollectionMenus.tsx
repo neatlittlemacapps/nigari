@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useRef, useState, type ComponentPropsWithoutRef, type ReactNode } from 'react';
 import { ChevronDown, Plus } from 'lucide-react';
 import { t } from '../i18n';
+import { Button } from '../ui/Button';
 import type { ViewDef } from '../types';
 import { Menu, MenuItem, MenuLabel, MenuSeparator, MenuSubmenu, MenuValueItem, MenuValues, type MenuPoint, MenuRadioGroup, MenuRadioItem } from '../ui/Menu';
 
@@ -167,14 +168,13 @@ export function ViewPicker({
 
 const ViewPickerButton = forwardRef<HTMLButtonElement, ComponentPropsWithoutRef<'button'> & { icon: ReactNode; name: string }>(
   function ViewPickerButton({ icon, name, ...props }, ref) {
+    // A Menu trigger clones its props onto this button (Base UI), so they are
+    // passed through to ui/Button.
     return (
-      <button ref={ref} className="view-picker" {...props}>
-        <span className="view-tab-ic" aria-hidden>
-          {icon}
-        </span>
+      <Button ref={ref} {...(props as object)} emphasis="low" size="sm" className="view-picker" icon={icon}>
         <span className="view-picker-name">{name}</span>
         <ChevronDown size={14} aria-hidden className="view-picker-chev" />
-      </button>
+      </Button>
     );
   },
 );
