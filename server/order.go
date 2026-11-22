@@ -53,14 +53,6 @@ func writePlaceError(w http.ResponseWriter, err error) {
 	httpError(w, 500, err.Error())
 }
 
-// orderScope says whose order a move writes. Today every move writes the
-// database's own order (the rows' position), whatever view it was made in.
-// A view keeping an order of its own, with a "change everywhere" choice, is
-// #870 (owner, 2026-11-22); it is decided here, so both doors follow.
-func orderScope(parentID, viewID string) string {
-	return "database"
-}
-
 // placeSide picks the side from the two optional anchors a caller passes.
 func placeSide(after, before string) (anchor, side string, err error) {
 	switch {
@@ -83,14 +75,37 @@ type sibling struct {
 
 // placePage puts page id just after or just before anchorID, a sibling, and
 // answers its new position and whether anything was written. viewID, when
-// given, is the database view the move was made in; it must exist
-// (orderScope). A page placed next to itself, or already in that place,
-// writes nothing.
+// given, is the database view the move was made in; it must be one of the
+// database's views. Every move writes the database's own order today; a view
+// keeping an order of its own, with a "change everywhere" choice, is #870
+// (owner, 2026-11-22), and the view id checked here is where it will be
+// decided. A page placed next to itself, or already in that place, writes
+// nothing.
 //
 // The activity log is the caller's: the person's door logs "reorder_page",
-// an agent's tool call is logged once by mcpCall, and a page placed as it is
-// created or duplicated is part of that act.
+// an agent's tool call is logged once by mcpCall.
 func (s *Server) placePage(u *user, id, anchorID, side, viewID string) (float64, bool, error) {
+	pos, wrote, err := s.placeQuietly(u, id, anchorID, side, viewID)
+	if err == nil && wrote {
+		s.placed(id)
+	}
+	return pos, wrote, err
+}
+
+// placed tells the open tables and the webhooks that a page moved. After the
+// commit: one connection, and a write inside the open transaction would wait
+// for it forever.
+func (s *Server) placed(id string) {
+	s.pagesChanged()
+	s.rowChanged(id)
+	s.fireWebhook("page.updated", id)
+}
+
+// placeQuietly is placePage without telling anyone: for a page placed as it
+// is created or duplicated, where the caller's own page.created follows. Fired
+// from here as well, a webhook consumer would get page.updated for an id it
+// has not seen yet, then page.created.
+func (s *Server) placeQuietly(u *user, id, anchorID, side, viewID string) (float64, bool, error) {
 	if u == nil || !s.canWrite(u.ID, id) || !s.credentialMayEnter(u, s.pageWorkspace(id)) {
 		return 0, false, errPlaceNotFound
 	}
@@ -118,13 +133,12 @@ func (s *Server) placePage(u *user, id, anchorID, side, viewID string) (float64,
 	}
 	if viewID != "" {
 		if !parent.Valid {
-			return 0, false, &placeError{400, "view_not_in_database", "A view only applies to a row of a database."}
+			return 0, false, &placeError{400, "", "A view only applies to a row of a database."}
 		}
 		if _, _, _, err := s.viewOf(parent.String, viewID); err != nil {
-			return 0, false, &placeError{400, "view_not_in_database", err.Error()}
+			return 0, false, &placeError{400, "", err.Error()}
 		}
 	}
-	_ = orderScope(parent.String, viewID)
 
 	tx, err := s.db.Begin()
 	if err != nil {
@@ -163,11 +177,6 @@ func (s *Server) placePage(u *user, id, anchorID, side, viewID string) (float64,
 	if err := tx.Commit(); err != nil {
 		return 0, false, err
 	}
-	// After the commit: one connection, and a write inside the open
-	// transaction would wait for it forever.
-	s.pagesChanged()
-	s.rowChanged(id)
-	s.fireWebhook("page.updated", id)
 	return next, true, nil
 }
 
@@ -188,8 +197,9 @@ func (s *Server) checkAnchor(u *user, parent sql.NullString, ws, anchorID string
 // For "after", lo is the anchor and hi the next sibling (nil at the end); for
 // "before", hi is the anchor and lo the one before it (nil at the start).
 // moved reports that the page already sits there. The order is the rows
-// query's, position then created_at, with the id to break a full tie the
-// same way every time. Two short reads, not the whole list: a 10k-row
+// query's: position, created_at, then the id, which every query that shows
+// rows ends on too, so two rows that tie on both are in the same order here
+// as on the screen (code review, PR 1). Two short reads, not the whole list: a 10k-row
 // database read whole per move was 25 ms at p95 (research R9).
 func placeBounds(tx *sql.Tx, parent sql.NullString, ws, id, anchorID, side string) (lo, hi *sibling, moved bool, err error) {
 	var a sibling
@@ -263,11 +273,18 @@ func renumberSiblings(tx *sql.Tx, parent sql.NullString, ws string) error {
 	var ids []string
 	for rows.Next() {
 		var id string
-		if rows.Scan(&id) == nil {
-			ids = append(ids, id)
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return err
 		}
+		ids = append(ids, id)
 	}
 	rows.Close()
+	// A cursor that stopped early would leave the rest on old numbers that
+	// now collide with 1..n.
+	if err := rows.Err(); err != nil {
+		return err
+	}
 	for i, id := range ids {
 		if _, err := tx.Exec(`UPDATE pages SET position = ? WHERE id = ?`, float64(i+1), id); err != nil {
 			return err
@@ -326,11 +343,16 @@ func (s *Server) placeCopyAfter(u *user, srcID, copyID string) error {
 		return nil
 	}
 	// The copy has the source's parent; a source in the trash has no place
-	// to be next to, and the copy stays at the end.
-	_, _, err := s.placePage(u, copyID, srcID, "after", "")
+	// to be next to, and the copy stays at the end. Quietly: the duplicate's
+	// own announcement follows, and the open tables reload once.
+	_, wrote, err := s.placeQuietly(u, copyID, srcID, "after", "")
 	var pe *placeError
 	if errors.As(err, &pe) && pe.code == "anchor_not_sibling" {
 		return nil
+	}
+	if err == nil && wrote {
+		s.pagesChanged()
+		s.rowChanged(copyID)
 	}
 	return err
 }

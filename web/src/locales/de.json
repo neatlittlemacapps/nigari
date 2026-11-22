@@ -1394,5 +1394,5 @@
   "Added the date property {name}. Change the dates in Settings.": "Datumseigenschaft {name} hinzugefügt. Die Daten ändern unter Einstellungen.",
   "Drop to make a new column here": "Loslassen, um hier eine neue Spalte anzulegen",
   "Drop to put the two blocks side by side": "Loslassen, um die beiden Blöcke nebeneinanderzustellen",
-  "This row could not be moved there: the row it was placed next to is gone or in another list. Reload and try again.": "Die Zeile konnte nicht dorthin verschoben werden: Die Zeile, neben die sie gesetzt wurde, gibt es nicht mehr oder sie steht in einer anderen Liste. Lade neu und versuche es noch einmal."
+  "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "Die Zeile neben dieser Stelle gibt es nicht mehr oder sie steht in einer anderen Liste, darum wurde dort nichts eingefügt. Lade neu und versuche es noch einmal."
 }

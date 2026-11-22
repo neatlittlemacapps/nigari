@@ -436,7 +436,9 @@ workspace, which may not be the one you meant.
 Among its siblings a new page goes to the end, unless `after` or `before` names
 a sibling (a page with the same parent; for a row, another row of the same
 database). Then it goes right next to it, as the **+** beside a table row does.
-An id that is not a sibling is refused before anything is created.
+An id that is not a sibling is refused before anything is created. Not
+together with `template_id` yet: a row made from a template goes to the end;
+place it afterwards with `update_page`.
 
 `icon` takes an emoji, `lucide:Name`, `mdi:Name`, or an image URL. `cover` takes
 only two forms: `gradient:linear-gradient(120deg,#a8edea,#5b86e5)` or an
@@ -543,7 +545,10 @@ log, like any property change. `get_page` reports it back.
 Errors: `nothing to update: pass at least one of title, icon, cover,
 description, visibility, tags, parent_id, workspace_id, after, before, favorite or full_width`;
 `pass exactly one of after or before`; `"<id>" is not a sibling of this page`
-(not the same parent, in the trash, or a page you cannot read);
+(not the same parent, in the trash, or a page you cannot read). With a new
+`parent_id` in the same call, the anchor must be a child of that parent, and it
+is checked before the page moves. A page that is already in that place is
+answered "already … nothing moved";
 `page settings apply to documents only`; `a page cannot be its own parent`; `cannot move a page into its own subtree`;
 `a page can only be re-parented within its own workspace`;
 `visibility must be "workspace" or "private"`.

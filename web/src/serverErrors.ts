@@ -66,7 +66,7 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
 
     // ---- putting a row or page next to a sibling (spec 022) ----
     case 'anchor_not_sibling':
-      return t('This row could not be moved there: the row it was placed next to is gone or in another list. Reload and try again.');
+      return t('The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.');
 
     // ---- how a view opens its rows (spec 007) ----
     case 'invalid_view_open_in':

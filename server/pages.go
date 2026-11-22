@@ -127,7 +127,7 @@ func (s *Server) handleListPages(w http.ResponseWriter, r *http.Request) {
 		     OR p.type = 'collection'
 		     OR (SELECT type FROM pages parent WHERE parent.id = p.parent_id) != 'collection'
 		     OR EXISTS (SELECT 1 FROM pages c WHERE c.parent_id = p.id AND c.trashed_at IS NULL))
-		ORDER BY position, created_at`, args...)
+		ORDER BY position, created_at, id`, args...)
 	if err != nil {
 		httpError(w, 500, err.Error())
 		return
@@ -434,14 +434,14 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if placed {
-		// The anchor was checked before the insert, so this only fails on a
-		// database error or a view the row was not made in.
-		if _, _, err := s.placePage(u, id, anchor, side, body.ViewID); err != nil {
-			writePlaceError(w, err)
-			return
-		}
-		if p2, err := s.getPage(id); err == nil {
-			p = p2
+		// Quietly: page.created below is this page's first announcement. The
+		// anchor was checked before the insert; if it went to the trash in
+		// between, the page stays at the end rather than the create failing
+		// with the page already made (a retry would make a second one).
+		if _, wrote, err := s.placeQuietly(u, id, anchor, side, body.ViewID); err == nil && wrote {
+			if p2, err := s.getPage(id); err == nil {
+				p = p2
+			}
 		}
 	}
 	s.audit("human", userID, requestUser(r).Name, "create_page", id, workspaceID, body.Title)
@@ -930,7 +930,7 @@ func (s *Server) handleReindexSiblings(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback()
 
 	rows, err := tx.Query(`SELECT id FROM pages WHERE parent_id IS ? AND trashed_at IS NULL
-		AND (? = '' OR workspace_id = ?) ORDER BY position, created_at`, body.ParentID, wsFilter, wsFilter)
+		AND (? = '' OR workspace_id = ?) ORDER BY position, created_at, id`, body.ParentID, wsFilter, wsFilter)
 	if err != nil {
 		httpError(w, 500, err.Error())
 		return

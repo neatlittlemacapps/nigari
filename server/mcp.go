@@ -1056,6 +1056,12 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		case "create_page":
 			// template_id replaces create_from_template: same act, one entry point.
 			if args.TemplateID != "" {
+				// A row made from a template goes to the end for now; saying
+				// so beats a call that succeeds and quietly ignores where the
+				// agent asked for the row to go.
+				if args.After != "" || args.Before != "" {
+					return "", fmt.Errorf("after and before do not apply together with template_id: create the row, then place it with update_page and after or before")
+				}
 				return s.mcpCreateFromTemplate(u, args.TemplateID, args.Title, parentID, args.Properties, args.ViewID, args.Embed)
 			}
 			if strings.TrimSpace(args.Title) == "" {
@@ -1155,15 +1161,20 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 					return "", err
 				}
 			}
+			placeNote := ""
 			if placeAnchor != "" {
 				// An embed's view lives in the document, not the database: the
-				// move is the database's order either way (orderScope).
+				// move is the database's order either way. Quietly, because
+				// page.created below is this page's first announcement. The
+				// anchor was checked before the insert; if it left in between,
+				// the page stays at the end and the agent is told, rather than
+				// the call failing with the page already made.
 				placeView := args.ViewID
 				if args.Embed != nil {
 					placeView = ""
 				}
-				if _, _, err := s.placePage(u, id, placeAnchor, placeAt, placeView); err != nil {
-					return "", fmt.Errorf("page created (%s) but could not be placed: %w", id, err)
+				if _, _, err := s.placeQuietly(u, id, placeAnchor, placeAt, placeView); err != nil {
+					placeNote = fmt.Sprintf(" It could not be placed %s %s (%v), so it is at the end.", placeAt, placeAnchor, err)
 				}
 			}
 			if err := s.reindexPage(id); err != nil {
@@ -1172,7 +1183,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 			s.pagesChanged()
 			s.fireWebhook("page.created", id)
 			created := fmt.Sprintf("Created page %q with id %s (path: /p/%s)", args.Title, id, id)
-			return created + s.viewMatchNote(id, parentID, rv), nil
+			return created + placeNote + s.viewMatchNote(id, parentID, rv), nil
 		case "update_page":
 			// Moving and favouriting are metadata changes and used to be tools of
 			// their own. Order matters: move first, so a failed move does not leave
@@ -1180,6 +1191,23 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 			done := []string{}
 			// args.ParentID != nil covers "" too — that is a move to the top level,
 			// and it has to be distinguishable from not asking for a move at all.
+			placing := args.After != "" || args.Before != ""
+			var anchor, side string
+			if placing {
+				var err error
+				if anchor, side, err = placeSide(args.After, args.Before); err != nil {
+					return "", err
+				}
+				// With a new parent in the same call, the anchor must be a
+				// child of that parent: checked before the move, so a refused
+				// anchor does not leave the page moved behind an error.
+				if args.ParentID != nil && args.WorkspaceID == "" {
+					target := sql.NullString{String: parentID, Valid: parentID != ""}
+					if err := s.checkAnchor(u, target, s.pageWorkspace(args.PageID), anchor); err != nil {
+						return "", err
+					}
+				}
+			}
 			if args.ParentID != nil || args.WorkspaceID != "" {
 				msg, err := s.mcpMovePageOrWorkspace(u, args.PageID, parentID, args.WorkspaceID)
 				if err != nil {
@@ -1188,15 +1216,20 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 				done = append(done, msg)
 			}
 			// After a move, so the page is placed among its new siblings.
-			if args.After != "" || args.Before != "" {
-				anchor, side, err := placeSide(args.After, args.Before)
+			if placing {
+				_, wrote, err := s.placePage(u, args.PageID, anchor, side, args.ViewID)
 				if err != nil {
+					if len(done) > 0 {
+						// What already happened stays true: say so.
+						return "", fmt.Errorf("%s But it was not placed: %w", strings.Join(done, " "), err)
+					}
 					return "", err
 				}
-				if _, _, err := s.placePage(u, args.PageID, anchor, side, args.ViewID); err != nil {
-					return "", err
+				if wrote {
+					done = append(done, fmt.Sprintf("Placed page %s %s %s.", args.PageID, side, anchor))
+				} else {
+					done = append(done, fmt.Sprintf("Page %s was already %s %s; nothing moved.", args.PageID, side, anchor))
 				}
-				done = append(done, fmt.Sprintf("Placed page %s %s %s.", args.PageID, side, anchor))
 			}
 			if args.Favorite != nil {
 				msg, err := s.mcpSetFavorite(userID, args.PageID, *args.Favorite)

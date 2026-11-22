@@ -40,9 +40,10 @@ compute positions); renumbering every row on each move (one write per row,
 SC-002).
 
 **Room for #870** (a view's own order with "change everywhere", owner
-2026-11-22): the order a move writes is chosen by one function,
-`orderScope(colID, viewID)`, which answers "the database" today. REST and
-MCP both accept a `view_id`, validated and logged now, used by #870 later.
+2026-11-22): REST and MCP both accept a view id, checked against the
+database's views and logged now; #870 decides from it whose order a move
+writes. A first draft had an `orderScope` function that always answered "the
+database"; review found it dead code and it went until #870 needs it.
 
 ## R2. The door for people: `POST /api/pages/{id}/place`
 

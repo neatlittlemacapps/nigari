@@ -1394,5 +1394,5 @@
   "Added the date property {name}. Change the dates in Settings.": "Datumeigenschap {name} toegevoegd. Wijzig de datums in Instellingen.",
   "Drop to make a new column here": "Loslaten om hier een nieuwe kolom te maken",
   "Drop to put the two blocks side by side": "Loslaten om de twee blokken naast elkaar te zetten",
-  "This row could not be moved there: the row it was placed next to is gone or in another list. Reload and try again.": "Deze rij kon daar niet worden geplaatst: de rij waarnaast ze kwam, bestaat niet meer of staat in een andere lijst. Herlaad en probeer het opnieuw."
+  "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "De rij naast deze plek bestaat niet meer of staat in een andere lijst, dus er is niets neergezet. Herlaad en probeer het opnieuw."
 }

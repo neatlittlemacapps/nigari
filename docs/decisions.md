@@ -12,8 +12,8 @@ entries are not edited away.
 - **One order per database** (owner, Q1). A row's place is its page's
   `position`, shared by every view without a sort. A view keeping its own
   order, with a "change everywhere" choice, is #870 (owner: later). Room is
-  kept for it: `orderScope` decides whose order a move writes, and both doors
-  already accept and check a view id.
+  kept for it: both doors already accept a view id and check it against the
+  database's views, which is where #870 will decide whose order a move writes.
 - **By neighbour, not by number.** `POST /api/pages/{id}/place` and the MCP
   `update_page`/`create_page` take `after` or `before` a sibling's id; the
   server finds the row on the other side and writes the midpoint. Turned down:
@@ -33,6 +33,14 @@ entries are not edited away.
 - **No new index** (constitution VII). 10,000 rows: p95 6.9 ms, inside the
   8 ms write budget, once the neighbour read became two short reads instead
   of reading every sibling (25.5 ms).
+- **Ties are broken by the id everywhere.** Two rows with the same position
+  and created_at (a copied database) were in the table's order only by chance;
+  every query that shows rows now ends on the id, as the move does, so "next
+  to" on the server is "next to" on the screen (found by review).
+- **Created means created.** If the anchor goes to the trash between the
+  check and the placing, the new row stays at the end instead of the request
+  failing after the row exists (a retry would make a second one). A page
+  placed as it is created or duplicated announces only `page.created`.
 - **"Move to" another database** is not part of this (owner, Q2): #869.
 
 ---

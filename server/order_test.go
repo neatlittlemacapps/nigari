@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -268,5 +269,90 @@ func TestNewRowsAndCopiesLandNextToTheirRow(t *testing.T) {
 	}
 	if got := f.order(t); got != "MA"+"Copy of A"+"NB"+"Copy of B"+"C" {
 		t.Fatalf("order %q, want the copy of A right after A", got)
+	}
+}
+
+// shown is the titles in the order the table gets them, from the rows route.
+func (f orderFixture) shown(t *testing.T) string {
+	t.Helper()
+	rec := requestAs(t, f.s, f.cookie, "GET", "/api/collections/"+f.db+"/rows", "")
+	if rec.Code != 200 {
+		t.Fatalf("rows: %d %s", rec.Code, rec.Body.String())
+	}
+	var out struct {
+		Rows []struct {
+			Title string `json:"title"`
+		} `json:"rows"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	var b strings.Builder
+	for _, r := range out.Rows {
+		b.WriteString(r.Title)
+	}
+	return b.String()
+}
+
+// Two rows with the same position and the same created_at (a copied
+// database) were in the table's order only by chance, while placePage broke
+// the tie by id: a row dropped between them could land after both. Every
+// query that shows rows now ends on the id too (code review, PR 1).
+func TestPlaceBetweenRowsThatFullyTie(t *testing.T) {
+	f := newOrderFixture(t)
+	// Ten rows tied on both, so a table that orders them by chance is
+	// caught by more than luck.
+	ids := map[string]string{"B": f.b, "C": f.c}
+	for _, title := range []string{"D", "E", "F", "G", "H", "I", "J", "K"} {
+		ids[title] = f.s.makeRow(t, f.ws, f.owner, f.db, title, `{}`)
+	}
+	for _, id := range ids {
+		f.s.db.Exec(`UPDATE pages SET position = 2, created_at = '2026-01-01T00:00:00Z' WHERE id = ?`, id)
+	}
+	shown := f.shown(t)
+	if shown != f.order(t) {
+		t.Fatalf("the table shows %q, placePage's order is %q", shown, f.order(t))
+	}
+	first, second := shown[1:2], shown[2:3]
+	// Already in place, though only the id says which comes first: nothing moves.
+	if code, body := f.place(t, ids[second], `{"after":"`+ids[first]+`"}`); code != 200 || f.order(t) != shown {
+		t.Fatalf("placing %s after %s where it is: %d %s, order %q, want %q", second, first, code, body, f.order(t), shown)
+	}
+	if code, body := f.place(t, f.a, `{"after":"`+ids[first]+`"}`); code != 200 {
+		t.Fatalf("place A between two tied rows: %d %s", code, body)
+	}
+	if got, want := f.shown(t)[:3], first+"A"+second; got != want {
+		t.Fatalf("order %q, want %q", got, want)
+	}
+}
+
+// update_page with a new parent and an anchor that is not a child of it used
+// to move the page first and then fail, so the agent was told nothing
+// happened while the page had moved (code review, PR 1).
+func TestUpdatePageRefusesABadAnchorBeforeMoving(t *testing.T) {
+	f := newOrderFixture(t)
+	u := &user{ID: f.owner, Name: "Agent"}
+	other := f.s.makeCollection(t, f.ws, f.owner, "Other", `[]`)
+	if _, err := callTool(t, f.s, u, "update_page", `{"page_id":"`+f.a+`","parent_id":"`+other+`","after":"`+f.b+`"}`); err == nil {
+		t.Fatal("an anchor outside the new parent was accepted")
+	}
+	var parent string
+	f.s.db.QueryRow(`SELECT parent_id FROM pages WHERE id = ?`, f.a).Scan(&parent)
+	if parent != f.db {
+		t.Errorf("the refused call still moved the page to %q", parent)
+	}
+}
+
+// An agent is told when a placement changed nothing, and a template with an
+// anchor is refused rather than the anchor ignored (code review, PR 1).
+func TestAgentsAreToldWhatPlacingDid(t *testing.T) {
+	f := newOrderFixture(t)
+	u := &user{ID: f.owner, Name: "Agent"}
+	out, err := callTool(t, f.s, u, "update_page", `{"page_id":"`+f.b+`","after":"`+f.a+`"}`)
+	if err != nil || !strings.Contains(out, "already") {
+		t.Errorf("B after A where it is: %q %v, want an 'already' answer", out, err)
+	}
+	if _, err := callTool(t, f.s, u, "create_page", `{"title":"T","parent_id":"`+f.db+`","template_id":"any","after":"`+f.a+`"}`); err == nil || !strings.Contains(err.Error(), "template_id") {
+		t.Errorf("create_page with template_id and after: %v, want a refusal naming template_id", err)
 	}
 }

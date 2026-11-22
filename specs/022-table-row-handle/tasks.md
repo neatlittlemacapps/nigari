@@ -29,7 +29,7 @@ description: "Tasks for the table row handle, + and row menu, in two pull reques
 
 ### Phase 1: Foundational (the move)
 
-- [x] T001 [backend] `server/order.go` (new): `placePage(u, actorType, id, anchorID, side, viewID)` (R1): gates, anchor check (`anchor_not_sibling`), neighbour read, midpoint, renumbering on a tie or a gap too small, no `updated_at` change, `audit(…, "reorder_page")`, `pagesChanged`, `rowChanged`, `fireWebhook`. `orderScope(colID, viewID)` answers the database (room for #870)
+- [x] T001 [backend] `server/order.go` (new): `placePage(u, actorType, id, anchorID, side, viewID)` (R1): gates, anchor check (`anchor_not_sibling`), neighbour read, midpoint, renumbering on a tie or a gap too small, no `updated_at` change, `audit(…, "reorder_page")`, `pagesChanged`, `rowChanged`, `fireWebhook`. The view id is checked (room for #870)
 - [x] T002 [test] `server/order_test.go` (new): before and after, first and last place, a tie renumbered, a page next to itself writes nothing, `updated_at` unchanged, the audit entry; refused: trashed, foreign or missing anchor, no write access, a credential outside the workspace, a workspace closed to agents. Mutation-check the anchor check
 
 **Checkpoint**: the move exists and is tested; no door calls it yet.
