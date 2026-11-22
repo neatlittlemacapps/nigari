@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Issues**: #370 (P1); closes the agent side of #4 if Q1 is answered A
+**Issues**: #370 (P1); #4 (agents put pages in order)
 
 **Input**: Owner, 2026-10-30, on #370 (marked important), with three Notion
 screenshots:
@@ -64,32 +64,29 @@ source:
 
 ## Clarifications
 
-Open questions for the owner, with a recommendation each (answered before
-the plan):
+### Session 2026-11-22
 
-- **Q1. Is the manual order one per database, or one per view?**
-  [NEEDS CLARIFICATION: one order per database or per view]
-  - **A (recommended): one per database.** It is the order rows already have.
-    A drag in one table view moves the row in every view that has no sort.
-    Nothing new is stored, a move writes one row, and agents get the same
-    move (closes #4 for rows and pages alike).
-  - **B: one per view.** Two tables of one database can be ordered
-    differently. Each view stores its own list of row ids, which grows with
-    the database (10,000 rows is a long list in a view's settings), every new
-    row must be placed in every view's list, and agents need a per-view move.
-    About twice the work and a new stored shape.
-- **Q2. What does "Move to" in the row menu do?**
-  [NEEDS CLARIFICATION: what Move to means for a row]
-  - **A (recommended): leave it out of this spec.** Moving a row into another
-    database means fitting its properties to another schema, which is a
-    feature of its own (file it as an issue). The menu still has everything
-    else.
-  - **B: move the row out of the database to become an ordinary page** under
-    another page or at the top level, its properties dropped (with a
-    confirmation).
-  - **C: move it to another database**, keeping the properties whose names
-    and types match and dropping the rest (with a confirmation that lists
-    what is lost).
+Decided by Claude on the recommendations, at the owner's request ("Choices?
+Seriously. You need to do a better job of helping me out", 2026-11-22):
+
+- Q: Is the manual order one per database, or one per view? → A: **one per
+  database**: the rows' existing `position`. A drag in one table view moves
+  the row in every view without a sort. Nothing new is stored, a move writes
+  one row, and agents get the same move (closes #4). Turned down: one order
+  per view (a stored list of every row id in each view, every new row placed
+  in every list, a per-view move for agents; about twice the work).
+- Q: What does "Move to" in the row menu do? → A: **left out of this spec**,
+  filed as #869: moving a row into another database or out of one
+  drops or remaps properties, which needs its own design. Turned down: a row
+  becomes a plain page (properties dropped), and a move to another database
+  keeping matching properties.
+- Owner, 2026-11-22, on Q1: "Later we'll add a "change everywhere" option per
+  view". So views will get an order of their own later, with a "change
+  everywhere" option that applies a move to the shared order. This spec builds
+  only the shared order, and must not block that: the place a drag or an
+  agent's move writes its order is decided in one function, a move names its
+  view (unused today), and nothing assumes a view can never hold an order of
+  its own. Filed as #870.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -303,7 +300,7 @@ the new order.
   land, and the drop MUST land exactly there.
 - **FR-003**: A drop MUST store the row's new place in the manual order, by
   writing that one row only, and the order MUST survive a reload and show for
-  every viewer the manual order applies to (per Q1).
+  every viewer of a view without a sort.
 - **FR-004**: A drop in a sorted view MUST remove that view's sort for the
   person dragging, as a personal view change the existing bar can save for
   everyone or reset; no confirmation is asked.
@@ -339,7 +336,7 @@ the new order.
 - **Row**: a page inside a database; its `position` is its place in the
   manual order.
 - **Manual order**: the order of a database's rows when no sort applies (one
-  per database if Q1 is A).
+  per database).
 - **View sort**: a view's sort, shared or the viewer's own (spec 013); a drag
   removes it as a personal change.
 - **Row menu**: the actions on one row, shared in content and icons with the

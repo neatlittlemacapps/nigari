@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain (Q1 manual order per database or per view; Q2 what Move to means)
+- [x] No [NEEDS CLARIFICATION] markers remain (Q1, Q2 decided 2026-11-22)
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -32,4 +32,4 @@
 ## Notes
 
 - The Context section names code (as specs 020 and 021 do) so the owner and the plan see what exists; the requirements themselves stay free of it.
-- Q1 and Q2 go to the owner before `/speckit-plan`.
+- Q1 and Q2 decided 2026-11-22 (see the spec's Clarifications).
