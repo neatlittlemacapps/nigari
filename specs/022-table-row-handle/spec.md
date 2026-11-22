@@ -146,10 +146,10 @@ see the sort gone and the row first.
 2. **Given** a sort was removed by a drag, **When** the person chooses
    "Reset", **Then** the sort is back; the row keeps its new place in the
    manual order.
-3. **Given** a sorted view whose views are locked, **When** a person hovers a
-   row, **Then** the handle still opens the row menu, but the row cannot be
-   dragged, and the handle's tooltip says why (the view is locked and
-   sorted).
+3. **Given** a sorted view whose views are locked, **When** a row is
+   dragged, **Then** it works as in scenario 1: removing the sort for
+   oneself is a personal change, which a lock allows (spec 013, FR-009);
+   only "Save for everyone" stays locked.
 4. **Given** a sorted view, **When** the drag starts, **Then** the rows show
    in manual order at once, so the line shows a spot in the order the drop
    will keep.
@@ -279,9 +279,8 @@ the new order.
   embed's sort, not the database's; the manual order is the database's.
 - **Grouped tables** (the coming Group by epic #823): a drag stays inside its
   group; changing group by dragging is #823's work.
-- **Very long tables** (rows loaded page by page): a row can only be dropped
-  next to rows that are loaded; the view scrolls while dragging near its top
-  or bottom edge.
+- **Very long tables**: the view scrolls while dragging near its top or
+  bottom edge (the table loads all its rows, in steps).
 - **A row the person may not edit** in a database they may edit (row-level
   access does not exist today): not applicable; the database's access
   decides.
@@ -304,8 +303,10 @@ the new order.
 - **FR-004**: A drop in a sorted view MUST remove that view's sort for the
   person dragging, as a personal view change the existing bar can save for
   everyone or reset; no confirmation is asked.
-- **FR-005**: In a sorted view whose views are locked, rows MUST NOT drag;
-  the handle's tooltip MUST say why.
+- **FR-005**: A lock on the views MUST NOT stop a drag: the sort removed is
+  the person's own; where a view has no personal state (a bare embed) and
+  the person may not change it, a sorted view's rows MUST NOT drag, and the
+  handle's tooltip MUST say why.
 - **FR-006**: In a tree of sub-items, a drag MUST keep a row among the rows
   at its own level under the same parent.
 - **FR-007**: A row menu MUST open from the handle (click or tap), from a
