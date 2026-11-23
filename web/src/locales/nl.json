@@ -1410,5 +1410,6 @@
   "Filter": "Filteren",
   "Views": "Weergaven",
   "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "De rij naast deze plek bestaat niet meer of staat in een andere lijst, dus er is niets neergezet. Herlaad en probeer het opnieuw.",
-  "Show more": "Meer tonen"
+  "Show more": "Meer tonen",
+  "Emergency access by {name} ended.": "Noodtoegang van {name} beëindigd."
 }
