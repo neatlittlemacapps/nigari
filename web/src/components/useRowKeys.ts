@@ -1,7 +1,7 @@
 import type { RefObject } from 'react';
 import { useShortcut } from '../keys';
 import { t } from '../i18n';
-import { rowStep, type DrawnRow, type RowSpot } from '../rowDrag';
+import type { DrawnRow } from '../rowDrag';
 
 // The table's row shortcuts (spec 022, US5, research R7), for the row that
 // holds the focus in this table: mod+/ opens its menu, mod+shift+↑/↓ moves it
@@ -25,17 +25,25 @@ export function useRowKeys({
   rows: readonly DrawnRow[];
   /** Opens the row's menu; `from` gets the focus back when it closes. */
   onMenu: (id: string, tr: HTMLTableRowElement, from: HTMLElement | null) => void;
-  /** Absent: rows do not move here (a reader). */
-  onMove?: (id: string, spot: RowSpot) => void;
+  /** One place up (-1) or down (1); false when it cannot go further.
+   *  Absent: rows do not move here (a reader). */
+  onMove?: (id: string, dir: -1 | 1) => boolean | void;
 }) {
   const focused = () => focusedRowIn(body.current);
+  // This table answers when the focus is in one of its rows, or in no table
+  // at all (the shortcut sheet, which has the focus while it lists them).
+  // With focus in another table's row, that table answers: two tables on
+  // one page each register these keys (code review).
+  const mine = () => {
+    if (!body.current) return false;
+    const el = document.activeElement;
+    return body.current.contains(el) || !el?.closest('.db-table tbody');
+  };
   useShortcut({
     id: 'row.menu',
     keys: ['mod+/'],
     scope: 'view',
-    // Listed whenever a table is on screen (the shortcut sheet takes the
-    // focus while it is open); a press with no row focused passes through.
-    when: () => !!body.current,
+    when: mine,
     label: () => t('Open the row’s menu'),
     group: () => t('Table'),
     run: () => {
@@ -51,11 +59,9 @@ export function useRowKeys({
     const id = focused()?.dataset.rowId;
     const row = id ? rows.find((r) => r.id === id) : undefined;
     if (!onMove || !row || (row.depth ?? 0) > 0) return false;
-    const spot = rowStep(rows, row.id, dir);
-    if (!spot) return false;
-    onMove(row.id, spot);
+    if (onMove(row.id, dir) === false) return false;
   };
-  const movable = () => !!onMove && !!body.current;
+  const movable = () => !!onMove && mine();
   useShortcut({
     id: 'row.moveUp',
     keys: ['mod+shift+arrowup'],

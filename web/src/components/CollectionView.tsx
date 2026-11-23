@@ -12,11 +12,12 @@ import Portal from './Portal';
 import { anchoredMenuStyle } from '../anchoredMenu';
 import { sortComparator } from '../viewSort';
 import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } from '../columnDrag';
-import { applySpot, useRowDrag, type DrawnRow, type RowSpot } from '../rowDrag';
+import { rowStep, useRowDrag, type DrawnRow, type RowSpot } from '../rowDrag';
 import { RowGutter, RowGutterHead } from './RowHandle';
 import { RowMenu } from './RowMenu';
 import { RowTitleInput } from './RowTitleInput';
 import { useRowKeys } from './useRowKeys';
+import { useTableRowActions } from './useTableRowActions';
 import { ColHead, type PropertyChanges } from './TableColumnHead';
 import { useColumnPropertyChanges } from './useColumnPropertyChanges';
 import { tagColorClass } from '../tags';
@@ -638,69 +639,6 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     announceIfHidden(row);
   };
 
-  // The + beside a table row (spec 022): the new row goes right below it, or
-  // above with Alt or Option, in one request, in the view the person is
-  // looking at, as addRow makes it.
-  const addRowNextTo = async (anchor: string, above: boolean) => {
-    try {
-      const row = await api.createPage(collectionId, '', 'doc', undefined, undefined, rowViewId(), undefined, rowViewFilters(), {
-        anchor,
-        side: above ? 'before' : 'after',
-      });
-      onPagesChanged();
-      announceIfHidden(row);
-      setEditTitleId(row.id);
-    } catch (e) {
-      toast(e instanceof ApiError ? serverMessage(e.code, e.message) : t('Change not saved'));
-    }
-  };
-  // The row the + just added, its title being typed (spec 022, US4).
-  const [editTitleId, setEditTitleId] = useState<string | null>(null);
-  const finishTitle = async (id: string, title: string | null) => {
-    setEditTitleId(null);
-    if (title === null) return;
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, title } : r)));
-    try {
-      await api.updatePage(id, { title });
-      onPagesChanged();
-    } catch (e) {
-      toast(e instanceof ApiError ? serverMessage(e.code, e.message) : t('Change not saved'));
-      void loadRows();
-    }
-  };
-
-  // A row dragged next to another (spec 022): shown in its new place at once,
-  // then saved; the server names the neighbours, so a filter's hidden rows
-  // keep their places. On a refusal the rows are read again.
-  const placeRow = async (id: string, spot: RowSpot) => {
-    setRows((prev) => applySpot(prev, id, spot));
-    try {
-      await api.placePage(id, spot, rowViewId());
-    } catch (e) {
-      toast(e instanceof ApiError ? serverMessage(e.code, e.message) : t('Change not saved'));
-      void loadRows();
-    }
-  };
-
-  // Duplicate in a row's menu: the copy lands right below its row (the
-  // server places it, spec 022 R3), and the rows are read again.
-  const duplicateRow = async (id: string) => {
-    try {
-      await api.duplicatePage(id);
-      onPagesChanged();
-    } catch (e) {
-      toast(e instanceof ApiError ? serverMessage(e.code, e.message) : t('Change not saved'));
-    }
-  };
-
-  // The first move of a drag in a sorted view: the rows are drawn in their own
-  // order at once, so the line shows where the row will really go, and the
-  // sort goes as the person's own change, which the bar can undo.
-  const dropSortForDrag = () => {
-    setRows((prev) => [...prev].sort((a, b) => (a.position ?? 0) - (b.position ?? 0)));
-    updateView({ sort: null });
-  };
-
   // The view a new row is made in. A form has no filters, and its fields are
   // what the person fills in.
   // In a document the view is the embed's own and the server has no such view
@@ -723,6 +661,17 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       run: () => openCollectionRow({}, row.id, { onNavigate, onOpenInNewTab }, { openIn: view?.openIn, onPeek }),
     });
   };
+
+  const { editTitleId, addRowNextTo, finishTitle, placeRow, duplicateRow, dropSortForDrag } = useTableRowActions({
+    collectionId,
+    setRows,
+    loadRows,
+    onPagesChanged,
+    rowViewId,
+    rowViewFilters,
+    announceIfHidden,
+    dropSort: () => updateView({ sort: null }),
+  });
 
   // Persist an inline change to a select/multiselect property's options (create,
   // recolour, delete) — the cell editor edits the schema, not just the value.
@@ -1367,7 +1316,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           // everyone, and a lock leaves it open. Only where the sort could
           // not be the person's own and they may not change the view do the
           // rows of a sorted view not drag (FR-005).
-          onPlaceRow={canEdit && (!serverSort || !!personalScope || mayChangeViews) ? (id, spot) => void placeRow(id, spot) : undefined}
+          // In a sorted view only where the sort can go as the person's own
+          // change: elsewhere (an embed with no place for personal state) it
+          // would go for everyone, on the first move of a drag (code review).
+          onPlaceRow={canEdit && (!serverSort || !!personalScope) ? (id, spot) => void placeRow(id, spot) : undefined}
           onRowDragStart={serverSort ? dropSortForDrag : undefined}
           onAddRowBelow={canEdit ? (id, above) => void addRowNextTo(id, above) : undefined}
           onDuplicateRow={canEdit ? (id) => void duplicateRow(id) : undefined}
@@ -2394,9 +2346,14 @@ function TableView({
       const b = (tr.querySelector('.db-row-handle') ?? tr).getBoundingClientRect();
       openRowMenu(id, rows.find((r) => r.id === id)?.title ?? '', { x: b.left, y: b.bottom }, from);
     },
-    // A sorted view gives up its sort first, as a drag does.
+    // A sorted view gives up its sort first, as a drag does, and "one place
+    // up" means among the rows in their own order, not the sorted ones.
     onMove: onPlaceRow
-      ? (id, spot) => {
+      ? (id, dir) => {
+          const at = new Map(rows.map((r) => [r.id, r.position ?? 0]));
+          const list = onRowDragStart ? drawn.filter((d) => (d.depth ?? 0) === 0).sort((a, b) => (at.get(a.id) ?? 0) - (at.get(b.id) ?? 0)) : drawn;
+          const spot = rowStep(list, id, dir);
+          if (!spot) return false;
           onRowDragStart?.();
           onPlaceRow(id, spot);
         }

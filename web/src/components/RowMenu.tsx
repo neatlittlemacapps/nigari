@@ -29,8 +29,11 @@ export type RowMenuDeps = {
 };
 
 /** What the menu shows about the row, read when it opens: whether it is a
- *  favourite, and "Edited {time} by {name}" from its newest activity entry
- *  that is not a move (a move is not an edit, research R6). */
+ *  favourite, and "Edited {time}" from the row's own last change (a move
+ *  leaves it alone, PR 1). Not "by {name}" as research R6 planned: a
+ *  person's edit to a property is not recorded with its author anywhere, so
+ *  the newest activity entry named whoever commented or created the row
+ *  (code review). */
 function useRowFacts(rowId: string) {
   const [favorite, setFavorite] = useState<boolean | null>(null);
   const [edited, setEdited] = useState<string | null>(null);
@@ -41,11 +44,8 @@ function useRowFacts(rowId: string) {
       .then((ids) => live && setFavorite(ids.includes(rowId)))
       .catch(() => {});
     api
-      .audit(undefined, rowId)
-      .then((entries) => {
-        const last = entries.find((e) => e.action !== 'reorder_page');
-        if (live && last) setEdited(t('Edited {time} by {name}', { time: formatRelative(last.createdAt), name: last.actorName }));
-      })
+      .getPage(rowId)
+      .then((p) => live && p.updatedAt && setEdited(t('Edited {time}', { time: formatRelative(p.updatedAt) })))
       .catch(() => {});
     return () => {
       live = false;
@@ -95,10 +95,10 @@ export function RowMenuItems({ place, row, deps }: { place: RowPlace; row: { id:
           },
     copyLink: () => {
       const url = `${location.origin}/p/${id}`;
-      navigator.clipboard?.writeText(url).then(
-        () => toast(t('Link copied')),
-        () => toast(t('Change not saved')),
-      );
+      // No clipboard on a plain-http address (a LAN instance): say so.
+      const failed = () => toast(t('Copy failed; select the link'));
+      if (!navigator.clipboard) failed();
+      else navigator.clipboard.writeText(url).then(() => toast(t('Link copied')), failed);
     },
     duplicate: deps.onDuplicate ? () => deps.onDuplicate!(id) : undefined,
     moveToColumn: deps.moveToColumn,

@@ -116,7 +116,7 @@ await withFixture(async ({ page, api, base, path }) => {
   for (const name of ['Open', 'Open in', 'Add row below', 'Edit property', 'Comment', 'Copy link', 'Duplicate', 'Move to trash']) {
     assert.equal(await menu.getByRole('menuitem', { name, exact: true }).count(), 1, `the row menu offers ${name}`);
   }
-  await menu.getByText(/^Edited .* by /).waitFor();
+  await menu.getByText(/^Edited /).waitFor();
   await page.keyboard.press('Escape');
   await menu.waitFor({ state: 'hidden' });
   await eventually(() => row('A').locator('.db-row-handle').evaluate((b) => b === document.activeElement)).catch(() => assert.fail('Escape gives focus back to the handle'));
@@ -199,8 +199,22 @@ await withFixture(async ({ page, api, base, path }) => {
   await page.mouse.up();
   await eventually(async () => (await serverOrder()) === 'BDEAC');
   assert.deepEqual(await sharedSort(), { property: 'kind', dir: 'asc' }, 'a lock keeps the shared sort');
+  // From the keyboard in a sorted view, "one place up" is among the rows in
+  // their own order (BDEAC), not the sorted ones (EACBD): B is first in its
+  // own order and stays, where the sorted order would put it before C (code
+  // review).
+  await page.reload();
+  await bar.getByRole('button', { name: 'Reset' }).click();
+  await eventually(async () => (await shown()).join('') === 'EACBD');
+  await row('B').locator('.db-title-link').focus();
+  await page.keyboard.press('ControlOrMeta+Shift+ArrowUp');
+  await page.waitForTimeout(800);
+  assert.equal(await serverOrder(), 'BDEAC', 'a keyboard move in a sorted view goes by the rows\' own order');
 
   // ---- A phone: the handle shows on the row last tapped (owner, 2026-11-23) ----
+  // Unsorted, so the drag below lands where the rows are drawn.
+  assert.ok((await page.request.fetch(`${base}${path}/lock`, { method: 'DELETE' })).ok());
+  await api('PUT', path, { ...(await api('GET', path)), views: [{ id: 'table', name: 'Table', type: 'table' }] });
   const phone = await page.context().browser().newContext({
     storageState: await page.context().storageState(),
     hasTouch: true,

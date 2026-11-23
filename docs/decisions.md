@@ -32,6 +32,14 @@ entries are not edited away.
   state, a 300-row table was drawn again on every gap change: 37 ms of script
   a step in Chromium. Now React hears only the start and the end of a drag:
   0.5 ms script, 0.6 ms layout, 0.3 ms style a step.
+- **The menu says "Edited {time}", not "by {name}"** as research R6 planned.
+  A person's edit to a property is recorded nowhere with its author, so the
+  newest activity entry named whoever commented on or created the row (code
+  review). The time is the row's own `updated_at`, which a move leaves alone.
+- **A sorted view's rows move only where the sort can go as the person's
+  own** (code review). An embed without a place for personal state would
+  have dropped the sort for everyone on the first move of a drag; there the
+  rows do not move while the view is sorted.
 - **`mod+/` and `mod+shift+↑/↓` work on the row holding the focus**, and are
   listed in the shortcut sheet whenever a table is on screen. On a layout
   where `/` needs Shift (German), `mod+/` is not reachable; the handle and the

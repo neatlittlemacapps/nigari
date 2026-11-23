@@ -12,7 +12,10 @@
 // at the bottom is the gesture, written as columnDrag.ts drags a column:
 // pointer events, so mouse, pen and finger take one path, a 5px threshold
 // that tells a click on the handle (its menu) from a drag, and a hold before
-// a finger drags, so a swipe that starts on the handle still scrolls.
+// a finger drags, so a tap on the handle stays a tap (its menu). The handle
+// itself does not scroll the page (touch-action: none, or the browser would
+// take the finger before the hold is up); a swipe anywhere else on the row
+// does. The grip is 28px wide and shows only on the row tapped last.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -208,6 +211,8 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
     /** The gap the line is on, and the row carrying it. */
     gap: number;
     painted: HTMLElement | null;
+    /** Started, and waiting for the rows to be drawn again (onStart). */
+    waiting: boolean;
   } | null>(null);
   const draggedAt = useRef({ id: '', at: 0 });
 
@@ -234,9 +239,18 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
         l.started = true;
         document.body.classList.add('is-row-moving');
         window.getSelection()?.removeAllRanges();
-        startRef.current?.();
         setDrag({ id: l.id });
+        if (startRef.current) {
+          // The rows are about to be drawn in another order: no spot until
+          // they are, or a quick flick would drop the row by its neighbour
+          // in the old order (code review).
+          startRef.current();
+          l.waiting = true;
+          return;
+        }
       }
+      if (l.waiting && rowsRef.current === l.rowsAt) return;
+      l.waiting = false;
       if (rowsRef.current !== l.rowsAt) {
         // The rows were drawn again (a sorted view gave way to its own
         // order, a row arrived): their boxes moved with them, and the line
@@ -322,6 +336,7 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
       rowsAt: rowsRef.current,
       gap: -1,
       painted: null as HTMLElement | null,
+      waiting: false,
     };
     live.current = l;
     if (touch) {

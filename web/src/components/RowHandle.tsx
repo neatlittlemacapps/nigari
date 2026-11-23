@@ -6,8 +6,9 @@ import { t } from '../i18n';
 // row below this one, and the handle that drags the row and, on a click, opens
 // its menu. Its own narrow cell ahead of every column, so it does not move
 // when another column is put first. Shown on hover and on keyboard focus; on a
-// phone, once the row is tapped (owner, 2026-11-23). A reader gets an empty
-// cell: nothing here is theirs to do.
+// phone, once the row is tapped (owner, 2026-11-23). A reader gets no + and
+// no drag, but the handle still opens the menu: Open, Copy link and
+// favourites are theirs too. With none of the three, the cell is empty.
 
 export function RowGutterHead() {
   return <th className="db-row-gutter" aria-hidden="true" />;
