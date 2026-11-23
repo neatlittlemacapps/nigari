@@ -90,7 +90,7 @@
       "takenAt": {
         "web/src/components/Sidebar.tsx": "f93ed29c4be7",
         "web/src/components/Editor.tsx": "84fd65b1ed4f",
-        "web/src/App.tsx": "7948e5fbb3b7",
+        "web/src/App.tsx": "98ca4e95be65",
         "web/src/tokens.css": "57855a2ffdba",
         "web/src/theme.css": "16fd3013201a"
       }
