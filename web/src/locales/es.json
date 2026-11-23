@@ -1395,5 +1395,6 @@
   "Drop to make a new column here": "Suelta para crear aquí una columna nueva",
   "Drop to put the two blocks side by side": "Suelta para poner los dos bloques uno al lado del otro",
   "Filter": "Filtrar",
-  "Views": "Vistas"
+  "Views": "Vistas",
+  "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "La fila junto a este lugar ya no existe o está en otra lista, así que no se colocó nada ahí. Recarga e inténtalo de nuevo."
 }

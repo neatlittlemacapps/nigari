@@ -432,7 +432,7 @@ func (s *Server) collectionMarkdown(p *page, userID string) (string, error) {
 	b.WriteString("\n")
 
 	rule, ruleArgs := s.privateRowRule(userID, p.ID)
-	rows, err := s.db.Query(`SELECT title, props FROM pages WHERE parent_id = ? AND trashed_at IS NULL AND `+rule+` ORDER BY position, created_at`,
+	rows, err := s.db.Query(`SELECT title, props FROM pages WHERE parent_id = ? AND trashed_at IS NULL AND `+rule+` ORDER BY position, created_at, id`,
 		append([]any{p.ID}, ruleArgs...)...)
 	if err != nil {
 		return "", err

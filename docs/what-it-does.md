@@ -70,7 +70,10 @@ database's views alone. A row added in a
 filtered view starts with the values that view filters on, so it stays in sight. A view
 can open its rows in a peek, beside the view or over it, instead of as a full page.
 A table's columns move by dragging their headings, in that view only, and an
-agent can set the same order. A view's layout can be changed in place, a table
+agent can set the same order. A database's rows keep an order of their own, which every
+view without a sort shows; an agent puts a row (or any page) right before or after
+a sibling, and a new or duplicated row can land right next to the row it belongs
+beside. A view's layout can be changed in place, a table
 into a board and back, keeping its filters, sort and the settings of the layout
 it left, for people and agents alike. A database's views can be locked so nobody changes
 them by accident, people and agents alike, while its rows stay editable; only a

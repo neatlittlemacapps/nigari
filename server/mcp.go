@@ -124,6 +124,10 @@ func isMCPTool(name string) bool {
 }
 
 // viewIDHint describes view_id on create_page and create_rows (spec 005).
+// The place arguments of create_page and update_page (spec 022).
+const placeAfterHint = "Optional id of a sibling (a page with the same parent; for a row, another row of the same database) to put this page just after. For a database this sets the rows' order, which every view without a sort shows. Not together with before."
+const placeBeforeHint = "Optional id of a sibling to put this page just before. Not together with after."
+
 const viewIDHint = "The view the row is made in (call get_collection for view ids). The row gets every value that view's filters pin to a single answer (Status is To do → Status = To do), with properties you pass winning over them, and the answer says whether the row matches the view: one that does not will not show there. Only for rows of a database; a view of another database is refused and nothing is created. With embed, view_id names a view of that embed instead."
 
 // embedArgHint and embedIDHint describe spec 014's embed arguments, shared by
@@ -180,6 +184,8 @@ var mcpTools = []map[string]any{
 				"markdown":     map[string]any{"type": "string", "description": "Optional initial content as Markdown. " + pageLinkHint + " " + diagramHint + " " + blockSpellingHint},
 				"icon":         map[string]any{"type": "string", "description": "Optional emoji, \"lucide:Name\", \"mdi:Name\" or image URL"},
 				"properties":   map[string]any{"type": "object", "description": "Typed property values when creating a database row — same shape as set_properties. Call get_collection first for property ids."},
+				"after":        map[string]any{"type": "string", "description": placeAfterHint},
+				"before":       map[string]any{"type": "string", "description": placeBeforeHint},
 				"cover":        map[string]any{"type": "string", "description": coverHint},
 				"description":  map[string]any{"type": "string", "description": "Optional one-line summary, shown under the title."},
 				"tags":         map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Optional tags. Call list with kind=\"tags\" first and reuse what exists instead of inventing near-duplicates."},
@@ -192,7 +198,8 @@ var mcpTools = []map[string]any{
 		"name": "update_page",
 		"description": "Update a page's metadata: title, icon, cover, description, tags, visibility — and where it sits. " +
 			"parent_id moves it under another page (empty string moves it to the top level), workspace_id moves it and its whole sub-tree into another workspace, " +
-			"and favorite pins it in the sidebar. full_width makes a document use the whole window width instead of the normal column, " +
+			"after or before puts it just after or before a sibling (another page with the same parent), which for a database row is its place in the rows' order. That order is what every view without a sort shows; it removes no view's sort (use set_view for that). " +
+			"favorite pins it in the sidebar. full_width makes a document use the whole window width instead of the normal column, " +
 			"for everyone who opens it and on its public link (false puts it back; documents only). Only the fields you pass are changed. Tags replace the whole list — call list with kind=\"tags\" first and " +
 			"reuse existing tags instead of inventing near-duplicates. Cover: " + coverHint,
 		"inputSchema": map[string]any{"type": "object",
@@ -208,6 +215,9 @@ var mcpTools = []map[string]any{
 				"workspace_id": map[string]any{"type": "string", "description": "Move the page and its whole sub-tree into this workspace. Takes precedence over parent_id."},
 				"favorite":     map[string]any{"type": "boolean", "description": "Pin the page in the sidebar, or unpin it."},
 				"full_width":   map[string]any{"type": "boolean", "description": "Make the document full width (true) or back to the normal column (false). get_page shows it as \"Page settings: full_width=true\" when on; missing means off."},
+				"after":        map[string]any{"type": "string", "description": placeAfterHint},
+				"before":       map[string]any{"type": "string", "description": placeBeforeHint},
+				"view_id":      map[string]any{"type": "string", "description": "With after or before on a database row: the view you are ordering in. It must be one of the database's views. The move still sets the database's one order, which every view without a sort shows."},
 			},
 			"required": []string{"page_id"}},
 	},
@@ -759,13 +769,16 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		PageID string `json:"page_id"`
 		// A POINTER: update_page needs "" (move to the top level) to differ from
 		// "not mentioned". create_page and create_database only ever read it.
-		ParentID       *string `json:"parent_id"`
-		Title          string  `json:"title"`
-		Icon           string  `json:"icon"`
-		Markdown       string  `json:"markdown"`
-		FileName       string  `json:"file_name"`
-		DataBase64     string  `json:"data_base64"`
-		IdempotencyKey string  `json:"idempotency_key"`
+		ParentID *string `json:"parent_id"`
+		// Spec 022: a sibling to place the page just after or before.
+		After          string `json:"after"`
+		Before         string `json:"before"`
+		Title          string `json:"title"`
+		Icon           string `json:"icon"`
+		Markdown       string `json:"markdown"`
+		FileName       string `json:"file_name"`
+		DataBase64     string `json:"data_base64"`
+		IdempotencyKey string `json:"idempotency_key"`
 		// Database tools (Welle 9).
 		Filter []struct {
 			Property, Op, Value string
@@ -1043,6 +1056,12 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		case "create_page":
 			// template_id replaces create_from_template: same act, one entry point.
 			if args.TemplateID != "" {
+				// A row made from a template goes to the end for now; saying
+				// so beats a call that succeeds and quietly ignores where the
+				// agent asked for the row to go.
+				if args.After != "" || args.Before != "" {
+					return "", fmt.Errorf("after and before do not apply together with template_id: create the row, then place it with update_page and after or before")
+				}
 				return s.mcpCreateFromTemplate(u, args.TemplateID, args.Title, parentID, args.Properties, args.ViewID, args.Embed)
 			}
 			if strings.TrimSpace(args.Title) == "" {
@@ -1082,6 +1101,21 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 				var err error
 				workspaceID, err = s.mcpCreateWorkspaceTarget(u, args.WorkspaceID)
 				if err != nil {
+					return "", err
+				}
+			}
+			placeAnchor, placeAt := "", ""
+			if args.After != "" || args.Before != "" {
+				var err error
+				if placeAnchor, placeAt, err = placeSide(args.After, args.Before); err != nil {
+					return "", err
+				}
+				var par sql.NullString
+				if parent != nil {
+					par = sql.NullString{String: *parent, Valid: true}
+				}
+				// Before the insert: a refused anchor leaves no page behind.
+				if err := s.checkAnchor(u, par, workspaceID, placeAnchor); err != nil {
 					return "", err
 				}
 			}
@@ -1127,13 +1161,29 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 					return "", err
 				}
 			}
+			placeNote := ""
+			if placeAnchor != "" {
+				// An embed's view lives in the document, not the database: the
+				// move is the database's order either way. Quietly, because
+				// page.created below is this page's first announcement. The
+				// anchor was checked before the insert; if it left in between,
+				// the page stays at the end and the agent is told, rather than
+				// the call failing with the page already made.
+				placeView := args.ViewID
+				if args.Embed != nil {
+					placeView = ""
+				}
+				if _, _, err := s.placeQuietly(u, id, placeAnchor, placeAt, placeView); err != nil {
+					placeNote = fmt.Sprintf(" It could not be placed %s %s (%v), so it is at the end.", placeAt, placeAnchor, err)
+				}
+			}
 			if err := s.reindexPage(id); err != nil {
 				return "", err
 			}
 			s.pagesChanged()
 			s.fireWebhook("page.created", id)
 			created := fmt.Sprintf("Created page %q with id %s (path: /p/%s)", args.Title, id, id)
-			return created + s.viewMatchNote(id, parentID, rv), nil
+			return created + placeNote + s.viewMatchNote(id, parentID, rv), nil
 		case "update_page":
 			// Moving and favouriting are metadata changes and used to be tools of
 			// their own. Order matters: move first, so a failed move does not leave
@@ -1141,12 +1191,45 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 			done := []string{}
 			// args.ParentID != nil covers "" too — that is a move to the top level,
 			// and it has to be distinguishable from not asking for a move at all.
+			placing := args.After != "" || args.Before != ""
+			var anchor, side string
+			if placing {
+				var err error
+				if anchor, side, err = placeSide(args.After, args.Before); err != nil {
+					return "", err
+				}
+				// With a new parent in the same call, the anchor must be a
+				// child of that parent: checked before the move, so a refused
+				// anchor does not leave the page moved behind an error.
+				if args.ParentID != nil && args.WorkspaceID == "" {
+					target := sql.NullString{String: parentID, Valid: parentID != ""}
+					if err := s.checkAnchor(u, target, s.pageWorkspace(args.PageID), anchor); err != nil {
+						return "", err
+					}
+				}
+			}
 			if args.ParentID != nil || args.WorkspaceID != "" {
 				msg, err := s.mcpMovePageOrWorkspace(u, args.PageID, parentID, args.WorkspaceID)
 				if err != nil {
 					return "", err
 				}
 				done = append(done, msg)
+			}
+			// After a move, so the page is placed among its new siblings.
+			if placing {
+				_, wrote, err := s.placePage(u, args.PageID, anchor, side, args.ViewID)
+				if err != nil {
+					if len(done) > 0 {
+						// What already happened stays true: say so.
+						return "", fmt.Errorf("%s But it was not placed: %w", strings.Join(done, " "), err)
+					}
+					return "", err
+				}
+				if wrote {
+					done = append(done, fmt.Sprintf("Placed page %s %s %s.", args.PageID, side, anchor))
+				} else {
+					done = append(done, fmt.Sprintf("Page %s was already %s %s; nothing moved.", args.PageID, side, anchor))
+				}
 			}
 			if args.Favorite != nil {
 				msg, err := s.mcpSetFavorite(userID, args.PageID, *args.Favorite)
@@ -1177,7 +1260,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 				done = append(done, msg)
 			}
 			if len(done) == 0 {
-				return "", fmt.Errorf("nothing to update: pass at least one of title, icon, cover, description, visibility, tags, parent_id, workspace_id, favorite or full_width")
+				return "", fmt.Errorf("nothing to update: pass at least one of title, icon, cover, description, visibility, tags, parent_id, workspace_id, after, before, favorite or full_width")
 			}
 			return strings.Join(done, " "), nil
 		case "delete_comment":
@@ -1397,6 +1480,10 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		case "duplicate_page":
 			nid, err := s.duplicatePage(args.PageID, userID, false, false)
 			if err != nil {
+				return "", err
+			}
+			// A row's copy right below it, as in the interface (spec 022).
+			if err := s.placeCopyAfter(u, args.PageID, nid); err != nil {
 				return "", err
 			}
 			return "Duplicated page → new id " + nid, nil

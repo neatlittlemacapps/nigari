@@ -1395,5 +1395,6 @@
   "Drop to make a new column here": "Loslaten om hier een nieuwe kolom te maken",
   "Drop to put the two blocks side by side": "Loslaten om de twee blokken naast elkaar te zetten",
   "Filter": "Filteren",
-  "Views": "Weergaven"
+  "Views": "Weergaven",
+  "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "De rij naast deze plek bestaat niet meer of staat in een andere lijst, dus er is niets neergezet. Herlaad en probeer het opnieuw."
 }
