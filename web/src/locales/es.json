@@ -1404,5 +1404,9 @@
   "Edited {time} by {name}": "Editado {time} por {name}",
   "Menu of {title}": "Menú de {title}",
   "New tab": "Nueva pestaña",
-  "Open in": "Abrir en"
+  "Open in": "Abrir en",
+  "Row title": "Título de la fila",
+  "Open the row’s menu": "Abrir el menú de la fila",
+  "Move the row up": "Subir la fila",
+  "Move the row down": "Bajar la fila"
 }

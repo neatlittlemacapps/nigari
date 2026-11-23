@@ -93,9 +93,20 @@ await withFixture(async ({ page, api, base, path }) => {
   await row('B').hover();
   await row('B').locator('.db-row-add').click();
   await eventually(async () => (await serverOrder()) === 'EB_ACD');
+  // The new row's title is ready for typing; Escape leaves it untitled.
+  const titleInput = page.locator('.db-title-input');
+  await titleInput.waitFor();
+  assert.equal(await titleInput.evaluate((i) => i === document.activeElement), true, 'the new row\'s title has focus');
+  await page.keyboard.type('N');
+  await page.keyboard.press('Enter');
+  await eventually(async () => (await serverOrder()) === 'EBNACD');
+  await api('PATCH', `/api/pages/${(await api('GET', `${path}/rows?limit=50`)).rows.find((r) => r.title === 'N').id}`, { title: '' });
   await row('C').hover();
   await row('C').locator('.db-row-add').click({ modifiers: ['Alt'] });
   await eventually(async () => (await serverOrder()) === 'EB_A_CD');
+  await titleInput.waitFor();
+  await page.keyboard.press('Escape');
+  await titleInput.waitFor({ state: 'detached' });
 
   // ---- The row's menu: from the handle, a right-click, and back ----
   await row('A').hover();
@@ -108,7 +119,7 @@ await withFixture(async ({ page, api, base, path }) => {
   await menu.getByText(/^Edited .* by /).waitFor();
   await page.keyboard.press('Escape');
   await menu.waitFor({ state: 'hidden' });
-  assert.equal(await row('A').locator('.db-row-handle').evaluate((b) => b === document.activeElement), true, 'Escape gives focus back to the handle');
+  await eventually(() => row('A').locator('.db-row-handle').evaluate((b) => b === document.activeElement)).catch(() => assert.fail('Escape gives focus back to the handle'));
   // Edit property › Kind opens that cell's own editor.
   await row('A').locator('.db-row-handle').click();
   await menu.getByRole('menuitem', { name: 'Edit property', exact: true }).click();
@@ -124,6 +135,20 @@ await withFixture(async ({ page, api, base, path }) => {
   await menu.getByRole('menuitem', { name: 'Move to trash', exact: true }).click();
   await page.locator('.confirm-dialog').getByRole('button', { name: 'Move to trash' }).click();
   await eventually(async () => (await serverOrder()) === 'EB_A_CD');
+
+  // ---- The keyboard: mod+/ for the menu, mod+shift+arrows to move ----
+  await row('A').locator('.db-title-link').focus();
+  await page.keyboard.press('ControlOrMeta+Slash');
+  await menu.waitFor();
+  await page.keyboard.press('Escape');
+  await menu.waitFor({ state: 'hidden' });
+  await eventually(() => row('A').locator('.db-title-link').evaluate((b) => b === document.activeElement)).catch(() => assert.fail('Escape gives focus back to the row'));
+  await row('C').locator('.db-title-link').focus();
+  await page.keyboard.press('ControlOrMeta+Shift+ArrowUp');
+  await eventually(async () => (await serverOrder()) === 'EB_AC_D');
+  await page.keyboard.press('ControlOrMeta+Shift+ArrowDown');
+  await eventually(async () => (await serverOrder()) === 'EB_A_CD');
+  assert.equal(await row('C').locator('.db-title-link').evaluate((b) => b === document.activeElement), true, 'the moved row keeps the focus');
 
   // ---- A tree: only top-level rows have a handle ----
   await api('PATCH', `/api/pages/${ids.E}`, { propsPatch: { kids: [ids.D] } });
@@ -175,5 +200,38 @@ await withFixture(async ({ page, api, base, path }) => {
   await eventually(async () => (await serverOrder()) === 'BDEAC');
   assert.deepEqual(await sharedSort(), { property: 'kind', dir: 'asc' }, 'a lock keeps the shared sort');
 
-  console.log('row-handle: drag, line, Escape, reload, filtered view, + below and above, row menu, tree, sorted view, locked view');
+  // ---- A phone: the handle shows on the row last tapped (owner, 2026-11-23) ----
+  const phone = await page.context().browser().newContext({
+    storageState: await page.context().storageState(),
+    hasTouch: true,
+    isMobile: true,
+    viewport: { width: 390, height: 844 },
+  });
+  const tap = await phone.newPage();
+  await tap.goto(`${base}/p/${collectionId}`);
+  const tapRow = (title) => tap.locator('.db-table tbody tr[data-row-id]', { has: tap.locator('.db-title-link', { hasText: new RegExp(`^${title}$`) }) });
+  await tapRow('A').waitFor();
+  const shows = (title) => tapRow(title).locator('.db-row-gutter-btns').evaluate((el) => getComputedStyle(el).opacity !== '0');
+  assert.equal(await shows('A'), false, 'no handle before a tap');
+  // A tap where the hidden + is: it lands on the row, not on the +.
+  const rowsBefore = (await api('GET', `${path}/rows?limit=50`)).rows.length;
+  await tapRow('A').locator('.db-row-add').tap({ force: true });
+  await eventually(() => shows('A')).catch(() => assert.fail('a tap on the row shows its handle'));
+  assert.equal((await api('GET', `${path}/rows?limit=50`)).rows.length, rowsBefore, 'a tap on the hidden + adds no row');
+  assert.equal(await shows('C'), false, 'only on the row tapped');
+  // Hold the handle, then drag: A goes below C.
+  const before = await serverOrder();
+  const cdp = await phone.newCDPSession(tap);
+  const h = await tapRow('A').locator('.db-row-handle').boundingBox();
+  const c = await tapRow('C').boundingBox();
+  const touch = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
+  await touch('touchStart', h.x + h.width / 2, h.y + h.height / 2);
+  await tap.waitForTimeout(400);
+  for (let i = 1; i <= 8; i++) await touch('touchMove', h.x + h.width / 2, h.y + h.height / 2 + ((c.y + c.height * 0.8 - h.y) * i) / 8);
+  await touch('touchEnd');
+  const want = before.replace('A', '').replace('C', 'CA');
+  await eventually(async () => (await serverOrder()) === want).catch(async () => assert.fail(`hold and drag on a phone: ${await serverOrder()}, want ${want}`));
+  await phone.close();
+
+  console.log('row-handle: drag, line, Escape, reload, filtered view, + below and above, row menu, keyboard, tree, sorted view, locked view, phone tap and hold-drag');
 });

@@ -15,6 +15,8 @@ import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } fro
 import { applySpot, useRowDrag, type DrawnRow, type RowSpot } from '../rowDrag';
 import { RowGutter, RowGutterHead } from './RowHandle';
 import { RowMenu } from './RowMenu';
+import { RowTitleInput } from './RowTitleInput';
+import { useRowKeys } from './useRowKeys';
 import { ColHead, type PropertyChanges } from './TableColumnHead';
 import { useColumnPropertyChanges } from './useColumnPropertyChanges';
 import { tagColorClass } from '../tags';
@@ -647,8 +649,23 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       });
       onPagesChanged();
       announceIfHidden(row);
+      setEditTitleId(row.id);
     } catch (e) {
       toast(e instanceof ApiError ? serverMessage(e.code, e.message) : t('Change not saved'));
+    }
+  };
+  // The row the + just added, its title being typed (spec 022, US4).
+  const [editTitleId, setEditTitleId] = useState<string | null>(null);
+  const finishTitle = async (id: string, title: string | null) => {
+    setEditTitleId(null);
+    if (title === null) return;
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, title } : r)));
+    try {
+      await api.updatePage(id, { title });
+      onPagesChanged();
+    } catch (e) {
+      toast(e instanceof ApiError ? serverMessage(e.code, e.message) : t('Change not saved'));
+      void loadRows();
     }
   };
 
@@ -1355,6 +1372,8 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           onAddRowBelow={canEdit ? (id, above) => void addRowNextTo(id, above) : undefined}
           onDuplicateRow={canEdit ? (id) => void duplicateRow(id) : undefined}
           onTrashRow={canEdit ? (id, title) => void trashRow(id, title) : undefined}
+          editTitleId={editTitleId}
+          onTitleDone={(id, title) => void finishTitle(id, title)}
         />
       )}
       </RowOpenContext.Provider>
@@ -2166,6 +2185,8 @@ function TableView({
   onAddRowBelow,
   onDuplicateRow,
   onTrashRow,
+  editTitleId,
+  onTitleDone,
 }: {
   rows: Row[];
   schema: PropDef[];
@@ -2197,6 +2218,9 @@ function TableView({
   /** The row menu's Duplicate and Move to trash. Absent for a reader. */
   onDuplicateRow?: (id: string) => void;
   onTrashRow?: (id: string, title: string) => void;
+  /** A row whose title is being typed, just added by its +. */
+  editTitleId?: string | null;
+  onTitleDone?: (id: string, title: string | null) => void;
 }) {
   // What a click on a row does follows the view (spec 007, pageOpen.ts).
   const openRow = useOpenRow({ onNavigate, onOpenInNewTab });
@@ -2352,7 +2376,7 @@ function TableView({
   const editCell = (id: string, propId: string) => {
     rowMenuReturn.current = null;
     window.setTimeout(() => {
-      const cell = document.querySelector<HTMLElement>(`.db-table tr[data-row-id="${CSS.escape(id)}"] td[data-prop-id="${CSS.escape(propId)}"]`);
+      const cell = rowBody.current?.querySelector<HTMLElement>(`tr[data-row-id="${CSS.escape(id)}"] td[data-prop-id="${CSS.escape(propId)}"]`);
       const target = cell?.querySelector<HTMLElement>('button, input, select, textarea, [tabindex]');
       cell?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
       if (target) {
@@ -2362,10 +2386,39 @@ function TableView({
     }, 0);
   };
   const { drag: rowDrag, startDrag: startRowDrag, consumeClick: consumeRowClick } = useRowDrag(drawn, (id, spot) => onPlaceRow?.(id, spot), onRowDragStart);
+  const rowBody = useRef<HTMLTableSectionElement>(null);
+  useRowKeys({
+    body: rowBody,
+    rows: drawn,
+    onMenu: (id, tr, from) => {
+      const b = (tr.querySelector('.db-row-handle') ?? tr).getBoundingClientRect();
+      openRowMenu(id, rows.find((r) => r.id === id)?.title ?? '', { x: b.left, y: b.bottom }, from);
+    },
+    // A sorted view gives up its sort first, as a drag does.
+    onMove: onPlaceRow
+      ? (id, spot) => {
+          onRowDragStart?.();
+          onPlaceRow(id, spot);
+        }
+      : undefined,
+  });
   const dropGap = rowDrag?.spot ? rowDrag.gap : -1;
+  // On a touch screen the handle shows only on the row last tapped (owner,
+  // 2026-11-23): the tap still does what it did (the title opens, a cell
+  // edits), and the row's handle and + appear beside it.
+  const [tappedRow, setTappedRow] = useState<string | null>(null);
+  // The tap that shows a row's buttons is not also a press on one of them:
+  // they become touchable between the finger going down and the click.
+  const freshTap = useRef<string | null>(null);
+  const tapReachesButtons = (id: string) => {
+    const fresh = freshTap.current === id;
+    freshTap.current = null;
+    return !fresh;
+  };
   const rowClass = (i: number, id: string) =>
     [
       rowDrag?.id === id ? 'is-row-dragged' : '',
+      tappedRow === id ? 'is-row-tapped' : '',
       dropGap === i ? 'row-drop-before' : '',
       dropGap === ordered.length && i === ordered.length - 1 ? 'row-drop-after' : '',
     ]
@@ -2437,27 +2490,34 @@ function TableView({
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody ref={rowBody}>
           {ordered.map(({ row: r, depth, hasKids }, i) => (
             <tr
               key={r.id}
               data-row-id={r.id}
               className={rowClass(i, r.id)}
+              onPointerDown={(e) => {
+                if (e.pointerType !== 'touch') return;
+                freshTap.current = tappedRow === r.id ? null : r.id;
+                setTappedRow(r.id);
+              }}
               onContextMenu={(e) => {
                 // A field being typed in keeps the browser's own menu (paste,
                 // spelling).
                 if ((e.target as HTMLElement).closest('input, textarea, [contenteditable="true"]')) return;
                 e.preventDefault();
+                // A finger held on the handle is a drag, not a long-press menu.
+                if (rowDrag || (e.target as HTMLElement).closest('.db-row-handle')) return;
                 openRowMenu(r.id, r.title, { x: e.clientX, y: e.clientY }, e.currentTarget.querySelector<HTMLElement>('.db-title-link'));
               }}
             >
               <RowGutter
                 rowId={r.id}
                 title={r.title}
-                onAddBelow={onAddRowBelow}
+                onAddBelow={onAddRowBelow && ((id, above) => tapReachesButtons(id) && onAddRowBelow(id, above))}
                 onHandleDown={onPlaceRow && depth === 0 ? startRowDrag : undefined}
                 onHandleClick={(e, id) => {
-                  if (consumeRowClick(id)) return;
+                  if (!tapReachesButtons(id) || consumeRowClick(id)) return;
                   const b = e.currentTarget.getBoundingClientRect();
                   openRowMenu(id, r.title, { x: b.left, y: b.bottom }, e.currentTarget as HTMLElement);
                 }}
@@ -2477,14 +2537,18 @@ function TableView({
                       <span className="db-tree-spacer" />
                     )
                   ) : null}
-                  <button
-                    className="db-title-link"
-                    onClick={(e) => openRow(e, r.id)}
-                    onAuxClick={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
-                  >
-                    {r.icon && <span className="inline-icon"><PageIcon icon={r.icon} size={14} /> </span>}
-                    {r.title || t('Untitled')}
-                  </button>
+                  {editTitleId === r.id && onTitleDone ? (
+                    <RowTitleInput initial={r.title} onDone={(title) => onTitleDone(r.id, title)} />
+                  ) : (
+                    <button
+                      className="db-title-link"
+                      onClick={(e) => openRow(e, r.id)}
+                      onAuxClick={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
+                    >
+                      {r.icon && <span className="inline-icon"><PageIcon icon={r.icon} size={14} /> </span>}
+                      {r.title || t('Untitled')}
+                    </button>
+                  )}
                   {/* Presence was drawn on the board card and nowhere else, so
                       anybody working in the table saw nothing at all — which is
                       most of the time. The mark belongs wherever a row is

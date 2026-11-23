@@ -2796,12 +2796,16 @@ body.is-col-moving .db-table th .th-label {
 }
 
 @media (hover: none) {
-  .db-table tr:hover > .db-row-gutter .db-row-gutter-btns {
+  /* Hidden is untouchable too: a finger on an unseen + would add a row. */
+  .db-table tr:hover > .db-row-gutter .db-row-gutter-btns,
+  .db-row-gutter-btns {
     opacity: 0;
+    pointer-events: none;
   }
   .db-table tr:focus-within > .db-row-gutter .db-row-gutter-btns,
   .db-table tr.is-row-tapped > .db-row-gutter .db-row-gutter-btns {
     opacity: 1;
+    pointer-events: auto;
   }
 }
 
@@ -2885,6 +2889,13 @@ body.is-col-resizing {
 
 .db-title-link:hover {
   text-decoration: underline;
+}
+
+/* A new row's title, typed in place after its + (spec 022). */
+.db-title-input {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
 }
 
 .db-empty {

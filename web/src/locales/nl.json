@@ -1404,5 +1404,9 @@
   "Edited {time} by {name}": "Bewerkt {time} door {name}",
   "Menu of {title}": "Menu van {title}",
   "New tab": "Nieuw tabblad",
-  "Open in": "Openen in"
+  "Open in": "Openen in",
+  "Row title": "Rijtitel",
+  "Open the row’s menu": "Menu van de rij openen",
+  "Move the row up": "Rij omhoog verplaatsen",
+  "Move the row down": "Rij omlaag verplaatsen"
 }

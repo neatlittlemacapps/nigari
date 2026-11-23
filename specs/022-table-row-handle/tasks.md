@@ -83,18 +83,18 @@ description: "Tasks for the table row handle, + and row menu, in two pull reques
 
 - [x] T024 [US3] [ui] The row menu from `rowActions.ts`: from the handle, a right-click on the row, and `mod+/` on a focused row (the shortcut lands with T029); Open, Open in ›, Edit property ›, Comment, favourites, Copy link, Duplicate (lands below), Move to trash; "Edited {time} by {name}" from `GET /api/audit?page=` when it opens
 - [x] T025 [US3] [ui] The board's `CardMenu` drawn from the same list (keeps its Move to column, with its reason; leaves out Edit property, with its reason: a card edits no property in place)
-- [ ] T026 [US3] [test] `row-handle.mjs`: the menu from all three ways, each item once, focus back to the row on Escape; the board card menu offers the list's boardCard actions (handle and right-click done; mod+/ with T031)
+- [x] T026 [US3] [test] `row-handle.mjs`: the menu from all three ways, each item once, focus back to the row on Escape; the board card menu offers the list's boardCard actions
 
 ### Phase 9: User Story 4, the + (P2)
 
-- [ ] T027 [US4] [ui] + adds a row below (above with Alt/Option) in one request with `after`/`before` and the view's filter values; title in edit mode; a sorted view keeps its sort
+- [x] T027 [US4] [ui] + adds a row below (above with Alt/Option) in one request with `after`/`before` and the view's filter values; title in edit mode; a sorted view keeps its sort
 - [ ] T028 [US4] [test] `row-handle.mjs`: + below and Alt+ above, after a reload too; in a filtered view the row gets the filter's value
 
 ### Phase 10: User Story 5, keyboard and touch (P2)
 
-- [ ] T029 [US5] [ui] `keys.ts`: `mod+/` (row menu), `mod+shift+arrowup`/`arrowdown` (move one place); the shortcut sheet lists them; `check-keys.mjs` extended
-- [ ] T030 [US5] [ui] Touch: the handle as decided in T013; tap opens the menu, press-and-hold (300 ms) drags
-- [ ] T031 [US5] [test] `row-handle.mjs`: the keys; a touch emulation run (hold-to-drag, tap for the menu)
+- [x] T029 [US5] [ui] `keys.ts`: `mod+/` (row menu), `mod+shift+arrowup`/`arrowdown` (move one place); the shortcut sheet lists them; `check-keys.mjs` extended
+- [x] T030 [US5] [ui] Touch: the handle as decided in T013; tap opens the menu, press-and-hold (300 ms) drags
+- [x] T031 [US5] [test] `row-handle.mjs`: the keys; a touch emulation run (hold-to-drag, tap for the menu)
 
 ### Phase 11: PR 2 polish, release and Umbrel
 

@@ -1404,5 +1404,9 @@
   "Edited {time} by {name}": "Bearbeitet {time} von {name}",
   "Menu of {title}": "Menü von {title}",
   "New tab": "Neuer Tab",
-  "Open in": "Öffnen in"
+  "Open in": "Öffnen in",
+  "Row title": "Zeilentitel",
+  "Open the row’s menu": "Menü der Zeile öffnen",
+  "Move the row up": "Zeile nach oben verschieben",
+  "Move the row down": "Zeile nach unten verschieben"
 }
