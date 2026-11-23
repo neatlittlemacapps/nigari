@@ -578,7 +578,7 @@ func (s *Server) collectionRowsQuery(ctx context.Context, u *user, colID string,
 	}
 	whereSQL, args := s.rowsWhere(u, colID, flat, groups, now)
 
-	orderSQL := "position, created_at"
+	orderSQL := "position, created_at, id"
 	var orderArgs []any
 	if sortParam != "" {
 		propID, dir, _ := strings.Cut(sortParam, ":")

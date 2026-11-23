@@ -60,7 +60,7 @@ func (s *Server) publicCollectionTable(p *page, nonces ...string) (string, error
 	if err := s.db.QueryRow(`SELECT COUNT(*) FROM pages WHERE parent_id = ? AND trashed_at IS NULL AND `+rule, queryArgs...).Scan(&total); err != nil {
 		return "", err
 	}
-	rows, err := s.db.Query(`SELECT title, props FROM pages WHERE parent_id = ? AND trashed_at IS NULL AND `+rule+` ORDER BY position, created_at LIMIT 1000`, queryArgs...)
+	rows, err := s.db.Query(`SELECT title, props FROM pages WHERE parent_id = ? AND trashed_at IS NULL AND `+rule+` ORDER BY position, created_at, id LIMIT 1000`, queryArgs...)
 	if err != nil {
 		return "", err
 	}

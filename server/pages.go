@@ -127,7 +127,7 @@ func (s *Server) handleListPages(w http.ResponseWriter, r *http.Request) {
 		     OR p.type = 'collection'
 		     OR (SELECT type FROM pages parent WHERE parent.id = p.parent_id) != 'collection'
 		     OR EXISTS (SELECT 1 FROM pages c WHERE c.parent_id = p.id AND c.trashed_at IS NULL))
-		ORDER BY position, created_at`, args...)
+		ORDER BY position, created_at, id`, args...)
 	if err != nil {
 		httpError(w, 500, err.Error())
 		return
@@ -296,9 +296,18 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 		// embed's views live in the document, so the browser sends them as
 		// it shows them. Not together with viewId.
 		ViewFilters *[]filterJSON `json:"viewFilters"`
+		// Where the new page goes among its siblings (spec 022): just after
+		// or before one of them, as the + beside a table row asks. Without
+		// either it goes to the end, as before.
+		After  string `json:"after"`
+		Before string `json:"before"`
 	}
 	if err := decodeJSON(w, r, &body); err != nil {
 		httpError(w, 400, "invalid JSON")
+		return
+	}
+	if body.After != "" && body.Before != "" {
+		writePlaceError(w, errPlaceSide)
 		return
 	}
 	if len([]rune(body.Title)) > maxTitleLen {
@@ -374,6 +383,18 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	anchor, side, placed := "", "", body.After != "" || body.Before != ""
+	if placed {
+		anchor, side, _ = placeSide(body.After, body.Before)
+		var parent sql.NullString
+		if body.ParentID != nil {
+			parent = sql.NullString{String: *body.ParentID, Valid: true}
+		}
+		if err := s.checkAnchor(u, parent, workspaceID, anchor); err != nil {
+			writePlaceError(w, err)
+			return
+		}
+	}
 	id := newID()
 	ts := now()
 	var pos float64
@@ -411,6 +432,17 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httpError(w, 500, err.Error())
 		return
+	}
+	if placed {
+		// Quietly: page.created below is this page's first announcement. The
+		// anchor was checked before the insert; if it went to the trash in
+		// between, the page stays at the end rather than the create failing
+		// with the page already made (a retry would make a second one).
+		if _, wrote, err := s.placeQuietly(u, id, anchor, side, body.ViewID); err == nil && wrote {
+			if p2, err := s.getPage(id); err == nil {
+				p = p2
+			}
+		}
 	}
 	s.audit("human", userID, requestUser(r).Name, "create_page", id, workspaceID, body.Title)
 	s.pagesChanged()
@@ -898,7 +930,7 @@ func (s *Server) handleReindexSiblings(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback()
 
 	rows, err := tx.Query(`SELECT id FROM pages WHERE parent_id IS ? AND trashed_at IS NULL
-		AND (? = '' OR workspace_id = ?) ORDER BY position, created_at`, body.ParentID, wsFilter, wsFilter)
+		AND (? = '' OR workspace_id = ?) ORDER BY position, created_at, id`, body.ParentID, wsFilter, wsFilter)
 	if err != nil {
 		httpError(w, 500, err.Error())
 		return

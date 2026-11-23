@@ -516,3 +516,35 @@ func BenchmarkStorageStart(b *testing.B) {
 		l.report(b)
 	})
 }
+
+// Moving a row in a 10k-row database (spec 022, research R9): POST
+// /api/pages/{id}/place after another row, by the member, one at a time. The
+// move reads the database's rows in order to find the neighbour and writes one
+// row; this says whether that needs an index on (parent_id, position).
+func BenchmarkStoragePlaceRow(b *testing.B) {
+	w := sharedBenchWorld(b, 0, 10000)
+	var writable []string
+	for _, id := range w.rows {
+		if !w.private[id] {
+			writable = append(writable, id)
+		}
+	}
+	rng := rand.New(rand.NewPCG(benchSeed(), 22))
+	var l latencies
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		id, anchor := writable[rng.IntN(len(writable))], writable[rng.IntN(len(writable))]
+		body := `{"after":"` + anchor + `"}`
+		l.time(func() {
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest("POST", "/api/pages/"+id+"/place", strings.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Cookie", w.memberCookie())
+			w.s.ServeHTTP(rec, req)
+			if rec.Code != 200 {
+				b.Errorf("place: %d %s", rec.Code, rec.Body.String())
+			}
+		})
+	}
+	l.report(b)
+}

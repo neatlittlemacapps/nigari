@@ -427,7 +427,7 @@ func (s *Server) aggregateDerived(ctx context.Context, u *user, colID string, sp
 	order := []string{}
 	res := aggResult{Groups: []aggGroup{}}
 	for offset := 0; ; offset += derivedPage {
-		rs, err := s.rdb.QueryContext(ctx, `SELECT id, props FROM pages WHERE `+whereSQL+` ORDER BY position, created_at LIMIT ? OFFSET ?`, append(append([]any{}, args...), derivedPage, offset)...)
+		rs, err := s.rdb.QueryContext(ctx, `SELECT id, props FROM pages WHERE `+whereSQL+` ORDER BY position, created_at, id LIMIT ? OFFSET ?`, append(append([]any{}, args...), derivedPage, offset)...)
 		if err != nil {
 			return aggResult{}, readErr(ctx, err)
 		}
