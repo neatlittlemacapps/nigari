@@ -7,6 +7,28 @@ entries are not edited away.
 
 ---
 
+## 2026-11-23 — A phone list scrolls sideways in one piece (#906)
+
+- **On a phone a list row stays one line and the whole list scrolls
+  sideways** (owner, 2026-11-23: "I'd rather not have reflow here"). Until
+  then the properties wrapped onto a second line under the title below
+  768px. Turned down: each row scrolling on its own (the owner agreed to the
+  recommendation against it), because the properties drift apart from row to
+  row and a swipe moves one line out of step with the rest.
+- **The rows are CSS subgrids of one grid, on a phone only.** That is what
+  keeps a property at the same place in every row. Desktop keeps the quiet
+  flex row with no column grid. ListView renders the same cells in every
+  row for it: an empty tags cell when some row has tags, and one wrapper per
+  property, since a compact empty value renders nothing.
+- **The title is as wide as the longest one, up to 60vw**, then cut off with
+  an ellipsis; tracks are max-content, never squeezed. With `auto` or
+  `fit-content` the grid squeezed the title and wrapped "To do" over two
+  lines instead of scrolling.
+- **The other phone layouts already scroll or are not rows**: the table and
+  the board scroll sideways, the gallery is a grid of cards, and the only
+  other phone reflow (an agent's skill card in settings) is a form, not a
+  list of rows.
+
 ## 2026-11-23 — Spec 022 PR 2: the row's handle, +, menu and keys
 
 - **A drag in a sorted view drops just the person's own sort** (owner,
