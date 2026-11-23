@@ -19,11 +19,23 @@ concurrency:
 jobs:
   codegraph:
     name: CodeGraph section
+    # This repository only: upstream and other forks have no code graph rule.
+    if: github.repository == 'neatlittlemacapps/nigari'
     runs-on: ubuntu-latest
     steps:
-      # The script only, from the pull request's own tree; nothing is built
-      # or installed, and the token is read-only.
+      # The script from the base branch, so a pull request cannot loosen the
+      # check that judges it. Only while main has no copy yet (the pull request
+      # that adds it) does the pull request's own copy run. Nothing is built or
+      # installed, and the token is read-only.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          sparse-checkout: scripts/check-pr-codegraph.mjs
+          sparse-checkout-cone-mode: false
+
+      - name: Fall back to the pull request's copy while main has none
+        if: hashFiles('scripts/check-pr-codegraph.mjs') == ''
+        uses: actions/checkout@v4
         with:
           sparse-checkout: scripts/check-pr-codegraph.mjs
           sparse-checkout-cone-mode: false

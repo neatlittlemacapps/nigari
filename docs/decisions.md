@@ -28,6 +28,10 @@ entries are not edited away.
 - **Not a required check yet.** A red mark shows on the pull request; merging
   is not blocked. Like the catalogue, it is made required in the ruleset after
   it has been right on a few pull requests.
+- **The check runs main's copy of the script**, so a pull request cannot
+  loosen the check that judges it; only the pull request that adds the script
+  runs its own. A pull request with merge conflicts gets no mark at all (GitHub
+  cannot build its merge ref), so a missing mark is not a pass.
 
 ## 2026-11-23 — A phone list scrolls sideways in one piece (#906)
 
