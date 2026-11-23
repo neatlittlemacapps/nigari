@@ -20,6 +20,7 @@ import { DialogHost, confirm, promptText } from './dialog';
 import { announceModal, modalOpen } from './modal';
 import { toast } from './toast';
 import { onRefresh } from './pwa';
+import { shouldAnnounce } from './versionNotice';
 import PullToRefresh from './components/PullToRefresh';
 import Logo from './Logo';
 import ThemeSwitch, { type ThemePref } from './ThemeSwitch';
@@ -92,6 +93,17 @@ if (mailOauthMsg) {
 declare const __NIGARI_VERSION__: string;
 const BUILD_VERSION = __NIGARI_VERSION__;
 
+/** "A new version is available", once per server version per page load
+ *  (#923, versionNotice.ts), with Reload beside it: reloading is what brings
+ *  the new build, and the installed app has no reload button of its own. */
+function announceNewVersion(serverVersion: string | undefined) {
+  if (!shouldAnnounce(serverVersion, BUILD_VERSION)) return;
+  toast(t('A new version is available: reload the page'), {
+    label: t('Reload'),
+    run: () => window.location.reload(),
+  });
+}
+
 function pageIdFromLocation(): string | null {
   const m = window.location.pathname.match(/^\/p\/([0-9a-f]+)$/);
   return m ? m[1] : null;
@@ -102,6 +114,9 @@ type Theme = 'light' | 'dark';
 export default function App() {
   const [me, setMe] = useState<Me | null>(null);
   const [pages, setPages] = useState<PageMeta[] | null>(null);
+  // The version the server last reported (/api/me, then each live-updates
+  // hello). Compared with this build by announceNewVersion.
+  const [serverVersion, setServerVersion] = useState<string | undefined>();
   const [favorites, setFavorites] = useState<string[]>([]);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   // The last opened workspace is remembered. Without it every reload dropped
@@ -391,13 +406,32 @@ export default function App() {
         // stale — somebody who changed the language on their phone gets it
         // here too, one frame later (W112).
         if (m.authenticated && m.prefs) void applyPrefs(m.prefs);
-        if (m.version && m.version !== BUILD_VERSION) {
-          toast(t('A new version is available: reload the page'));
-        }
+        setServerVersion(m.version);
         if (m.authenticated) void loadAll();
       })
       .catch(() => setLoadError(true));
   }, [loadAll]);
+
+  // Said only once the app is on screen and the tab is in view. Before the app
+  // shows, the Toaster is not mounted and a toast has no listener; in a tab in
+  // the background, the toast's eight seconds run out unseen. Either way
+  // shouldAnnounce would record it as said, and this page load would never
+  // hear about that version (#923).
+  const appShown = !!pages && !!me?.user;
+  useEffect(() => {
+    if (!appShown || !serverVersion) return;
+    if (document.visibilityState !== 'hidden') {
+      announceNewVersion(serverVersion);
+      return;
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'hidden') return;
+      document.removeEventListener('visibilitychange', onVisible);
+      announceNewVersion(serverVersion);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [appShown, serverVersion]);
 
   useEffect(() => {
     const onUnauthorized = () => {
@@ -631,7 +665,6 @@ export default function App() {
   useEffect(() => {
     if (!me?.authenticated) return;
     const es = new EventSource('/api/events');
-    let warnedVersion = false;
 
     // The watchdog. The server sends {"type":"ping"} every 25 seconds, so a
     // stream that has said nothing for 60 is not a quiet workspace — it is a
@@ -678,10 +711,7 @@ export default function App() {
           collection?: string;
           id?: string;
         };
-        if (msg.type === 'hello' && msg.version && msg.version !== BUILD_VERSION && !warnedVersion) {
-          warnedVersion = true;
-          toast(t('A new version is available: reload the page'));
-        }
+        if (msg.type === 'hello' && msg.version) setServerVersion(msg.version);
         if (msg.type === 'pages') {
           window.clearTimeout(reloadTimer.current);
           reloadTimer.current = window.setTimeout(() => void loadPages(), 250);
