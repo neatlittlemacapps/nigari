@@ -259,14 +259,20 @@ away again.
 
 ### `list`
 
-One line per row and deliberately not a narrow table: no header row, no column
-grid, nothing scrolls sideways. The icon and title lead, the tags follow, and
+One line per row and deliberately not a narrow table: no header row, and on a
+wide screen no column grid. The icon and title lead, the tags follow, and
 then the first three visible properties trail quietly behind, still editable,
 so a select can be changed from the line. If the view shows a checkbox, the
 first one leads each line instead, with a tap area big enough for a thumb:
 ticking it saves at once and does not open the row. Which three depends on schema order
 and on what you have hidden; hide a column and the next one moves up. Anyone who
 wants to compare values down a column takes the table instead.
+
+On a phone (about 768 px and below) a line stays one line. When the tags and
+properties don't fit beside the title, the whole list scrolls sideways
+together, the way a table does, so each property stays in the same place from
+line to line. A long title is cut off at about two thirds of the screen's
+width, so the properties after it are only a short swipe away.
 
 ### `gallery`
 

@@ -71,11 +71,41 @@ await withFixture(async ({ page, api, base, path }) => {
   assert.equal(page.url(), listUrl, 'ticking in the list must not open the row');
   assert.equal(await page.locator('.list-row-props input[type="checkbox"]').count(), 0, 'the box is not repeated among the properties');
 
+  // On a phone a list row stays one line and the whole list scrolls sideways
+  // together (#906): no properties wrapped under the title, and each
+  // property starts at the same place in every row.
+  const layout = await page.locator('.list-view').evaluate((list) => {
+    const rows = [...list.querySelectorAll('.list-row')];
+    return {
+      heights: rows.map((r) => r.getBoundingClientRect().height),
+      titleTops: rows.map((r) => r.querySelector('.list-row-title').getBoundingClientRect().top - r.getBoundingClientRect().top),
+      propLefts: rows.map((r) => [...r.querySelectorAll('.list-row-prop')].map((c) => Math.round(c.getBoundingClientRect().left))),
+      overflowX: getComputedStyle(list).overflowX,
+    };
+  });
+  assert(layout.heights.length > 1, 'the list has rows to compare');
+  assert(layout.heights.every((h) => h < 60), `a list row stays one line on a phone (heights ${layout.heights})`);
+  assert.equal(layout.overflowX, 'auto', 'the list scrolls sideways on a phone');
+  assert(layout.propLefts.every((l) => l.length === layout.propLefts[0].length && l.every((x, i) => x === layout.propLefts[0][i])), `properties line up row to row (${JSON.stringify(layout.propLefts)})`);
+  // A long title pushes the properties off screen; the list, not the page,
+  // then scrolls, and every row moves with it.
+  await api('PATCH', `/api/pages/${first.id}`, { title: 'First row with a title long enough to need the whole width of a phone screen' });
+  await eventually(async () => (await page.locator('.list-view').evaluate((l) => l.scrollWidth > l.clientWidth)));
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'the page itself does not scroll sideways');
+  const moved = await page.locator('.list-view').evaluate((l) => {
+    const before = [...l.querySelectorAll('.list-row-title')].map((t) => t.getBoundingClientRect().left);
+    l.scrollLeft = 80;
+    const after = [...l.querySelectorAll('.list-row-title')].map((t) => t.getBoundingClientRect().left);
+    return before.map((b, i) => Math.round(b - after[i]));
+  });
+  assert(moved.every((d) => d === moved[0] && d > 0), `every row scrolls together (${moved})`);
+  await page.locator('.list-view').evaluate((l) => { l.scrollLeft = 0; });
+
   // The picker can add a view.
   await picker.click();
   await page.getByRole('menuitem', { name: 'Add view' }).click();
   await page.getByRole('menuitem', { name: 'Gallery' }).click();
   await eventually(async () => (await api('GET', path)).views.some((v) => v.type === 'gallery'));
 
-  console.log('Checkbox views: the box leads tables and lists, and a phone picks views from one menu.');
+  console.log('Checkbox views: the box leads tables and lists, a phone list scrolls sideways in one piece, and a phone picks views from one menu.');
 });

@@ -7562,19 +7562,74 @@ a,
   font-size: 13px;
 }
 
-/* On narrow screens the title is what counts; properties slide below it. */
+/* A row without tags or with an empty value still carries those cells for the
+   phone grid below (ListView); on a wide screen they would only add a gap. */
+.list-row-tags:empty,
+.list-row-prop:empty {
+  display: none;
+}
+
+/* On a phone a row stays one line (owner, 2026-11-23, #906): the checkbox,
+   icon, title, tags and properties side by side, and the whole list scrolls
+   sideways together, as the table does. Until then the properties wrapped
+   onto a second line under the title, so a list of ten rows was twenty lines
+   with nothing lined up. The rows are subgrids of one grid, so a property
+   sits at the same place in every row; one row scrolling on its own would
+   have let them drift apart. The title column is as wide as the longest
+   title up to 60vw, cut off with an ellipsis past that. Every track is
+   max-content: with auto, a tight screen squeezed the columns instead of
+   scrolling, and "To do" broke over two lines. The trailing 1fr track takes the room a short list
+   leaves, so the row's hover and divider still run the full width. Which
+   tracks exist follows the view (data-* on .list-view, set by ListView). */
 @media (max-width: 768px) {
-  .list-row-body {
-    flex-wrap: wrap;
-    row-gap: 4px;
+  .list-view {
+    --list-check: ;
+    --list-tags: ;
+    --list-props: ;
+    display: grid;
+    grid-template-columns:
+      var(--list-check) max-content max-content var(--list-tags)
+      var(--list-props) minmax(0, 1fr);
+    column-gap: 10px;
+    overflow-x: auto;
+    /* A sideways swipe at the end of the list does not go back a page. */
+    overscroll-behavior-x: contain;
   }
+  .list-view[data-check] {
+    --list-check: max-content;
+  }
+  .list-view[data-tags] {
+    --list-tags: max-content;
+  }
+  .list-view[data-props='1'] {
+    --list-props: max-content;
+  }
+  .list-view[data-props='2'] {
+    --list-props: max-content max-content;
+  }
+  .list-view[data-props='3'] {
+    --list-props: max-content max-content max-content;
+  }
+  .list-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
+  }
+  /* Their children become the row's cells. Clicks still bubble through them,
+     so the properties' stopPropagation keeps working. */
+  .list-row-body,
+  .list-row-props {
+    display: contents;
+  }
+  /* Its own width, never squeezed below it (the list scrolls instead), but
+     at most 60vw so the first property still shows. */
   .list-row-title {
-    /* Beside its icon, then the properties wrap below. */
-    flex: 1 1 calc(100% - 32px);
-    white-space: normal;
+    width: max-content;
+    max-width: 60vw;
   }
-  .list-row-icon {
-    order: -1;
+  .list-row-tags:empty,
+  .list-row-prop:empty {
+    display: block;
   }
 }
 
