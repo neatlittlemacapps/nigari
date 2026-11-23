@@ -63,7 +63,7 @@ description: "Tasks for the table row handle, + and row menu, in two pull reques
 - [x] T014 [ui] `web/src/rowDrag.ts` (new), pure part: from the pointer's y and the row boxes to one spot per gap; tree spots limited to siblings at the same depth under the same parent; the spot as `{anchor, side}` to send; nothing to send when the row would stay (R5)
 - [x] T015 [P] [test] `web/scripts/check-rowdrag.mjs` (new), in `npm run check`: each gap gives one spot, the first and last place, a filtered view's spots name visible rows, tree limits, the no-op. Mutation-check it
 - [x] T016 [ui] `web/src/actions/rowActions.ts` and `rowActionReasons.ts` (new): the row actions by place (`table`, `boardCard`) and group (R6); `menuIcons.ts`: `openIn`, `openInSidePeek`, `openInCenterPeek`, `addRowBelow` with icons of their own
-- [ ] T017 [P] [test] `check-content-actions.mjs` covers the row list and both menus; `check-menu-icons.mjs` passes
+- [x] T017 [P] [test] `check-content-actions.mjs` covers the row list and both menus; `check-menu-icons.mjs` passes
 
 **Checkpoint**: the decisions exist and are checked; nothing draws them yet.
 
@@ -81,9 +81,9 @@ description: "Tasks for the table row handle, + and row menu, in two pull reques
 
 ### Phase 8: User Story 3, the row menu (P1)
 
-- [ ] T024 [US3] [ui] The row menu from `rowActions.ts`: from the handle, a right-click on the row, and `mod+/` on a focused row; Open, Open in ›, Edit property ›, Comment, favourites, Copy link, Duplicate (lands below), Move to trash; "Edited {time} by {name}" from `GET /api/audit?page=` when it opens
-- [ ] T025 [US3] [ui] The board's `CardMenu` drawn from the same list (keeps its Move to column, with its reason)
-- [ ] T026 [US3] [test] `row-handle.mjs`: the menu from all three ways, each item once, focus back to the row on Escape; the board card menu unchanged in what it offers
+- [x] T024 [US3] [ui] The row menu from `rowActions.ts`: from the handle, a right-click on the row, and `mod+/` on a focused row (the shortcut lands with T029); Open, Open in ›, Edit property ›, Comment, favourites, Copy link, Duplicate (lands below), Move to trash; "Edited {time} by {name}" from `GET /api/audit?page=` when it opens
+- [x] T025 [US3] [ui] The board's `CardMenu` drawn from the same list (keeps its Move to column, with its reason; leaves out Edit property, with its reason: a card edits no property in place)
+- [ ] T026 [US3] [test] `row-handle.mjs`: the menu from all three ways, each item once, focus back to the row on Escape; the board card menu offers the list's boardCard actions (handle and right-click done; mod+/ with T031)
 
 ### Phase 9: User Story 4, the + (P2)
 

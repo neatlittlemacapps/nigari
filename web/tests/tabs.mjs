@@ -32,11 +32,14 @@ await withFixture(async ({ page }) => {
   assert.equal(await tabs.count(), 2);
   assert.equal(await tabs.filter({ hasText: 'First row' }).count(), 1);
 
-  // The card's ⋯ menu carries the visible entry, the way the sidebar's does.
+  // The card's ⋯ menu carries the visible entry, under Open in › with the
+  // peeks (spec 022, research R6: the card's menu is the row's menu).
   await boardTab.click();
   await firstRow.waitFor();
   await firstRow.click({ button: 'right' });
-  await page.getByRole('menuitem', { name: 'Open in new tab', exact: true }).waitFor();
+  await page.getByRole('menuitem', { name: 'Open in', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'New tab', exact: true }).waitFor();
+  await page.keyboard.press('Escape');
 
   // An ordinary click still navigates the active tab instead of adding one.
   // Escape first: an open ui/Menu takes the next click outside it to close.

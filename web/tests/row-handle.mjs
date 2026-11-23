@@ -97,6 +97,34 @@ await withFixture(async ({ page, api, base, path }) => {
   await row('C').locator('.db-row-add').click({ modifiers: ['Alt'] });
   await eventually(async () => (await serverOrder()) === 'EB_A_CD');
 
+  // ---- The row's menu: from the handle, a right-click, and back ----
+  await row('A').hover();
+  await row('A').locator('.db-row-handle').click();
+  const menu = page.getByRole('menu', { name: 'Row actions' });
+  await menu.waitFor();
+  for (const name of ['Open', 'Open in', 'Add row below', 'Edit property', 'Comment', 'Copy link', 'Duplicate', 'Move to trash']) {
+    assert.equal(await menu.getByRole('menuitem', { name, exact: true }).count(), 1, `the row menu offers ${name}`);
+  }
+  await menu.getByText(/^Edited .* by /).waitFor();
+  await page.keyboard.press('Escape');
+  await menu.waitFor({ state: 'hidden' });
+  assert.equal(await row('A').locator('.db-row-handle').evaluate((b) => b === document.activeElement), true, 'Escape gives focus back to the handle');
+  // Edit property › Kind opens that cell's own editor.
+  await row('A').locator('.db-row-handle').click();
+  await menu.getByRole('menuitem', { name: 'Edit property', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Kind', exact: true }).click();
+  await page.locator('.select-menu').waitFor();
+  await page.locator('.select-backdrop').click();
+  // A right-click anywhere on the row opens the same menu at the pointer;
+  // Duplicate puts the copy right below, Move to trash takes it away.
+  await row('C').locator('td').nth(2).click({ button: 'right' });
+  await menu.getByRole('menuitem', { name: 'Duplicate', exact: true }).click();
+  await eventually(async () => (await serverOrder()) === 'EB_A_CCopy of CD');
+  await row('Copy of C').locator('td').nth(2).click({ button: 'right' });
+  await menu.getByRole('menuitem', { name: 'Move to trash', exact: true }).click();
+  await page.locator('.confirm-dialog').getByRole('button', { name: 'Move to trash' }).click();
+  await eventually(async () => (await serverOrder()) === 'EB_A_CD');
+
   // ---- A tree: only top-level rows have a handle ----
   await api('PATCH', `/api/pages/${ids.E}`, { propsPatch: { kids: [ids.D] } });
   await api('PUT', path, {
@@ -106,8 +134,9 @@ await withFixture(async ({ page, api, base, path }) => {
   await page.reload();
   await row('D').waitFor();
   await row('D').hover();
-  assert.equal(await row('D').locator('.db-row-handle').count(), 0, 'a sub-item has no handle: its place is its relation\'s order');
-  assert.equal(await row('E').locator('.db-row-handle').count(), 1, 'a top-level row keeps its handle');
+  assert.equal(await row('D').locator('.db-row-handle:not(.is-menu-only)').count(), 0, 'a sub-item has no drag handle: its place is its relation\'s order');
+  assert.equal(await row('D').locator('.db-row-handle.is-menu-only').count(), 1, 'a sub-item\'s handle still opens its menu');
+  assert.equal(await row('E').locator('.db-row-handle:not(.is-menu-only)').count(), 1, 'a top-level row keeps its handle');
 
   // ---- A sorted view: the drag takes the sort away, for this person only ----
   // (owner, 2026-11-23). The rows are drawn in their own order as the drag
@@ -146,5 +175,5 @@ await withFixture(async ({ page, api, base, path }) => {
   await eventually(async () => (await serverOrder()) === 'BDEAC');
   assert.deepEqual(await sharedSort(), { property: 'kind', dir: 'asc' }, 'a lock keeps the shared sort');
 
-  console.log('row-handle: drag, line, Escape, reload, filtered view, + below and above, tree, sorted view, locked view');
+  console.log('row-handle: drag, line, Escape, reload, filtered view, + below and above, row menu, tree, sorted view, locked view');
 });

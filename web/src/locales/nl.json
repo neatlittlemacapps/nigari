@@ -1396,5 +1396,13 @@
   "Drop to put the two blocks side by side": "Loslaten om de twee blokken naast elkaar te zetten",
   "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "De rij naast deze plek bestaat niet meer of staat in een andere lijst, dus er is niets neergezet. Herlaad en probeer het opnieuw.",
   "Add a row below (Alt: above)": "Rij eronder toevoegen (Alt: erboven)",
-  "Drag to move {title}, click for its menu": "Sleep om {title} te verplaatsen, klik voor het menu"
+  "Drag to move {title}, click for its menu": "Sleep om {title} te verplaatsen, klik voor het menu",
+  "Add row below": "Rij eronder toevoegen",
+  "Add to favourites": "Aan favorieten toevoegen",
+  "Centre peek": "Snelweergave in het midden",
+  "Comment": "Opmerking plaatsen",
+  "Edited {time} by {name}": "Bewerkt {time} door {name}",
+  "Menu of {title}": "Menu van {title}",
+  "New tab": "Nieuw tabblad",
+  "Open in": "Openen in"
 }

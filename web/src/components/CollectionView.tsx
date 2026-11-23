@@ -14,6 +14,7 @@ import { sortComparator } from '../viewSort';
 import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } from '../columnDrag';
 import { applySpot, useRowDrag, type DrawnRow, type RowSpot } from '../rowDrag';
 import { RowGutter, RowGutterHead } from './RowHandle';
+import { RowMenu } from './RowMenu';
 import { ColHead, type PropertyChanges } from './TableColumnHead';
 import { useColumnPropertyChanges } from './useColumnPropertyChanges';
 import { tagColorClass } from '../tags';
@@ -664,6 +665,17 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     }
   };
 
+  // Duplicate in a row's menu: the copy lands right below its row (the
+  // server places it, spec 022 R3), and the rows are read again.
+  const duplicateRow = async (id: string) => {
+    try {
+      await api.duplicatePage(id);
+      onPagesChanged();
+    } catch (e) {
+      toast(e instanceof ApiError ? serverMessage(e.code, e.message) : t('Change not saved'));
+    }
+  };
+
   // The first move of a drag in a sorted view: the rows are drawn in their own
   // order at once, so the line shows where the row will really go, and the
   // sort goes as the person's own change, which the bar can undo.
@@ -1232,6 +1244,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             void setGroupValue(rowId, groupBy, optId);
           }}
           onTrashRow={trashRow}
+          onDuplicateRow={canEdit ? (id) => void duplicateRow(id) : undefined}
           onAddInColumn={(groupBy, optId, extra) =>
             void addRow({ ...(optId === UNSET ? {} : { [groupBy]: groupValueFor(schema, groupBy, optId) }), ...(extra ?? {}) })
           }
@@ -1340,6 +1353,8 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           onPlaceRow={canEdit && (!serverSort || !!personalScope || mayChangeViews) ? (id, spot) => void placeRow(id, spot) : undefined}
           onRowDragStart={serverSort ? dropSortForDrag : undefined}
           onAddRowBelow={canEdit ? (id, above) => void addRowNextTo(id, above) : undefined}
+          onDuplicateRow={canEdit ? (id) => void duplicateRow(id) : undefined}
+          onTrashRow={canEdit ? (id, title) => void trashRow(id, title) : undefined}
         />
       )}
       </RowOpenContext.Provider>
@@ -2149,6 +2164,8 @@ function TableView({
   onPlaceRow,
   onRowDragStart,
   onAddRowBelow,
+  onDuplicateRow,
+  onTrashRow,
 }: {
   rows: Row[];
   schema: PropDef[];
@@ -2177,6 +2194,9 @@ function TableView({
   onRowDragStart?: () => void;
   /** The + beside a row; `above` with Alt or Option. Absent for a reader. */
   onAddRowBelow?: (id: string, above: boolean) => void;
+  /** The row menu's Duplicate and Move to trash. Absent for a reader. */
+  onDuplicateRow?: (id: string) => void;
+  onTrashRow?: (id: string, title: string) => void;
 }) {
   // What a click on a row does follows the view (spec 007, pageOpen.ts).
   const openRow = useOpenRow({ onNavigate, onOpenInNewTab });
@@ -2318,7 +2338,30 @@ function TableView({
   // sub-item's place under its parent is the order of the relation's values,
   // not the row's position, so dragging it would change nothing on screen.
   const drawn: DrawnRow[] = ordered.map((o) => ({ id: o.row.id, parentId: o.parent, depth: o.depth }));
-  const { drag: rowDrag, startDrag: startRowDrag } = useRowDrag(drawn, (id, spot) => onPlaceRow?.(id, spot), onRowDragStart);
+  // The row's menu (spec 022, US3): one menu for the table, opened for one
+  // row at a time, from its handle, a right-click, or mod+/.
+  const [rowMenu, setRowMenu] = useState<{ id: string; title: string; point: { x: number; y: number } } | null>(null);
+  const rowMenuReturn = useRef<HTMLElement | null>(null);
+  const openRowMenu = (id: string, title: string, point: { x: number; y: number }, from: HTMLElement | null) => {
+    rowMenuReturn.current = from;
+    setRowMenu({ id, title, point });
+  };
+  // Edit property › in the menu: the cell's own editor, as a click on it opens.
+  // Focus goes to the editor, not back to the handle; and it opens once the
+  // menu has closed, or the menu's own closing would take the click.
+  const editCell = (id: string, propId: string) => {
+    rowMenuReturn.current = null;
+    window.setTimeout(() => {
+      const cell = document.querySelector<HTMLElement>(`.db-table tr[data-row-id="${CSS.escape(id)}"] td[data-prop-id="${CSS.escape(propId)}"]`);
+      const target = cell?.querySelector<HTMLElement>('button, input, select, textarea, [tabindex]');
+      cell?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      if (target) {
+        target.focus();
+        target.click();
+      }
+    }, 0);
+  };
+  const { drag: rowDrag, startDrag: startRowDrag, consumeClick: consumeRowClick } = useRowDrag(drawn, (id, spot) => onPlaceRow?.(id, spot), onRowDragStart);
   const dropGap = rowDrag?.spot ? rowDrag.gap : -1;
   const rowClass = (i: number, id: string) =>
     [
@@ -2396,12 +2439,28 @@ function TableView({
         </thead>
         <tbody>
           {ordered.map(({ row: r, depth, hasKids }, i) => (
-            <tr key={r.id} data-row-id={r.id} className={rowClass(i, r.id)}>
+            <tr
+              key={r.id}
+              data-row-id={r.id}
+              className={rowClass(i, r.id)}
+              onContextMenu={(e) => {
+                // A field being typed in keeps the browser's own menu (paste,
+                // spelling).
+                if ((e.target as HTMLElement).closest('input, textarea, [contenteditable="true"]')) return;
+                e.preventDefault();
+                openRowMenu(r.id, r.title, { x: e.clientX, y: e.clientY }, e.currentTarget.querySelector<HTMLElement>('.db-title-link'));
+              }}
+            >
               <RowGutter
                 rowId={r.id}
                 title={r.title}
                 onAddBelow={onAddRowBelow}
                 onHandleDown={onPlaceRow && depth === 0 ? startRowDrag : undefined}
+                onHandleClick={(e, id) => {
+                  if (consumeRowClick(id)) return;
+                  const b = e.currentTarget.getBoundingClientRect();
+                  openRowMenu(id, r.title, { x: b.left, y: b.bottom }, e.currentTarget as HTMLElement);
+                }}
               />
               <td className="db-title-col" style={colStyle(TITLE_COL)}>
                 <span className="db-title-inner" style={depth ? { paddingLeft: depth * 20 } : undefined}>
@@ -2441,7 +2500,7 @@ function TableView({
                 )}
               </td>
               {schema.map((p) => (
-                <td key={p.id} style={colStyle(p.id)}>
+                <td key={p.id} data-prop-id={p.id} style={colStyle(p.id)}>
                   <PropertyValue
                     def={p}
                     value={r.props[p.id]}
@@ -2482,6 +2541,22 @@ function TableView({
           </tfoot>
         )}
       </table>
+      <RowMenu
+        place="table"
+        row={rowMenu}
+        point={rowMenu?.point ?? null}
+        onClose={() => setRowMenu(null)}
+        returnFocus={rowMenuReturn}
+        deps={{
+          onOpen: (id) => openRow({}, id),
+          onOpenInNewTab,
+          onAddBelow: onAddRowBelow ? (id) => onAddRowBelow(id, false) : undefined,
+          properties: onAddRowBelow ? schema.map((p) => ({ id: p.id, name: p.name })) : undefined,
+          onEditProperty: onAddRowBelow ? editCell : undefined,
+          onDuplicate: onDuplicateRow,
+          onTrash: onTrashRow,
+        }}
+      />
     </div>
   );
 }

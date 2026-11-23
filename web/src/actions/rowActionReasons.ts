@@ -8,6 +8,9 @@ export const ROW_LEFT_OUT: Partial<Record<RowAction['id'], Partial<Record<RowPla
   addRowBelow: {
     boardCard: 'A board has no order between columns to add below in: a new card is added in its column, with the column’s own +.',
   },
+  editProperty: {
+    boardCard: 'A card shows only some of its properties and edits none in place; they are edited on the card’s page, which Open gives.',
+  },
   moveToColumn: {
     table: 'A table has no columns of values to move a row between; the row’s property is changed in its cell or under Edit property.',
   },

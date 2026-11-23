@@ -21,9 +21,14 @@
 //      items of its own instead of the renderer's, or does not use it for
 //      its place.
 //
-// Rows (src/actions/rowActions.ts, spec 022) are held to rules 1 and 2 with
-// their own places, table and boardCard; a choice there is a submenu item
-// inside its group (Open › Open in ›), as research R6 lays the menu out.
+// Rows (src/actions/rowActions.ts, spec 022) are held to all four with their
+// own places, table and boardCard; a choice there is a submenu item inside
+// its group (Open › Open in ›), as research R6 lays the menu out. Their
+// renderer is RowActionItems.tsx; the board draws its columns (Move to)
+// itself, as values whose reason names the function. The table's menu is
+// <RowMenu place="table"> in CollectionView.tsx, the card's
+// <RowMenuItems place="boardCard"> in BoardView.tsx, which has no menu
+// items of its own.
 //
 // A self-test runs first on lists that must fail: a check that finds nothing
 // because it broke is worse than no check.
@@ -43,6 +48,33 @@ const reasonsBundle = join(tmp, 'propertyActionReasons.mjs');
 const rowBundle = join(tmp, 'rowActions.mjs');
 const rowReasonsBundle = join(tmp, 'rowActionReasons.mjs');
 const ROW_PLACES = ['table', 'boardCard'];
+
+/** Where a row choice is drawn when not by the renderer. */
+const ROW_CHOICE_FILES = { moveToColumn: 'components/BoardView.tsx' };
+const ROW_MENUS = { table: ['components/CollectionView.tsx', 'RowMenu'], boardCard: ['components/BoardView.tsx', 'RowMenuItems'] };
+const stripComments = (text) => text.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+/** Rules 3 and 4 for the row list; `read` gives a file under src. */
+function rowRenderFailures(actions, read) {
+  const fails = [];
+  const renderer = read('components/RowActionItems.tsx');
+  for (const a of actions) {
+    if (!renderer.includes(`case '${a.id}'`)) fails.push(`RowActionItems.tsx: no case for ${a.id}`);
+    const elsewhere = ROW_CHOICE_FILES[a.id];
+    if (elsewhere) {
+      if (!new RegExp(`<MenuValues[^>]*function, ${a.fn}\\b`).test(read(elsewhere))) fails.push(`${elsewhere}: ${a.id} is not drawn as values of ${a.fn}`);
+    } else if (!renderer.includes(`fn="${a.fn}"`)) fails.push(`RowActionItems.tsx: ${a.id} is not drawn with fn="${a.fn}"`);
+  }
+  if (!/<RowActionItems[^>]*place=\{place\}/.test(stripComments(read('components/RowMenu.tsx')))) fails.push('RowMenu.tsx: its items are not drawn by <RowActionItems place={place}>');
+  for (const [place, [file, part]] of Object.entries(ROW_MENUS)) {
+    if (!new RegExp(`<${part}[^>]*place="${place}"`).test(stripComments(read(file)))) fails.push(`${file}: the ${place} row menu is not <${part} place="${place}">`);
+  }
+  const board = stripComments(read('components/BoardView.tsx'));
+  for (const part of ['MenuItem', 'MenuSubmenu', 'MenuCheckboxItem', 'MenuRadioItem']) {
+    if (new RegExp(`<${part}[\\s>]`).test(board)) fails.push(`BoardView.tsx: a <${part}> of its own; add the action to rowActions.ts instead`);
+  }
+  return fails;
+}
 
 /** Rules 1 and 2 for the row list. */
 function rowListFailures(actions, sectionsOf, SUBMENU_ABOVE, reasons) {
@@ -156,6 +188,20 @@ try {
       process.exit(1);
     }
   }
+  // Rules 3 and 4 for rows, on the real files with one thing broken each.
+  const real = (f) => readFileSync(join(src, f), 'utf8');
+  const broken = [
+    ['a row action the renderer forgot', (f) => (f.endsWith('RowActionItems.tsx') ? real(f).replace("case 'copyLink':", "case 'gone':") : real(f))],
+    ['a row action drawn with another fn', (f) => (f.endsWith('RowActionItems.tsx') ? real(f).replace('fn="duplicate"', 'fn="copy"') : real(f))],
+    ['a card menu with an item of its own', (f) => (f.endsWith('BoardView.tsx') ? real(f) + '\n<MenuItem fn="x">x</MenuItem>' : real(f))],
+    ['a table without the row menu', (f) => (f.endsWith('CollectionView.tsx') ? real(f).replace('<RowMenu', '<Other') : real(f))],
+  ];
+  for (const [name, read] of broken) {
+    if (rowRenderFailures(rows.ROW_ACTIONS, read).length === 0) {
+      console.error(`  ✗ self-test "${name}" passed; the check is broken`);
+      process.exit(1);
+    }
+  }
   if (SUBMENU_ABOVE !== 3 || rows.SUBMENU_ABOVE !== 3) {
     console.error(`  ✗ SUBMENU_ABOVE is ${SUBMENU_ABOVE}; the owner's rule is "beyond 3" (docs/decisions.md 2026-11-13)`);
     process.exit(1);
@@ -188,6 +234,9 @@ try {
       if (new RegExp(`<${part}[\\s>]`).test(text)) failures.push(`${file}: a <${part}> of its own; add the action to propertyActions.ts instead`);
     }
   }
+
+  // ---- rules 3 and 4 for rows ----
+  failures.push(...rowRenderFailures(rows.ROW_ACTIONS, (f) => readFileSync(join(src, f), 'utf8')));
 
   if (failures.length) {
     for (const f of failures) console.error(`  ✗ ${f}`);

@@ -43,7 +43,7 @@ export const ROW_ACTIONS: readonly RowAction[] = [
   { id: 'openIn', fn: 'openIn', group: 'open', choice: true, places: ['table', 'boardCard'] },
   { id: 'addRowBelow', fn: 'addRowBelow', group: 'add', places: ['table'] },
   // The row's properties, each opening its editor.
-  { id: 'editProperty', fn: 'editProperty', group: 'edit', choice: true, places: ['table', 'boardCard'] },
+  { id: 'editProperty', fn: 'editProperty', group: 'edit', choice: true, places: ['table'] },
   { id: 'comment', fn: 'commentsPanel', group: 'edit', places: ['table', 'boardCard'] },
   { id: 'favorite', fn: 'favorite', group: 'edit', places: ['table', 'boardCard'] },
   { id: 'copyLink', fn: 'copyLink', group: 'copy', places: ['table', 'boardCard'] },

@@ -6,7 +6,8 @@ import { isOptionType, isSingleOptionType, type PropDef, type PropOption, type S
 import PropertyValue, { PersonStack, loadRelationOptions, type RelOption } from './PropertyValue';
 import { openPageAux, useOpenRow } from '../pageOpen';
 import { CardMenu } from './CollectionMenus';
-import { MenuItem, MenuSeparator, MenuValueItem, MenuValues, type MenuPoint } from '../ui/Menu';
+import { RowMenuItems } from './RowMenu';
+import { MenuValueItem, MenuValues, type MenuPoint } from '../ui/Menu';
 import { AgentDot } from './AgentBadge';
 import { planCard, isBlank, zoneOf, contactKind, needsLabel } from '../cardLayout';
 import { PageIcon } from '../pageIcon';
@@ -165,6 +166,7 @@ export default function BoardView({
   onSetOptions,
   onDrop,
   onTrashRow,
+  onDuplicateRow,
   onAddInColumn,
   lanes,
 }: {
@@ -181,6 +183,8 @@ export default function BoardView({
   onSetOptions: (propId: string, options: PropOption[]) => void;
   onDrop: (rowId: string, groupBy: string, optId: string) => void;
   onTrashRow: (id: string, title: string) => Promise<void>;
+  /** The card menu's Duplicate; absent for a reader. */
+  onDuplicateRow?: (id: string) => void;
   /** extra: on a board with lanes, the lane's value too (spec 013). */
   onAddInColumn: (groupBy: string, optId: string, extra?: Record<string, unknown>) => void;
   /** A board's lanes (spec 013, US4): the sub-group property, its lanes,
@@ -425,31 +429,27 @@ export default function BoardView({
                       setMoveMenu(o ? `${key}:${r.id}` : null);
                     }}
                   >
-                    <MenuItem fn="open" onClick={() => openRow({}, r.id)}>
-                      {t('Open')}
-                    </MenuItem>
-                    {/* The visible way to a second tab, as in the sidebar's
-                        row menu: ⌘-click and middle-click work too, but a
-                        menu that stays silent about them leaves most people
-                        without a way to ask. */}
-                    <MenuItem fn="openInNewTab" onClick={() => (onOpenInNewTab ?? onNavigate)(r.id)}>
-                      {t('Open in new tab')}
-                    </MenuItem>
-                    {columns.some((c) => !rowsFor(c.id).some((x) => x.id === r.id)) && (
-                      <MenuValues label={t('Move to')} reason="Columns are values of one function, moveTo: the card moves to the one picked">
-                        {columns
-                          .filter((c) => !rowsFor(c.id).some((x) => x.id === r.id))
-                          .map((c) => (
-                            <MenuValueItem key={c.id} onClick={() => onDrop(r.id, groupBy, c.id)}>
-                              {c.name}
-                            </MenuValueItem>
-                          ))}
-                      </MenuValues>
-                    )}
-                    <MenuSeparator />
-                    <MenuItem fn="moveToTrash" danger onClick={() => void onTrashRow(r.id, r.title)}>
-                      {t('Move to trash')}
-                    </MenuItem>
+                    <RowMenuItems
+                      place="boardCard"
+                      row={r}
+                      deps={{
+                        onOpen: (id) => openRow({}, id),
+                        onOpenInNewTab: onOpenInNewTab ?? onNavigate,
+                        onDuplicate: onDuplicateRow,
+                        onTrash: (id, title) => void onTrashRow(id, title),
+                        moveToColumn: columns.some((c) => !rowsFor(c.id).some((x) => x.id === r.id)) && (
+                          <MenuValues label={t('Move to')} reason="Columns are values of one function, moveTo: the card moves to the one picked">
+                            {columns
+                              .filter((c) => !rowsFor(c.id).some((x) => x.id === r.id))
+                              .map((c) => (
+                                <MenuValueItem key={c.id} onClick={() => onDrop(r.id, groupBy, c.id)}>
+                                  {c.name}
+                                </MenuValueItem>
+                              ))}
+                          </MenuValues>
+                        ),
+                      }}
+                    />
                   </CardMenu>
                 </div>
                 {!!r.tags?.length && (

@@ -24,12 +24,12 @@ export function RowGutter({
   title: string;
   /** Absent: rows cannot be added here (a reader). */
   onAddBelow?: (rowId: string, above: boolean) => void;
-  /** Absent: the row cannot be dragged (a reader, a view whose order is not
-   *  the database's own). */
+  /** Absent: the row cannot be dragged (a reader, a sub-item in a tree). The
+   *  handle still opens the row's menu then. */
   onHandleDown?: (e: React.PointerEvent, rowId: string) => void;
   onHandleClick?: (e: React.MouseEvent, rowId: string) => void;
 }) {
-  if (!onAddBelow && !onHandleDown) return <td className="db-row-gutter" />;
+  if (!onAddBelow && !onHandleDown && !onHandleClick) return <td className="db-row-gutter" />;
   const name = title || t('Untitled');
   return (
     <td className="db-row-gutter">
@@ -45,14 +45,18 @@ export function RowGutter({
             onClick={(e) => onAddBelow(rowId, e.altKey)}
           />
         )}
-        {onHandleDown && (
+        {(onHandleDown || onHandleClick) && (
           <Button
             size="sm"
             emphasis="low"
-            className="db-row-handle"
+            className={'db-row-handle' + (onHandleDown ? '' : ' is-menu-only')}
             icon={<GripVertical size={14} />}
-            label={t('Drag to move {title}, click for its menu', { title: name })}
-            onPointerDown={(e) => onHandleDown(e, rowId)}
+            label={
+              onHandleDown
+                ? t('Drag to move {title}, click for its menu', { title: name })
+                : t('Menu of {title}', { title: name })
+            }
+            onPointerDown={onHandleDown ? (e) => onHandleDown(e, rowId) : undefined}
             onClick={(e) => onHandleClick?.(e, rowId)}
           />
         )}

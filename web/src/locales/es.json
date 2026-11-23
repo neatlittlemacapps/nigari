@@ -1396,5 +1396,13 @@
   "Drop to put the two blocks side by side": "Suelta para poner los dos bloques uno al lado del otro",
   "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "La fila junto a este lugar ya no existe o está en otra lista, así que no se colocó nada ahí. Recarga e inténtalo de nuevo.",
   "Add a row below (Alt: above)": "Añadir una fila debajo (Alt: encima)",
-  "Drag to move {title}, click for its menu": "Arrastra para mover {title}, haz clic para ver su menú"
+  "Drag to move {title}, click for its menu": "Arrastra para mover {title}, haz clic para ver su menú",
+  "Add row below": "Añadir fila debajo",
+  "Add to favourites": "Añadir a favoritos",
+  "Centre peek": "Vista central",
+  "Comment": "Comentar",
+  "Edited {time} by {name}": "Editado {time} por {name}",
+  "Menu of {title}": "Menú de {title}",
+  "New tab": "Nueva pestaña",
+  "Open in": "Abrir en"
 }
