@@ -7,6 +7,32 @@ entries are not edited away.
 
 ---
 
+## 2026-11-23 — Every pull request says what the code graph showed, and a check holds it to that (#926)
+
+- **A `## CodeGraph` section in every pull request, checked by its own
+  workflow** (owner, 2026-11-23, "I guess"). #907, #920 and #922 were opened
+  by project threads that clone after the session starts, so the SessionStart
+  hook never built the graph and nothing said so. The rule existed only as
+  instructions (AGENTS.md, `.claude/rules/codegraph.md`, handoff rule 36);
+  "Derive, do not remember" asks for a check. Turned down: leaving it to
+  instructions and to the coordinator reading each PR (it was missed three
+  times), and a step in `ci.yml` (it does not run when only the description is
+  edited, so a fixed description stays red until the next push).
+- **Placeholder and near-empty sections fail too**: the template's comment, an
+  empty section, "n/a", or under 30 characters. A change to docs only passes
+  by saying so. The heading may read "CodeGraph" or "Code graph".
+- **Bots and outside contributors are not asked**: a bot author, or any author
+  GitHub does not mark as owner, member or collaborator (a first contribution
+  like #821). They have no session and no graph; a red mark would only tell
+  them about our tooling.
+- **Not a required check yet.** A red mark shows on the pull request; merging
+  is not blocked. Like the catalogue, it is made required in the ruleset after
+  it has been right on a few pull requests.
+- **The check runs main's copy of the script**, so a pull request cannot
+  loosen the check that judges it; only the pull request that adds the script
+  runs its own. A pull request with merge conflicts gets no mark at all (GitHub
+  cannot build its merge ref), so a missing mark is not a pass.
+
 ## 2026-11-23 — A phone list scrolls sideways in one piece (#906)
 
 - **On a phone a list row stays one line and the whole list scrolls

@@ -89,9 +89,11 @@ locale files are JSON objects: keep both keys, then `npm run check`.
 5. The conductor asks the owner before opening it ("Ready to continue with
    opening the PR?"), unless the owner just asked for it.
 
-The pull request body says why the change was needed, lists every surface
-as changed or ruled out, names the reviews that ran, and carries the
-`Closes #N` lines. Every number in it was measured in the session that
+The pull request body follows `.github/pull_request_template.md`: why the
+change was needed, every surface as changed or ruled out, a `## CodeGraph`
+section with the graph queries that ran and what they found, the reviews
+that ran, and the `Closes #N` lines. The "CodeGraph section" check fails a
+body without it (#926); fix the description, no push is needed. Every number in it was measured in the session that
 writes it.
 
 ## After a pull request is opened
