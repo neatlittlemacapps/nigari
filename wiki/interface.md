@@ -456,9 +456,11 @@ where the document tree would be: the same cards, the same **All** and
 | `←` / `→`, with nothing focused | into the sidebar / into the page. In the sidebar `↑` `↓` (or `K` `J`) move through the rows, `→` opens a row's children and `←` closes them, `Home` / `End` jump to the first / last row, and `Enter` opens the page. `←` at the very start of a page title goes back to the sidebar |
 | `L` · `M` · `T` · `F` · `C` · `Shift+N` | the library · notes mode on or off · a new page from a template · the open page into or out of the favourites · its comment panel · a new collection. Single letters act only while nothing is being typed: in a text they are simply letters |
 | `⌘Backspace` / `Ctrl+Backspace` | with a row focused in the sidebar: moves that page to the trash |
+| `⌘/` / `Ctrl+/` | with focus in a table row: opens that row's menu. See [Views](views.md#table) |
+| `⌘⇧↑` / `⌘⇧↓` (`Ctrl+Shift+↑` / `↓`) | with focus in a table row: moves the row one place up or down |
 | ⌘-click, Ctrl-click or middle-click | opens a page in a new tab |
 | middle-click on a tab | closes it |
-| right-click | opens the ⋯ menu of a sidebar row, a collection row in the sidebar, a template, or a board card. On a view's tab it offers renaming, moving and removing that view |
+| right-click | opens the ⋯ menu of a sidebar row, a collection row in the sidebar, a template, a table row, or a board card. On a view's tab it offers renaming, moving and removing that view |
 
 The shortcut badge beside **Search** reads `⌘K` on every platform; `Ctrl+K`
 works just as well.

@@ -90,7 +90,7 @@
       "takenAt": {
         "web/src/components/Sidebar.tsx": "f93ed29c4be7",
         "web/src/components/Editor.tsx": "84fd65b1ed4f",
-        "web/src/App.tsx": "d56154365df8",
+        "web/src/App.tsx": "7948e5fbb3b7",
         "web/src/tokens.css": "57855a2ffdba",
         "web/src/theme.css": "16fd3013201a"
       }
@@ -324,7 +324,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "75d0edcb8eeb",
+        "web/src/components/CollectionView.tsx": "19ef4d62386f",
         "web/src/tokens.css": "57855a2ffdba",
         "web/src/theme.css": "16fd3013201a"
       }
@@ -361,8 +361,8 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "75d0edcb8eeb",
-        "web/src/components/BoardView.tsx": "4dac5818b928",
+        "web/src/components/CollectionView.tsx": "19ef4d62386f",
+        "web/src/components/BoardView.tsx": "92f2f572fee2",
         "web/src/cardLayout.ts": "81a08ba36ba8",
         "web/src/tokens.css": "57855a2ffdba",
         "web/src/theme.css": "16fd3013201a"
@@ -398,7 +398,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "75d0edcb8eeb",
+        "web/src/components/CollectionView.tsx": "19ef4d62386f",
         "web/src/tokens.css": "57855a2ffdba",
         "web/src/theme.css": "16fd3013201a"
       }
@@ -442,7 +442,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "75d0edcb8eeb",
+        "web/src/components/CollectionView.tsx": "19ef4d62386f",
         "web/src/components/ChartFigure.tsx": "d8d497a63489",
         "web/src/components/ChartView.css": "ad6a7c9c7acf",
         "web/src/components/ChartSettings.tsx": "845dc5779885",
@@ -505,7 +505,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "75d0edcb8eeb",
+        "web/src/components/CollectionView.tsx": "19ef4d62386f",
         "web/src/components/ChartSettings.tsx": "845dc5779885",
         "web/src/components/ChartSettings.css": "16a9584f65dc",
         "web/src/components/ChartPane.tsx": "1fbe458f0d0b",

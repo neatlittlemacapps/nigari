@@ -99,6 +99,54 @@ column. Someone who can only read the database sees plain headings, and so
 does a database shown inside a document: its columns are the database's own,
 arranged on its own page.
 
+**Moving a row.** Each row has a narrow margin on its left with two buttons
+that show when you point at the row: a **+** and a grip. Drag the grip up or
+down: the row fades, a line marks the gap it will land in, and it lands there
+when you let go. The table scrolls along near its top or bottom edge; Escape,
+or letting go outside the table, puts it back. The new place belongs to the
+**database**, not to the view: every view without a sort shows the rows in
+that order, and a board column or a gallery uses it too. In a filtered view
+the rows you cannot see keep their places; the row goes right next to the one
+you dropped it beside. From the keyboard, with focus anywhere in a row,
+`⌘⇧↑` / `⌘⇧↓` (`Ctrl+Shift+↑` / `↓`) moves it one place.
+
+In a **sorted** view a drag takes the sort away first, for you only: the rows
+are drawn in their own order the moment the drag starts, so the line shows
+where the row really goes. The bar under the views then says *Only you see
+these changes*, with **Reset** (the sort comes back; the row keeps its new
+place) and **Save for everyone**. Everyone else keeps the sort. This works on
+locked views too, since the sort you drop is your own.
+
+In a tree (**Sub-items**) only the top-level rows can be dragged: a sub-item's
+place under its parent is the order of the relation's values, so its grip only
+opens its menu. Someone who can only read the database sees no **+** and no
+drag.
+
+**Adding a row next to another.** The **+** adds an empty row right below; hold
+Alt (Option on a Mac) to add it above. Its title is ready for typing: Enter or
+clicking away keeps it, Escape leaves it **Untitled**. In a filtered view the
+new row gets the values the filter pins down, as **New** does.
+
+**The row's menu.** A click on the grip, a right-click anywhere on the row
+(except in a field you are typing in), or `⌘/` (`Ctrl+/`) with focus in the row
+opens it: **Open**, **Open in** › side peek, centre peek, new tab; **Add row
+below**; **Edit property** › one of the row's properties, which opens that
+cell's editor; **Comment** (opens the row with its comments); **Add to** or
+**Remove from favourites**; **Copy link**; **Duplicate** (the copy lands right
+below); **Move to trash**. Under them it says when the row was last edited and
+by whom; moving a row is not counted as an edit. A board card's ⋯ offers the
+same list, with **Move to** a column instead of **Add row below** and without
+**Edit property** (a card edits nothing in place).
+
+**On a phone** nothing hovers, so the margin's buttons show on the row you
+tapped last. The tap still does what it did (the name opens the row, a cell
+edits), and the tap that shows the buttons never also presses one. Hold the
+grip for about a third of a second to drag.
+
+**Not built yet:** a view of its own order (every unsorted view shares the
+database's order; an option to change it everywhere or for one view is
+planned, #870), and **Move to** another database from the row's menu (#869).
+
 ### `board`
 
 Cards in columns, one column per option of the property it groups by, plus a
@@ -743,7 +791,8 @@ accented letters land beside their plain forms instead of after Z; numbers are
 compared as numbers.
 
 With no sort, rows keep the order they have in the collection: the manual
-position first, then when they were created. That is also the order cards come in
+position (set by dragging a row's grip, see [`table`](#table)) first, then
+when they were created. That is also the order cards come in
 inside a board column and across a gallery.
 
 Like a filter, a sort you set is your own until you save it for everyone (see

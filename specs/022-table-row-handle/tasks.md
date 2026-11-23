@@ -98,8 +98,8 @@ description: "Tasks for the table row handle, + and row menu, in two pull reques
 
 ### Phase 11: PR 2 polish, release and Umbrel
 
-- [ ] T032 [P] [i18n] New strings in `de.json`, `es.json`, `nl.json` (a Sonnet helper may draft; reviewed)
-- [ ] T033 [wiki] `wiki/views.md` (table: handle, menu, manual order, sort), shortcut list; table screenshots retaken and looked at
+- [x] T032 [P] [i18n] New strings in `de.json`, `es.json`, `nl.json` (a Sonnet helper may draft; reviewed)
+- [x] T033 [wiki] `wiki/views.md` (table: handle, menu, manual order, sort), shortcut list; table screenshots retaken and looked at
 - [ ] T034 [test] Reviews: `/code-review` (fresh agent), `ux-ui-audit` light and dark, desktop and phone; `codegraph sync`, then `codegraph callers` on every exported symbol added or moved. `docs/decisions.md` entry. `scripts/agent-gate.sh` green
 - [ ] T035 [backend] After PR 2 merges: check the release and its `umbrel-store` job, give the owner the store pull request on `neatlittlemacapps/yokogaki-umbrel` to merge (rule 32); then the handoff on #643
 
