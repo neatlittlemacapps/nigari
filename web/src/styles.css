@@ -2774,9 +2774,9 @@ body.is-col-moving .db-table th .th-label {
    The buttons show on hover and on keyboard focus; on a touch screen, where
    nothing hovers, once the row is tapped (owner, 2026-11-23). */
 .db-table .db-row-gutter {
-  width: 48px;
-  min-width: 48px;
-  max-width: 48px;
+  width: 52px;
+  min-width: 52px;
+  max-width: 52px;
   padding: 4px 2px 0 0;
   vertical-align: top;
   border: 0;
@@ -2787,6 +2787,12 @@ body.is-col-moving .db-table th .th-label {
   display: flex;
   justify-content: flex-end;
   opacity: 0;
+}
+
+/* WCAG 2.5.8: each at least 24px square (the small button measured 23). */
+.db-row-gutter-btns .ui-button {
+  min-width: 24px;
+  min-height: 24px;
 }
 
 .db-table tr:hover > .db-row-gutter .db-row-gutter-btns,
