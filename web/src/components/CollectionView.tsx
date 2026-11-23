@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { PeekMode } from '../peek';
 import { api, ApiError } from '../api';
+import { serverMessage } from '../serverErrors';
 import { usePersonalViews } from '../usePersonalViews';
 import { hasPersonalChange, mergeViewState, viewScope, withFoldedLane, withPersonalEdit, withQuickPick, withoutViewChanges } from '../viewState';
 import { laneIsReadOnly, quickFilterProps } from '../quickFilters';
@@ -11,6 +12,8 @@ import Portal from './Portal';
 import { anchoredMenuStyle } from '../anchoredMenu';
 import { sortComparator } from '../viewSort';
 import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } from '../columnDrag';
+import { applySpot, useRowDrag, type DrawnRow, type RowSpot } from '../rowDrag';
+import { RowGutter, RowGutterHead } from './RowHandle';
 import { ColHead, type PropertyChanges } from './TableColumnHead';
 import { useColumnPropertyChanges } from './useColumnPropertyChanges';
 import { tagColorClass } from '../tags';
@@ -630,6 +633,35 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     const row = await api.createPage(collectionId, '', 'doc', presetProps, undefined, rowViewId(), undefined, rowViewFilters());
     onPagesChanged();
     announceIfHidden(row);
+  };
+
+  // The + beside a table row (spec 022): the new row goes right below it, or
+  // above with Alt or Option, in one request, in the view the person is
+  // looking at, as addRow makes it.
+  const addRowNextTo = async (anchor: string, above: boolean) => {
+    try {
+      const row = await api.createPage(collectionId, '', 'doc', undefined, undefined, rowViewId(), undefined, rowViewFilters(), {
+        anchor,
+        side: above ? 'before' : 'after',
+      });
+      onPagesChanged();
+      announceIfHidden(row);
+    } catch (e) {
+      toast(e instanceof ApiError ? serverMessage(e.code, e.message) : t('Change not saved'));
+    }
+  };
+
+  // A row dragged next to another (spec 022): shown in its new place at once,
+  // then saved; the server names the neighbours, so a filter's hidden rows
+  // keep their places. On a refusal the rows are read again.
+  const placeRow = async (id: string, spot: RowSpot) => {
+    setRows((prev) => applySpot(prev, id, spot));
+    try {
+      await api.placePage(id, spot, rowViewId());
+    } catch (e) {
+      toast(e instanceof ApiError ? serverMessage(e.code, e.message) : t('Change not saved'));
+      void loadRows();
+    }
   };
 
   // The view a new row is made in. A form has no filters, and its fields are
@@ -1291,6 +1323,11 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           onOpenInNewTab={onOpenInNewTab}
           onSetProp={setRowProp}
           onSetOptions={setPropOptions}
+          // Rows move in the database's own order, which a sorted view does
+          // not show; a drag there comes with removing the sort (spec 022,
+          // US2), not yet wired.
+          onPlaceRow={canEdit && !serverSort ? (id, spot) => void placeRow(id, spot) : undefined}
+          onAddRowBelow={canEdit ? (id, above) => void addRowNextTo(id, above) : undefined}
         />
       )}
       </RowOpenContext.Provider>
@@ -2097,6 +2134,8 @@ function TableView({
   onOpenInNewTab,
   onSetProp,
   onSetOptions,
+  onPlaceRow,
+  onAddRowBelow,
 }: {
   rows: Row[];
   schema: PropDef[];
@@ -2117,6 +2156,11 @@ function TableView({
   onOpenInNewTab?: (id: string) => void;
   onSetProp: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
+  /** Move a row next to another (spec 022). Absent: rows do not move here (a
+   *  reader, or a view whose order is not the database's own). */
+  onPlaceRow?: (id: string, spot: RowSpot) => void;
+  /** The + beside a row; `above` with Alt or Option. Absent for a reader. */
+  onAddRowBelow?: (id: string, above: boolean) => void;
 }) {
   // What a click on a row does follows the view (spec 007, pageOpen.ts).
   const openRow = useOpenRow({ onNavigate, onOpenInNewTab });
@@ -2235,24 +2279,39 @@ function TableView({
     subItemProp && Array.isArray(r.props[subItemProp])
       ? (r.props[subItemProp] as string[]).filter((cid) => rowById.has(cid))
       : [];
-  const ordered: { row: Row; depth: number; hasKids: boolean }[] = [];
+  const ordered: { row: Row; depth: number; hasKids: boolean; parent: string | null }[] = [];
   if (subItemProp) {
     const childSet = new Set<string>();
     for (const r of rows) for (const cid of childIdsOf(r)) childSet.add(cid);
     const roots = rows.filter((r) => !childSet.has(r.id));
-    const visit = (r: Row, depth: number, seen: Set<string>) => {
+    const visit = (r: Row, depth: number, seen: Set<string>, parent: string | null) => {
       const kids = childIdsOf(r);
-      ordered.push({ row: r, depth, hasKids: kids.length > 0 });
+      ordered.push({ row: r, depth, hasKids: kids.length > 0, parent });
       if (kids.length && !collapsed.has(r.id)) {
         for (const cid of kids) {
-          if (!seen.has(cid)) visit(rowById.get(cid)!, depth + 1, new Set([...seen, r.id]));
+          if (!seen.has(cid)) visit(rowById.get(cid)!, depth + 1, new Set([...seen, r.id]), r.id);
         }
       }
     };
-    for (const r of roots) visit(r, 0, new Set([r.id]));
+    for (const r of roots) visit(r, 0, new Set([r.id]), null);
   } else {
-    for (const r of rows) ordered.push({ row: r, depth: 0, hasKids: false });
+    for (const r of rows) ordered.push({ row: r, depth: 0, hasKids: false, parent: null });
   }
+
+  // Moving a row (spec 022). In a tree only the top-level rows move: a
+  // sub-item's place under its parent is the order of the relation's values,
+  // not the row's position, so dragging it would change nothing on screen.
+  const drawn: DrawnRow[] = ordered.map((o) => ({ id: o.row.id, parentId: o.parent, depth: o.depth }));
+  const { drag: rowDrag, startDrag: startRowDrag } = useRowDrag(drawn, (id, spot) => onPlaceRow?.(id, spot));
+  const dropGap = rowDrag?.spot ? rowDrag.gap : -1;
+  const rowClass = (i: number, id: string) =>
+    [
+      rowDrag?.id === id ? 'is-row-dragged' : '',
+      dropGap === i ? 'row-drop-before' : '',
+      dropGap === ordered.length && i === ordered.length - 1 ? 'row-drop-after' : '',
+    ]
+      .filter(Boolean)
+      .join(' ') || undefined;
 
   // Per-column footer aggregate: numeric columns (number/rollup/formula) show a
   // sum, everything else a count of filled cells — a lightweight Notion-style
@@ -2285,6 +2344,7 @@ function TableView({
       <table className="db-table">
         <thead ref={theadRef}>
           <tr>
+            <RowGutterHead />
             <th className="db-title-col" style={colStyle(TITLE_COL)}>
               <ColHead
                 label={t('Name')}
@@ -2319,8 +2379,14 @@ function TableView({
           </tr>
         </thead>
         <tbody>
-          {ordered.map(({ row: r, depth, hasKids }) => (
-            <tr key={r.id}>
+          {ordered.map(({ row: r, depth, hasKids }, i) => (
+            <tr key={r.id} data-row-id={r.id} className={rowClass(i, r.id)}>
+              <RowGutter
+                rowId={r.id}
+                title={r.title}
+                onAddBelow={onAddRowBelow}
+                onHandleDown={onPlaceRow && depth === 0 ? startRowDrag : undefined}
+              />
               <td className="db-title-col" style={colStyle(TITLE_COL)}>
                 <span className="db-title-inner" style={depth ? { paddingLeft: depth * 20 } : undefined}>
                   {subItemProp ? (
@@ -2373,7 +2439,7 @@ function TableView({
           ))}
           {rows.length === 0 && (
             <tr>
-              <td colSpan={schema.length + 1} className="db-empty">
+              <td colSpan={schema.length + 2} className="db-empty">
                 {emptyLabel}
               </td>
             </tr>
@@ -2382,6 +2448,7 @@ function TableView({
         {rows.length > 0 && (
           <tfoot>
             <tr className="db-calc-row">
+              <td className="db-row-gutter" />
               {/* German, hard-coded, in an English-first product — and every
                   check read clean. The JSX rule structurally cannot see a
                   string with an expression inside it, and one word without an

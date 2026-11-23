@@ -8,7 +8,13 @@
 // side. So all this module decides is which gap the pointer is in and which
 // visible row that gap names.
 //
-// The pure part below is checked by web/scripts/check-rowdrag.mjs.
+// The pure part below is checked by web/scripts/check-rowdrag.mjs. The hook
+// at the bottom is the gesture, written as columnDrag.ts drags a column:
+// pointer events, so mouse, pen and finger take one path, a 5px threshold
+// that tells a click on the handle (its menu) from a drag, and a hold before
+// a finger drags, so a swipe that starts on the handle still scrolls.
+
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /** A row as the table draws it: its page id, its parent (the database for a
  *  top-level row, another row for a sub-item in a tree) and its depth. */
@@ -93,6 +99,18 @@ export function rowSpot(rows: readonly DrawnRow[], dragId: string, gap: number):
   return spot;
 }
 
+/** The list with row `id` moved to `spot`, as the table shows it at once
+ *  while the server saves the move. An unknown id or anchor changes nothing. */
+export function applySpot<T extends { id: string }>(list: readonly T[], id: string, spot: RowSpot): T[] {
+  const moving = list.find((r) => r.id === id);
+  if (!moving || id === spot.anchor) return [...list];
+  const rest = list.filter((r) => r.id !== id);
+  const at = rest.findIndex((r) => r.id === spot.anchor);
+  if (at < 0) return [...list];
+  rest.splice(spot.side === 'after' ? at + 1 : at, 0, moving);
+  return rest;
+}
+
 /** The spot one place up (delta -1) or down (+1) among the row's siblings,
  *  for the keyboard (mod+shift+↑/↓, R7); null at either end. */
 export function rowStep(rows: readonly DrawnRow[], id: string, delta: -1 | 1): RowSpot | null {
@@ -104,4 +122,177 @@ export function rowStep(rows: readonly DrawnRow[], id: string, delta: -1 | 1): R
   const next = siblings[i + delta];
   if (!next) return null;
   return delta < 0 ? { anchor: next, side: 'before' } : { anchor: next, side: 'after' };
+}
+
+// ---- The gesture ----
+
+export interface RowDragState {
+  id: string;
+  gap: number;
+  /** Where a release would put the row; null where it would do nothing. */
+  spot: RowSpot | null;
+}
+
+const START_THRESHOLD = 5; // px, as the board and the columns
+const TOUCH_HOLD_MS = 300; // research R5
+const TOUCH_HOLD_SLOP = 10;
+// How near the scrolling page's top or bottom the pointer must be to scroll
+// it along, so a row can be taken past what is on screen.
+const EDGE = 48;
+const EDGE_STEP = 14;
+const CLICK_AFTER_DRAG_MS = 300;
+
+/** The nearest ancestor that scrolls up and down: the page, a peek. */
+function scrollParent(el: HTMLElement): HTMLElement | null {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const o = getComputedStyle(p).overflowY;
+    if ((o === 'auto' || o === 'scroll') && p.scrollHeight > p.clientHeight) return p;
+  }
+  return null;
+}
+
+/** Dragging a table row by its handle. `rows` is the table as drawn, in
+ *  order; rows are found by `data-row-id` in the tbody the drag started in.
+ *  `onDrop(id, spot)` is called on a release over the table when the spot
+ *  moves the row; Escape, or a release anywhere else, cancels. */
+export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot: RowSpot) => void) {
+  const [drag, setDrag] = useState<RowDragState | null>(null);
+  const dropRef = useRef(onDrop);
+  dropRef.current = onDrop;
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+  const live = useRef<{
+    id: string;
+    startX: number;
+    startY: number;
+    started: boolean;
+    touch: boolean;
+    armed: boolean;
+    holdTimer: number | null;
+    body: HTMLElement;
+    // Row boxes are read once, when the drag starts, and moved by the scroll
+    // since: reading every row's box on each pointer move is layout work per
+    // pixel (the #810 lesson).
+    rects: { top: number; bottom: number }[];
+    scroller: HTMLElement | null;
+    scrollTop0: number;
+    spot: RowSpot | null;
+  } | null>(null);
+  const draggedAt = useRef({ id: '', at: 0 });
+
+  const cancel = useCallback(() => {
+    const l = live.current;
+    if (l?.holdTimer) clearTimeout(l.holdTimer);
+    live.current = null;
+    document.body.classList.remove('is-row-moving');
+    setDrag(null);
+  }, []);
+
+  useEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      const l = live.current;
+      if (!l) return;
+      const moved = Math.hypot(e.clientX - l.startX, e.clientY - l.startY);
+      if (!l.started) {
+        if (l.touch && !l.armed) {
+          if (moved > TOUCH_HOLD_SLOP) cancel();
+          return;
+        }
+        if (moved < START_THRESHOLD) return;
+        l.started = true;
+        document.body.classList.add('is-row-moving');
+        window.getSelection()?.removeAllRanges();
+      }
+      if (l.scroller) {
+        const r = l.scroller.getBoundingClientRect();
+        if (e.clientY - r.top < EDGE) l.scroller.scrollTop -= EDGE_STEP;
+        else if (r.bottom - e.clientY < EDGE) l.scroller.scrollTop += EDGE_STEP;
+      }
+      const shift = l.scroller ? l.scroller.scrollTop - l.scrollTop0 : 0;
+      const gap = rowGap(l.rects, e.clientY + shift);
+      const spot = rowSpot(rowsRef.current, l.id, gap);
+      l.spot = spot;
+      setDrag((d) => (d && d.id === l.id && d.gap === gap ? d : { id: l.id, gap, spot }));
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      const l = live.current;
+      if (!l) return;
+      cancel();
+      if (!l.started) return;
+      draggedAt.current = { id: l.id, at: Date.now() };
+      const r = l.body.getBoundingClientRect();
+      const over = e.clientY >= r.top - EDGE && e.clientY <= r.bottom + EDGE && e.clientX >= r.left && e.clientX <= r.right;
+      if (e.type === 'pointerup' && over && l.spot) dropRef.current(l.id, l.spot);
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && live.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (live.current.started) draggedAt.current = { id: live.current.id, at: Date.now() };
+        cancel();
+      }
+    };
+
+    // Once a drag runs, a finger must not scroll the page along with it
+    // (boardDrag.ts explains why this needs a non-passive listener).
+    const onTouchMove = (e: TouchEvent) => {
+      if (live.current?.started) e.preventDefault();
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+    window.addEventListener('keydown', onKey, true);
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+      window.removeEventListener('keydown', onKey, true);
+      window.removeEventListener('touchmove', onTouchMove);
+    };
+  }, [cancel]);
+
+  const startDrag = useCallback((e: React.PointerEvent, id: string) => {
+    if (e.button !== 0) return;
+    const body = (e.currentTarget as HTMLElement).closest('tbody');
+    if (!body) return;
+    const touch = e.pointerType === 'touch' || e.pointerType === 'pen';
+    const scroller = scrollParent(body);
+    const l = {
+      id,
+      startX: e.clientX,
+      startY: e.clientY,
+      started: false,
+      touch,
+      armed: !touch,
+      holdTimer: null as number | null,
+      body,
+      rects: [...body.querySelectorAll<HTMLElement>(':scope > tr[data-row-id]')].map((tr) => {
+        const b = tr.getBoundingClientRect();
+        return { top: b.top, bottom: b.bottom };
+      }),
+      scroller,
+      scrollTop0: scroller?.scrollTop ?? 0,
+      spot: null as RowSpot | null,
+    };
+    live.current = l;
+    if (touch) {
+      l.holdTimer = window.setTimeout(() => {
+        if (live.current === l) l.armed = true;
+      }, TOUCH_HOLD_MS);
+    }
+  }, []);
+
+  /** True once for the click on row `id`'s handle that ends its drag, so it
+   *  does not open the menu. */
+  const consumeClick = useCallback((id: string) => {
+    const d = draggedAt.current;
+    draggedAt.current = { id: '', at: 0 };
+    return d.id === id && Date.now() - d.at < CLICK_AFTER_DRAG_MS;
+  }, []);
+
+  return { drag, startDrag, consumeClick };
 }

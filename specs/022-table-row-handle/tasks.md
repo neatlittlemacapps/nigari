@@ -69,8 +69,8 @@ description: "Tasks for the table row handle, + and row menu, in two pull reques
 
 ### Phase 6: User Story 1, drag a row (P1) 🎯 MVP
 
-- [ ] T018 [US1] [ui] `rowDrag.ts` hook: pointer events, 5px threshold, cached row boxes, the line (2px `--color-focus`), auto-scroll near the edges, Escape and a drop outside cancel; on drop `api.placePage` and the rows reload
-- [ ] T019 [US1] [ui] `components/RowHandle.tsx` (new): handle and + as `ui/Button`s in the title cell (sticky column), shown on hover and focus, hidden for readers; `TableView` renders it and uses the hook (no behaviour inline in `CollectionView.tsx`)
+- [x] T018 [US1] [ui] `rowDrag.ts` hook: pointer events, 5px threshold, cached row boxes, the line (2px `--color-focus`), auto-scroll near the edges, Escape and a drop outside cancel; on drop `api.placePage` and the rows reload
+- [x] T019 [US1] [ui] `components/RowHandle.tsx` (new): handle and + as `ui/Button`s in the title cell (sticky column), shown on hover and focus, hidden for readers; `TableView` renders it and uses the hook (no behaviour inline in `CollectionView.tsx`)
 - [ ] T020 [US1] [test] `web/tests/row-handle.mjs` (new), in the test script: a drag lands where the line showed and survives a reload; Escape cancels; a filtered view; a tree. Mutation-check it (send the wrong side)
 - [ ] T021 [US1] [perf] A drag step with the #810 probe on a 300-row table, Chromium: under 4 ms. Numbers in the PR
 

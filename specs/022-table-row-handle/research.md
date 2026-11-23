@@ -147,9 +147,10 @@ shortcut sheet lists them; `check-keys.mjs` is extended.
 
 ## R8. Where the handle sits
 
-**Decision (to show the owner as a picture before building)**: in a narrow
-leading gutter cell of its own, sticky at the row's left, ahead of every
-column: it stays in view while the table scrolls sideways, does not move when
+**Decision (shown to the owner as a picture, 2026-11-23)**: in a narrow
+leading gutter cell of its own, ahead of every column. Not frozen at the
+left: the title column is not either, and a frozen gutter covered the titles
+once the table was scrolled sideways (found while building). It does not move when
 another column is put first (the checkbox-first change in the other thread),
 and inside a document it does not collide with the embed block's own handle in
 the document's left margin. First drafted inside the title cell; changed

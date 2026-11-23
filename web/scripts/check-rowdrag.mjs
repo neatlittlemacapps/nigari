@@ -95,6 +95,14 @@ try {
   check('in a tree, c1 down skips c2\'s sub-items: after c2', rd.rowStep(tree, 'c1', 1), { anchor: 'c2', side: 'after' });
   check('in a tree, P2 up: before P1', rd.rowStep(tree, 'P2', -1), { anchor: 'P1', side: 'before' });
 
+  // ---- What the table shows at once, before the server answers ----
+  const ids = (l) => l.map((r) => r.id).join('');
+  check('B after D', ids(rd.applySpot(flat, 'B', { anchor: 'D', side: 'after' })), 'ACDB');
+  check('D before A', ids(rd.applySpot(flat, 'D', { anchor: 'A', side: 'before' })), 'DABC');
+  check('C before B', ids(rd.applySpot(flat, 'C', { anchor: 'B', side: 'before' })), 'ACBD');
+  check('an unknown anchor changes nothing', ids(rd.applySpot(flat, 'C', { anchor: 'Z', side: 'before' })), 'ABCD');
+  check('next to itself changes nothing', ids(rd.applySpot(flat, 'C', { anchor: 'C', side: 'after' })), 'ABCD');
+
   const failed = out.filter((c) => c.got !== c.want);
   for (const c of failed) console.error(`  FAIL ${c.name}: got ${c.got}, want ${c.want}`);
   console.log(`  rowdrag: ${out.length - failed.length} passed, ${failed.length} failed`);
