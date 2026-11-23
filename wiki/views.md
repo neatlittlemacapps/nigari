@@ -133,8 +133,8 @@ opens it: **Open**, **Open in** › side peek, centre peek, new tab; **Add row
 below**; **Edit property** › one of the row's properties, which opens that
 cell's editor; **Comment** (opens the row with its comments); **Add to** or
 **Remove from favourites**; **Copy link**; **Duplicate** (the copy lands right
-below); **Move to trash**. Under them it says when the row was last edited and
-by whom; moving a row is not counted as an edit. A board card's ⋯ offers the
+below); **Move to trash**. Under them it says when the row was last edited
+(not yet by whom); moving a row is not counted as an edit. A board card's ⋯ offers the
 same list, with **Move to** a column instead of **Add row below** and without
 **Edit property** (a card edits nothing in place).
 
