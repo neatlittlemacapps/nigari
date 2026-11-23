@@ -67,6 +67,7 @@ import { PageIcon } from '../pageIcon';
 import { groupFilterMatch, isGroupOp } from '../statusFilter';
 import StatusGroupFilter from './StatusGroupFilter';
 import { toast } from '../toast';
+import { EMBED_ROW_STEP, limitRows, nextLimit } from '../embedRows';
 import { Table2, Columns3, LayoutGrid, CalendarDays, List, Plus, Filter as FilterIcon, ArrowUpDown, Calendar, ClipboardList, Check, Send, Share2, Globe, ChartPie, GanttChartSquare, ChevronDown, LayoutTemplate, Copy, X } from 'lucide-react';
 
 /** A collection shown inside a document rather than as its own page.
@@ -230,6 +231,17 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const narrowScreen = useNarrowScreen();
   const [config, setConfig] = useState<CollectionConfig | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
+  // In a document a table, list or gallery draws its first rows only, and
+  // Show more adds a step (spec 023, embedRows.ts). Kept per view: another
+  // view starts again at the first step. Nothing is stored.
+  const [rowLimit, setRowLimit] = useState<{ view: string; n: number }>({ view: '', n: EMBED_ROW_STEP });
+  // Rows made here (New, a row's +, Duplicate) land past the limit: they are
+  // drawn anyway, or they would vanish the moment they were made. All of
+  // them, for this visit: a second New must not hide the first.
+  const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
+  const reveal = (id: string) => {
+    if (embed) setRevealed((prev) => new Set(prev).add(id));
+  };
   // A full page remembers its view across tab switches and reloads (see
   // pageUiState). An embed never touches that store: its view lives in the
   // block itself, and borrowing the page's would couple every embed of the
@@ -639,6 +651,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     // In the view the person is looking at (spec 005): the server fills in
     // what its filters pin down, under presetProps (a board column's value).
     const row = await api.createPage(collectionId, '', 'doc', presetProps, undefined, rowViewId(), undefined, rowViewFilters());
+    reveal(row.id);
     onPagesChanged();
     announceIfHidden(row);
   };
@@ -675,6 +688,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     rowViewFilters,
     announceIfHidden,
     dropSort: () => updateView({ sort: null }),
+    onMade: reveal,
   });
 
   // Persist an inline change to a select/multiselect property's options (create,
@@ -916,6 +930,12 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   };
 
   const viewRows = applyView(rows, view, schema);
+  // The row limit of a document's table, list or gallery (spec 023). A
+  // database page draws every row.
+  const embedLimit = embed ? (rowLimit.view === view.id ? rowLimit.n : EMBED_ROW_STEP) : undefined;
+  const showMore = () => setRowLimit({ view: view.id, n: nextLimit(embedLimit ?? EMBED_ROW_STEP) });
+  const listedRows = limitRows(viewRows, embedLimit, (r) => revealed.has(r.id));
+  const moreRows = listedRows.length < viewRows.length && <ShowMoreRows onClick={showMore} />;
   // Each row's place before the view's sort: how a sort's ties, and a view
   // without one, order the rows. The board's drop marker reads it.
   const rowOrder = view.type === 'board' ? new Map(rows.map((r, i) => [r.id, i])) : undefined;
@@ -1244,8 +1264,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           lanes={boardLanes}
         />
       ) : view.type === 'gallery' ? (
+        <>
         <GalleryView
-          rows={viewRows}
+          rows={listedRows}
           schema={visibleSchema}
           emptyLabel={emptyLabel}
           tagColors={tagColors}
@@ -1254,6 +1275,8 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           onSetProp={setRowProp}
           onSetOptions={setPropOptions}
         />
+        {moreRows}
+        </>
       ) : view.type === 'calendar' ? (
         <CalendarView
           rows={viewRows}
@@ -1287,8 +1310,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           />
         </Suspense>
       ) : view.type === 'list' ? (
+        <>
         <ListView
-          rows={viewRows}
+          rows={listedRows}
           schema={visibleSchema}
           emptyLabel={emptyLabel}
           tagColors={tagColors}
@@ -1297,6 +1321,8 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           onSetProp={setRowProp}
           onSetOptions={setPropOptions}
         />
+        {moreRows}
+        </>
       ) : view.type === 'timeline' ? (
         <TimelineView
           rows={viewRows}
@@ -1353,6 +1379,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           onTrashRow={canEdit ? (id, title) => void trashRow(id, title) : undefined}
           editTitleId={editTitleId}
           onTitleDone={(id, title) => void finishTitle(id, title)}
+          rowLimit={embedLimit}
+          revealed={revealed}
+          onShowMore={showMore}
         />
       )}
       </RowOpenContext.Provider>
@@ -2200,6 +2229,9 @@ function TableView({
   onTrashRow,
   editTitleId,
   onTitleDone,
+  rowLimit,
+  revealed,
+  onShowMore,
 }: {
   rows: Row[];
   schema: PropDef[];
@@ -2234,6 +2266,12 @@ function TableView({
   /** A row whose title is being typed, just added by its +. */
   editTitleId?: string | null;
   onTitleDone?: (id: string, title: string | null) => void;
+  /** In a document: how many rows to draw before Show more (spec 023).
+   *  Absent on a database page, which draws every row. */
+  rowLimit?: number;
+  /** Rows made from the embed, drawn even past the limit. */
+  revealed?: ReadonlySet<string>;
+  onShowMore?: () => void;
 }) {
   // What a click on a row does follows the view (spec 007, pageOpen.ts).
   const openRow = useOpenRow({ onNavigate, onOpenInNewTab });
@@ -2376,6 +2414,24 @@ function TableView({
   } else {
     for (const r of rows) ordered.push({ row: r, depth: 0, hasKids: false, parent: null });
   }
+  // In a document, the first rows as drawn (sub-items count: they take the
+  // room), and a row just added or being titled even past them (spec 023).
+  // The summary row below still reads every row.
+  // A tree is never cut in two, and a revealed sub-item comes with its tree.
+  const allDrawn = ordered.length;
+  const shown = limitRows(
+    ordered,
+    rowLimit,
+    (o) => o.row.id === editTitleId || !!revealed?.has(o.row.id),
+    (o) => o.depth === 0,
+  );
+  // The unbroken run of rows at the top, before any drawn only because it
+  // was revealed: a keyboard move steps among these, so it never jumps over
+  // the rows Show more has not drawn yet (code review: Alt+Down on row 25
+  // moved it after a new row at the end of the database).
+  let inRun = 0;
+  while (inRun < shown.length && shown[inRun] === ordered[inRun]) inRun++;
+  ordered.splice(0, ordered.length, ...shown);
 
   // Moving a row (spec 022). In a tree only the top-level rows move: a
   // sub-item's place under its parent is the order of the relation's values,
@@ -2418,7 +2474,9 @@ function TableView({
     onMove: onPlaceRow
       ? (id, dir) => {
           const at = new Map(rows.map((r) => [r.id, r.position ?? 0]));
-          const list = onRowDragStart ? drawn.filter((d) => (d.depth ?? 0) === 0).sort((a, b) => (at.get(a.id) ?? 0) - (at.get(b.id) ?? 0)) : drawn;
+          // Only among the unbroken run at the top in a document (spec 023).
+          const run = drawn.slice(0, inRun);
+          const list = onRowDragStart ? run.filter((d) => (d.depth ?? 0) === 0).sort((a, b) => (at.get(a.id) ?? 0) - (at.get(b.id) ?? 0)) : run;
           const spot = rowStep(list, id, dir);
           if (!spot) return false;
           onRowDragStart?.();
@@ -2639,6 +2697,7 @@ function TableView({
           </tfoot>
         )}
       </table>
+      {ordered.length < allDrawn && onShowMore && <ShowMoreRows onClick={onShowMore} />}
       <RowMenu
         place="table"
         row={rowMenu}
@@ -2903,3 +2962,15 @@ function CalendarView({
 }
 
 export type { Row, Page };
+
+/** "Show more" under a database in a document that draws only its first rows
+ *  (spec 023). The summary row above already says how many there are. */
+function ShowMoreRows({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="load-more-row">
+      <Button size="sm" emphasis="low" onClick={onClick}>
+        {t('Show more')}
+      </Button>
+    </div>
+  );
+}

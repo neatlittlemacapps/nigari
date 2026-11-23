@@ -1409,5 +1409,6 @@
   "Move the row down": "Zeile nach unten verschieben",
   "Filter": "Filter",
   "Views": "Ansichten",
-  "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "Die Zeile neben dieser Stelle gibt es nicht mehr oder sie steht in einer anderen Liste, darum wurde dort nichts eingefügt. Lade neu und versuche es noch einmal."
+  "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "Die Zeile neben dieser Stelle gibt es nicht mehr oder sie steht in einer anderen Liste, darum wurde dort nichts eingefügt. Lade neu und versuche es noch einmal.",
+  "Show more": "Mehr anzeigen"
 }

@@ -493,9 +493,17 @@ collection's icon and name and, when the collection has a description, that
 description in muted text under the name (cut off after two lines); the search
 matches the description as well as the name. What you get is fully usable
 in place (filter it, add rows, drag cards), with the document's own text above
-and below it. The heading of the block opens it as its own page
+and below it. It sits in the page like the text does, with no box around it:
+its name, its view tabs and its rows line up with the paragraphs, and it is
+as tall as what it shows. The name opens it as its own page
 (**Open as page ↗**). Its toolbar stays out of the way of the text until you
-reach for it. The rows are the collection's; the views are the embed's own,
+reach for it.
+
+A long table, list or gallery shows its first **25** rows, then **Show more**,
+which adds 25 at a time; the summary under a table still counts every row. A
+row you add from the block is shown even past those 25. A board keeps a fixed
+height and its columns scroll on their own. Opened as its own page, a
+collection shows every row. The rows are the collection's; the views are the embed's own,
 kept in the document, so changing them there changes nothing on the
 collection's page. See [Views in a document](views.md#views-in-a-document).
 

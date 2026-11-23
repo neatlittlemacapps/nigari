@@ -28,6 +28,34 @@ entries are not edited away.
   the board scroll sideways, the gallery is a grid of cards, and the only
   other phone reflow (an agent's skill card in settings) is a form, not a
   list of rows.
+## 2026-11-23 — Spec 023: a database in a document fits its content, with no card
+
+- **No card** (owner, 2026-11-23: "Just take the contents and put that on the
+  page"). The block lost its border, radius and background, and inside a
+  document the views lost the full page's 48px sides and 40px foot, which were
+  the indent and the empty band in the owner's screenshot. Selection still
+  shows: it is BlockNote's outline on the block, not the card's border.
+- **25 rows, then Show more, by 25** (owner, "accept your proposal"), for a
+  table, list and gallery. Turned down: no limit (a long database pushes the
+  rest of the document out of reach) and a fixed height with scrolling (what
+  was asked to go). Steps rather than "Show all": one press on a huge database
+  must not draw every row at once. The gallery is included without being
+  asked: the same problem, and one rule is easier to predict.
+- **A row made from the embed is drawn after the 25** (New, a row's +,
+  Duplicate; every one made in the visit), alone, not with every row before
+  it: the first version drew all 121 rows of a 120-row table to reach the new
+  one (found by `embed-fit.mjs`), and kept only the last one made (code
+  review). The cut never splits a tree of sub-items, and a keyboard move steps
+  only among the unbroken first rows, so it never jumps over rows not drawn
+  yet.
+- **A board keeps its capped height** (owner): its columns scroll on their own,
+  which needs a height.
+- **The row gutter hangs into the page margin** on a desktop, so the grid lines
+  up with the text. On a phone the margin is 18px, too narrow for the 52px
+  gutter: the table reaches the screen's edge and the grid starts 34px in.
+  Turned down: hanging it out anyway (a tapped row's handle was off the
+  screen), and dropping the handle in a document on a phone (the owner chose
+  a handle on the tapped row for spec 022).
 
 ## 2026-11-23 — Spec 022 PR 2: the row's handle, +, menu and keys
 

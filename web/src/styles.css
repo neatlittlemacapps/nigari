@@ -7692,34 +7692,55 @@ a,
 
 /* ---- Embedded database ---------------------------------------------------
    Notion's model: a database is a block, not a page type of its own. It may sit
-   in the middle of a document with text above and below. The border sets it
-   visibly apart from the running text without looking like a foreign body. */
+   in the middle of a document with text above and below.
+
+   Part of the page, not a card on it (spec 023, owner 2026-11-23: "they should
+   not be in their separate wrapper. Just take the contents and put that on the
+   page"). It used to have a border, a rounded card and a background of its
+   own, and inside them the full page's 48px sides and 40px foot, which in a
+   document were an indent from the text and an empty band under the last row.
+   Now the title, the tabs and the rows line up with the text above and below,
+   and the block ends at its last row. A selected block still shows: that is
+   BlockNote's outline on the block, not this border (#532, #818). */
 .bn-db-embed {
-  margin: 12px 0;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--card);
+  margin: var(--space-300) 0;
+  /* BlockNote lays a block's content out in a flex row, where a child is at
+     least as wide as its content. The card's overflow: hidden used to cut
+     that to the column; without it a board of three columns or a wide table
+     made the block 1,300px wide and the whole document scrolled sideways
+     (ux-ui-audit, 1280px). Its own views scroll sideways inside it instead. */
+  min-width: 0;
+  width: 100%;
 }
 
+/* The title: a plain line naming the database, which still opens it. */
 .bn-db-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-200);
   width: 100%;
-  padding: 10px 14px;
+  padding: var(--space-100) 0;
   border: none;
-  border-bottom: 1px solid var(--border);
   background: transparent;
   color: var(--fg);
-  font-size: 14.5px;
+  font-size: var(--font-size-lg);
   font-weight: 600;
   cursor: pointer;
   text-align: left;
 }
 
+/* The line opens the database: a hover that says so. The padding and the
+   negative margin give the tint room without moving the name off the text's
+   edge. */
 .bn-db-title:hover {
   background: var(--hover);
+}
+
+.bn-db-title {
+  margin-inline: calc(-1 * var(--space-150));
+  padding-inline: var(--space-150);
+  width: calc(100% + 2 * var(--space-150));
+  border-radius: var(--radius-scale-sm);
 }
 
 /* Jumping to the full page is a secondary action — visible only on hover. */
@@ -7732,7 +7753,8 @@ a,
   transition: opacity 0.12s;
 }
 
-.bn-db-title:hover .bn-db-open {
+.bn-db-title:hover .bn-db-open,
+.bn-db-title:focus-visible .bn-db-open {
   opacity: 1;
 }
 
@@ -7740,6 +7762,50 @@ a,
   .bn-db-open {
     opacity: 1;
   }
+}
+
+/* Inside a document the views keep no sides or foot of their own (FR-002):
+   the toolbar, the rows and Show more start where the text starts. A table's
+   row gutter (spec 022, 52px: the handle and +) hangs into the page margin
+   to the left, where BlockNote's own block handle sits, so the grid lines up
+   with the text rather than 52px in from it (FR-003). */
+.collection-scroll.is-embed .collection-toolbar,
+.collection-scroll.is-embed .load-more-row {
+  padding-inline: 0;
+}
+
+.collection-scroll.is-embed .table-wrap {
+  padding: var(--space-200) 0 0;
+  margin-left: -52px; /* token-ok: the row gutter's width, .db-table .db-row-gutter */
+}
+
+/* On a phone the page's margin is 18px (.editor-inner), too narrow for the
+   52px gutter: hung out as on a desktop, a tapped row's handle and + were off
+   the screen. There the table reaches the screen's edge instead and the
+   gutter stays whole, so the grid starts 34px in from the text. Measured at
+   390px. */
+@media (max-width: 768px) {
+  .collection-scroll.is-embed .table-wrap {
+    margin-left: -18px; /* token-ok: the page's phone margin, .editor-inner */
+  }
+}
+
+.collection-scroll.is-embed .gallery {
+  padding: var(--space-300) 0 0;
+}
+
+/* A board keeps its capped height (.bn-db-embed .board); only its sides go. */
+.collection-scroll.is-embed .board {
+  padding-inline: 0;
+}
+
+.collection-scroll.is-embed > .db-empty {
+  padding: var(--space-300) 0;
+}
+
+.collection-scroll.is-embed .load-more-row {
+  justify-content: flex-start;
+  padding-block: var(--space-200) 0;
 }
 
 .bn-db-picker {
