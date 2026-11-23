@@ -199,9 +199,11 @@ export default function ViewSettingsMenu({
               <ViewOpenMenu view={view} onChange={(openIn) => onChange({ openIn })} bare />
             </MenuSubmenu>
           )}
-          {/* A calendar's date is its start: one item, named for what it is. */}
+          {/* A calendar's date is its start: one item, named for what it is.
+              "Date property", since the property is often itself called Date
+              and the row read "Date / Date" (#745). */}
           {view.type === 'calendar' && (
-            <MenuSubmenu fn="timelineDates" label={t('Date')} value={nameOf(timelineStart, dateProps) ?? t('No start date')}>
+            <MenuSubmenu fn="timelineDates" label={t('Date property')} value={nameOf(timelineStart, dateProps) ?? t('No start date')}>
               {propRadio(timelineStart, dateProps, (id) => onChange({ dateProp: id }), t('No start date'))}
             </MenuSubmenu>
           )}
