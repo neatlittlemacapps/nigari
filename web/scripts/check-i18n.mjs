@@ -209,6 +209,19 @@ for (const file of files) {
     }
   }
 
+  // A toast says its text straight to the person, so its text goes through
+  // t(). The JSX and attribute rules below never see a toast's argument, and a
+  // short German sentence in a template literal reads as English to Section
+  // 3: `Zugriff von ${g.user} beendet.` sat in BreakGlassLog.tsx, untranslated
+  // and German for every admin, while this check passed (#929).
+  {
+    const bare = blankComments(text);
+    for (const m of bare.matchAll(/\btoast(Error)?\(\s*['"`]/g)) {
+      if (/i18n-ok:\s*\S/.test(text.split('\n')[bare.slice(0, m.index).split('\n').length - 1] ?? '')) continue;
+      errors.push(`${rel}:${bare.slice(0, m.index).split('\n').length}  toast${m[1] ?? ''}() with a bare string — wrap it in t()`);
+    }
+  }
+
   if (!file.endsWith('.tsx')) continue;
 
   // Scanned over the WHOLE file, not line by line. JSX puts text and its

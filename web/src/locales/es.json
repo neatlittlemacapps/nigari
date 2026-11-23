@@ -1410,5 +1410,6 @@
   "Filter": "Filtrar",
   "Views": "Vistas",
   "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "La fila junto a este lugar ya no existe o está en otra lista, así que no se colocó nada ahí. Recarga e inténtalo de nuevo.",
-  "Show more": "Mostrar más"
+  "Show more": "Mostrar más",
+  "Emergency access by {name} ended.": "Acceso de emergencia de {name} finalizado."
 }

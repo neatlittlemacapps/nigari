@@ -66,7 +66,24 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
     assert(await toolbar.locator('.fs-controls button', { hasText: kept }).first().isVisible(), `${kept} not offered while locked`);
   }
   assert.equal(await page.locator('.col-resize').count(), 0, 'a column grip while locked');
-  assert.equal(await page.locator('.db-table .th-label').count(), 0, 'a column menu while locked');
+  // The heading's menu stays, with the property's own actions only. Since
+  // spec 015 (US1 scenario 7) it carries Rename, Edit property, Duplicate and
+  // Delete, which change the schema, and the lock does not cover the schema
+  // (see Edit properties below). What the lock takes away is the view's part:
+  // Move left, Move right and Hide in view, and dragging the heading. Before
+  // spec 015 the heading had no menu while locked, which this line asserted
+  // (#928).
+  const headLabel = page.locator('.db-table th[data-col-id="status"] .th-label');
+  await headLabel.click();
+  const headMenu = page.getByRole('menu', { name: 'Status column' });
+  await headMenu.waitFor();
+  const headItems = await headMenu.locator('[role="menuitem"]').evaluateAll((els) => els.map((e) => e.textContent.trim()));
+  await page.keyboard.press('Escape');
+  await headMenu.waitFor({ state: 'hidden' });
+  for (const gone of ['Move left', 'Move right', 'Hide in view']) {
+    assert(!headItems.some((i) => i.startsWith(gone)), `${gone} in the column menu while locked: ${headItems}`);
+  }
+  assert(headItems.includes('Rename') && headItems.includes('Edit property'), `locked column menu: ${headItems}`);
   const tab = page.locator('.view-tab', { hasText: 'Table' });
   await tab.click({ button: 'right' });
   await page.waitForTimeout(300);
