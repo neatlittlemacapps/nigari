@@ -95,7 +95,8 @@ a tree allows; the anchor and side to send) checked by
 - **Touch**: a press-and-hold of 300ms on the handle starts the drag, so a
   scroll that starts on the handle still scrolls. **Owner decision**
   (2026-11-23): on a phone the handle is hidden until a row is tapped; the
-  tap shows that row's handle (and does not open the row). Turned down:
+  tap shows that row's handle, while a tap on the title still opens the row
+  and a tap on a cell still edits it. Turned down:
   always visible on every row (the picture's draft), for a cleaner table.
 - **The line**: the block drop line's look, 2px in `--color-focus`
   (`--editor-drop-line-width`), drawn across the row's full width between two
