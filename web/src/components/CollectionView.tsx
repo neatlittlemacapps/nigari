@@ -664,6 +664,14 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     }
   };
 
+  // The first move of a drag in a sorted view: the rows are drawn in their own
+  // order at once, so the line shows where the row will really go, and the
+  // sort goes as the person's own change, which the bar can undo.
+  const dropSortForDrag = () => {
+    setRows((prev) => [...prev].sort((a, b) => (a.position ?? 0) - (b.position ?? 0)));
+    updateView({ sort: null });
+  };
+
   // The view a new row is made in. A form has no filters, and its fields are
   // what the person fills in.
   // In a document the view is the embed's own and the server has no such view
@@ -1324,9 +1332,13 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           onSetProp={setRowProp}
           onSetOptions={setPropOptions}
           // Rows move in the database's own order, which a sorted view does
-          // not show; a drag there comes with removing the sort (spec 022,
-          // US2), not yet wired.
-          onPlaceRow={canEdit && !serverSort ? (id, spot) => void placeRow(id, spot) : undefined}
+          // not show. A drag there takes the sort away as the person's own
+          // change (owner, 2026-11-23): the bar offers Reset and Save for
+          // everyone, and a lock leaves it open. Only where the sort could
+          // not be the person's own and they may not change the view do the
+          // rows of a sorted view not drag (FR-005).
+          onPlaceRow={canEdit && (!serverSort || !!personalScope || mayChangeViews) ? (id, spot) => void placeRow(id, spot) : undefined}
+          onRowDragStart={serverSort ? dropSortForDrag : undefined}
           onAddRowBelow={canEdit ? (id, above) => void addRowNextTo(id, above) : undefined}
         />
       )}
@@ -2135,6 +2147,7 @@ function TableView({
   onSetProp,
   onSetOptions,
   onPlaceRow,
+  onRowDragStart,
   onAddRowBelow,
 }: {
   rows: Row[];
@@ -2159,6 +2172,9 @@ function TableView({
   /** Move a row next to another (spec 022). Absent: rows do not move here (a
    *  reader, or a view whose order is not the database's own). */
   onPlaceRow?: (id: string, spot: RowSpot) => void;
+  /** A press on a handle became a drag: a sorted view gives way to the rows'
+   *  own order here (spec 022, US2). */
+  onRowDragStart?: () => void;
   /** The + beside a row; `above` with Alt or Option. Absent for a reader. */
   onAddRowBelow?: (id: string, above: boolean) => void;
 }) {
@@ -2302,7 +2318,7 @@ function TableView({
   // sub-item's place under its parent is the order of the relation's values,
   // not the row's position, so dragging it would change nothing on screen.
   const drawn: DrawnRow[] = ordered.map((o) => ({ id: o.row.id, parentId: o.parent, depth: o.depth }));
-  const { drag: rowDrag, startDrag: startRowDrag } = useRowDrag(drawn, (id, spot) => onPlaceRow?.(id, spot));
+  const { drag: rowDrag, startDrag: startRowDrag } = useRowDrag(drawn, (id, spot) => onPlaceRow?.(id, spot), onRowDragStart);
   const dropGap = rowDrag?.spot ? rowDrag.gap : -1;
   const rowClass = (i: number, id: string) =>
     [

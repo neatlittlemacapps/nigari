@@ -109,5 +109,42 @@ await withFixture(async ({ page, api, base, path }) => {
   assert.equal(await row('D').locator('.db-row-handle').count(), 0, 'a sub-item has no handle: its place is its relation\'s order');
   assert.equal(await row('E').locator('.db-row-handle').count(), 1, 'a top-level row keeps its handle');
 
-  console.log('row-handle: drag, line, Escape, reload, filtered view, + below and above, tree');
+  // ---- A sorted view: the drag takes the sort away, for this person only ----
+  // (owner, 2026-11-23). The rows are drawn in their own order as the drag
+  // starts, so the line shows where the row really goes; the bar offers Reset
+  // and Save for everyone; the new place is shared at once either way.
+  for (const r of (await api('GET', `${path}/rows?limit=50`)).rows) if (!r.title) await api('DELETE', `/api/pages/${r.id}`);
+  await api('PATCH', `/api/pages/${ids.E}`, { propsPatch: { kids: [] } });
+  const sorted = { id: 'table', name: 'Table', type: 'table', sort: { property: 'kind', dir: 'asc' } };
+  await api('PUT', path, { ...(await api('GET', path)), views: [sorted] });
+  const sharedSort = async () => (await api('GET', path)).views[0].sort;
+  await page.reload();
+  // Alpha first (E, A, C by their own order), then Beta (B, D).
+  await eventually(async () => (await shown()).join('') === 'EACBD');
+  await grab('D');
+  await eventually(async () => (await shown()).join('') === 'EBACD');
+  await over('E', 0.2);
+  await page.mouse.up();
+  await eventually(async () => (await serverOrder()) === 'DEBAC');
+  await eventually(async () => (await shown()).join('') === 'DEBAC');
+  const bar = page.locator('.view-change-bar');
+  await bar.waitFor();
+  assert.match(await bar.textContent(), /Only you see these changes/);
+  assert.deepEqual(await sharedSort(), { property: 'kind', dir: 'asc' }, 'the view keeps its sort for everyone else');
+  // Reset: the sort comes back, and D keeps its new place among the Betas.
+  await bar.getByRole('button', { name: 'Reset' }).click();
+  await eventually(async () => (await shown()).join('') === 'EACDB');
+  assert.equal(await serverOrder(), 'DEBAC', 'Reset brings the sort back, not the old order');
+
+  // ---- Locked views: a sorted view still drags (the sort is the person's own) ----
+  assert.ok((await page.request.fetch(`${base}${path}/lock`, { method: 'PUT' })).ok());
+  await page.reload();
+  await eventually(async () => (await shown()).join('') === 'EACDB');
+  await grab('B');
+  await over('D', 0.2);
+  await page.mouse.up();
+  await eventually(async () => (await serverOrder()) === 'BDEAC');
+  assert.deepEqual(await sharedSort(), { property: 'kind', dir: 'asc' }, 'a lock keeps the shared sort');
+
+  console.log('row-handle: drag, line, Escape, reload, filtered view, + below and above, tree, sorted view, locked view');
 });

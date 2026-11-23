@@ -151,16 +151,28 @@ function scrollParent(el: HTMLElement): HTMLElement | null {
   return null;
 }
 
+function rowBoxes(body: HTMLElement) {
+  return [...body.querySelectorAll<HTMLElement>(':scope > tr[data-row-id]')].map((tr) => {
+    const b = tr.getBoundingClientRect();
+    return { top: b.top, bottom: b.bottom };
+  });
+}
+
 /** Dragging a table row by its handle. `rows` is the table as drawn, in
  *  order; rows are found by `data-row-id` in the tbody the drag started in.
  *  `onDrop(id, spot)` is called on a release over the table when the spot
- *  moves the row; Escape, or a release anywhere else, cancels. */
-export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot: RowSpot) => void) {
+ *  moves the row; Escape, or a release anywhere else, cancels. `onStart` is
+ *  called once the press has become a drag: a sorted view draws its rows in
+ *  their own order then (spec 022, US2), and the boxes are read again as soon
+ *  as the rows change. */
+export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot: RowSpot) => void, onStart?: () => void) {
   const [drag, setDrag] = useState<RowDragState | null>(null);
   const dropRef = useRef(onDrop);
   dropRef.current = onDrop;
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
+  const startRef = useRef(onStart);
+  startRef.current = onStart;
   const live = useRef<{
     id: string;
     startX: number;
@@ -177,6 +189,8 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
     scroller: HTMLElement | null;
     scrollTop0: number;
     spot: RowSpot | null;
+    /** The rows the boxes were read for. */
+    rowsAt: readonly DrawnRow[];
   } | null>(null);
   const draggedAt = useRef({ id: '', at: 0 });
 
@@ -202,6 +216,14 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
         l.started = true;
         document.body.classList.add('is-row-moving');
         window.getSelection()?.removeAllRanges();
+        startRef.current?.();
+      }
+      if (rowsRef.current !== l.rowsAt) {
+        // The rows were drawn again (a sorted view gave way to its own
+        // order, a row arrived): their boxes moved with them.
+        l.rowsAt = rowsRef.current;
+        l.rects = rowBoxes(l.body);
+        l.scrollTop0 = l.scroller?.scrollTop ?? 0;
       }
       if (l.scroller) {
         const r = l.scroller.getBoundingClientRect();
@@ -270,13 +292,11 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
       armed: !touch,
       holdTimer: null as number | null,
       body,
-      rects: [...body.querySelectorAll<HTMLElement>(':scope > tr[data-row-id]')].map((tr) => {
-        const b = tr.getBoundingClientRect();
-        return { top: b.top, bottom: b.bottom };
-      }),
+      rects: rowBoxes(body),
       scroller,
       scrollTop0: scroller?.scrollTop ?? 0,
       spot: null as RowSpot | null,
+      rowsAt: rowsRef.current,
     };
     live.current = l;
     if (touch) {

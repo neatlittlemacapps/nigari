@@ -76,8 +76,8 @@ description: "Tasks for the table row handle, + and row menu, in two pull reques
 
 ### Phase 7: User Story 2, a drag in a sorted view removes the sort (P1)
 
-- [ ] T022 [US2] [ui] On drop in a sorted view: rows drawn in manual order from the drag's start, then `updateView({ sort: null })` (the personal path, or the owner's choice in T013); no drag where the person may not change a sorted view without a personal scope (FR-005), with the tooltip's reason
-- [ ] T023 [US2] [test] `row-handle.mjs`: sorted view, the bar's Reset brings the sort back and keeps the new place; a locked sorted view still drags. Mutation-check it
+- [x] T022 [US2] [ui] On drop in a sorted view: rows drawn in manual order from the drag's start, then `updateView({ sort: null })` (the personal path, or the owner's choice in T013); no drag where the person may not change a sorted view without a personal scope (FR-005), with the tooltip's reason
+- [x] T023 [US2] [test] `row-handle.mjs`: sorted view, the bar's Reset brings the sort back and keeps the new place; a locked sorted view still drags. Mutation-check it
 
 ### Phase 8: User Story 3, the row menu (P1)
 
