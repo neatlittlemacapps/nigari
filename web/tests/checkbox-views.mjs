@@ -24,8 +24,11 @@ await withFixture(async ({ page, api, base, path }) => {
   await page.goto(`${base}/p/${collectionId}`);
   await page.locator('.view-tab', { hasText: 'Table' }).waitFor();
   assert.equal(await page.locator('.view-picker').count(), 0, 'desktop keeps the tabs');
-  const firstHead = page.locator('.db-table thead th').first();
+  // The row handle's gutter (spec 022) sits in the margin ahead of every
+  // column; the first column after it is the checkbox.
+  const firstHead = page.locator('.db-table thead th:not(.db-row-gutter)').first();
   assert.match(await firstHead.getAttribute('class'), /db-check-col/, 'the checkbox leads the table');
+  assert.match(await page.locator('.db-table thead th').first().getAttribute('class'), /db-row-gutter/, 'the row handle stays in front of the checkbox');
   assert.equal(await page.locator('.db-table thead').getByRole('button', { name: 'Applied', exact: true }).count(), 1, 'the checkbox column is drawn once, its menu named after it');
   // Its heading keeps the column's menu (Hide in view among it).
   await page.locator('.db-table thead').getByRole('button', { name: 'Applied', exact: true }).click();
@@ -38,7 +41,7 @@ await withFixture(async ({ page, api, base, path }) => {
     const order = (await api('GET', path)).views.find((v) => v.id === 'table').colOrder ?? [];
     return order.join() === 'labels,status,ok';
   });
-  const heads = await page.locator('.db-table thead th').evaluateAll((ths) => ths.map((th) => th.className.includes('db-check-col') ? 'ok' : (th.dataset.colId ?? 'name')));
+  const heads = await page.locator('.db-table thead th:not(.db-row-gutter)').evaluateAll((ths) => ths.map((th) => th.className.includes('db-check-col') ? 'ok' : (th.dataset.colId ?? 'name')));
   assert.deepEqual(heads, ['ok', 'name', 'labels', 'status'], 'drawn: box, name, then the moved columns');
   const view = page.url();
   await page.getByRole('checkbox', { name: 'Applied: First row' }).click();
