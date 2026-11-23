@@ -93,8 +93,10 @@ a tree allows; the anchor and side to send) checked by
 - Pointer events, so mouse, pen and finger take one path (`boardDrag.ts`,
   `columnDrag.ts`); a 5px threshold tells a click (menu) from a drag.
 - **Touch**: a press-and-hold of 300ms on the handle starts the drag, so a
-  scroll that starts on the handle still scrolls (pending owner decision on
-  the handle's visibility; the gesture is the same either way).
+  scroll that starts on the handle still scrolls. **Owner decision**
+  (2026-11-23): on a phone the handle is hidden until a row is tapped; the
+  tap shows that row's handle (and does not open the row). Turned down:
+  always visible on every row (the picture's draft), for a cleaner table.
 - **The line**: the block drop line's look, 2px in `--color-focus`
   (`--editor-drop-line-width`), drawn across the row's full width between two
   rows. One spot per gap, so it cannot twitch between two (the #809 lesson).
