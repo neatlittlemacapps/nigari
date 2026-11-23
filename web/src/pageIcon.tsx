@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { lucideIcon, useLucide } from './lucideLoader';
+import { lucideFailed, lucideIcon, useLucide } from './lucideLoader';
 import { mdiPath, useMdi } from './mdiLoader';
 
 // A page icon can be one of four things, all stored in the single `icon`
@@ -69,7 +69,7 @@ export function PageIcon({
     const { name, color } = parseIconRef(icon);
     // Still loading (lucideLoader.ts): hold the icon's place, so the row
     // does not shift, and do not flash the fallback glyph in between.
-    if (!lucideReady) return <span className="page-icon-lucide" style={{ display: 'inline-block', width: size, height: size }} aria-hidden="true" />;
+    if (!lucideReady && !lucideFailed()) return <span className="page-icon-lucide" style={{ display: 'inline-block', width: size, height: size }} aria-hidden="true" />;
     const Cmp = lucideIcon(name);
     if (!Cmp) return <>{fallback}</>;
     return (

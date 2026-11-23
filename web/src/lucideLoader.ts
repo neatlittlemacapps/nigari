@@ -13,11 +13,16 @@ import type { LucideIcon } from 'lucide-react';
 let SET: Record<string, LucideIcon> | null = null;
 let NAMES: string[] = [];
 let loading: Promise<void> | null = null;
+// The last load failed (a network blip, a chunk gone after a deploy): an icon
+// then draws its fallback instead of an empty box for good, and the next
+// component that asks tries again.
+let failed = false;
 const subscribers = new Set<() => void>();
 
 export function loadLucide(): Promise<void> {
   if (SET) return Promise.resolve();
   if (!loading) {
+    failed = false;
     loading = import('./lucideSet')
       .then((m) => {
         SET = m.LUCIDE_SET;
@@ -26,6 +31,8 @@ export function loadLucide(): Promise<void> {
       })
       .catch(() => {
         loading = null; // allow a retry (e.g. after a flaky network)
+        failed = true;
+        subscribers.forEach((f) => f());
       });
   }
   return loading;
@@ -33,6 +40,10 @@ export function loadLucide(): Promise<void> {
 
 export function lucideIcon(name: string): LucideIcon | undefined {
   return SET?.[name];
+}
+
+export function lucideFailed(): boolean {
+  return failed;
 }
 
 export function lucideNames(): string[] {

@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Trash2, Upload as UploadIcon } from 'lucide-react';
 import Portal from './Portal';
 import { EMOJI_GROUPS } from '../emojiData';
-import { lucideIcon, lucideNames, useLucide } from '../lucideLoader';
+import { lucideFailed, lucideIcon, lucideNames, useLucide } from '../lucideLoader';
 import { api } from '../api';
 import { toastError } from '../toast';
 import { makeLucide, makeMdi } from '../pageIcon';
@@ -236,7 +236,7 @@ export default function IconPicker({ onPick, onRemove, onClose, pageId, anchor }
         {tab === 'icon' && lib === 'mdi' && !mdiReady && (
           <div className="icon-empty">{t('Loading Material icons…')}</div>
         )}
-        {tab === 'icon' && (lib === 'mdi' ? mdiReady : lucideReady) && iconResults.length === 0 && (
+        {tab === 'icon' && (lib === 'mdi' ? mdiReady : lucideReady || lucideFailed()) && iconResults.length === 0 && (
           <div className="icon-empty">{t('No matches')}</div>
         )}
 
