@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
-import { toast } from '../toast';
+import { toastError } from '../toast';
 import type { Comment } from '../types';
 import { MessageSquareText, X } from 'lucide-react';
 import { t, plural } from '../i18n';
@@ -82,7 +82,7 @@ export default function CommentsPanel({
       requestAnimationFrame(() => listRef.current?.scrollTo({ top: 1e6, behavior: 'smooth' }));
     } catch (err) {
       setBody(text); // swallow nothing if sending fails
-      toast((err as Error).message || t('Could not post the comment'));
+      toastError((err as Error).message || t('Could not post the comment'));
     }
   };
 

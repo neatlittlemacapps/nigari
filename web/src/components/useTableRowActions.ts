@@ -3,7 +3,7 @@ import { api, ApiError } from '../api';
 import type { Filter } from '../types';
 import type { Row } from '../collectionRow';
 import { t } from '../i18n';
-import { toast } from '../toast';
+import { toastError } from '../toast';
 import { serverMessage } from '../serverErrors';
 import { applySpot, type RowSpot } from '../rowDrag';
 
@@ -34,7 +34,7 @@ export function useTableRowActions({
    *  past its first rows (spec 023). */
   onMade?: (id: string) => void;
 }) {
-  const fail = (e: unknown) => toast(e instanceof ApiError ? serverMessage(e.code, e.message) : t('Change not saved'));
+  const fail = (e: unknown) => toastError(e instanceof ApiError ? serverMessage(e.code, e.message) : t('Change not saved'));
 
   // The row the + just added, its title being typed (US4).
   const [editTitleId, setEditTitleId] = useState<string | null>(null);

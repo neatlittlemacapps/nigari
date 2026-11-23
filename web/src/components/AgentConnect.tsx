@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import Portal from './Portal';
 import { useExclusiveModal } from '../modal';
-import { toast } from '../toast';
+import { toast, toastError } from '../toast';
 import type { Workspace } from '../types';
 import { Bot, Check, Copy, Download, ShieldCheck, KeyRound } from 'lucide-react';
 import { t } from '../i18n';
@@ -193,7 +193,7 @@ export default function AgentConnectModal({
       setToken(res.token);
       toast(t('Token created, shown only once'));
     } catch (e) {
-      toast((e as Error).message || t('The token could not be created'));
+      toastError((e as Error).message || t('The token could not be created'));
     } finally {
       setBusy(false);
     }

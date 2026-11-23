@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { ChevronDown, ChevronUp, EyeDashed, Plus } from 'lucide-react';
 import { api } from '../api';
-import { toast } from '../toast';
+import { toastError } from '../toast';
 import { confirm } from '../dialog';
 import { plural, t } from '../i18n';
 import type { CollectionConfig, PropDef, PropOption, PropType } from '../types';
@@ -134,7 +134,7 @@ export default function RowProperties({
     try {
       await api.updatePage(pageId, { propsPatch: { [propId]: value } });
     } catch {
-      toast(t('Property not saved'));
+      toastError(t('Property not saved'));
     }
   };
 
@@ -149,7 +149,7 @@ export default function RowProperties({
         return true;
       } catch (e) {
         waiting.current--;
-        toast((e as Error).message);
+        toastError((e as Error).message);
         void load();
         return false;
       }

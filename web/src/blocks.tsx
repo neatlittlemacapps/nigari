@@ -8,7 +8,7 @@ import { openPage, openPageAux } from './pageOpen';
 import CollectionView, { type EmbedState } from './components/CollectionView';
 import { chartEmbed, openSettingsOnce } from './chartInsert';
 import type { ChartKind } from './chartLayout';
-import { toast } from './toast';
+import { toastError } from './toast';
 import { plural, t } from './i18n';
 import {
   MIN_PCT,
@@ -361,7 +361,7 @@ export const databaseSpec = createReactBlockSpec(
           editor.updateBlock(block, { props: { collectionId: id, chartKind: '', local: chartLocal } } as never);
         } catch (e) {
           editor.updateBlock(block, { props: { collectionId: id, chartKind: '' } } as never);
-          toast(t('No chart was added to this database: {reason}', { reason: (e as Error).message }));
+          toastError(t('No chart was added to this database: {reason}', { reason: (e as Error).message }));
         }
       };
       const embed: EmbedState = {

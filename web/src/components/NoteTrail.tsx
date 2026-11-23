@@ -5,7 +5,7 @@ import type { PageNote } from '../types';
 import { formatMoment, formatRelative } from '../format';
 import { AgentMark } from './AgentBadge';
 import { confirm } from '../dialog';
-import { toast } from '../toast';
+import { toastError } from '../toast';
 import { t, plural } from '../i18n';
 import { Button } from '../ui/Button';
 
@@ -76,7 +76,7 @@ export default function NoteTrail({ pageId, canWrite }: { pageId: string; canWri
       load();
     } catch (e) {
       setBody(text);
-      toast((e as Error).message || t('Note not saved'));
+      toastError((e as Error).message || t('Note not saved'));
     }
   };
 
@@ -95,7 +95,7 @@ export default function NoteTrail({ pageId, canWrite }: { pageId: string; canWri
       await api.clearNotes(pageId);
       load();
     } catch (e) {
-      toast((e as Error).message || t('Not discarded'));
+      toastError((e as Error).message || t('Not discarded'));
     }
   };
 

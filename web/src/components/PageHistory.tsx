@@ -5,7 +5,7 @@ import type { Revision } from '../types';
 import Portal from './Portal';
 import { confirm } from '../dialog';
 import { useExclusiveModal } from '../modal';
-import { toast } from '../toast';
+import { toast, toastError } from '../toast';
 import { formatMoment } from '../format';
 import { t } from '../i18n';
 
@@ -33,7 +33,7 @@ export function HistoryModal({
       onRestored();
       onClose();
     } catch (e) {
-      toast((e as Error).message || t('Restoring failed'));
+      toastError((e as Error).message || t('Restoring failed'));
     }
   };
 

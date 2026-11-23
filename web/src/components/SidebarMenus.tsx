@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useRef, useState, type ComponentPropsWithoutRef } from 'react';
 import { Plus, MoreHorizontal } from 'lucide-react';
 import { api } from '../api';
-import { toast } from '../toast';
+import { toast, toastError } from '../toast';
 import { t } from '../i18n';
 import { chordFor } from '../keys';
 import { Menu, MenuItem, MenuSeparator, MenuSubmenu, MenuValueItem, MenuValues, type MenuPoint } from '../ui/Menu';
@@ -197,7 +197,7 @@ function PageMenu({
           void api
             .duplicatePage(id, false, true)
             .then(() => toast(t('Saved as template')))
-            .catch(() => toast(t('Could not save as template')))
+            .catch(() => toastError(t('Could not save as template')))
         }
       >
         {t('Save as template')}
@@ -212,7 +212,7 @@ function PageMenu({
             void api
               .addDatabaseTemplate(parentId, { fromPageId: id })
               .then(() => toast(t('Saved as a template of this database')))
-              .catch(() => toast(t('Could not save as template')))
+              .catch(() => toastError(t('Could not save as template')))
           }
         >
           {t('Save as a template of this database')}

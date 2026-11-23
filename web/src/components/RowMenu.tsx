@@ -2,7 +2,7 @@ import { useContext, useEffect, useState, type ReactNode, type RefObject } from 
 import { api } from '../api';
 import { t } from '../i18n';
 import { formatRelative } from '../format';
-import { toast } from '../toast';
+import { toast, toastError } from '../toast';
 import { Menu, type MenuPoint } from '../ui/Menu';
 import { RowOpenContext } from '../pageOpen';
 import { setCommentsPanelOpen } from '../commentsPanelState';
@@ -89,14 +89,14 @@ export function RowMenuItems({ place, row, deps }: { place: RowPlace; row: { id:
                 .then(() => window.dispatchEvent(new Event('nigari:favorites-changed')))
                 .catch(() => {
                   setFavorite(!next);
-                  toast(t('Change not saved'));
+                  toastError(t('Change not saved'));
                 });
             },
           },
     copyLink: () => {
       const url = `${location.origin}/p/${id}`;
       // No clipboard on a plain-http address (a LAN instance): say so.
-      const failed = () => toast(t('Copy failed; select the link'));
+      const failed = () => toastError(t('Copy failed; select the link'));
       if (!navigator.clipboard) failed();
       else navigator.clipboard.writeText(url).then(() => toast(t('Link copied')), failed);
     },

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Check, Pencil, SmilePlus, Trash2 } from 'lucide-react';
 import { api } from '../api';
-import { toast } from '../toast';
+import { toastError } from '../toast';
 import type { Comment, CommentVersion } from '../types';
 import { formatMoment, formatRelative } from '../format';
 import { t } from '../i18n';
@@ -71,7 +71,7 @@ export default function CommentItem({
       onChanged();
     } catch (err) {
       // The draft stays: nothing typed is lost to a refusal.
-      toast((err as Error).message || t('Could not save the comment'));
+      toastError((err as Error).message || t('Could not save the comment'));
     } finally {
       setSaving(false);
     }
@@ -90,7 +90,7 @@ export default function CommentItem({
     try {
       await api.setReaction(c.id, key, on);
     } catch (err) {
-      toast((err as Error).message);
+      toastError((err as Error).message);
     }
     onChanged();
   };

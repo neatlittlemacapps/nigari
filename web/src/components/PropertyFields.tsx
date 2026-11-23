@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type CSSP
 import { api } from '../api';
 import { isOptionType, type PropDef, type PropOption, type PropType, type StatusGroup } from '../types';
 import { STATUS_GROUPS, orderByGroup, statusGroupLabel } from '../statusGroups';
-import { toast } from '../toast';
+import { toastError } from '../toast';
 import { Button } from '../ui/Button';
 import { Menu, MenuValueItem, MenuValues } from '../ui/Menu';
 import Portal from './Portal';
@@ -124,7 +124,7 @@ export function PropertyFields({
   const leavesGroupEmpty = (id: string, to: StatusGroup) => {
     const from = (p.options ?? []).find((x) => x.id === id)?.group;
     if (!from || from === to || !lastOfGroup(id, from)) return false;
-    toast(EACH_GROUP);
+    toastError(EACH_GROUP);
     return true;
   };
   /** An option to the end of a group (the Move to menu, a drop on a heading). */
@@ -140,7 +140,7 @@ export function PropertyFields({
     // A status's option names are unique (the server refuses two alike, and
     // the whole dialog's save with them): said here, before anything is lost.
     if (options.some((o) => o.name.trim().toLowerCase() === name.trim().toLowerCase())) {
-      toast(t('Enter a unique, non-empty name.'));
+      toastError(t('Enter a unique, non-empty name.'));
       return;
     }
     let oid = slug(name);
@@ -222,7 +222,7 @@ export function PropertyFields({
                                     }} />
                                   <Button emphasis="low" tone="destructive" size="sm" icon={<Trash2 size={16} />} label={t('Delete option')} onClick={async () => {
                                     setColorPick(null);
-                                    if (isStatus && o.group && lastOfGroup(o.id, o.group)) { toast(EACH_GROUP); return; }
+                                    if (isStatus && o.group && lastOfGroup(o.id, o.group)) { toastError(EACH_GROUP); return; }
                                     const ok = await confirm(t('Delete option “{name}”?', { name: o.name }) + '\n' + t('Existing selections are not cleared.'), { confirmText: t('Delete option'), danger: true });
                                     if (!ok) return;
                                     onPatch({ options: (p.options ?? []).filter((item) => item.id !== o.id) });

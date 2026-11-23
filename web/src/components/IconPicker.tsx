@@ -4,7 +4,7 @@ import Portal from './Portal';
 import { EMOJI_GROUPS } from '../emojiData';
 import { LUCIDE_SET, LUCIDE_NAMES } from '../lucideSet';
 import { api } from '../api';
-import { toast } from '../toast';
+import { toastError } from '../toast';
 import { makeLucide, makeMdi } from '../pageIcon';
 import { mdiNames, mdiPath, useMdi } from '../mdiLoader';
 import { t } from '../i18n';
@@ -117,7 +117,7 @@ export default function IconPicker({ onPick, onRemove, onClose, pageId, anchor }
       const url = await api.upload(file, pageId);
       onPick(url);
     } catch {
-      toast(t('Upload failed'));
+      toastError(t('Upload failed'));
     } finally {
       setUploading(false);
     }

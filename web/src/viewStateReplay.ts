@@ -5,7 +5,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { api } from './api';
 import { t } from './i18n';
-import { toast } from './toast';
+import { toastError } from './toast';
 import { outboxKey } from './viewStateOutbox';
 import { parseOutbox } from './viewStateNote';
 import type { PersonalViewState } from './viewState';
@@ -31,7 +31,7 @@ export function replayOutbox(
   const owed = parseOutbox(raw, Date.now());
   for (const [scope, state] of owed) {
     const again = state ? api.putViewState(collectionId, scope, state) : api.deleteViewState(collectionId, scope);
-    again.catch(() => toast(t('Your change to this view was not saved')));
+    again.catch(() => toastError(t('Your change to this view was not saved')));
   }
   if (!owed.length || !stillHere()) return;
   for (const [scope] of owed) touched.add(scope);

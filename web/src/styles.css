@@ -4994,9 +4994,11 @@ body.is-col-resizing {
   .collection-toolbar.has-view-picker {
     gap: 8px;
   }
+  /* It shrinks, but not below the floor .view-picker sets (96px): at
+     min-width 0 an embed's toolbar squeezed it to "B…", and nobody could
+     tell which view was open (#921). Past that floor the bar scrolls. */
   .collection-toolbar.has-view-picker > .view-picker {
     flex-shrink: 1;
-    min-width: 0;
   }
 
   /* The views lock's marker first on a phone (spec 013): the toolbar scrolls
@@ -5178,14 +5180,23 @@ body.is-col-resizing {
   pointer-events: none;
 }
 
+/* A toast is ink, as the primary button is: the text colour as a surface,
+   which stands out on every page in both themes (17:1 and up). A failure
+   takes the destructive colour with the text the tokens pair with it
+   (on-destructive), so it passes in dark too: it used to be white on the
+   dark theme's light orange, 2.3:1 (#924). */
 .toast {
-  background: var(--danger);
-  color: #fff;
+  background: var(--color-pill-default);
+  color: var(--color-pill-text);
   padding: 9px 16px;
   border-radius: 8px;
   font-size: 13.5px;
   box-shadow: var(--shadow);
   max-width: 90vw;
+}
+.toast-error {
+  background: var(--color-destructive);
+  color: var(--color-on-destructive);
 }
 
 /* A toast with an action (spec 005): the message and its button on one line,
@@ -5195,6 +5206,46 @@ body.is-col-resizing {
   align-items: center;
   gap: var(--space-200);
   pointer-events: auto;
+}
+
+/* The toast's button is drawn in the toast's own text colour, with a hairline
+   of it, so it reads on ink and on the error colour alike. As a plain
+   low-emphasis button it kept the page's text colour: 3.0:1 on the light
+   error toast, 1.8:1 on the dark one (#924). */
+.toast .toast-action.ui-button {
+  flex: none;
+  color: inherit;
+  border-color: currentColor;
+}
+.toast .toast-action.ui-button:hover:not([data-disabled]) {
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+.toast .toast-action.ui-button:focus-visible {
+  outline-color: currentColor;
+}
+
+/* On a phone the toasts keep 12px from the edges (a long one wraps inside
+   them) and stand above the update banner, which spans the foot there
+   (UpdateBanner): both at the bottom, the toast sat on top of the banner and
+   hid it (#924). The offset clears a banner of up to two lines: on a 320px
+   phone the Spanish one wraps. */
+@media (max-width: 720px) {
+  .toaster {
+    left: 12px;
+    right: 12px;
+    transform: none;
+  }
+  .toast {
+    max-width: 100%;
+  }
+  body:has(.update-banner) .toaster,
+  body:has(.live-down) .toaster {
+    bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+  /* Both: the banner has stepped up above the connection warning. */
+  body:has(.update-banner):has(.live-down) .toaster {
+    bottom: calc(120px + env(safe-area-inset-bottom));
+  }
 }
 
 /* ---------- Scrollbars ---------- */

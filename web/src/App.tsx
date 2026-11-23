@@ -18,7 +18,7 @@ import { UploadBar, ImageLightbox } from './components/Overlays';
 import Toaster from './components/Toaster';
 import { DialogHost, confirm, promptText } from './dialog';
 import { announceModal, modalOpen } from './modal';
-import { toast } from './toast';
+import { toast, toastError } from './toast';
 import { onRefresh } from './pwa';
 import { shouldAnnounce } from './versionNotice';
 import PullToRefresh from './components/PullToRefresh';
@@ -78,7 +78,7 @@ if (mailOauthMsg) {
       return;
     }
     const msg = serverMessage(mailOauthMsg.code, mailOauthMsg.text);
-    toast(t('Mail connection: {detail}', {
+    toastError(t('Mail connection: {detail}', {
       detail: mailOauthMsg.detail ? `${msg} (${mailOauthMsg.detail})` : msg,
     }));
   }, 400);
@@ -991,7 +991,7 @@ export default function App() {
         p = await api.createPage(parentId, '', type, undefined, parentId ? undefined : currentWs);
       } catch (e) {
         // A refusal (a read-only workspace, say) used to end here unseen.
-        toast((e as Error).message || t('Could not be created'));
+        toastError((e as Error).message || t('Could not be created'));
         return;
       }
       setPages((prev) => (prev ? [...prev, p] : [p]));
@@ -1055,7 +1055,7 @@ export default function App() {
           navigate(r.id);
         }
       } catch (err) {
-        toast((err as Error).message || t('Import failed'));
+        toastError((err as Error).message || t('Import failed'));
       }
     },
     [loadPages, navigate],
@@ -1093,7 +1093,7 @@ export default function App() {
         await loadPages();
         navigate(r.id);
       } catch {
-        toast(t('Could not be duplicated'));
+        toastError(t('Could not be duplicated'));
       }
     },
     [loadPages, navigate],
@@ -1475,7 +1475,7 @@ export default function App() {
                         await loadWorkspaces();
                         setCurrentWs(ws.id);
                       } catch (e) {
-                        toast((e as Error).message || t('Could not be created'));
+                        toastError((e as Error).message || t('Could not be created'));
                       }
                     })();
                   }}

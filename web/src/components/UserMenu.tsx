@@ -5,7 +5,7 @@ import type { FontPref } from '../App';
 import type { AuditEntry, User } from '../types';
 import Portal from './Portal';
 import { confirm } from '../dialog';
-import { toast } from '../toast';
+import { toast, toastError } from '../toast';
 import { useExclusiveModal } from '../modal';
 import { Menu, MenuCheckboxItem, MenuItem, MenuSeparator } from '../ui/Menu';
 import { formatMoment } from '../format';
@@ -89,7 +89,7 @@ function ProfileModal({
 
   const save = async () => {
     if (pwMismatch) {
-      toast(t('The two new passwords do not match'));
+      toastError(t('The two new passwords do not match'));
       return;
     }
     setBusy(true);
@@ -108,7 +108,7 @@ function ProfileModal({
       onClose();
       if (pw) toast(t('Password changed, other sessions were signed out'));
     } catch (err) {
-      toast((err as Error).message || t('Saving failed'));
+      toastError((err as Error).message || t('Saving failed'));
     } finally {
       setBusy(false);
     }
@@ -120,7 +120,7 @@ function ProfileModal({
       const url = await api.upload(f);
       setAvatar(url);
     } catch (err) {
-      toast((err as Error).message || t('Upload failed'));
+      toastError((err as Error).message || t('Upload failed'));
     }
   };
 
@@ -390,7 +390,7 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
     try {
       const r = await api.revertChange(id);
       if (r.reverted.length === 0) {
-        toast(t('Nothing was taken back: every value has been changed since.'));
+        toastError(t('Nothing was taken back: every value has been changed since.'));
       } else if (r.skipped.length > 0) {
         toast(
           t('{n} taken back, {m} left alone because they changed since.')
@@ -401,7 +401,7 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
         toast(t('Taken back.'));
       }
     } catch {
-      toast(t('That could not be taken back.'));
+      toastError(t('That could not be taken back.'));
     } finally {
       setBusy(null);
     }

@@ -14,7 +14,7 @@ import { holdSideMenuWhileHovered } from '../sideMenuHold';
 import { en as coreEn } from '@blocknote/core/locales';
 import { BlockNoteView } from '@blocknote/mantine';
 import { api, ApiError, materializeQuery } from '../api';
-import { toast } from '../toast';
+import { toast, toastError } from '../toast';
 import type { Backlink, Page, PageMeta, User } from '../types';
 import { NigariProvider } from '../collab';
 import { plural, t } from '../i18n';
@@ -729,7 +729,7 @@ function PageHeader({
   const togglePrivate = () => {
     const next = visibility === 'private' ? 'workspace' : 'private';
     setVisibility(next);
-    api.updatePage(pageId, { visibility: next }).catch(() => toast(t('Visibility not saved')));
+    api.updatePage(pageId, { visibility: next }).catch(() => toastError(t('Visibility not saved')));
   };
 
   // One request at a time: two in flight can answer out of order and leave the
@@ -746,7 +746,7 @@ function PageHeader({
       setShareOff(false);
       onPagesChanged();
     } catch {
-      toast(t('Sharing failed'));
+      toastError(t('Sharing failed'));
     } finally {
       setShareBusy(false);
     }
@@ -778,7 +778,7 @@ function PageHeader({
     } catch {
       // A refused revoke used to look like a successful one: the menu closed and
       // the marker went away while the link kept working.
-      toast(t('Could not stop sharing'));
+      toastError(t('Could not stop sharing'));
     } finally {
       setShareBusy(false);
     }
@@ -797,7 +797,7 @@ function PageHeader({
       pendingMeta.current = {};
       api.updatePage(pageId, merged).catch(() => {
         Object.assign(pendingMeta.current, merged); // keep for a later retry
-        toast(t('Title/icon not saved'));
+        toastError(t('Title/icon not saved'));
       });
     }, 500);
   };
@@ -851,7 +851,7 @@ function PageHeader({
     onLocalMeta({ props: next ? { ...rest, _fullWidth: true } : rest });
     api
       .updatePage(pageId, { propsPatch: { _fullWidth: next ? true : null } })
-      .catch(() => toast(t('Page width not saved')));
+      .catch(() => toastError(t('Page width not saved')));
   };
   const removeDescription = () => {
     setShowDesc(false);
@@ -878,7 +878,7 @@ function PageHeader({
         onNavigate(r.id);
       }
     } catch (err) {
-      toast((err as Error).message || t('Import failed'));
+      toastError((err as Error).message || t('Import failed'));
     }
   };
 
@@ -1038,7 +1038,7 @@ function PageHeader({
                     <div className="share-hint">{t('Anyone with this link can view this page (read-only).')}</div>
                     <div className="share-link-row">
                       <input className="share-input" readOnly aria-label={t('Public link')} value={shareUrl} onFocus={(e) => e.currentTarget.select()} />
-                      <Button emphasis="low" className="share-copy" icon={shareCopied ? <Check size={16} /> : <Copy size={16} />} label={shareCopied ? t('Copied') : t('Copy link')} onClick={async () => { try { await navigator.clipboard.writeText(shareUrl); setShareCopied(true); } catch { toast(t('Copy failed; select the link')); } }} />
+                      <Button emphasis="low" className="share-copy" icon={shareCopied ? <Check size={16} /> : <Copy size={16} />} label={shareCopied ? t('Copied') : t('Copy link')} onClick={async () => { try { await navigator.clipboard.writeText(shareUrl); setShareCopied(true); } catch { toastError(t('Copy failed; select the link')); } }} />
                       <span className="share-copy-status" role="status">{shareCopied ? t('Copied') : ''}</span>
                     </div>
                   </>
@@ -2049,7 +2049,7 @@ function BlockContent({
             return;
           }
           dirty.current = true; // retry on next change / unmount flush
-          toast(t('Page content not saved'));
+          toastError(t('Page content not saved'));
         });
       }
     };
@@ -2144,7 +2144,7 @@ function BlockContent({
         );
         added++;
       } catch (err) {
-        toast((err as Error).message || t('“{name}” was not uploaded', { name: file.name }));
+        toastError((err as Error).message || t('“{name}” was not uploaded', { name: file.name }));
       }
     }
     if (added > 1) toast(plural(added, '{n} file added', '{n} files added'));

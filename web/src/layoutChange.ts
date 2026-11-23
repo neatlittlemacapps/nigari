@@ -14,7 +14,7 @@
 import { api } from './api';
 import { confirm } from './dialog';
 import { t } from './i18n';
-import { toast } from './toast';
+import { toast, toastError } from './toast';
 import type { PropDef, ViewDef } from './types';
 import { newDateProperty, switchLayout } from './viewLayout';
 
@@ -61,7 +61,7 @@ export async function changeLayout(ctx: LayoutChangeContext, viewId: string, typ
   let added: PropDef | null = null;
   if (needsDate) {
     if (!ctx.canEditSchema) {
-      toast(t('This layout shows rows by date, and the database has no date property. Someone who can edit the database can add one.'));
+      toastError(t('This layout shows rows by date, and the database has no date property. Someone who can edit the database can add one.'));
       return;
     }
     const prop = newDateProperty(first.schema, t('Date'));

@@ -279,7 +279,8 @@ arrive from an import or from an agent, and is shown when it is there.
 
 **An empty date looks empty.** Until it has a value, the field is a blank spot
 (in a table or on a board) or the word *Empty* (on the row page); click it and
-the date picker opens. Browsers draw an empty picker their own way, and Safari
+the date picker opens. A list line shows nothing for an empty date, as for
+every other empty value; set it on the row's page or in a table. Browsers draw an empty picker their own way, and Safari
 draws today's date, which made a row look dated when it was not. Clearing a
 date stores nothing, the same as never filling it in.
 
