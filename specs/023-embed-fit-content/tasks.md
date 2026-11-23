@@ -32,4 +32,4 @@ description: "Tasks for a database in a document that fits its content, in one p
 
 - [x] T006 [test] `web/tests/embed-fit.mjs` (new), in `web/tests/package.json`
 - [x] T007 [wiki] `wiki/collections.md`; retake the screenshots `check-wiki.mjs` lists; `docs/decisions.md`
-- [ ] T008 [test] Reviews: `/code-review`, `ux-ui-audit` (light, dark, desktop, phone); the embed specs listed in plan.md pass
+- [x] T008 [test] Reviews: `/code-review`, `ux-ui-audit` (light, dark, desktop, phone); the embed specs listed in plan.md pass
