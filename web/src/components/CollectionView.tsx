@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { PeekMode } from '../peek';
 import { api, ApiError } from '../api';
+import { serverMessage } from '../serverErrors';
 import { usePersonalViews } from '../usePersonalViews';
 import { hasPersonalChange, mergeViewState, viewScope, withFoldedLane, withPersonalEdit, withQuickPick, withoutViewChanges } from '../viewState';
 import { laneIsReadOnly, quickFilterProps } from '../quickFilters';
@@ -11,6 +12,12 @@ import Portal from './Portal';
 import { anchoredMenuStyle } from '../anchoredMenu';
 import { sortComparator } from '../viewSort';
 import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } from '../columnDrag';
+import { rowStep, useRowDrag, type DrawnRow, type RowSpot } from '../rowDrag';
+import { RowGutter, RowGutterHead } from './RowHandle';
+import { RowMenu } from './RowMenu';
+import { RowTitleInput } from './RowTitleInput';
+import { useRowKeys } from './useRowKeys';
+import { useTableRowActions } from './useTableRowActions';
 import { ColHead, type PropertyChanges } from './TableColumnHead';
 import { LeadCheckBox, LeadCheckFoot, LeadCheckHead } from './TableCheckColumn';
 import { leadCheckbox, movableColumns, withLead } from '../tableLead';
@@ -659,6 +666,17 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     });
   };
 
+  const { editTitleId, addRowNextTo, finishTitle, placeRow, duplicateRow, dropSortForDrag } = useTableRowActions({
+    collectionId,
+    setRows,
+    loadRows,
+    onPagesChanged,
+    rowViewId,
+    rowViewFilters,
+    announceIfHidden,
+    dropSort: () => updateView({ sort: null }),
+  });
+
   // Persist an inline change to a select/multiselect property's options (create,
   // recolour, delete) — the cell editor edits the schema, not just the value.
   const setPropOptions = (propId: string, options: PropOption[]) => {
@@ -1219,6 +1237,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             void setGroupValue(rowId, groupBy, optId);
           }}
           onTrashRow={trashRow}
+          onDuplicateRow={canEdit ? (id) => void duplicateRow(id) : undefined}
           onAddInColumn={(groupBy, optId, extra) =>
             void addRow({ ...(optId === UNSET ? {} : { [groupBy]: groupValueFor(schema, groupBy, optId) }), ...(extra ?? {}) })
           }
@@ -1318,6 +1337,22 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           onOpenInNewTab={onOpenInNewTab}
           onSetProp={setRowProp}
           onSetOptions={setPropOptions}
+          // Rows move in the database's own order, which a sorted view does
+          // not show. A drag there takes the sort away as the person's own
+          // change (owner, 2026-11-23): the bar offers Reset and Save for
+          // everyone, and a lock leaves it open. Only where the sort could
+          // not be the person's own and they may not change the view do the
+          // rows of a sorted view not drag (FR-005).
+          // In a sorted view only where the sort can go as the person's own
+          // change: elsewhere (an embed with no place for personal state) it
+          // would go for everyone, on the first move of a drag (code review).
+          onPlaceRow={canEdit && (!serverSort || !!personalScope) ? (id, spot) => void placeRow(id, spot) : undefined}
+          onRowDragStart={serverSort ? dropSortForDrag : undefined}
+          onAddRowBelow={canEdit ? (id, above) => void addRowNextTo(id, above) : undefined}
+          onDuplicateRow={canEdit ? (id) => void duplicateRow(id) : undefined}
+          onTrashRow={canEdit ? (id, title) => void trashRow(id, title) : undefined}
+          editTitleId={editTitleId}
+          onTitleDone={(id, title) => void finishTitle(id, title)}
         />
       )}
       </RowOpenContext.Provider>
@@ -2158,6 +2193,13 @@ function TableView({
   onOpenInNewTab,
   onSetProp,
   onSetOptions,
+  onPlaceRow,
+  onRowDragStart,
+  onAddRowBelow,
+  onDuplicateRow,
+  onTrashRow,
+  editTitleId,
+  onTitleDone,
 }: {
   rows: Row[];
   schema: PropDef[];
@@ -2178,6 +2220,20 @@ function TableView({
   onOpenInNewTab?: (id: string) => void;
   onSetProp: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
+  /** Move a row next to another (spec 022). Absent: rows do not move here (a
+   *  reader, or a view whose order is not the database's own). */
+  onPlaceRow?: (id: string, spot: RowSpot) => void;
+  /** A press on a handle became a drag: a sorted view gives way to the rows'
+   *  own order here (spec 022, US2). */
+  onRowDragStart?: () => void;
+  /** The + beside a row; `above` with Alt or Option. Absent for a reader. */
+  onAddRowBelow?: (id: string, above: boolean) => void;
+  /** The row menu's Duplicate and Move to trash. Absent for a reader. */
+  onDuplicateRow?: (id: string) => void;
+  onTrashRow?: (id: string, title: string) => void;
+  /** A row whose title is being typed, just added by its +. */
+  editTitleId?: string | null;
+  onTitleDone?: (id: string, title: string | null) => void;
 }) {
   // What a click on a row does follows the view (spec 007, pageOpen.ts).
   const openRow = useOpenRow({ onNavigate, onOpenInNewTab });
@@ -2302,24 +2358,93 @@ function TableView({
     subItemProp && Array.isArray(r.props[subItemProp])
       ? (r.props[subItemProp] as string[]).filter((cid) => rowById.has(cid))
       : [];
-  const ordered: { row: Row; depth: number; hasKids: boolean }[] = [];
+  const ordered: { row: Row; depth: number; hasKids: boolean; parent: string | null }[] = [];
   if (subItemProp) {
     const childSet = new Set<string>();
     for (const r of rows) for (const cid of childIdsOf(r)) childSet.add(cid);
     const roots = rows.filter((r) => !childSet.has(r.id));
-    const visit = (r: Row, depth: number, seen: Set<string>) => {
+    const visit = (r: Row, depth: number, seen: Set<string>, parent: string | null) => {
       const kids = childIdsOf(r);
-      ordered.push({ row: r, depth, hasKids: kids.length > 0 });
+      ordered.push({ row: r, depth, hasKids: kids.length > 0, parent });
       if (kids.length && !collapsed.has(r.id)) {
         for (const cid of kids) {
-          if (!seen.has(cid)) visit(rowById.get(cid)!, depth + 1, new Set([...seen, r.id]));
+          if (!seen.has(cid)) visit(rowById.get(cid)!, depth + 1, new Set([...seen, r.id]), r.id);
         }
       }
     };
-    for (const r of roots) visit(r, 0, new Set([r.id]));
+    for (const r of roots) visit(r, 0, new Set([r.id]), null);
   } else {
-    for (const r of rows) ordered.push({ row: r, depth: 0, hasKids: false });
+    for (const r of rows) ordered.push({ row: r, depth: 0, hasKids: false, parent: null });
   }
+
+  // Moving a row (spec 022). In a tree only the top-level rows move: a
+  // sub-item's place under its parent is the order of the relation's values,
+  // not the row's position, so dragging it would change nothing on screen.
+  const drawn: DrawnRow[] = ordered.map((o) => ({ id: o.row.id, parentId: o.parent, depth: o.depth }));
+  // The row's menu (spec 022, US3): one menu for the table, opened for one
+  // row at a time, from its handle, a right-click, or mod+/.
+  const [rowMenu, setRowMenu] = useState<{ id: string; title: string; point: { x: number; y: number } } | null>(null);
+  const rowMenuReturn = useRef<HTMLElement | null>(null);
+  const openRowMenu = (id: string, title: string, point: { x: number; y: number }, from: HTMLElement | null) => {
+    rowMenuReturn.current = from;
+    setRowMenu({ id, title, point });
+  };
+  // Edit property › in the menu: the cell's own editor, as a click on it opens.
+  // Focus goes to the editor, not back to the handle; and it opens once the
+  // menu has closed, or the menu's own closing would take the click.
+  const editCell = (id: string, propId: string) => {
+    rowMenuReturn.current = null;
+    window.setTimeout(() => {
+      const cell = rowBody.current?.querySelector<HTMLElement>(`tr[data-row-id="${CSS.escape(id)}"] td[data-prop-id="${CSS.escape(propId)}"]`);
+      const target = cell?.querySelector<HTMLElement>('button, input, select, textarea, [tabindex]');
+      cell?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      if (target) {
+        target.focus();
+        target.click();
+      }
+    }, 0);
+  };
+  const { drag: rowDrag, startDrag: startRowDrag, consumeClick: consumeRowClick } = useRowDrag(drawn, (id, spot) => onPlaceRow?.(id, spot), onRowDragStart);
+  const rowBody = useRef<HTMLTableSectionElement>(null);
+  useRowKeys({
+    body: rowBody,
+    rows: drawn,
+    onMenu: (id, tr, from) => {
+      const b = (tr.querySelector('.db-row-handle') ?? tr).getBoundingClientRect();
+      openRowMenu(id, rows.find((r) => r.id === id)?.title ?? '', { x: b.left, y: b.bottom }, from);
+    },
+    // A sorted view gives up its sort first, as a drag does, and "one place
+    // up" means among the rows in their own order, not the sorted ones.
+    onMove: onPlaceRow
+      ? (id, dir) => {
+          const at = new Map(rows.map((r) => [r.id, r.position ?? 0]));
+          const list = onRowDragStart ? drawn.filter((d) => (d.depth ?? 0) === 0).sort((a, b) => (at.get(a.id) ?? 0) - (at.get(b.id) ?? 0)) : drawn;
+          const spot = rowStep(list, id, dir);
+          if (!spot) return false;
+          onRowDragStart?.();
+          onPlaceRow(id, spot);
+        }
+      : undefined,
+  });
+  // On a touch screen the handle shows only on the row last tapped (owner,
+  // 2026-11-23): the tap still does what it did (the title opens, a cell
+  // edits), and the row's handle and + appear beside it.
+  const [tappedRow, setTappedRow] = useState<string | null>(null);
+  // The tap that shows a row's buttons is not also a press on one of them:
+  // they become touchable between the finger going down and the click.
+  const freshTap = useRef<string | null>(null);
+  const tapReachesButtons = (id: string) => {
+    const fresh = freshTap.current === id;
+    freshTap.current = null;
+    return !fresh;
+  };
+  const rowClass = (i: number, id: string) =>
+    [
+      rowDrag?.id === id ? 'is-row-dragged' : '',
+      tappedRow === id ? 'is-row-tapped' : '',
+    ]
+      .filter(Boolean)
+      .join(' ') || undefined;
 
   // Per-column footer aggregate: numeric columns (number/rollup/formula) show a
   // sum, everything else a count of filled cells — a lightweight Notion-style
@@ -2352,6 +2477,7 @@ function TableView({
       <table className="db-table">
         <thead ref={theadRef}>
           <tr>
+            <RowGutterHead />
             {lead && (
               <LeadCheckHead
                 prop={lead}
@@ -2392,11 +2518,40 @@ function TableView({
             ))}
           </tr>
         </thead>
-        <tbody>
-          {ordered.map(({ row: r, depth, hasKids }) => (
-            <tr key={r.id}>
+        <tbody ref={rowBody}>
+          {ordered.map(({ row: r, depth, hasKids }, i) => (
+            <tr
+              key={r.id}
+              data-row-id={r.id}
+              className={rowClass(i, r.id)}
+              onPointerDown={(e) => {
+                if (e.pointerType !== 'touch') return;
+                freshTap.current = tappedRow === r.id ? null : r.id;
+                setTappedRow(r.id);
+              }}
+              onContextMenu={(e) => {
+                // A field being typed in keeps the browser's own menu (paste,
+                // spelling).
+                if ((e.target as HTMLElement).closest('input, textarea, [contenteditable="true"]')) return;
+                e.preventDefault();
+                // A finger held on the handle is a drag, not a long-press menu.
+                if (rowDrag || (e.target as HTMLElement).closest('.db-row-handle')) return;
+                openRowMenu(r.id, r.title, { x: e.clientX, y: e.clientY }, e.currentTarget.querySelector<HTMLElement>('.db-title-link'));
+              }}
+            >
+              <RowGutter
+                rowId={r.id}
+                title={r.title}
+                onAddBelow={onAddRowBelow && ((id, above) => tapReachesButtons(id) && onAddRowBelow(id, above))}
+                onHandleDown={onPlaceRow && depth === 0 ? startRowDrag : undefined}
+                onHandleClick={(e, id) => {
+                  if (!tapReachesButtons(id) || consumeRowClick(id)) return;
+                  const b = e.currentTarget.getBoundingClientRect();
+                  openRowMenu(id, r.title, { x: b.left, y: b.bottom }, e.currentTarget as HTMLElement);
+                }}
+              />
               {lead && (
-                <td className="db-check-col">
+                <td className="db-check-col" data-prop-id={lead.id}>
                   <LeadCheckBox prop={lead} title={r.title} value={r.props[lead.id]} onChange={(v) => onSetProp(r.id, lead.id, v)} />
                 </td>
               )}
@@ -2415,14 +2570,18 @@ function TableView({
                       <span className="db-tree-spacer" />
                     )
                   ) : null}
-                  <button
-                    className="db-title-link"
-                    onClick={(e) => openRow(e, r.id)}
-                    onAuxClick={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
-                  >
-                    {r.icon && <span className="inline-icon"><PageIcon icon={r.icon} size={14} /> </span>}
-                    {r.title || t('Untitled')}
-                  </button>
+                  {editTitleId === r.id && onTitleDone ? (
+                    <RowTitleInput initial={r.title} onDone={(title) => onTitleDone(r.id, title)} />
+                  ) : (
+                    <button
+                      className="db-title-link"
+                      onClick={(e) => openRow(e, r.id)}
+                      onAuxClick={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
+                    >
+                      {r.icon && <span className="inline-icon"><PageIcon icon={r.icon} size={14} /> </span>}
+                      {r.title || t('Untitled')}
+                    </button>
+                  )}
                   {/* Presence was drawn on the board card and nowhere else, so
                       anybody working in the table saw nothing at all — which is
                       most of the time. The mark belongs wherever a row is
@@ -2438,7 +2597,7 @@ function TableView({
                 )}
               </td>
               {cols.map((p) => (
-                <td key={p.id} style={colStyle(p.id)}>
+                <td key={p.id} data-prop-id={p.id} style={colStyle(p.id)}>
                   <PropertyValue
                     def={p}
                     value={r.props[p.id]}
@@ -2452,7 +2611,7 @@ function TableView({
           ))}
           {rows.length === 0 && (
             <tr>
-              <td colSpan={schema.length + 1} className="db-empty">
+              <td colSpan={schema.length + 2} className="db-empty">
                 {emptyLabel}
               </td>
             </tr>
@@ -2461,6 +2620,7 @@ function TableView({
         {rows.length > 0 && (
           <tfoot>
             <tr className="db-calc-row">
+              <td className="db-row-gutter" />
               {/* German, hard-coded, in an English-first product — and every
                   check read clean. The JSX rule structurally cannot see a
                   string with an expression inside it, and one word without an
@@ -2479,6 +2639,22 @@ function TableView({
           </tfoot>
         )}
       </table>
+      <RowMenu
+        place="table"
+        row={rowMenu}
+        point={rowMenu?.point ?? null}
+        onClose={() => setRowMenu(null)}
+        returnFocus={rowMenuReturn}
+        deps={{
+          onOpen: (id) => openRow({}, id),
+          onOpenInNewTab,
+          onAddBelow: onAddRowBelow ? (id) => onAddRowBelow(id, false) : undefined,
+          properties: onAddRowBelow ? schema.map((p) => ({ id: p.id, name: p.name })) : undefined,
+          onEditProperty: onAddRowBelow ? editCell : undefined,
+          onDuplicate: onDuplicateRow,
+          onTrash: onTrashRow,
+        }}
+      />
     </div>
   );
 }

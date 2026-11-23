@@ -21,6 +21,15 @@
 //      items of its own instead of the renderer's, or does not use it for
 //      its place.
 //
+// Rows (src/actions/rowActions.ts, spec 022) are held to all four with their
+// own places, table and boardCard; a choice there is a submenu item inside
+// its group (Open › Open in ›), as research R6 lays the menu out. Their
+// renderer is RowActionItems.tsx; the board draws its columns (Move to)
+// itself, as values whose reason names the function. The table's menu is
+// <RowMenu place="table"> in CollectionView.tsx, the card's
+// <RowMenuItems place="boardCard"> in BoardView.tsx, which has no menu
+// items of its own.
+//
 // A self-test runs first on lists that must fail: a check that finds nothing
 // because it broke is worse than no check.
 
@@ -36,6 +45,60 @@ const src = join(web, 'src');
 const tmp = mkdtempSync(join(tmpdir(), 'nigari-contentactions-'));
 const bundle = join(tmp, 'propertyActions.mjs');
 const reasonsBundle = join(tmp, 'propertyActionReasons.mjs');
+const rowBundle = join(tmp, 'rowActions.mjs');
+const rowReasonsBundle = join(tmp, 'rowActionReasons.mjs');
+const ROW_PLACES = ['table', 'boardCard'];
+
+/** Where a row choice is drawn when not by the renderer. */
+const ROW_CHOICE_FILES = { moveToColumn: 'components/BoardView.tsx' };
+const ROW_MENUS = { table: ['components/CollectionView.tsx', 'RowMenu'], boardCard: ['components/BoardView.tsx', 'RowMenuItems'] };
+const stripComments = (text) => text.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+/** Rules 3 and 4 for the row list; `read` gives a file under src. */
+function rowRenderFailures(actions, read) {
+  const fails = [];
+  const renderer = read('components/RowActionItems.tsx');
+  for (const a of actions) {
+    if (!renderer.includes(`case '${a.id}'`)) fails.push(`RowActionItems.tsx: no case for ${a.id}`);
+    const elsewhere = ROW_CHOICE_FILES[a.id];
+    if (elsewhere) {
+      if (!new RegExp(`<MenuValues[^>]*function, ${a.fn}\\b`).test(read(elsewhere))) fails.push(`${elsewhere}: ${a.id} is not drawn as values of ${a.fn}`);
+    } else if (!renderer.includes(`fn="${a.fn}"`)) fails.push(`RowActionItems.tsx: ${a.id} is not drawn with fn="${a.fn}"`);
+  }
+  if (!/<RowActionItems[^>]*place=\{place\}/.test(stripComments(read('components/RowMenu.tsx')))) fails.push('RowMenu.tsx: its items are not drawn by <RowActionItems place={place}>');
+  for (const [place, [file, part]] of Object.entries(ROW_MENUS)) {
+    if (!new RegExp(`<${part}[^>]*place="${place}"`).test(stripComments(read(file)))) fails.push(`${file}: the ${place} row menu is not <${part} place="${place}">`);
+  }
+  const board = stripComments(read('components/BoardView.tsx'));
+  for (const part of ['MenuItem', 'MenuSubmenu', 'MenuCheckboxItem', 'MenuRadioItem']) {
+    if (new RegExp(`<${part}[\\s>]`).test(board)) fails.push(`BoardView.tsx: a <${part}> of its own; add the action to rowActions.ts instead`);
+  }
+  return fails;
+}
+
+/** Rules 1 and 2 for the row list. */
+function rowListFailures(actions, sectionsOf, SUBMENU_ABOVE, reasons) {
+  const fails = [];
+  for (const a of actions) {
+    for (const place of ROW_PLACES) {
+      const applies = a.places.includes(place);
+      const reason = (reasons[a.id]?.[place] ?? '').trim();
+      if (!applies && !reason) fails.push(`rows: ${a.id} not in ${place} and no reason in rowActionReasons.ts`);
+      if (applies && reason) fails.push(`rows: ${a.id} in ${place} and also left out there`);
+    }
+  }
+  for (const place of ROW_PLACES) {
+    for (const s of sectionsOf(place, actions)) {
+      if (s.actions.length > SUBMENU_ABOVE && !s.submenu) fails.push(`rows ${place}: group "${s.group}" has ${s.actions.length} actions on the first level`);
+    }
+  }
+  const fns = new Map();
+  for (const a of actions) {
+    if (fns.has(a.fn)) fails.push(`rows: ${a.id} and ${fns.get(a.fn)} share the function ${a.fn}`);
+    fns.set(a.fn, a.id);
+  }
+  return fails;
+}
 
 const PLACES = ['rowPage', 'view'];
 const MENUS = { rowPage: 'components/RowProperties.tsx', view: 'components/TableColumnHead.tsx' };
@@ -80,10 +143,22 @@ try {
       [join(src, 'actions/propertyActionReasons.ts'), '--bundle', '--format=esm', '--outfile=' + reasonsBundle],
       { stdio: ['ignore', 'ignore', 'pipe'] },
     );
+    execFileSync(
+      join(web, 'node_modules/esbuild/bin/esbuild'),
+      [join(src, 'actions/rowActions.ts'), '--bundle', '--format=esm', '--outfile=' + rowBundle],
+      { stdio: ['ignore', 'ignore', 'pipe'] },
+    );
+    execFileSync(
+      join(web, 'node_modules/esbuild/bin/esbuild'),
+      [join(src, 'actions/rowActionReasons.ts'), '--bundle', '--format=esm', '--outfile=' + rowReasonsBundle],
+      { stdio: ['ignore', 'ignore', 'pipe'] },
+    );
   } catch (e) {
     console.error(String(e.stderr ?? e));
     process.exit(1);
   }
+  const rows = await import(rowBundle);
+  const { ROW_LEFT_OUT } = await import(rowReasonsBundle);
   const { PROPERTY_ACTIONS, menuSections, SUBMENU_ABOVE } = await import(bundle);
   const { PROPERTY_LEFT_OUT } = await import(reasonsBundle);
 
@@ -101,7 +176,33 @@ try {
       process.exit(1);
     }
   }
-  if (SUBMENU_ABOVE !== 3) {
+  const rowOk = (id, group, places = ['table', 'boardCard']) => ({ id, fn: id, group, places });
+  const rowSelfTests = [
+    ['row: no reason', [rowOk('a', 'g', ['table'])], {}],
+    ['row: both', [rowOk('a', 'g')], { a: { table: 'why' } }],
+    ['row: one function twice', [rowOk('a', 'g'), { ...rowOk('b', 'h'), fn: 'a' }], {}],
+  ];
+  for (const [name, list, reasons] of rowSelfTests) {
+    if (rowListFailures(list, rows.rowMenuSections, rows.SUBMENU_ABOVE, reasons).length === 0) {
+      console.error(`  ✗ self-test "${name}" passed; the check is broken`);
+      process.exit(1);
+    }
+  }
+  // Rules 3 and 4 for rows, on the real files with one thing broken each.
+  const real = (f) => readFileSync(join(src, f), 'utf8');
+  const broken = [
+    ['a row action the renderer forgot', (f) => (f.endsWith('RowActionItems.tsx') ? real(f).replace("case 'copyLink':", "case 'gone':") : real(f))],
+    ['a row action drawn with another fn', (f) => (f.endsWith('RowActionItems.tsx') ? real(f).replace('fn="duplicate"', 'fn="copy"') : real(f))],
+    ['a card menu with an item of its own', (f) => (f.endsWith('BoardView.tsx') ? real(f) + '\n<MenuItem fn="x">x</MenuItem>' : real(f))],
+    ['a table without the row menu', (f) => (f.endsWith('CollectionView.tsx') ? real(f).replace('<RowMenu', '<Other') : real(f))],
+  ];
+  for (const [name, read] of broken) {
+    if (rowRenderFailures(rows.ROW_ACTIONS, read).length === 0) {
+      console.error(`  ✗ self-test "${name}" passed; the check is broken`);
+      process.exit(1);
+    }
+  }
+  if (SUBMENU_ABOVE !== 3 || rows.SUBMENU_ABOVE !== 3) {
     console.error(`  ✗ SUBMENU_ABOVE is ${SUBMENU_ABOVE}; the owner's rule is "beyond 3" (docs/decisions.md 2026-11-13)`);
     process.exit(1);
   }
@@ -109,6 +210,11 @@ try {
   const failures = listFailures(PROPERTY_ACTIONS, menuSections, SUBMENU_ABOVE, PROPERTY_LEFT_OUT);
   for (const id of Object.keys(PROPERTY_LEFT_OUT)) {
     if (!PROPERTY_ACTIONS.some((a) => a.id === id)) failures.push(`propertyActionReasons.ts: ${id} is not an action`);
+  }
+
+  failures.push(...rowListFailures(rows.ROW_ACTIONS, rows.rowMenuSections, rows.SUBMENU_ABOVE, ROW_LEFT_OUT));
+  for (const id of Object.keys(ROW_LEFT_OUT)) {
+    if (!rows.ROW_ACTIONS.some((a) => a.id === id)) failures.push(`rowActionReasons.ts: ${id} is not an action`);
   }
 
   // ---- rule 3: the renderer draws every action ----
@@ -129,13 +235,17 @@ try {
     }
   }
 
+  // ---- rules 3 and 4 for rows ----
+  failures.push(...rowRenderFailures(rows.ROW_ACTIONS, (f) => readFileSync(join(src, f), 'utf8')));
+
   if (failures.length) {
     for (const f of failures) console.error(`  ✗ ${f}`);
     console.error(`\n  FAILED — a menu of a property does not follow its action list (src/actions/propertyActions.ts).`);
     process.exit(1);
   }
   const shape = PLACES.map((p) => `${p} ${menuSections(p).map((s) => (s.submenu ? `[${s.actions.length}▸]` : s.actions.length)).join('|')}`).join(', ');
-  console.log(`  content actions: properties ${PROPERTY_ACTIONS.length} actions; ${shape}`);
+  const rowShape = ROW_PLACES.map((p) => `${p} ${rows.rowMenuSections(p).map((s) => (s.submenu ? `[${s.actions.length}▸]` : s.actions.length)).join('|')}`).join(', ');
+  console.log(`  content actions: properties ${PROPERTY_ACTIONS.length} actions; ${shape}; rows ${rows.ROW_ACTIONS.length} actions; ${rowShape}`);
 } finally {
   rmSync(tmp, { recursive: true, force: true });
 }

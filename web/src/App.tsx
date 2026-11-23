@@ -353,6 +353,14 @@ export default function App() {
     await Promise.all([loadPages(), loadFavorites(), loadWorkspaces()]);
   }, [loadPages, loadFavorites, loadWorkspaces]);
 
+  // A row's menu in a database (spec 022) adds and removes favourites itself;
+  // it says so with this event, and the sidebar's list follows.
+  useEffect(() => {
+    const reload = () => void loadFavorites();
+    window.addEventListener('nigari:favorites-changed', reload);
+    return () => window.removeEventListener('nigari:favorites-changed', reload);
+  }, [loadFavorites]);
+
   const toggleFavorite = useCallback(
     async (id: string) => {
       const willAdd = !favorites.includes(id);

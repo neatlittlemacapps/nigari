@@ -27,7 +27,7 @@ await withFixture(async ({ page, api, base, path }) => {
     ],
   });
   await page.reload();
-  const headers = () => page.locator('.db-table thead th').allTextContents();
+  const headers = () => page.locator('.db-table thead th:not(.db-row-gutter)').allTextContents();
   const label = (name) => page.locator('.db-table thead th .th-label', { hasText: name });
   const view = async (id) => (await api('GET', path)).views.find((v) => v.id === id);
   await eventually(async () => (await headers()).join() === 'Name,Status,Effort,Due,Owner');

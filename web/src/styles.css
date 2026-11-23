@@ -2766,6 +2766,80 @@ body.is-col-moving .db-table th .th-label {
   right: -1px;
 }
 
+/* A row's leading cell (spec 022, research R8): the + and the handle, in a
+   narrow cell of its own ahead of every column. Not frozen: the title column
+   is not either, and a frozen gutter sat over the titles once the table was
+   scrolled sideways at all (the wrapper's own side padding is enough). No grid
+   lines and the page's own surface, so it reads as a margin beside the table.
+   The buttons show on hover and on keyboard focus; on a touch screen, where
+   nothing hovers, once the row is tapped (owner, 2026-11-23). */
+.db-table .db-row-gutter {
+  width: 52px;
+  min-width: 52px;
+  max-width: 52px;
+  padding: 4px 2px 0 0;
+  vertical-align: top;
+  border: 0;
+  background: var(--color-surface-default);
+}
+
+.db-row-gutter-btns {
+  display: flex;
+  justify-content: flex-end;
+  opacity: 0;
+}
+
+/* WCAG 2.5.8: each at least 24px square (the small button measured 23). */
+.db-row-gutter-btns .ui-button {
+  min-width: 24px;
+  min-height: 24px;
+}
+
+.db-table tr:hover > .db-row-gutter .db-row-gutter-btns,
+.db-row-gutter:focus-within .db-row-gutter-btns,
+.db-table tr.is-row-dragged > .db-row-gutter .db-row-gutter-btns {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  /* Hidden is untouchable too: a finger on an unseen + would add a row. */
+  .db-table tr:hover > .db-row-gutter .db-row-gutter-btns,
+  .db-row-gutter-btns {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .db-table tr:focus-within > .db-row-gutter .db-row-gutter-btns,
+  .db-table tr.is-row-tapped > .db-row-gutter .db-row-gutter-btns {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.db-row-handle {
+  cursor: grab;
+  touch-action: none;
+}
+
+body.is-row-moving,
+body.is-row-moving * {
+  cursor: grabbing;
+  user-select: none;
+}
+
+/* The row being dragged, faded, and the line on the gap it would drop into:
+   the editor's drop line, across every cell but the gutter. */
+.db-table tr.is-row-dragged > td:not(.db-row-gutter) {
+  opacity: 0.45;
+}
+
+.db-table tr.row-drop-before > td:not(.db-row-gutter) {
+  box-shadow: inset 0 var(--editor-drop-line-width) 0 var(--color-focus); /* token-ok: the drop line, drawn from its own tokens, not a shadow */
+}
+
+.db-table tr.row-drop-after > td:not(.db-row-gutter) {
+  box-shadow: inset 0 calc(-1 * var(--editor-drop-line-width)) 0 var(--color-focus); /* token-ok: the drop line, drawn from its own tokens, not a shadow */
+}
+
 /* The grip on a column's right edge. -10px is the cell's own horizontal padding,
    so the grip ends exactly ON the border and every pixel of it lies INSIDE the
    cell: anything hanging over the edge paints correctly and is not hit-testable,
@@ -2868,6 +2942,13 @@ body.is-col-resizing {
 
 .db-title-link:hover {
   text-decoration: underline;
+}
+
+/* A new row's title, typed in place after its + (spec 022). */
+.db-title-input {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
 }
 
 .db-empty {

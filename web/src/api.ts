@@ -355,10 +355,14 @@ export const api = {
     // 014). Instead of viewId, never with it: an embed's views live in the
     // document, not in the database.
     viewFilters?: Filter[],
+    // Just after or before a sibling instead of at the end (spec 022): the
+    // + beside a table row. Refused, with nothing created, when the anchor is
+    // not a sibling.
+    place?: { anchor: string; side: 'after' | 'before' },
   ) =>
     req<Page & { matchesView?: boolean }>('/api/pages', {
       method: 'POST',
-      body: JSON.stringify({ parentId, title, type, props, workspaceId, viewId, viewScope, viewFilters }),
+      body: JSON.stringify({ parentId, title, type, props, workspaceId, viewId, viewScope, viewFilters, ...(place ? { [place.side]: place.anchor } : {}) }),
     }),
   getPage: (id: string) => req<Page>(`/api/pages/${id}`),
   updatePage: (
@@ -424,6 +428,15 @@ export const api = {
     req<{ ok: boolean }>(`/api/pages/${id}?permanent=1`, { method: 'DELETE' }),
   restorePage: (id: string) =>
     req<{ ok: boolean }>(`/api/pages/${id}/restore`, { method: 'POST' }),
+  // Puts a page just after or before a sibling (spec 022): the server finds
+  // the neighbour on the other side and writes one position. For a database's
+  // rows that is the order every view without a sort shows. viewId is the
+  // view the move was made in, for the activity log.
+  placePage: (id: string, spot: { anchor: string; side: 'after' | 'before' }, viewId?: string) =>
+    req<{ id: string; position: number }>(`/api/pages/${id}/place`, {
+      method: 'POST',
+      body: JSON.stringify({ [spot.side]: spot.anchor, viewId }),
+    }),
   reindexSiblings: (parentId: string | null, workspaceId?: string) =>
     req<{ reindexed: number }>('/api/reindex-siblings', {
       method: 'POST',

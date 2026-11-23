@@ -116,6 +116,11 @@ try {
   offGlobal();
   check('nothing is left behind', resolve(normalize('mod+e'), false), 'null');
 
+  // ---- a table row's keys (spec 022, research R7) ----
+  check('the row menu chord is the slash key', chordOf({ code: 'Slash', key: '/', metaKey: true }), normalize('mod+/'));
+  check('moving a row is two modifiers and an arrow', chordOf({ key: 'ArrowUp', metaKey: true, shiftKey: true }), normalize('mod+shift+arrowup'));
+  check('a move is not the plain arrow that walks the rows', normalize('mod+shift+arrowdown') === chordOf({ key: 'ArrowDown' }), 'false');
+
   // ---- the typing guard, which is the whole point ----
   const offQuiet = register({ id: 'quiet', keys: ['alt+n'], run: run('quiet') });
   check('silent while typing by default', resolve(normalize('alt+n'), true), 'null');

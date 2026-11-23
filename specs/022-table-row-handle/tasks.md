@@ -56,51 +56,51 @@ description: "Tasks for the table row handle, + and row menu, in two pull reques
 
 ### Phase 4: Before building
 
-- [ ] T013 [ui] A picture of the handle and + in a table row, light and dark, desktop and phone (R8), shown to the owner; the two decisions (R4 who loses the sort, R5 the handle on a phone) answered
+- [x] T013 [ui] A picture of the handle and + in a table row, light and dark, desktop and phone (R8), shown to the owner; the two decisions (R4 who loses the sort, R5 the handle on a phone) answered
 
 ### Phase 5: Foundational (pure parts)
 
-- [ ] T014 [ui] `web/src/rowDrag.ts` (new), pure part: from the pointer's y and the row boxes to one spot per gap; tree spots limited to siblings at the same depth under the same parent; the spot as `{anchor, side}` to send; nothing to send when the row would stay (R5)
-- [ ] T015 [P] [test] `web/scripts/check-rowdrag.mjs` (new), in `npm run check`: each gap gives one spot, the first and last place, a filtered view's spots name visible rows, tree limits, the no-op. Mutation-check it
-- [ ] T016 [ui] `web/src/actions/rowActions.ts` and `rowActionReasons.ts` (new): the row actions by place (`table`, `boardCard`) and group (R6); `menuIcons.ts`: `openIn`, `openInSidePeek`, `openInCenterPeek`, `addRowBelow` with icons of their own
-- [ ] T017 [P] [test] `check-content-actions.mjs` covers the row list and both menus; `check-menu-icons.mjs` passes
+- [x] T014 [ui] `web/src/rowDrag.ts` (new), pure part: from the pointer's y and the row boxes to one spot per gap; tree spots limited to siblings at the same depth under the same parent; the spot as `{anchor, side}` to send; nothing to send when the row would stay (R5)
+- [x] T015 [P] [test] `web/scripts/check-rowdrag.mjs` (new), in `npm run check`: each gap gives one spot, the first and last place, a filtered view's spots name visible rows, tree limits, the no-op. Mutation-check it
+- [x] T016 [ui] `web/src/actions/rowActions.ts` and `rowActionReasons.ts` (new): the row actions by place (`table`, `boardCard`) and group (R6); `menuIcons.ts`: `openIn`, `openInSidePeek`, `openInCenterPeek`, `addRowBelow` with icons of their own
+- [x] T017 [P] [test] `check-content-actions.mjs` covers the row list and both menus; `check-menu-icons.mjs` passes
 
 **Checkpoint**: the decisions exist and are checked; nothing draws them yet.
 
 ### Phase 6: User Story 1, drag a row (P1) 🎯 MVP
 
-- [ ] T018 [US1] [ui] `rowDrag.ts` hook: pointer events, 5px threshold, cached row boxes, the line (2px `--color-focus`), auto-scroll near the edges, Escape and a drop outside cancel; on drop `api.placePage` and the rows reload
-- [ ] T019 [US1] [ui] `components/RowHandle.tsx` (new): handle and + as `ui/Button`s in the title cell (sticky column), shown on hover and focus, hidden for readers; `TableView` renders it and uses the hook (no behaviour inline in `CollectionView.tsx`)
-- [ ] T020 [US1] [test] `web/tests/row-handle.mjs` (new), in the test script: a drag lands where the line showed and survives a reload; Escape cancels; a filtered view; a tree. Mutation-check it (send the wrong side)
-- [ ] T021 [US1] [perf] A drag step with the #810 probe on a 300-row table, Chromium: under 4 ms. Numbers in the PR
+- [x] T018 [US1] [ui] `rowDrag.ts` hook: pointer events, 5px threshold, cached row boxes, the line (2px `--color-focus`), auto-scroll near the edges, Escape and a drop outside cancel; on drop `api.placePage` and the rows reload
+- [x] T019 [US1] [ui] `components/RowHandle.tsx` (new): handle and + as `ui/Button`s in the title cell (sticky column), shown on hover and focus, hidden for readers; `TableView` renders it and uses the hook (no behaviour inline in `CollectionView.tsx`)
+- [x] T020 [US1] [test] `web/tests/row-handle.mjs` (new), in the test script: a drag lands where the line showed and survives a reload; Escape cancels; a filtered view; a tree. Mutation-check it (send the wrong side)
+- [x] T021 [US1] [perf] A drag step with the #810 probe on a 300-row table, Chromium: under 4 ms. Numbers in the PR (first 37 ms of script a step, the whole table drawn again per gap; after the line was painted on the rows directly, 0.5 ms script + 0.6 ms layout + 0.3 ms style)
 
 ### Phase 7: User Story 2, a drag in a sorted view removes the sort (P1)
 
-- [ ] T022 [US2] [ui] On drop in a sorted view: rows drawn in manual order from the drag's start, then `updateView({ sort: null })` (the personal path, or the owner's choice in T013); no drag where the person may not change a sorted view without a personal scope (FR-005), with the tooltip's reason
-- [ ] T023 [US2] [test] `row-handle.mjs`: sorted view, the bar's Reset brings the sort back and keeps the new place; a locked sorted view still drags. Mutation-check it
+- [x] T022 [US2] [ui] On drop in a sorted view: rows drawn in manual order from the drag's start, then `updateView({ sort: null })` (the personal path, or the owner's choice in T013); no drag where the person may not change a sorted view without a personal scope (FR-005), with the tooltip's reason
+- [x] T023 [US2] [test] `row-handle.mjs`: sorted view, the bar's Reset brings the sort back and keeps the new place; a locked sorted view still drags. Mutation-check it
 
 ### Phase 8: User Story 3, the row menu (P1)
 
-- [ ] T024 [US3] [ui] The row menu from `rowActions.ts`: from the handle, a right-click on the row, and `mod+/` on a focused row; Open, Open in ›, Edit property ›, Comment, favourites, Copy link, Duplicate (lands below), Move to trash; "Edited {time} by {name}" from `GET /api/audit?page=` when it opens
-- [ ] T025 [US3] [ui] The board's `CardMenu` drawn from the same list (keeps its Move to column, with its reason)
-- [ ] T026 [US3] [test] `row-handle.mjs`: the menu from all three ways, each item once, focus back to the row on Escape; the board card menu unchanged in what it offers
+- [x] T024 [US3] [ui] The row menu from `rowActions.ts`: from the handle, a right-click on the row, and `mod+/` on a focused row (the shortcut lands with T029); Open, Open in ›, Edit property ›, Comment, favourites, Copy link, Duplicate (lands below), Move to trash; "Edited {time} by {name}" from `GET /api/audit?page=` when it opens
+- [x] T025 [US3] [ui] The board's `CardMenu` drawn from the same list (keeps its Move to column, with its reason; leaves out Edit property, with its reason: a card edits no property in place)
+- [x] T026 [US3] [test] `row-handle.mjs`: the menu from all three ways, each item once, focus back to the row on Escape; the board card menu offers the list's boardCard actions
 
 ### Phase 9: User Story 4, the + (P2)
 
-- [ ] T027 [US4] [ui] + adds a row below (above with Alt/Option) in one request with `after`/`before` and the view's filter values; title in edit mode; a sorted view keeps its sort
-- [ ] T028 [US4] [test] `row-handle.mjs`: + below and Alt+ above, after a reload too; in a filtered view the row gets the filter's value
+- [x] T027 [US4] [ui] + adds a row below (above with Alt/Option) in one request with `after`/`before` and the view's filter values; title in edit mode; a sorted view keeps its sort
+- [x] T028 [US4] [test] `row-handle.mjs`: + below and Alt+ above, after a reload too; in a filtered view the row gets the filter's value
 
 ### Phase 10: User Story 5, keyboard and touch (P2)
 
-- [ ] T029 [US5] [ui] `keys.ts`: `mod+/` (row menu), `mod+shift+arrowup`/`arrowdown` (move one place); the shortcut sheet lists them; `check-keys.mjs` extended
-- [ ] T030 [US5] [ui] Touch: the handle as decided in T013; tap opens the menu, press-and-hold (300 ms) drags
-- [ ] T031 [US5] [test] `row-handle.mjs`: the keys; a touch emulation run (hold-to-drag, tap for the menu)
+- [x] T029 [US5] [ui] `keys.ts`: `mod+/` (row menu), `mod+shift+arrowup`/`arrowdown` (move one place); the shortcut sheet lists them; `check-keys.mjs` extended
+- [x] T030 [US5] [ui] Touch: the handle as decided in T013; tap opens the menu, press-and-hold (300 ms) drags
+- [x] T031 [US5] [test] `row-handle.mjs`: the keys; a touch emulation run (hold-to-drag, tap for the menu)
 
 ### Phase 11: PR 2 polish, release and Umbrel
 
-- [ ] T032 [P] [i18n] New strings in `de.json`, `es.json`, `nl.json` (a Sonnet helper may draft; reviewed)
-- [ ] T033 [wiki] `wiki/views.md` (table: handle, menu, manual order, sort), shortcut list; table screenshots retaken and looked at
-- [ ] T034 [test] Reviews: `/code-review` (fresh agent), `ux-ui-audit` light and dark, desktop and phone; `codegraph sync`, then `codegraph callers` on every exported symbol added or moved. `docs/decisions.md` entry. `scripts/agent-gate.sh` green
+- [x] T032 [P] [i18n] New strings in `de.json`, `es.json`, `nl.json` (a Sonnet helper may draft; reviewed)
+- [x] T033 [wiki] `wiki/views.md` (table: handle, menu, manual order, sort), shortcut list; table screenshots retaken and looked at
+- [x] T034 [test] Reviews: `/code-review` (fresh agent), `ux-ui-audit` light and dark, desktop and phone; `codegraph sync`, then `codegraph callers` on every exported symbol added or moved. `docs/decisions.md` entry. `scripts/agent-gate.sh` green
 - [ ] T035 [backend] After PR 2 merges: check the release and its `umbrel-store` job, give the owner the store pull request on `neatlittlemacapps/yokogaki-umbrel` to merge (rule 32); then the handoff on #643
 
 ---

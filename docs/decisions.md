@@ -7,6 +7,46 @@ entries are not edited away.
 
 ---
 
+## 2026-11-23 — Spec 022 PR 2: the row's handle, +, menu and keys
+
+- **A drag in a sorted view drops just the person's own sort** (owner,
+  2026-11-23). The rows are drawn in their own order the moment the drag
+  starts, so the line shows where the row really goes; the bar offers Reset
+  and Save for everyone, and the shared sort stays. Turned down: removing the
+  view's sort for everyone (one person's drag would change everybody's
+  view), and refusing the drag in a sorted view (the commonest table is a
+  sorted one).
+- **On a phone the handle shows only on the row last tapped** (owner,
+  2026-11-23, over the recommendation to show it always). The tap keeps its
+  old meaning; hidden buttons take no touches, and the tap that shows them is
+  not also a press on one.
+- **Only top-level rows drag in a tree.** Sub-items come from a
+  self-relation, and their order under a parent is the relation's array, not
+  `position`: a drag would change nothing on screen. Their grip opens the
+  menu only.
+- **A board card's menu is the row's menu.** Drawn from `rowActions.ts`;
+  "Open in new tab" moved under Open in › with the peeks. The card keeps Move
+  to a column and leaves out Add row below and Edit property, each with its
+  reason in `rowActionReasons.ts` (a card edits nothing in place).
+- **The drop line is painted on the rows, not through React.** With it in
+  state, a 300-row table was drawn again on every gap change: 37 ms of script
+  a step in Chromium. Now React hears only the start and the end of a drag:
+  0.5 ms script, 0.6 ms layout, 0.3 ms style a step.
+- **The menu says "Edited {time}", not "by {name}"** as research R6 planned.
+  A person's edit to a property is recorded nowhere with its author, so the
+  newest activity entry named whoever commented on or created the row (code
+  review). The time is the row's own `updated_at`, which a move leaves alone.
+- **A sorted view's rows move only where the sort can go as the person's
+  own** (code review). An embed without a place for personal state would
+  have dropped the sort for everyone on the first move of a drag; there the
+  rows do not move while the view is sorted.
+- **`mod+/` and `mod+shift+↑/↓` work on the row holding the focus**, and are
+  listed in the shortcut sheet whenever a table is on screen. On a layout
+  where `/` needs Shift (German), `mod+/` is not reachable; the handle and the
+  right-click still are.
+
+---
+
 ## 2026-11-22 — Spec 022 PR 1: a row is placed by its neighbour, one order per database
 
 - **One order per database** (owner, Q1). A row's place is its page's
