@@ -18,6 +18,10 @@
 import { createElement, forwardRef } from 'react';
 import {
   AlignLeft,
+  BetweenHorizontalStart,
+  PanelRightOpen,
+  PictureInPicture2,
+  SquareArrowOutUpRight,
   AppWindow,
   ArrowLeft,
   ArrowRight,
@@ -210,6 +214,14 @@ export const MENU_ICONS = {
   // Delete. Different from moveToTrash on purpose (Clarifications).
   delete: CircleMinus,
   copyLink: Link,
+  // A table row's menu (spec 022, research R6). Open in is the submenu of
+  // where a row opens; each place has its own picture so the three are told
+  // apart at a glance. addRowBelow is the + beside a row, named in its
+  // tooltip, its menu item and the shortcut list.
+  openIn: SquareArrowOutUpRight,
+  openInSidePeek: PanelRightOpen,
+  openInCenterPeek: PictureInPicture2,
+  addRowBelow: BetweenHorizontalStart,
 
   // Workspaces and the account
   workspaceSettings: Settings2,

@@ -62,7 +62,7 @@ description: "Tasks for the table row handle, + and row menu, in two pull reques
 
 - [x] T014 [ui] `web/src/rowDrag.ts` (new), pure part: from the pointer's y and the row boxes to one spot per gap; tree spots limited to siblings at the same depth under the same parent; the spot as `{anchor, side}` to send; nothing to send when the row would stay (R5)
 - [x] T015 [P] [test] `web/scripts/check-rowdrag.mjs` (new), in `npm run check`: each gap gives one spot, the first and last place, a filtered view's spots name visible rows, tree limits, the no-op. Mutation-check it
-- [ ] T016 [ui] `web/src/actions/rowActions.ts` and `rowActionReasons.ts` (new): the row actions by place (`table`, `boardCard`) and group (R6); `menuIcons.ts`: `openIn`, `openInSidePeek`, `openInCenterPeek`, `addRowBelow` with icons of their own
+- [x] T016 [ui] `web/src/actions/rowActions.ts` and `rowActionReasons.ts` (new): the row actions by place (`table`, `boardCard`) and group (R6); `menuIcons.ts`: `openIn`, `openInSidePeek`, `openInCenterPeek`, `addRowBelow` with icons of their own
 - [ ] T017 [P] [test] `check-content-actions.mjs` covers the row list and both menus; `check-menu-icons.mjs` passes
 
 **Checkpoint**: the decisions exist and are checked; nothing draws them yet.
