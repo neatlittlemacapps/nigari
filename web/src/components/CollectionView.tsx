@@ -19,6 +19,8 @@ import { RowTitleInput } from './RowTitleInput';
 import { useRowKeys } from './useRowKeys';
 import { useTableRowActions } from './useTableRowActions';
 import { ColHead, type PropertyChanges } from './TableColumnHead';
+import { LeadCheckBox, LeadCheckFoot, LeadCheckHead } from './TableCheckColumn';
+import { leadCheckbox, movableColumns, withLead } from '../tableLead';
 import { useColumnPropertyChanges } from './useColumnPropertyChanges';
 import { tagColorClass } from '../tags';
 import { compare, firstWeekday, formatDay, formatMonth, isReadableDay, isUnfinishedRelativeDay, resolveSmartDate, toDayString, today, weekdayNames } from '../format';
@@ -42,8 +44,8 @@ import PropertyValue, { idList, loadRelationOptions, type RelOption } from './Pr
 import { openCollectionRow, openPageAux, RowOpenContext, useOpenRow } from '../pageOpen';
 import ViewSettingsMenu from './ViewSettingsMenu';
 import ViewsLockMarker, { setViewsLocked } from './ViewsLockMarker';
-import { AddViewMenu, ViewActionItems } from './CollectionMenus';
-import { Menu, MenuItem, MenuLabel, MenuSeparator, MenuValues, MenuValueSubmenu, type MenuPoint } from '../ui/Menu';
+import { AddViewMenu, ViewActionItems, ViewPicker } from './CollectionMenus';
+import { Menu, MenuItem, MenuLabel, MenuSeparator, MenuValues, MenuValueSubmenu, useNarrowScreen, type MenuPoint } from '../ui/Menu';
 import { Button } from '../ui/Button';
 import { ToggleGroup } from '../ui/ToggleGroup';
 import { readViewId, readViewScroll, writeViewId, writeViewScroll } from '../pageUiState';
@@ -224,6 +226,8 @@ function applyView(rows: Row[], view: ViewDef, schema: PropDef[]): Row[] {
 }
 
 export default function CollectionView({ collectionId, pages, tagColors, onNavigate, onOpenInNewTab, onPeek, onPagesChanged, onEditTemplate, embed, canEdit = true }: Props) {
+  // At phone width the views are one menu instead of a row of tabs.
+  const narrowScreen = useNarrowScreen();
   const [config, setConfig] = useState<CollectionConfig | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   // A full page remembers its view across tab switches and reloads (see
@@ -985,7 +989,29 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const viewFiltered = (view.filters ?? []).some((f) => filterIsArmed(f, isDateProp(f.property)));
 
   const viewSwitcher = (
-    <div className="collection-toolbar">
+    <div className={'collection-toolbar' + (narrowScreen ? ' has-view-picker' : '')}>
+      {narrowScreen ? (
+        // On a phone the views are one menu (owner, 2026-11-22): a row of tabs
+        // filled the toolbar and pushed every action off screen.
+        <ViewPicker
+          views={views!}
+          current={view}
+          icon={tabIcon}
+          onPick={pickView}
+          add={
+            mayChangeViews
+              ? {
+                  types: viewTypes,
+                  label: viewTypeLabel,
+                  onAdd: addView,
+                  copy: embed
+                    ? { databaseName: pages.get(collectionId)?.title || t('Untitled'), views: copyableViews(config.views), onCopy: addCopy }
+                    : undefined,
+                }
+              : undefined
+          }
+        />
+      ) : (
       <div className="view-tabs">
         {views!.map((v) => (
           <span key={v.id} className="view-tab-wrap">
@@ -1029,6 +1055,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           />
         )}
       </div>
+      )}
       {/* Beside the tabs, not inside them: on a phone the tab strip scrolls
           and the marker sat off screen at its end (ux audit); there it is
           drawn first instead (styles.css). */}
@@ -1724,6 +1751,7 @@ function FilterSortControls({
   onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState<'filter' | 'sort' | 'group' | null>(null);
+  const narrow = useNarrowScreen();
   // The cleanup matters: unmounted with a popover open (the view switched to a
   // form, which has no filter controls), it would otherwise leave the embed's
   // toolbar held open and its "Filtered" marker hidden.
@@ -1841,24 +1869,57 @@ function FilterSortControls({
     );
   }
 
+  // On a phone Filter and Sort are icons, so that they, Settings and New fit
+  // beside the view picker on one row; their tint still says when they are on.
+  const filterLabel = t('Filter') + (filters.length ? ` (${filters.length})` : '');
   return (
     <div className="fs-controls" ref={controlsRef}>
-      <Button
-        size="sm"
-        tone={filters.length ? 'primary' : 'neutral'}
-        icon={<FilterIcon size={14} />}
-        onClick={() => setOpen(open === 'filter' ? null : 'filter')}
-      >
-        Filter{filters.length ? ` (${filters.length})` : ''}
-      </Button>
-      <Button
-        size="sm"
-        tone={sort ? 'primary' : 'neutral'}
-        icon={<ArrowUpDown size={14} />}
-        onClick={() => setOpen(open === 'sort' ? null : 'sort')}
-      >
-        {t('Sort')}
-      </Button>
+      {narrow && !filters.length ? (
+        <Button
+          size="sm"
+          icon={<FilterIcon size={14} />}
+          label={filterLabel}
+          onClick={() => setOpen(open === 'filter' ? null : 'filter')}
+        />
+      ) : narrow ? (
+        // The count stays in sight on a phone; the word goes.
+        <Button
+          size="sm"
+          tone="primary"
+          icon={<FilterIcon size={14} />}
+          aria-label={filterLabel}
+          onClick={() => setOpen(open === 'filter' ? null : 'filter')}
+        >
+          {String(filters.length)}
+        </Button>
+      ) : (
+        <Button
+          size="sm"
+          tone={filters.length ? 'primary' : 'neutral'}
+          icon={<FilterIcon size={14} />}
+          onClick={() => setOpen(open === 'filter' ? null : 'filter')}
+        >
+          {filterLabel}
+        </Button>
+      )}
+      {narrow ? (
+        <Button
+          size="sm"
+          tone={sort ? 'primary' : 'neutral'}
+          icon={<ArrowUpDown size={14} />}
+          label={t('Sort')}
+          onClick={() => setOpen(open === 'sort' ? null : 'sort')}
+        />
+      ) : (
+        <Button
+          size="sm"
+          tone={sort ? 'primary' : 'neutral'}
+          icon={<ArrowUpDown size={14} />}
+          onClick={() => setOpen(open === 'sort' ? null : 'sort')}
+        >
+          {t('Sort')}
+        </Button>
+      )}
       {/* Only a board has columns to group into. The setting existed before
           this button did — it just took whatever select property came first,
           which is why nobody could put their tasks into one column per
@@ -2184,7 +2245,13 @@ function TableView({
 
   // Moving a column (spec 012, US2). The ids drawn, in order; the title is
   // not among them and cannot move.
-  const ids = schema.map((p) => p.id);
+  // The first checkbox the view shows leads the row, as narrow as its box
+  // (tableLead.ts): it keeps its stored place, and the others move among
+  // themselves around it.
+  const lead = leadCheckbox(schema);
+  const allIds = schema.map((p) => p.id);
+  const cols = lead ? schema.filter((p) => p !== lead) : schema;
+  const ids = movableColumns(allIds, lead?.id);
   const idsKey = ids.join('\u0000');
   const theadRef = useRef<HTMLTableSectionElement>(null);
   // After a Move, focus goes back to the header that moved (FR-005); after
@@ -2201,7 +2268,7 @@ function TableView({
   const setColumns = (next: string[], focus: string) => {
     if (!onSetColumns || next.join('\u0000') === idsKey) return;
     focusAfter.current = focus;
-    onSetColumns(next);
+    onSetColumns(withLead(next, lead?.id, allIds));
   };
   const { drag: colDrag, startDrag: startColDrag, consumeClick: consumeColClick } = useColumnDrag((id, gap) =>
     setColumns(moveToGap(ids, id, gap), id),
@@ -2411,6 +2478,13 @@ function TableView({
         <thead ref={theadRef}>
           <tr>
             <RowGutterHead />
+            {lead && (
+              <LeadCheckHead
+                prop={lead}
+                changes={propertyChanges?.(lead)}
+                onHide={onSetColumns && onHideColumn ? () => onHideColumn(lead.id) : undefined}
+              />
+            )}
             <th className="db-title-col" style={colStyle(TITLE_COL)}>
               <ColHead
                 label={t('Name')}
@@ -2418,7 +2492,7 @@ function TableView({
                 onReset={resetCol(TITLE_COL)}
               />
             </th>
-            {schema.map((p, i) => (
+            {cols.map((p, i) => (
               <th key={p.id} data-col-id={p.id} className={headClass(i, p.id)} style={colStyle(p.id)}>
                 <ColHead
                   label={p.name}
@@ -2476,6 +2550,11 @@ function TableView({
                   openRowMenu(id, r.title, { x: b.left, y: b.bottom }, e.currentTarget as HTMLElement);
                 }}
               />
+              {lead && (
+                <td className="db-check-col" data-prop-id={lead.id}>
+                  <LeadCheckBox prop={lead} title={r.title} value={r.props[lead.id]} onChange={(v) => onSetProp(r.id, lead.id, v)} />
+                </td>
+              )}
               <td className="db-title-col" style={colStyle(TITLE_COL)}>
                 <span className="db-title-inner" style={depth ? { paddingLeft: depth * 20 } : undefined}>
                   {subItemProp ? (
@@ -2517,7 +2596,7 @@ function TableView({
                   </span>
                 )}
               </td>
-              {schema.map((p) => (
+              {cols.map((p) => (
                 <td key={p.id} data-prop-id={p.id} style={colStyle(p.id)}>
                   <PropertyValue
                     def={p}
@@ -2547,10 +2626,11 @@ function TableView({
                   string with an expression inside it, and one word without an
                   umlaut is below the line rule's threshold. It was found by
                   reading the code for the wiki. */}
+              {lead && <LeadCheckFoot prop={lead} rows={rows} />}
               <td className="db-title-col db-calc-cell">
                 {plural(rows.length, '{n} row', '{n} rows')}
               </td>
-              {schema.map((p) => (
+              {cols.map((p) => (
                 <td key={p.id} className="db-calc-cell">
                   {footer(p)}
                 </td>

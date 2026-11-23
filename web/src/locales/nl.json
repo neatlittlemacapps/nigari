@@ -1394,7 +1394,6 @@
   "Added the date property {name}. Change the dates in Settings.": "Datumeigenschap {name} toegevoegd. Wijzig de datums in Instellingen.",
   "Drop to make a new column here": "Loslaten om hier een nieuwe kolom te maken",
   "Drop to put the two blocks side by side": "Loslaten om de twee blokken naast elkaar te zetten",
-  "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "De rij naast deze plek bestaat niet meer of staat in een andere lijst, dus er is niets neergezet. Herlaad en probeer het opnieuw.",
   "Add a row below (Alt: above)": "Rij eronder toevoegen (Alt: erboven)",
   "Drag to move {title}, click for its menu": "Sleep om {title} te verplaatsen, klik voor het menu",
   "Add row below": "Rij eronder toevoegen",
@@ -1407,5 +1406,8 @@
   "Row title": "Rijtitel",
   "Open the row’s menu": "Menu van de rij openen",
   "Move the row up": "Rij omhoog verplaatsen",
-  "Move the row down": "Rij omlaag verplaatsen"
+  "Move the row down": "Rij omlaag verplaatsen",
+  "Filter": "Filteren",
+  "Views": "Weergaven",
+  "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "De rij naast deze plek bestaat niet meer of staat in een andere lijst, dus er is niets neergezet. Herlaad en probeer het opnieuw."
 }

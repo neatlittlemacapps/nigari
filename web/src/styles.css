@@ -2887,6 +2887,53 @@ body.is-col-resizing {
   max-width: 420px;
 }
 
+/* The leading checkbox column (TableView): as wide as its box. Its name is
+   the heading's tooltip and is read out, but not drawn. */
+.db-table .db-check-col {
+  min-width: 40px;
+  width: 40px;
+  max-width: 40px;
+  padding: 7px 0;
+  text-align: center;
+  vertical-align: middle;
+}
+.db-table th.db-check-col {
+  color: var(--muted);
+}
+/* A heading drawn as an icon (ColHead's icon): the name is read out and is
+   the tooltip, but not drawn. */
+.th-hidden-name,
+.lead-check .ui-checkbox-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.db-table th.db-check-col .th-inner {
+  display: flex;
+  justify-content: center;
+}
+/* The leading box (TableCheckColumn): ui/Checkbox, larger than its 14px
+   default, because it is the thing you aim at here. */
+.lead-check {
+  justify-content: center;
+}
+.lead-check .ui-checkbox-box {
+  width: 18px;
+  height: 18px;
+}
+/* The whole 32 by 44 cell is the label, so a near miss still ticks. */
+.list-row-check .lead-check {
+  width: 100%;
+  min-height: 44px;
+}
+.list-row-check .lead-check .ui-checkbox-box {
+  width: 20px;
+  height: 20px;
+}
+
 .db-title-link {
   font-weight: 500;
   color: var(--fg);
@@ -2946,6 +2993,33 @@ body.is-col-resizing {
 }
 
 /* "+ Add view" button + its (portaled) menu. */
+/* The phone's view picker (CollectionMenus ViewPicker): the open view's
+   name in one button that gives way to the toolbar's actions, never the
+   other way round. ui/Button draws it; this only lets the name shrink. */
+.view-picker.ui-button {
+  min-width: 96px;
+  max-width: 100%;
+  border-radius: var(--radius-scale-full);
+  background: var(--active);
+  font-weight: 600;
+}
+.view-picker .ui-button-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.view-picker-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.view-picker-chev {
+  flex: none;
+  color: var(--muted);
+}
+
 .view-add {
   padding: 5px 8px;
   border-radius: 7px;
@@ -4911,6 +4985,18 @@ body.is-col-resizing {
 
   .collection-toolbar > * {
     flex-shrink: 0;
+  }
+
+  /* With the view picker the row fits on a phone: the picker shrinks (its
+     name ellipsised) and the actions keep their size. When even that is too
+     wide (a board's Group, an embed's state chips, a 320px screen) the bar
+     still scrolls sideways, as before. */
+  .collection-toolbar.has-view-picker {
+    gap: 8px;
+  }
+  .collection-toolbar.has-view-picker > .view-picker {
+    flex-shrink: 1;
+    min-width: 0;
   }
 
   /* The views lock's marker first on a phone (spec 013): the toolbar scrolls
@@ -7414,6 +7500,27 @@ a,
   cursor: pointer;
 }
 
+/* Everything after the leading checkbox: the icon, title and properties. */
+.list-row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The leading checkbox (ListView): a 44px tap area around a 20px box. */
+.list-row-check {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  min-height: 44px;
+  margin: -9px 0;
+  cursor: pointer;
+}
+
 .list-row:last-child {
   border-bottom: none;
 }
@@ -7457,12 +7564,13 @@ a,
 
 /* On narrow screens the title is what counts; properties slide below it. */
 @media (max-width: 768px) {
-  .list-row {
+  .list-row-body {
     flex-wrap: wrap;
     row-gap: 4px;
   }
   .list-row-title {
-    flex: 1 1 100%;
+    /* Beside its icon, then the properties wrap below. */
+    flex: 1 1 calc(100% - 32px);
     white-space: normal;
   }
   .list-row-icon {

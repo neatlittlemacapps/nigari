@@ -54,6 +54,7 @@ import {
   FilePlus,
   FolderTree,
   Globe,
+  Grid2x2Plus,
   Grid3x3,
   Hash,
   Heading1,
@@ -192,6 +193,9 @@ export const MENU_ICONS = {
   timelineDates: CalendarRange,
   // A view's layout, its type (spec 018).
   viewLayout: LayoutDashboard,
+  // The phone's view picker (views as one menu instead of tabs): a new view
+  // of the database, not a new page or workspace.
+  addView: Grid2x2Plus,
   subItems: Network,
   editProperties: Rows3,
   // The views lock (spec 013), under Database settings. Not Lock and
