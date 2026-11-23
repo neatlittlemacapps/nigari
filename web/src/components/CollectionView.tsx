@@ -2402,7 +2402,6 @@ function TableView({
         }
       : undefined,
   });
-  const dropGap = rowDrag?.spot ? rowDrag.gap : -1;
   // On a touch screen the handle shows only on the row last tapped (owner,
   // 2026-11-23): the tap still does what it did (the title opens, a cell
   // edits), and the row's handle and + appear beside it.
@@ -2419,8 +2418,6 @@ function TableView({
     [
       rowDrag?.id === id ? 'is-row-dragged' : '',
       tappedRow === id ? 'is-row-tapped' : '',
-      dropGap === i ? 'row-drop-before' : '',
-      dropGap === ordered.length && i === ordered.length - 1 ? 'row-drop-after' : '',
     ]
       .filter(Boolean)
       .join(' ') || undefined;

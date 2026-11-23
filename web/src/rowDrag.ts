@@ -126,11 +126,25 @@ export function rowStep(rows: readonly DrawnRow[], id: string, delta: -1 | 1): R
 
 // ---- The gesture ----
 
+/** The row being dragged. Where it would land is drawn straight onto the
+ *  rows (the `row-drop-before` / `row-drop-after` classes), not kept in React
+ *  state: a state change per gap drew the whole table again, 37 ms a step on
+ *  300 rows (T021). React hears only the start and the end. */
 export interface RowDragState {
   id: string;
-  gap: number;
-  /** Where a release would put the row; null where it would do nothing. */
-  spot: RowSpot | null;
+}
+
+const DROP_CLASSES = ['row-drop-before', 'row-drop-after'];
+
+/** Puts the drop line on the gap: above row `gap`, or below the last row. */
+function paintGap(body: HTMLElement, painted: HTMLElement | null, gap: number, show: boolean): HTMLElement | null {
+  painted?.classList.remove(...DROP_CLASSES);
+  if (!show) return null;
+  const trs = body.querySelectorAll<HTMLElement>(':scope > tr[data-row-id]');
+  if (trs.length === 0) return null;
+  const tr = gap < trs.length ? trs[gap] : trs[trs.length - 1];
+  tr.classList.add(gap < trs.length ? 'row-drop-before' : 'row-drop-after');
+  return tr;
 }
 
 const START_THRESHOLD = 5; // px, as the board and the columns
@@ -191,12 +205,16 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
     spot: RowSpot | null;
     /** The rows the boxes were read for. */
     rowsAt: readonly DrawnRow[];
+    /** The gap the line is on, and the row carrying it. */
+    gap: number;
+    painted: HTMLElement | null;
   } | null>(null);
   const draggedAt = useRef({ id: '', at: 0 });
 
   const cancel = useCallback(() => {
     const l = live.current;
     if (l?.holdTimer) clearTimeout(l.holdTimer);
+    l?.painted?.classList.remove(...DROP_CLASSES);
     live.current = null;
     document.body.classList.remove('is-row-moving');
     setDrag(null);
@@ -217,13 +235,16 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
         document.body.classList.add('is-row-moving');
         window.getSelection()?.removeAllRanges();
         startRef.current?.();
+        setDrag({ id: l.id });
       }
       if (rowsRef.current !== l.rowsAt) {
         // The rows were drawn again (a sorted view gave way to its own
-        // order, a row arrived): their boxes moved with them.
+        // order, a row arrived): their boxes moved with them, and the line
+        // may sit on a row that moved.
         l.rowsAt = rowsRef.current;
         l.rects = rowBoxes(l.body);
         l.scrollTop0 = l.scroller?.scrollTop ?? 0;
+        l.gap = -1;
       }
       if (l.scroller) {
         const r = l.scroller.getBoundingClientRect();
@@ -232,9 +253,11 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
       }
       const shift = l.scroller ? l.scroller.scrollTop - l.scrollTop0 : 0;
       const gap = rowGap(l.rects, e.clientY + shift);
+      if (gap === l.gap) return;
       const spot = rowSpot(rowsRef.current, l.id, gap);
       l.spot = spot;
-      setDrag((d) => (d && d.id === l.id && d.gap === gap ? d : { id: l.id, gap, spot }));
+      l.gap = gap;
+      l.painted = paintGap(l.body, l.painted, gap, !!spot);
     };
 
     const onPointerUp = (e: PointerEvent) => {
@@ -297,6 +320,8 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
       scrollTop0: scroller?.scrollTop ?? 0,
       spot: null as RowSpot | null,
       rowsAt: rowsRef.current,
+      gap: -1,
+      painted: null as HTMLElement | null,
     };
     live.current = l;
     if (touch) {
