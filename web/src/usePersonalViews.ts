@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from './api';
 import { t } from './i18n';
-import { toast } from './toast';
+import { toastError } from './toast';
 import type { PersonalViewState } from './viewState';
 import { outboxKey } from './viewStateOutbox';
 
@@ -30,7 +30,7 @@ export function usePersonalViews(collectionId: string) {
   const send = useCallback(
     (scope: string, state: PersonalViewState | null) => {
       const done = state ? api.putViewState(collectionId, scope, state) : api.deleteViewState(collectionId, scope);
-      done.catch(() => toast(t('Your change to this view was not saved')));
+      done.catch(() => toastError(t('Your change to this view was not saved')));
     },
     [collectionId],
   );

@@ -1,7 +1,7 @@
 import { useState, type MutableRefObject } from 'react';
 import { ImageDown } from 'lucide-react';
 import { t } from '../i18n';
-import { toast } from '../toast';
+import { toast, toastError } from '../toast';
 import { Button } from '../ui/Button';
 import { Popover } from '../ui/Popover';
 import { Select } from '../ui/Select';
@@ -17,7 +17,7 @@ export default function ChartSave({ name, pictureRef }: { name: string; pictureR
   const picture = async (): Promise<Blob | null> => {
     const parts = pictureRef.current?.();
     if (!parts) {
-      toast(t('There is no chart to save yet.'));
+      toastError(t('There is no chart to save yet.'));
       return null;
     }
     return toPng(composePicture(parts, parts.token(BACKGROUND_TOKEN[background])));

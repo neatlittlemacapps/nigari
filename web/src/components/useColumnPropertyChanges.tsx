@@ -1,7 +1,7 @@
 import { lazy, Suspense, useRef, useState, type ReactNode } from 'react';
 import { confirm } from '../dialog';
 import { t } from '../i18n';
-import { toast } from '../toast';
+import { toastError } from '../toast';
 import type { CollectionConfig, PropDef } from '../types';
 // The save logic is imported when a change is made, not with every page:
 // a table heading's menu is drawn far more often than a property is changed
@@ -73,7 +73,7 @@ export function useColumnPropertyChanges({
         onSaved(await o.changeSchema(collectionId, next(o), tidyViews));
         return true;
       } catch (e) {
-        toast((e as Error).message);
+        toastError((e as Error).message);
         onRefused();
         return false;
       }

@@ -3,7 +3,7 @@ import { SidePanel } from '../ui/SidePanel';
 import { CenterPanel } from '../ui/CenterPanel';
 import type { PeekMode } from '../peek';
 import { Button } from '../ui/Button';
-import { toast } from '../toast';
+import { toastError } from '../toast';
 import { t } from '../i18n';
 import Editor, { type EditorProps } from './Editor';
 
@@ -44,7 +44,7 @@ export default function PeekPanel({ peekId, mode, onClose, onOpenFullPage, onTra
         // panel would only show an error, so it closes and says why.
         onMissing={() => {
           onClose();
-          toast(t('This page is no longer available.'));
+          toastError(t('This page is no longer available.'));
         }}
         onTrash={(id) => {
           onTrash(id);

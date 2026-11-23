@@ -2,7 +2,7 @@ import { useEffect, useState, type RefObject } from 'react';
 import { api } from '../api';
 import Portal from './Portal';
 import { useExclusiveModal } from '../modal';
-import { toast } from '../toast';
+import { toast, toastError } from '../toast';
 import { formatBytes, formatMoment } from '../format';
 import { DatabaseUpgrades } from './DatabaseUpgrades';
 import { plural, t } from '../i18n';
@@ -168,7 +168,7 @@ export function AdminSettingsModal({ onClose, returnFocus }: { onClose: () => vo
       // clean-up came up in red with a ⚠ in front of it.
       setPruned(r.removed);
     } catch (e) {
-      toast((e as Error).message || t('Clean-up failed'));
+      toastError((e as Error).message || t('Clean-up failed'));
     } finally {
       setPruning(false);
     }
@@ -181,7 +181,7 @@ export function AdminSettingsModal({ onClose, returnFocus }: { onClose: () => vo
       setPa(await api.publicAccess());
       if (action === 'start-token') setTunnelToken('');
     } catch (e) {
-      toast((e as Error).message || t('Tunnel action failed'));
+      toastError((e as Error).message || t('Tunnel action failed'));
     } finally {
       setTunnelBusy(false);
     }
@@ -194,7 +194,7 @@ export function AdminSettingsModal({ onClose, returnFocus }: { onClose: () => vo
       const r = await api.mailTest();
       toast(t('Test mail sent to {address} ✓', { address: r.to }));
     } catch (e) {
-      toast((e as Error).message || t('Test failed'));
+      toastError((e as Error).message || t('Test failed'));
     } finally {
       setMailBusy(false);
     }
@@ -205,7 +205,7 @@ export function AdminSettingsModal({ onClose, returnFocus }: { onClose: () => vo
       setMail({ provider: '', address: '' });
       toast(t('Mail connection disconnected'));
     } catch (e) {
-      toast((e as Error).message || t('Disconnecting failed'));
+      toastError((e as Error).message || t('Disconnecting failed'));
     }
   };
   const save = async () => {
@@ -251,7 +251,7 @@ export function AdminSettingsModal({ onClose, returnFocus }: { onClose: () => vo
       toast(t('Settings saved'));
       onClose();
     } catch (e) {
-      toast((e as Error).message || t('Saving failed'));
+      toastError((e as Error).message || t('Saving failed'));
     }
   };
 
@@ -538,13 +538,13 @@ ingress:
                     <div className="settings-row">
                       <Button
                         href={oauthSet.google ? '/api/admin/mail-oauth/google/start' : undefined}
-                        onClick={(e) => { if (!oauthSet.google) { e.preventDefault(); toast(t('Set up Google OAuth on the Access tab first')); } }}
+                        onClick={(e) => { if (!oauthSet.google) { e.preventDefault(); toastError(t('Set up Google OAuth on the Access tab first')); } }}
                       >
                         {t('Connect with Google')}
                       </Button>
                       <Button
                         href={oauthSet.ms ? '/api/admin/mail-oauth/microsoft/start' : undefined}
-                        onClick={(e) => { if (!oauthSet.ms) { e.preventDefault(); toast(t('Set up Microsoft OAuth on the Access tab first')); } }}
+                        onClick={(e) => { if (!oauthSet.ms) { e.preventDefault(); toastError(t('Set up Microsoft OAuth on the Access tab first')); } }}
                       >
                         {t('Connect with Microsoft')}
                       </Button>

@@ -41,7 +41,7 @@ paths:
   more than 3 related actions gets its own submenu, a smaller group stays
   on the first level behind a separator, and a choice among values is a
   submenu. Add a new action to the list, not to one menu. Not in the layer yet: toasts;
-  reuse `dialog.tsx` (confirm/prompt), `modal.ts`, `toast.ts` and `keys.ts`. BlockNote for the editor, Yjs for live
+  reuse `dialog.tsx` (confirm/prompt), `modal.ts`, `toast.ts` (`toast()` for a notice, `toastError()` for something that did not happen, #924) and `keys.ts`. BlockNote for the editor, Yjs for live
   documents.
 - **Keyboard.** Shortcuts register in `keys.ts`; focus movement goes through
   `nav.ts`. Both have checks (`check-keys.mjs`, `check-nav.mjs`) — extend them

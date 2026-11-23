@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { api } from '../api';
 import Portal from './Portal';
 import { useExclusiveModal } from '../modal';
-import { toast } from '../toast';
+import { toast, toastError } from '../toast';
 import { t } from '../i18n';
 import { formatMoment } from '../format';
 
@@ -46,7 +46,7 @@ export default function WorkspaceRules({
       toast(t('Workspace rules saved'));
       onClose();
     } catch (e) {
-      toast((e as Error).message || t('Saving failed'));
+      toastError((e as Error).message || t('Saving failed'));
     } finally {
       setSaving(false);
     }
@@ -59,7 +59,7 @@ export default function WorkspaceRules({
       onSaved();
       toast(t('Proposal dismissed'));
     } catch (e) {
-      toast((e as Error).message || t('Saving failed'));
+      toastError((e as Error).message || t('Saving failed'));
     }
   };
 

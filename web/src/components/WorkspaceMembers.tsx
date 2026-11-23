@@ -4,7 +4,7 @@ import { api, ApiError } from '../api';
 import Portal from './Portal';
 import { confirm } from '../dialog';
 import { useExclusiveModal } from '../modal';
-import { toast } from '../toast';
+import { toast, toastError } from '../toast';
 import { t } from '../i18n';
 import { X } from 'lucide-react';
 
@@ -59,7 +59,7 @@ export default function WorkspaceMembers({
       toast(r.emailed ? t('Invitation sent by email') : t('Invitation link copied'));
       load();
     } catch (err) {
-      toast((err as Error).message || t('Invitation failed'));
+      toastError((err as Error).message || t('Invitation failed'));
     }
   };
 
@@ -68,7 +68,7 @@ export default function WorkspaceMembers({
       await api.updateMember(workspaceId, m.userId, role);
       load();
     } catch (err) {
-      toast((err as Error).message || t('Could not change the role'));
+      toastError((err as Error).message || t('Could not change the role'));
     }
   };
 
@@ -107,7 +107,7 @@ export default function WorkspaceMembers({
         }
         return;
       }
-      toast(msg);
+      toastError(msg);
     }
   };
 

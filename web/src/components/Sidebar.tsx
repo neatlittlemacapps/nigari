@@ -7,7 +7,7 @@ import WorkspaceMembers from './WorkspaceMembers';
 import WorkspaceRules from './WorkspaceRules';
 import FileList from './FileList';
 import { promptText } from '../dialog';
-import { toast } from '../toast';
+import { toast, toastError } from '../toast';
 import Portal from './Portal';
 import { RowActions, openRowMenu } from './SidebarMenus';
 import { Menu, MenuItem, MenuSeparator, MenuValueItem, MenuValues, type MenuPoint } from '../ui/Menu';
@@ -648,7 +648,7 @@ export default function Sidebar({
       const r = await api.duplicatePage(id, true);
       onNavigate(r.id);
     } catch {
-      toast(t('The template could not be used'));
+      toastError(t('The template could not be used'));
     }
   };
   // ⋯ menu on a template row (remove the flag / trash the snapshot), opened by
@@ -671,7 +671,7 @@ export default function Sidebar({
     },
   });
   const unflagTemplate = (id: string) =>
-    void api.updatePage(id, { isTemplate: false }).catch(() => toast(t('Could not be changed')));
+    void api.updatePage(id, { isTemplate: false }).catch(() => toastError(t('Could not be changed')));
 
   // Which of the two sidebar shapes this workspace uses. Needed by the tree
   // itself, not just by the sections — see treeMode.ts.
@@ -869,7 +869,7 @@ export default function Sidebar({
           // (pagesChanged); only the workspace counters need catching up here.
           onWorkspacesChanged();
         })
-        .catch((e: Error) => toast(e.message || t('Moving failed')));
+        .catch((e: Error) => toastError(e.message || t('Moving failed')));
     },
     dragStart: (id, e) => {
       dragId.current = id;
@@ -973,7 +973,7 @@ export default function Sidebar({
       onWorkspacesChanged();
       toast(t('Workspace renamed'));
     } catch (e) {
-      toast((e as Error).message || t('Renaming failed'));
+      toastError((e as Error).message || t('Renaming failed'));
     }
   };
 
@@ -995,7 +995,7 @@ export default function Sidebar({
       onWorkspacesChanged();
       if (next) onSwitchWorkspace(next.id);
     } catch (e) {
-      toast((e as Error).message || t('Deleting failed'));
+      toastError((e as Error).message || t('Deleting failed'));
     }
   };
 
@@ -1028,7 +1028,7 @@ export default function Sidebar({
           : t('“{name}” is no longer assigned to new accounts.', { name: activeWs.name }),
       );
     } catch (e) {
-      toast((e as Error).message || t('Could not be changed'));
+      toastError((e as Error).message || t('Could not be changed'));
     }
   };
 
@@ -1051,7 +1051,7 @@ export default function Sidebar({
       onWorkspacesChanged();
       onSwitchWorkspace(out.workspaceId);
     } catch (err) {
-      toast((err as Error).message || t('Import failed'));
+      toastError((err as Error).message || t('Import failed'));
     }
   };
 
@@ -1520,7 +1520,7 @@ function WorkspaceImageModal({
       onChanged();
       onClose();
     } catch (e) {
-      toast((e as Error).message || t('Saving failed'));
+      toastError((e as Error).message || t('Saving failed'));
     } finally {
       setBusy(false);
     }
@@ -1537,7 +1537,7 @@ function WorkspaceImageModal({
       onChanged();
       onClose();
     } catch (err) {
-      toast((err as Error).message || t('Upload failed'));
+      toastError((err as Error).message || t('Upload failed'));
     } finally {
       setBusy(false);
     }

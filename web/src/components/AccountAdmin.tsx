@@ -10,7 +10,7 @@ import { api } from '../api';
 import type { ApiToken, User, Workspace } from '../types';
 import Portal from './Portal';
 import { confirm, promptText } from '../dialog';
-import { toast } from '../toast';
+import { toast, toastError } from '../toast';
 import { useExclusiveModal } from '../modal';
 import { formatDay, formatMoment } from '../format';
 import { plural, t } from '../i18n';
@@ -520,7 +520,7 @@ export function TokensModal({ onClose }: { onClose: () => void }) {
     // Guard the fail-open: "specific workspaces" with nothing picked must not
     // silently create an all-workspaces token (the server rejects it too).
     if (wsMode === 'some' && pickedWs.length === 0) {
-      toast(t('Pick at least one workspace (or “All workspaces”).'));
+      toastError(t('Pick at least one workspace (or “All workspaces”).'));
       return;
     }
     const chosen = wsMode === 'some' ? pickedWs : [];

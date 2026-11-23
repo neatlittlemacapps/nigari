@@ -66,7 +66,7 @@ const ChartPane = lazy(() => import('./ChartPane'));
 import { PageIcon } from '../pageIcon';
 import { groupFilterMatch, isGroupOp } from '../statusFilter';
 import StatusGroupFilter from './StatusGroupFilter';
-import { toast } from '../toast';
+import { toast, toastError } from '../toast';
 import { EMBED_ROW_STEP, limitRows, nextLimit } from '../embedRows';
 import { Table2, Columns3, LayoutGrid, CalendarDays, List, Plus, Filter as FilterIcon, ArrowUpDown, Calendar, ClipboardList, Check, Send, Share2, Globe, ChartPie, GanttChartSquare, ChevronDown, LayoutTemplate, Copy, X } from 'lucide-react';
 
@@ -290,7 +290,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       });
       await reloadTemplates();
     } catch {
-      toast(t('Could not create the template'));
+      toastError(t('Could not create the template'));
     }
   };
   const trashTemplate = async (p: PageMeta) => {
@@ -298,7 +298,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       await api.trashPage(p.id);
       await reloadTemplates();
     } catch {
-      toast(t('Could not be changed'));
+      toastError(t('Could not be changed'));
     }
   };
   const addRowFromTemplate = async (templateId: string) => {
@@ -308,7 +308,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       onPagesChanged();
       announceIfHidden(row);
     } catch {
-      toast(t('The template could not be used'));
+      toastError(t('The template could not be used'));
     }
   };
   const newTemplate = async () => {
@@ -317,7 +317,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       const p = await api.addDatabaseTemplate(collectionId);
       (onEditTemplate ?? onNavigate)(p.id);
     } catch {
-      toast(t('Could not create the template'));
+      toastError(t('Could not create the template'));
     }
   };
 
@@ -633,7 +633,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       // FR-027; spec 007's pattern). Every caller fires and forgets, so the
       // refusal ends here.
       if (before) setConfig(before);
-      toast((e as Error).message);
+      toastError((e as Error).message);
       // Somebody locked the views since this tab loaded them (spec 013): the
       // config is reloaded, so the lock shows and its controls go.
       if (e instanceof ApiError && e.code === 'views_locked') loadConfig();
@@ -709,7 +709,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     try {
       await api.updatePage(rowId, { propsPatch: patch });
     } catch {
-      toast(t('Change not saved'));
+      toastError(t('Change not saved'));
     }
   };
 
@@ -722,7 +722,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     try {
       await api.updatePage(rowId, { propsPatch: { [propId]: value } });
     } catch {
-      toast(t('Change not saved'));
+      toastError(t('Change not saved'));
     }
   };
 
@@ -745,7 +745,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       await loadRows();
       onPagesChanged();
     } catch (e) {
-      toast((e as Error).message || t('Could not be moved to the trash'));
+      toastError((e as Error).message || t('Could not be moved to the trash'));
     }
   };
 
@@ -1147,9 +1147,16 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         )}
         {view.type !== 'form' && (
           <div className="view-menu-wrap split-btn">
-            <Button size="sm" emphasis="high" icon={<Plus size={14} />} onClick={() => void addRow()}>
-              {t('New')}
-            </Button>
+            {/* On a phone New is its +, named for a screen reader: the word
+                took the room the view picker needs to say which view is
+                open (#921). */}
+            {narrowScreen ? (
+              <Button size="sm" emphasis="high" icon={<Plus size={14} />} label={t('New')} onClick={() => void addRow()} />
+            ) : (
+              <Button size="sm" emphasis="high" icon={<Plus size={14} />} onClick={() => void addRow()}>
+                {t('New')}
+              </Button>
+            )}
             <Menu
               label={t('Templates')}
               narrow="sheet"
@@ -1458,7 +1465,7 @@ function FormView({
         toast(t('Public link created'));
       }
     } catch {
-      toast(t('Sharing failed'));
+      toastError(t('Sharing failed'));
     } finally {
       setShareBusy(false);
     }
@@ -1472,7 +1479,7 @@ function FormView({
       setShareUrl(null);
       toast(t('Public link revoked'));
     } catch {
-      toast(t('That did not work'));
+      toastError(t('That did not work'));
     } finally {
       setShareBusy(false);
     }
@@ -1500,7 +1507,7 @@ function FormView({
       onSubmitted();
       setDone(true);
     } catch {
-      toast(t('Sending failed'));
+      toastError(t('Sending failed'));
     } finally {
       setBusy(false);
     }
@@ -1953,15 +1960,27 @@ function FilterSortControls({
           this button did — it just took whatever select property came first,
           which is why nobody could put their tasks into one column per
           project. */}
+      {/* An icon on a phone too, like Filter and Sort: with its word it
+          squeezed the view picker to "B…" (#921). */}
       {view.type === 'board' && canGroup && (
-        <Button
-          size="sm"
-          tone={view.groupBy ? 'primary' : 'neutral'}
-          icon={<Columns3 size={14} />}
-          onClick={() => setOpen(open === 'group' ? null : 'group')}
-        >
-          {t('Group')}
-        </Button>
+        narrow ? (
+          <Button
+            size="sm"
+            tone={view.groupBy ? 'primary' : 'neutral'}
+            icon={<Columns3 size={14} />}
+            label={t('Group')}
+            onClick={() => setOpen(open === 'group' ? null : 'group')}
+          />
+        ) : (
+          <Button
+            size="sm"
+            tone={view.groupBy ? 'primary' : 'neutral'}
+            icon={<Columns3 size={14} />}
+            onClick={() => setOpen(open === 'group' ? null : 'group')}
+          >
+            {t('Group')}
+          </Button>
+        )
       )}
 
       {open && pos && (

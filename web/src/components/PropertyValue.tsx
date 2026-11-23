@@ -3,7 +3,7 @@ import { api } from '../api';
 import { confirm } from '../dialog';
 import type { ChecklistItem, PropDef, PropOption } from '../types';
 import { STATUS_GROUPS, guessStatusGroup, orderByGroup, statusGroupLabel } from '../statusGroups';
-import { toast } from '../toast';
+import { toastError } from '../toast';
 import Portal from './Portal';
 import { OPTION_HEXES, optionPalette, optionSlug } from '../selectOptions';
 import { daysUntil, formatDay, formatMoment, formatNumber } from '../format';
@@ -206,7 +206,7 @@ function SelectCell({
   const remove = async (oid: string) => {
     const group = options.find((o) => o.id === oid)?.group;
     if (isStatus && group && options.filter((o) => o.group === group).length === 1) {
-      toast(t('Each group needs at least one option. Add another to this group first.'));
+      toastError(t('Each group needs at least one option. Add another to this group first.'));
       return;
     }
     close();
@@ -1179,6 +1179,11 @@ export default function PropertyValue({
       // counts as editing, so clearing one part of a filled date to retype it
       // keeps the input. The native picker is not part of the page, so opening
       // it does not blur the input.
+      // In a list line (compact) an empty date is nothing, as every other
+      // empty value there is: as a button it was an invisible 10×21px target
+      // nobody could find or hit on a phone (#911). It is set on the row's
+      // page, or in the table.
+      if (!value && !editing && compact) return null;
       if (!value && !editing) {
         return (
           <EmptyEdit

@@ -5,7 +5,7 @@ import { api } from '../api';
 import { formField } from './CollectionView';
 import { PageIcon } from '../pageIcon';
 import { PublicFormConfig, PropDef } from '../types';
-import { toast } from '../toast';
+import { toastError } from '../toast';
 import { t } from '../i18n';
 
 // Standalone, unauthenticated form page served at /form/{token}. Reuses the
@@ -45,7 +45,7 @@ export default function PublicForm({ token }: { token: string }) {
       await api.publicFormSubmit(token, title.trim(), props);
       setDone(true);
     } catch {
-      toast(t('Sending failed'));
+      toastError(t('Sending failed'));
     } finally {
       setBusy(false);
     }

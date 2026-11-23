@@ -4,7 +4,7 @@ import { api } from '../api';
 import type { Workspace } from '../types';
 import Portal from './Portal';
 import { useExclusiveModal } from '../modal';
-import { toast } from '../toast';
+import { toast, toastError } from '../toast';
 import { promptText } from '../dialog';
 import { t } from '../i18n';
 import {
@@ -76,7 +76,7 @@ export default function WorkspaceSettings({
       await api.updateWorkspace(ws.id, body);
       onChanged();
     } catch (e) {
-      toast((e as Error).message || t('Change not saved'));
+      toastError((e as Error).message || t('Change not saved'));
     } finally {
       setBusy(false);
     }

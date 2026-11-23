@@ -559,8 +559,9 @@ popover.
 
 On a phone (about 640 px and below) the view tabs become one button that
 names the open view: tap it for a list of every view, with **Add view** at its
-foot. **Filter** and **Sort** shrink to their icons, so they, **Settings** and
-**＋ New** all stay on screen beside it. Renaming, moving and removing a view
+foot. **Filter**, **Sort**, a board's **Group** and **＋ New** shrink to their
+icons, so they and **Settings** all stay on screen beside it, and the button
+keeps room for a short view name, also in a database inside a document. Renaming, moving and removing a view
 are in **Settings** there.
 
 On a narrow screen (about 640 px and below) those popovers dock to the bottom of
