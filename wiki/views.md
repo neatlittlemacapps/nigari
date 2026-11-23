@@ -271,7 +271,7 @@ wants to compare values down a column takes the table instead.
 On a phone (about 768 px and below) a line stays one line. When the tags and
 properties don't fit beside the title, the whole list scrolls sideways
 together, the way a table does, so each property stays in the same place from
-line to line. A long title is cut off at about two thirds of the screen's
+line to line. A long title is cut off at about 60% of the screen's
 width, so the properties after it are only a short swipe away.
 
 ### `gallery`

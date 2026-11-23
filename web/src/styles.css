@@ -7538,8 +7538,8 @@ a,
   color: var(--muted);
 }
 
-/* The title gets the room and may wrap rather than being cut off — in a list
-   of notes, the title IS the information. */
+/* The title gets the room and stays one line, cut off with an ellipsis only
+   when the room runs out — in a list of notes, the title IS the information. */
 .list-row-title {
   flex: 1;
   min-width: 0;
@@ -7569,6 +7569,13 @@ a,
   display: none;
 }
 
+/* The wrapper is the flex item now, so it centres its value as the value
+   itself was centred before. */
+.list-row-prop {
+  display: inline-flex;
+  align-items: center;
+}
+
 /* On a phone a row stays one line (owner, 2026-11-23, #906): the checkbox,
    icon, title, tags and properties side by side, and the whole list scrolls
    sideways together, as the table does. Until then the properties wrapped
@@ -7583,43 +7590,12 @@ a,
    tracks exist follows the view (data-* on .list-view, set by ListView). */
 @media (max-width: 768px) {
   .list-view {
-    --list-check: ;
-    --list-tags: ;
-    --list-props: ;
-    display: grid;
-    grid-template-columns:
-      var(--list-check) max-content max-content var(--list-tags)
-      var(--list-props) minmax(0, 1fr);
-    column-gap: 10px;
     overflow-x: auto;
     /* A sideways swipe at the end of the list does not go back a page. */
     overscroll-behavior-x: contain;
-  }
-  .list-view[data-check] {
-    --list-check: max-content;
-  }
-  .list-view[data-tags] {
-    --list-tags: max-content;
-  }
-  .list-view[data-props='1'] {
-    --list-props: max-content;
-  }
-  .list-view[data-props='2'] {
-    --list-props: max-content max-content;
-  }
-  .list-view[data-props='3'] {
-    --list-props: max-content max-content max-content;
-  }
-  .list-row {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: subgrid;
-  }
-  /* Their children become the row's cells. Clicks still bubble through them,
-     so the properties' stopPropagation keeps working. */
-  .list-row-body,
-  .list-row-props {
-    display: contents;
+    /* The list is a scroll container now: room for a focus ring on the
+       first and last rows, which it would otherwise clip. */
+    padding-block: var(--space-50);
   }
   /* Its own width, never squeezed below it (the list scrolls instead), but
      at most 60vw so the first property still shows. */
@@ -7627,9 +7603,59 @@ a,
     width: max-content;
     max-width: 60vw;
   }
-  .list-row-tags:empty,
-  .list-row-prop:empty {
-    display: block;
+  /* Without subgrid (Chromium before 117, older Android WebViews) a row
+     still stays one line and the list scrolls; only the properties do not
+     line up from row to row. */
+  .list-row {
+    width: max-content;
+    min-width: 100%;
+  }
+}
+
+@supports (grid-template-columns: subgrid) {
+  @media (max-width: 768px) {
+    .list-view {
+      --list-check: ;
+      --list-tags: ;
+      --list-props: ;
+      display: grid;
+      grid-template-columns:
+        var(--list-check) max-content max-content var(--list-tags)
+        var(--list-props) minmax(0, 1fr);
+      column-gap: var(--space-250);
+    }
+    .list-view[data-check] {
+      --list-check: max-content;
+    }
+    .list-view[data-tags] {
+      --list-tags: max-content;
+    }
+    .list-view[data-props='1'] {
+      --list-props: max-content;
+    }
+    .list-view[data-props='2'] {
+      --list-props: max-content max-content;
+    }
+    .list-view[data-props='3'] {
+      --list-props: max-content max-content max-content;
+    }
+    .list-row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: subgrid;
+      width: auto;
+      min-width: 0;
+    }
+    /* Their children become the row's cells. Clicks still bubble through
+       them, so the properties' stopPropagation keeps working. */
+    .list-row-body,
+    .list-row-props {
+      display: contents;
+    }
+    .list-row-tags:empty,
+    .list-row-prop:empty {
+      display: block;
+    }
   }
 }
 
