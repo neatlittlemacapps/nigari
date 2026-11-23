@@ -37,7 +37,8 @@ A cloud session starts with a code graph of the checkout (`.claude/hooks/codegra
 Use it at every step that needs to know how the code works, from `/speckit-specify` to
 the last fix: `codegraph explore`, `impact`, `callers` (or the `codegraph_explore` MCP
 tool) before grep or reading files, then the source itself. Plans record what it found
-(their **CodeGraph** section, enforced by `check-surfaces.mjs`). How:
+(their **CodeGraph** section, enforced by `check-surfaces.mjs`), and so does every pull
+request (its `## CodeGraph` section, enforced by the "CodeGraph section" check). How:
 `.claude/rules/codegraph.md`. On a computer without `.codegraph/`, skip it.
 
 ## Principles — a change that breaks one is wrong, however well it works
@@ -135,6 +136,10 @@ added on the REST side and missing on the MCP side, found later one by one.
 - Every surface above is changed or explicitly ruled out in the pull request.
 - The pull request links its issue (`Closes #N`) and explains why the change
   was needed, not only what it does.
+- The pull request has a `## CodeGraph` section saying which graph queries ran
+  and what they found (`.github/pull_request_template.md`). A project thread
+  clones after its session starts, so it runs `.claude/hooks/codegraph.sh`
+  itself first.
 
 ## How work flows
 

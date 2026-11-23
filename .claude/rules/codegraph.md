@@ -35,7 +35,9 @@ Use it as a coding tool, not a curiosity:
   `codegraph sync`, then `codegraph callers` on every exported symbol the
   branch added, moved or stopped using, and compare with what the plan said.
   Spec 010's first PR did this for `useMenuDismiss` (7 callers down to the
-  2 the plan kept) and `RowActions`. `codegraph affected` does not link the
+  2 the plan kept) and `RowActions`. What it showed goes into the pull request's
+  `## CodeGraph` section; the "CodeGraph section" check fails a pull request
+  without one (`scripts/check-pr-codegraph.mjs`). `codegraph affected` does not link the
   Playwright specs in `web/tests/` to the source, because they drive the UI
   over HTTP and never import it. Pick those specs with text search on the
   selectors and labels the change touches.

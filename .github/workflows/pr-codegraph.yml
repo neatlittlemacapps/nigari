@@ -1,0 +1,39 @@
+name: CodeGraph section
+
+# Fails a pull request whose description does not say what the code graph
+# showed (scripts/check-pr-codegraph.mjs, #926). Its own workflow, not a step of
+# ci.yml, because it has to run again when only the description is edited:
+# ci.yml runs on pushes, and a fixed description would stay red until the next
+# one. Bots and outside contributors are not asked (see the script).
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-codegraph-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  codegraph:
+    name: CodeGraph section
+    runs-on: ubuntu-latest
+    steps:
+      # The script only, from the pull request's own tree; nothing is built
+      # or installed, and the token is read-only.
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/check-pr-codegraph.mjs
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: The check's own cases
+        run: node scripts/check-pr-codegraph.mjs --self-test
+
+      - name: The description has a CodeGraph section
+        run: node scripts/check-pr-codegraph.mjs
