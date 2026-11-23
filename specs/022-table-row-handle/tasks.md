@@ -88,7 +88,7 @@ description: "Tasks for the table row handle, + and row menu, in two pull reques
 ### Phase 9: User Story 4, the + (P2)
 
 - [x] T027 [US4] [ui] + adds a row below (above with Alt/Option) in one request with `after`/`before` and the view's filter values; title in edit mode; a sorted view keeps its sort
-- [ ] T028 [US4] [test] `row-handle.mjs`: + below and Alt+ above, after a reload too; in a filtered view the row gets the filter's value
+- [x] T028 [US4] [test] `row-handle.mjs`: + below and Alt+ above, after a reload too; in a filtered view the row gets the filter's value
 
 ### Phase 10: User Story 5, keyboard and touch (P2)
 

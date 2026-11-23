@@ -86,6 +86,18 @@ await withFixture(async ({ page, api, base, path }) => {
   // Just before C in the database: B, which this view hides, stays before
   // it, and D after C.
   await eventually(async () => (await serverOrder()) === 'EBACD');
+  // The + in a filtered view: the new row gets the value the filter pins
+  // down, so it stays in the view, right below its row.
+  await row('A').hover();
+  await row('A').locator('.db-row-add').click();
+  await page.locator('.db-title-input').waitFor();
+  await page.keyboard.type('F');
+  await page.keyboard.press('Enter');
+  await eventually(async () => (await shown()).join('') === 'EAFC');
+  const f = (await api('GET', `${path}/rows?limit=50`)).rows.find((r) => r.title === 'F');
+  assert.equal(f.props.kind, 'a', 'a row added in a filtered view takes the filter\'s value');
+  assert.equal(await serverOrder(), 'EBAFCD');
+  await api('DELETE', `/api/pages/${f.id}`);
   await page.locator('.view-tab', { hasText: 'Table' }).click();
   await eventually(async () => (await shown()).join('') === 'EBACD');
 
@@ -107,6 +119,9 @@ await withFixture(async ({ page, api, base, path }) => {
   await titleInput.waitFor();
   await page.keyboard.press('Escape');
   await titleInput.waitFor({ state: 'detached' });
+  // After a reload the new rows keep their places.
+  await page.reload();
+  await eventually(async () => (await shown()).join('').replace(/Untitled/g, '_') === 'EB_A_CD');
 
   // ---- The row's menu: from the handle, a right-click, and back ----
   await row('A').hover();
