@@ -20,9 +20,13 @@ entries are not edited away.
   was asked to go). Steps rather than "Show all": one press on a huge database
   must not draw every row at once. The gallery is included without being
   asked: the same problem, and one rule is easier to predict.
-- **A row added from the embed is drawn after the 25**, alone, not with every
-  row before it: the first version drew all 121 rows of a 120-row table to
-  reach the new one (found by `embed-fit.mjs`).
+- **A row made from the embed is drawn after the 25** (New, a row's +,
+  Duplicate; every one made in the visit), alone, not with every row before
+  it: the first version drew all 121 rows of a 120-row table to reach the new
+  one (found by `embed-fit.mjs`), and kept only the last one made (code
+  review). The cut never splits a tree of sub-items, and a keyboard move steps
+  only among the unbroken first rows, so it never jumps over rows not drawn
+  yet.
 - **A board keeps its capped height** (owner): its columns scroll on their own,
   which needs a height.
 - **The row gutter hangs into the page margin** on a desktop, so the grid lines

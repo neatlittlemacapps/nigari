@@ -52,6 +52,15 @@ try {
   check('a row to reveal past the limit is drawn after them, alone', limitRows(rows(120), 25, (r) => r === 120).slice(-2), [25, 120]);
   check('a row to reveal inside the limit changes nothing', count(120, 25, (r) => r === 3), 25);
   check('none at all', count(0, 25), 0);
+  // Trees: rows as [id, depth]; a top-level row starts a group.
+  const tree = [['a', 0], ['a1', 1], ['a2', 1], ['b', 0], ['b1', 1], ['c', 0], ['c1', 1]];
+  const ids = (out) => out.map(([id]) => id);
+  const top = ([, d]) => d === 0;
+  check('the cut does not split a tree', ids(limitRows(tree, 2, undefined, top)), ['a', 'a1', 'a2']);
+  check('a cut on a tree boundary stays', ids(limitRows(tree, 3, undefined, top)), ['a', 'a1', 'a2']);
+  check('a revealed sub-item brings its whole tree', ids(limitRows(tree, 3, ([id]) => id === 'c1', top)), ['a', 'a1', 'a2', 'c', 'c1']);
+  check('two revealed rows are both drawn', limitRows(rows(120), 25, (r) => r === 60 || r === 120).slice(-2), [60, 120]);
+
   // SC-003: 120 rows reach 100 after three presses, all after a fourth.
   let limit = EMBED_ROW_STEP;
   for (let i = 0; i < 3; i++) limit = nextLimit(limit);

@@ -7623,6 +7623,13 @@ a,
    BlockNote's outline on the block, not this border (#532, #818). */
 .bn-db-embed {
   margin: var(--space-300) 0;
+  /* BlockNote lays a block's content out in a flex row, where a child is at
+     least as wide as its content. The card's overflow: hidden used to cut
+     that to the column; without it a board of three columns or a wide table
+     made the block 1,300px wide and the whole document scrolled sideways
+     (ux-ui-audit, 1280px). Its own views scroll sideways inside it instead. */
+  min-width: 0;
+  width: 100%;
 }
 
 /* The title: a plain line naming the database, which still opens it. */
@@ -7639,6 +7646,20 @@ a,
   font-weight: 600;
   cursor: pointer;
   text-align: left;
+}
+
+/* The line opens the database: a hover that says so. The padding and the
+   negative margin give the tint room without moving the name off the text's
+   edge. */
+.bn-db-title:hover {
+  background: var(--hover);
+}
+
+.bn-db-title {
+  margin-inline: calc(-1 * var(--space-150));
+  padding-inline: var(--space-150);
+  width: calc(100% + 2 * var(--space-150));
+  border-radius: var(--radius-scale-sm);
 }
 
 /* Jumping to the full page is a secondary action — visible only on hover. */

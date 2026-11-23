@@ -19,6 +19,7 @@ export function useTableRowActions({
   rowViewFilters,
   announceIfHidden,
   dropSort,
+  onMade,
 }: {
   collectionId: string;
   setRows: Dispatch<SetStateAction<Row[]>>;
@@ -29,6 +30,9 @@ export function useTableRowActions({
   announceIfHidden: (row: { id: string; matchesView?: boolean }) => void;
   /** Takes the view's sort away as the person's own change. */
   dropSort: () => void;
+  /** A row the + or Duplicate just made: a document's table draws it even
+   *  past its first rows (spec 023). */
+  onMade?: (id: string) => void;
 }) {
   const fail = (e: unknown) => toast(e instanceof ApiError ? serverMessage(e.code, e.message) : t('Change not saved'));
 
@@ -44,6 +48,7 @@ export function useTableRowActions({
         anchor,
         side: above ? 'before' : 'after',
       });
+      onMade?.(row.id);
       onPagesChanged();
       announceIfHidden(row);
       setEditTitleId(row.id);
@@ -90,7 +95,8 @@ export function useTableRowActions({
   // server places it, research R3), and the rows are read again.
   const duplicateRow = async (id: string) => {
     try {
-      await api.duplicatePage(id);
+      const copy = await api.duplicatePage(id);
+      onMade?.(copy.id);
       onPagesChanged();
     } catch (e) {
       fail(e);

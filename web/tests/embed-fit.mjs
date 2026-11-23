@@ -20,7 +20,7 @@ await withFixture(async ({ page, api, base, workspace }) => {
     await api('PUT', path, {
       schema: [
         { id: 'size', name: 'Size', type: 'number' },
-        { id: 'stage', name: 'Stage', type: 'select', options: [{ id: 'a', name: 'A', color: '#337ea9' }] },
+        { id: 'stage', name: 'Stage', type: 'select', options: ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id, name: id.toUpperCase(), color: '#337ea9' })) },
       ],
       views: [
         { id: 'table', name: 'Table', type: 'table' },
@@ -29,7 +29,7 @@ await withFixture(async ({ page, api, base, workspace }) => {
         { id: 'board', name: 'Board', type: 'board' },
       ],
     });
-    for (let i = 1; i <= n; i++) await api('POST', '/api/pages', { parentId: c.id, title: `Row ${i}`, props: { size: 1, stage: 'a' } });
+    for (let i = 1; i <= n; i++) await api('POST', '/api/pages', { parentId: c.id, title: `Row ${i}`, props: { size: 1, stage: 'abcde'[i % 5] } });
     return c;
   };
   const one = await make('One row', 1);
@@ -75,7 +75,8 @@ await withFixture(async ({ page, api, base, workspace }) => {
       r.selectNodeContents(p);
       return r.getBoundingClientRect().x;
     });
-    const titleX = await first.locator('.bn-db-title').evaluate((el) => el.getBoundingClientRect().x);
+    // The name's icon: the line itself reaches a little further for its hover tint.
+    const titleX = await first.locator('.bn-db-title svg').first().evaluate((el) => el.getBoundingClientRect().x);
     // The title's icon is its first thing; the first tab is a button with
     // its own padding, so its box, not its text, starts at the edge.
     const tabX = await left(first.locator('.view-tab, .view-picker').first());
@@ -117,9 +118,9 @@ await withFixture(async ({ page, api, base, workspace }) => {
   await eventually(async () => Number(await first.locator('.bn-db-open').evaluate((el) => getComputedStyle(el).opacity)) === 1);
 
   // ---- US2: 25 rows, then Show more by 25, then all ----
-  assert.equal(await rowsOf(second).count(), 25, 'a long table in a document draws more than 25 rows');
-  assert.equal((await second.locator('.db-calc-row .db-title-col').textContent()).trim(), '120 rows', 'the summary counts only the drawn rows');
-  assert((await second.locator('.db-calc-row').textContent()).includes('Σ 120'), 'the sum reads only the drawn rows');
+  assert.equal(await rowsOf(second).count(), 25, 'a long table in a document does not draw 25 rows');
+  assert.equal((await second.locator('.db-calc-row .db-title-col').textContent()).trim(), '120 rows', 'the summary does not count every row');
+  assert((await second.locator('.db-calc-row').textContent()).includes('Σ 120'), 'the sum does not read every row');
   for (const want of [50, 75, 100, 120]) {
     await more(second).click();
     await eventually(async () => (await rowsOf(second).count()) === want);
@@ -134,7 +135,7 @@ await withFixture(async ({ page, api, base, workspace }) => {
   await eventually(async () => (await second.locator('.list-row').count()) === 50);
   await tab('Gallery').click();
   await eventually(async () => (await second.locator('.gallery-card').count()) === 25);
-  assert.equal(await more(second).count(), 1, 'a long gallery offers no Show more');
+  assert.equal(await more(second).count(), 1, 'a long gallery has no Show more');
 
   // ---- US2: a row added from the embed's New is drawn past the limit ----
   await tab('Table').click();
@@ -143,16 +144,39 @@ await withFixture(async ({ page, api, base, workspace }) => {
   await second.locator('.collection-actions').getByRole('button', { name: 'New', exact: true }).click();
   await eventually(async () => (await rowsOf(second).count()) === 26);
   assert.equal((await rowsOf(second).nth(24).textContent()).startsWith('Row 25'), true, 'the 25 first rows are not the ones drawn');
-  assert.equal(await more(second).count(), 1, 'Show more went when the new row was drawn');
+  assert.equal(await more(second).count(), 1, 'Show more is gone once the new row is drawn');
+  // A second one keeps the first (code review: only the last was drawn).
+  await second.locator('.collection-actions').getByRole('button', { name: 'New', exact: true }).click();
+  await eventually(async () => (await rowsOf(second).count()) === 27);
+  // The + beside row 25 puts its row at 26, past the limit: it stays drawn
+  // once its title is typed (code review: it vanished on Enter).
+  const row25 = rowsOf(second).nth(24);
+  await row25.hover();
+  await row25.locator('.db-row-add').click();
+  await eventually(async () => (await rowsOf(second).count()) === 28);
+  await page.keyboard.type('Added by plus');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(800);
+  assert.equal(await rowsOf(second).count(), 28, 'the row the + made vanished once its title was typed');
+  assert(await second.getByText('Added by plus').isVisible(), 'the row the + made is not shown');
 
   // ---- US3: a board keeps its capped height ----
   await tab('Board').click();
   const boardH = await second.locator('.board').evaluate((el) => el.getBoundingClientRect().height);
   assert(boardH <= Math.min(560, 0.7 * 900) + 1, `the board is ${boardH}px tall, past its cap`);
+  // Five columns are wider than the text: the board scrolls inside the
+  // block, and the block stays the text's width (ux-ui-audit: without the
+  // card's clipping the block grew to the board's width and the whole
+  // document scrolled sideways).
+  const textRight = await page.locator('.bn-inline-content', { hasText: 'Text below.' }).evaluate((el) => el.closest('.bn-block-content').getBoundingClientRect().right);
+  const blockRight = await second.evaluate((el) => el.getBoundingClientRect().right);
+  assert(blockRight <= textRight + 1, `the board widened its block to ${blockRight}px, past the text's ${textRight}px`);
+  const board = await second.locator('.board').evaluate((el) => [el.scrollWidth, el.clientWidth]);
+  assert(board[0] > board[1], 'the five columns fit: the test no longer shows a wide board');
 
   // ---- FR-008: the database's own page draws every row ----
   await page.goto(`${base}/p/${many.id}`);
-  await eventually(async () => (await page.locator('.db-table tbody tr[data-row-id]').count()) === 121);
+  await eventually(async () => (await page.locator('.db-table tbody tr[data-row-id]').count()) === 123);
   assert.equal(await page.getByRole('button', { name: 'Show more', exact: true }).count(), 0, 'a database page offers Show more');
 
   // ---- Dark ----

@@ -13,14 +13,34 @@ export const EMBED_ROW_STEP = 25;
 
 /**
  * The rows to draw under `limit`: the first `limit`, then any later row
- * `reveal` asks for (a row just added from the embed, which lands at the end
- * and would otherwise vanish the moment it is made). Only that row, not every
- * row up to it: a row added to a 500-row table draws 26 rows, not 501. No
- * limit draws every row.
+ * `reveal` asks for (a row just added or duplicated from the embed, which
+ * lands past the limit and would otherwise vanish the moment it is made).
+ * Only that row, not every row up to it: a row added to a 500-row table draws
+ * 26 rows, not 501. No limit draws every row.
+ *
+ * In a table with sub-items the rows come as trees, flattened: `startsGroup`
+ * is true for a top-level row. The cut never falls inside a tree (a parent
+ * drawn open with its children missing), and a revealed sub-item brings its
+ * whole tree, so it is never drawn under somebody else's parent (code review).
  */
-export function limitRows<T>(items: T[], limit: number | undefined, reveal: (item: T) => boolean = () => false): T[] {
+export function limitRows<T>(
+  items: T[],
+  limit: number | undefined,
+  reveal: (item: T) => boolean = () => false,
+  startsGroup: (item: T) => boolean = () => true,
+): T[] {
   if (limit === undefined || items.length <= limit) return items;
-  return [...items.slice(0, limit), ...items.slice(limit).filter(reveal)];
+  let cut = limit;
+  while (cut < items.length && !startsGroup(items[cut])) cut++;
+  const out = items.slice(0, cut);
+  for (let i = cut; i < items.length; ) {
+    let end = i + 1;
+    while (end < items.length && !startsGroup(items[end])) end++;
+    const group = items.slice(i, end);
+    if (group.some(reveal)) out.push(...group);
+    i = end;
+  }
+  return out;
 }
 
 /** The limit after one press of Show more. */

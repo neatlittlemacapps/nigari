@@ -17,8 +17,9 @@ view and draws Show more. One pull request. No server, MCP or stored change.
 - **Gutter**: `.table-wrap` hangs 52px left in a document, so spec 022's row
   gutter sits in the page margin; on a phone (≤768px) only the page's 18px,
   so the handle stays on the screen (FR-003; decision in `docs/decisions.md`).
-- **Rows**: `limitRows` draws the first 25 plus a row just added; `nextLimit`
-  adds 25. The limit is React state keyed by view id; nothing stored
+- **Rows**: `limitRows` draws the first 25 plus every row made here (New, a
+  row's +, Duplicate), never cutting a tree of sub-items in two; `nextLimit`
+  adds 25. A keyboard move steps only among the unbroken first rows. The limit is React state keyed by view id; nothing stored
   (FR-005, FR-006). The table's summary reads every row.
 
 ## Technical Context
@@ -34,9 +35,9 @@ view and draws Show more. One pull request. No server, MCP or stored change.
 - Playwright `embed-fit.mjs` (new): no card, alignment and the block's foot at
   1280px and 390px (SC-001, SC-002), the gutter on the screen and beside the
   grid, Open as page on hover, 25 → 120 by Show more with the summary counting
-  every row (SC-003), list and gallery, another view back at 25, a new row
-  drawn past the limit, the board's cap, the database page drawing all 121
-  (SC-004). `SHOTS=<dir>` writes light, dark and phone screenshots.
+  every row (SC-003), list and gallery, another view back at 25, rows made
+  by New (twice) and by a row's + drawn past the limit, the board's cap, the
+  database page drawing every row (SC-004). `SHOTS=<dir>` writes light, dark and phone screenshots.
 - Kept passing: `embeds.mjs`, `embed-views.mjs`, `embed-toolbar-fold.mjs`,
   `row-handle.mjs`, `view-layout.mjs`, `chart-view.mjs`,
   `property-confirm.mjs`, `personal-view.mjs` (the specs that open an embed).
