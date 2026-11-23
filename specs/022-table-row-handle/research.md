@@ -79,9 +79,9 @@ for everyone and Reset. The move itself (R1) is shared at once.
 - **No personal scope** (an embed without a place): the sort change goes
   to the view as today, so a person who may not change that view cannot
   drag rows of a sorted view (spec FR-005).
-- **Pending owner decision** (asked 2026-11-22): whether the sort goes for
-  everyone at once instead. That would call `saveViews` instead of the
-  personal path and be refused under a lock. Everything else stays.
+- **Owner decision** (2026-11-23): just the person's own sort goes, as
+  above. Turned down: removing it for everyone at once (`saveViews`), which
+  would surprise teammates and be refused under a lock.
 
 ## R5. The gesture: pointer events, as the board and the columns drag
 
