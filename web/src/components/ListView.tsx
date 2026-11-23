@@ -14,10 +14,16 @@ interface Row {
   tags?: string[];
 }
 
-// A list view is deliberately NOT a narrow table: no column grid, no header
-// row, no horizontal scrolling. The title leads and the properties trail
+// A list view is deliberately NOT a narrow table: no header row, and on a
+// wide screen no column grid. The title leads and the properties trail
 // quietly behind it. This is the calm view for notes — anyone who wants to
 // compare values or read down a column takes the table instead.
+//
+// On a phone a row stays one line and the whole list scrolls sideways
+// together, like the table (owner, 2026-11-23, #906): until then the
+// properties wrapped onto a second line under the title. The rows share one
+// grid there (styles.css, "List view"), so every row must put the same cells
+// in the same order — hence the empty tags cell and one wrapper per property.
 export default function ListView({
   rows,
   schema,
@@ -49,9 +55,17 @@ export default function ListView({
   // A list lives on restraint: only the first few properties accompany the
   // title, or the row turns back into a table.
   const inline = schema.filter((p) => p !== check).slice(0, 3);
+  // Some rows have tags: every row keeps a (possibly empty) tags cell, so the
+  // properties after it line up in the phone grid.
+  const anyTags = rows.some((r) => (r.tags?.length ?? 0) > 0);
 
   return (
-    <div className="list-view">
+    <div
+      className="list-view"
+      data-check={check ? '' : undefined}
+      data-tags={anyTags ? '' : undefined}
+      data-props={inline.length}
+    >
       {rows.map((r) => (
         <div
           key={r.id}
@@ -71,9 +85,9 @@ export default function ListView({
             <PageIcon icon={r.icon} size={17} fallback="📄" />
           </span>
           <span className="list-row-title">{r.title || t('Untitled')}</span>
-          {r.tags && r.tags.length > 0 && (
+          {anyTags && (
             <span className="list-row-tags">
-              {r.tags.map((t) => (
+              {(r.tags ?? []).map((t) => (
                 <span key={t} className={'tag-chip ' + tagColorClass(t, tagColors)}>
                   #{t}
                 </span>
@@ -85,14 +99,17 @@ export default function ListView({
             // so the click must not fall through to the row.
             <span className="list-row-props" onClick={(e) => e.stopPropagation()}>
               {inline.map((p) => (
-                <PropertyValue
-                  key={p.id}
-                  def={p}
-                  value={r.props?.[p.id]}
-                  compact
-                  onChange={(v) => onSetProp(r.id, p.id, v)}
-                  onOptionsChange={(opts) => onSetOptions(p.id, opts)}
-                />
+                // A compact empty value renders nothing; the wrapper keeps
+                // its cell in the phone grid anyway.
+                <span key={p.id} className="list-row-prop">
+                  <PropertyValue
+                    def={p}
+                    value={r.props?.[p.id]}
+                    compact
+                    onChange={(v) => onSetProp(r.id, p.id, v)}
+                    onOptionsChange={(opts) => onSetOptions(p.id, opts)}
+                  />
+                </span>
               ))}
             </span>
           )}
