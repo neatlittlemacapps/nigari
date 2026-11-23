@@ -9,7 +9,7 @@ import { rowStep, type DrawnRow, type RowSpot } from '../rowDrag';
 // title, a cell, its handle. Typing in a cell keeps the keys for the field.
 
 /** The row of `body` that holds the focus, if any. */
-export function focusedRowIn(body: HTMLElement | null): HTMLTableRowElement | null {
+function focusedRowIn(body: HTMLElement | null): HTMLTableRowElement | null {
   const el = document.activeElement;
   if (!body || !el || !body.contains(el)) return null;
   return el.closest<HTMLTableRowElement>('tr[data-row-id]');
