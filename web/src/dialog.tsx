@@ -1,12 +1,20 @@
 import { Button } from './ui/Button';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import Portal from './components/Portal';
 import { t } from './i18n';
+import { FOCUSABLE, trapStep } from './modalKeys';
 
 // In-app confirm / prompt dialogs (replacing native window.confirm/prompt,
 // which look out of place and can't be styled). Promise-based: call
 // `await confirm(msg)` or `await promptText(msg)`; a single <DialogHost/>
 // mounted at the app root renders the actual dialog and resolves the promise.
+//
+// Not ui/AlertDialog (#572 suggested it): a confirmation layers on top of the
+// dialog that asked for it, and that one is usually a Base UI dialog in
+// another React tree, which would take the same Escape and close too. So this
+// keeps its own keys and does by hand what AlertDialog does: it is named by
+// its question, focus starts inside it (on Cancel when the answer destroys
+// something, so a habitual Enter keeps the data), and Tab stays inside.
 
 type ConfirmReq = {
   kind: 'confirm';
@@ -51,6 +59,10 @@ export function DialogHost() {
   const [req, setReq] = useState<Req | null>(null);
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const okRef = useRef<HTMLButtonElement>(null);
+  const messageId = useId();
   // Where focus was when the question was asked, to give it back on either
   // answer. Without it focus fell to <body> when the dialog closed: a menu's
   // "Rename view" left the keyboard nowhere (spec 010, menu-keyboard.mjs).
@@ -69,9 +81,18 @@ export function DialogHost() {
   }, []);
 
   useEffect(() => {
-    if (req?.kind === 'prompt') setTimeout(() => inputRef.current?.focus(), 0);
     if (!req) return;
+    setTimeout(() => (req.kind === 'prompt' ? inputRef.current : req.danger ? cancelRef.current : okRef.current)?.focus(), 0);
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        // Tab walked into the dialog underneath before (#572, #745).
+        const items = Array.from(panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []);
+        const next = trapStep(items.indexOf(document.activeElement as HTMLElement), items.length, e.shiftKey);
+        if (next === null) return;
+        e.preventDefault();
+        items[next].focus();
+        return;
+      }
       if (e.key !== 'Escape') return;
       // Handled: the modal underneath must not close on the same press.
       e.preventDefault();
@@ -113,8 +134,14 @@ export function DialogHost() {
   return (
     <Portal>
       <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) cancel(); }}>
-        <div className="dialog confirm-dialog" role="dialog" aria-modal="true">
-          <p className="confirm-message">{req.message}</p>
+        <div
+          ref={panelRef}
+          className="dialog confirm-dialog"
+          role={req.kind === 'confirm' ? 'alertdialog' : 'dialog'}
+          aria-modal="true"
+          aria-labelledby={messageId}
+        >
+          <p className="confirm-message" id={messageId}>{req.message}</p>
           {req.kind === 'prompt' && (
             <input
               ref={inputRef}
@@ -128,8 +155,9 @@ export function DialogHost() {
             />
           )}
           <div className="dialog-buttons">
-            <Button onClick={cancel}>{t('Cancel')}</Button>
+            <Button ref={cancelRef} onClick={cancel}>{t('Cancel')}</Button>
             <Button
+              ref={okRef}
               emphasis={req.kind === 'confirm' && req.danger ? 'medium' : 'high'}
               tone={req.kind === 'confirm' && req.danger ? 'destructive' : 'neutral'}
               onClick={ok}

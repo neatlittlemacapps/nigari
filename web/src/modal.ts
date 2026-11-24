@@ -209,8 +209,12 @@ export function useMenuDismiss(
  *
  *  What it is for: shortcuts that MOVE FOCUS in the application behind the
  *  modal (the arrow keys entering the sidebar) must do nothing while a modal
- *  owns the screen. */
+ *  owns the screen.
+ *
+ *  `.ui-dialog` is ui/Dialog's and ui/AlertDialog's popup: Base UI marks it
+ *  role="dialog" but not aria-modal, so until #802 the arrows on a dialog's
+ *  Cancel button walked into the sidebar tree behind it. */
 export function modalOpen(): boolean {
   if (typeof document === 'undefined') return false;
-  return !!document.querySelector('.modal-overlay, [aria-modal="true"]');
+  return !!document.querySelector('.modal-overlay, [aria-modal="true"], .ui-dialog');
 }

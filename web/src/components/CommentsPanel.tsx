@@ -5,6 +5,7 @@ import type { Comment } from '../types';
 import { MessageSquareText, X } from 'lucide-react';
 import { t, plural } from '../i18n';
 import { Button } from '../ui/Button';
+import { formatChord } from '../keys';
 import CommentItem, { grow } from './CommentItem';
 import { COMMENTS_CHANGED } from '../commentsPanelState';
 
@@ -147,7 +148,8 @@ export default function CommentsPanel({
           }}
         />
         <div className="cp-compose-foot">
-          <span className="cp-hint">{t('⌘↵ to send')}</span>
+          {/* The platform's own chord: ⌘ was shown on Windows too (#741). */}
+          <span className="cp-hint">{t('{chord} to send', { chord: formatChord('mod+enter') })}</span>
           <Button emphasis="high" size="sm" type="submit" disabled={!body.trim()}>
             {t('Send')}
           </Button>
