@@ -270,9 +270,6 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const [schemaOpen, setSchemaOpen] = useState(false);
   // The person's own filter and sort per view (spec 013, US1).
   const personal = usePersonalViews(collectionId);
-  // A popover of the filter or sort controls is open: with the templates
-  // menu, what keeps an embed's folding toolbar shown (data-menu-open).
-  const [fsOpen, setFsOpen] = useState(false);
   // The arrow beside New: this database's own templates, loaded when it opens
   // so the list is never older than the click.
   const [tplOpen, setTplOpen] = useState(false);
@@ -1118,7 +1115,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           {view.sort && <span className="embed-view-state-item">{t('Sorted')}</span>}
         </span>
       )}
-      <div className="collection-actions" data-menu-open={fsOpen || tplOpen ? '' : undefined}>
+      {/* An embed's folding toolbar stays shown while a popover or menu from it
+          is open: the CSS reads that off the buttons' aria-expanded (#531). */}
+      <div className="collection-actions">
         {/* Filter and sort stay while the views are locked: they are the
             person's own (spec 013, FR-009). Grouping changes the view for
             everyone, so it goes with the lock. */}
@@ -1127,7 +1126,6 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             schema={schema}
             view={ownFilterSort ? { ...view, ...ownFilterSort } : view}
             onChange={updateView}
-            onOpenChange={setFsOpen}
             canGroup={!viewsLock}
           />
         )}
@@ -1788,7 +1786,6 @@ function FilterSortControls({
   schema,
   view,
   onChange,
-  onOpenChange,
   canGroup = true,
 }: {
   schema: PropDef[];
@@ -1797,19 +1794,30 @@ function FilterSortControls({
   /** A board's grouping is the database's view setting even in a document,
    *  so the views lock takes it away there too (spec 013). */
   canGroup?: boolean;
-  /** Whether one of its popovers is open: an embed's folding toolbar stays
-   *  shown while it is (spec 012, FR-020). */
-  onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState<'filter' | 'sort' | 'group' | null>(null);
   const narrow = useNarrowScreen();
-  // The cleanup matters: unmounted with a popover open (the view switched to a
-  // form, which has no filter controls), it would otherwise leave the embed's
-  // toolbar held open and its "Filtered" marker hidden.
+  // Escape closes the popover (#745), and the press is marked handled so a
+  // dialog the database sits in stays open.
   useEffect(() => {
-    onOpenChange?.(open !== null);
-    return () => onOpenChange?.(false);
-  }, [open, onOpenChange]);
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      e.preventDefault();
+      // Back on the button that opened it, not on <body>.
+      controlsRef.current?.querySelector<HTMLElement>('[aria-expanded="true"]')?.focus();
+      setOpen(null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
+  // What each of the three buttons carries: it opens a popover, says whether
+  // it is open (#531: a screen reader was told neither), and toggles it.
+  const pop = (k: 'filter' | 'sort' | 'group') => ({
+    'aria-haspopup': 'dialog' as const,
+    'aria-expanded': open === k,
+    onClick: () => setOpen(open === k ? null : k),
+  });
   const controlsRef = useRef<HTMLDivElement>(null);
   // Titles for every relation in this schema, so a filter on one can offer
   // rows to pick instead of demanding an id. Keyed by property id; the
@@ -1930,7 +1938,7 @@ function FilterSortControls({
           size="sm"
           icon={<FilterIcon size={14} />}
           label={filterLabel}
-          onClick={() => setOpen(open === 'filter' ? null : 'filter')}
+          {...pop('filter')}
         />
       ) : narrow ? (
         // The count stays in sight on a phone; the word goes.
@@ -1939,7 +1947,7 @@ function FilterSortControls({
           tone="primary"
           icon={<FilterIcon size={14} />}
           aria-label={filterLabel}
-          onClick={() => setOpen(open === 'filter' ? null : 'filter')}
+          {...pop('filter')}
         >
           {String(filters.length)}
         </Button>
@@ -1948,7 +1956,7 @@ function FilterSortControls({
           size="sm"
           tone={filters.length ? 'primary' : 'neutral'}
           icon={<FilterIcon size={14} />}
-          onClick={() => setOpen(open === 'filter' ? null : 'filter')}
+          {...pop('filter')}
         >
           {filterLabel}
         </Button>
@@ -1959,14 +1967,14 @@ function FilterSortControls({
           tone={sort ? 'primary' : 'neutral'}
           icon={<ArrowUpDown size={14} />}
           label={t('Sort')}
-          onClick={() => setOpen(open === 'sort' ? null : 'sort')}
+          {...pop('sort')}
         />
       ) : (
         <Button
           size="sm"
           tone={sort ? 'primary' : 'neutral'}
           icon={<ArrowUpDown size={14} />}
-          onClick={() => setOpen(open === 'sort' ? null : 'sort')}
+          {...pop('sort')}
         >
           {t('Sort')}
         </Button>
@@ -1984,14 +1992,14 @@ function FilterSortControls({
             tone={view.groupBy ? 'primary' : 'neutral'}
             icon={<Columns3 size={14} />}
             label={t('Group')}
-            onClick={() => setOpen(open === 'group' ? null : 'group')}
+            {...pop('group')}
           />
         ) : (
           <Button
             size="sm"
             tone={view.groupBy ? 'primary' : 'neutral'}
             icon={<Columns3 size={14} />}
-            onClick={() => setOpen(open === 'group' ? null : 'group')}
+            {...pop('group')}
           >
             {t('Group')}
           </Button>

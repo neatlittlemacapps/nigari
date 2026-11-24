@@ -70,7 +70,9 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
     await setTheme(theme);
     for (const kind of ['info', 'error']) {
       await fire(kind, true);
-      const toast = page.locator('.toast').last();
+      // By its message: since #933 a toast stays while the pointer is on the
+      // toaster, so the app's own version notice can still be the last one.
+      const toast = page.locator('.toast').filter({ hasText: kind === 'error' ? 'Change not saved' : /^A new version is available(?!:)/ }).last();
       await toast.waitFor();
       assert.equal(await toast.evaluate((n) => n.classList.contains('toast-error')), kind === 'error');
       // The warning mark belongs to failures only.

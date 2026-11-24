@@ -2029,8 +2029,9 @@ body:has(.icon-picker) .bn-side-menu {
    its toolbar keeps to filter, sort and New, and folds away until it is
    reached for (spec 012, US5, research R11), so a document reads as text:
    shown while the pointer is over the embed, while focus is inside it, and
-   while a menu or popover from it is open (data-menu-open; the menus are
-   portaled, so neither :hover nor :focus-within can see them). Opacity, not
+   while a menu or popover from it is open (a button in it says
+   aria-expanded="true"; the menus are portaled, so neither :hover nor
+   :focus-within can see them, #531). Opacity, not
    visibility: the buttons keep their box, so nothing moves when they appear,
    and stay in the tab order and the accessibility tree, so one Tab from the
    view reveals them. Only where there IS a pointer: on a touch screen nothing
@@ -2044,14 +2045,14 @@ body:has(.icon-picker) .bn-side-menu {
   }
   .bn-db-embed:hover .collection-scroll.is-embed .collection-actions,
   .bn-db-embed:focus-within .collection-scroll.is-embed .collection-actions,
-  .collection-scroll.is-embed .collection-actions[data-menu-open] {
+  .collection-scroll.is-embed .collection-actions:has([aria-expanded='true']) {
     opacity: 1;
   }
   /* The marker says it while the buttons are folded, and gives way once
      they show it themselves. */
   .bn-db-embed:hover .embed-view-state,
   .bn-db-embed:focus-within .embed-view-state,
-  .collection-toolbar:has(.collection-actions[data-menu-open]) .embed-view-state {
+  .collection-toolbar:has(.collection-actions [aria-expanded='true']) .embed-view-state {
     visibility: hidden;
   }
 }
@@ -2939,7 +2940,8 @@ body.is-col-resizing {
 /* A heading drawn as an icon (ColHead's icon): the name is read out and is
    the tooltip, but not drawn. */
 .th-hidden-name,
-.lead-check .ui-checkbox-label {
+.lead-check .ui-checkbox-label,
+.toast-say {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -5229,34 +5231,39 @@ body.is-col-resizing {
   font-size: 13.5px;
   box-shadow: var(--shadow);
   max-width: 90vw;
+  /* The message and its buttons on one line, and clickable, which the
+     toaster itself is not: every toast has Dismiss since #933. */
+  display: flex;
+  align-items: center;
+  gap: var(--space-200);
+  pointer-events: auto;
 }
 .toast-error {
   background: var(--color-destructive);
   color: var(--color-on-destructive);
 }
 
-/* A toast with an action (spec 005): the message and its button on one line,
-   and clickable, which the toaster itself is not. */
-.toast-with-action {
-  display: flex;
-  align-items: center;
-  gap: var(--space-200);
-  pointer-events: auto;
-}
-
 /* The toast's button is drawn in the toast's own text colour, with a hairline
    of it, so it reads on ink and on the error colour alike. As a plain
    low-emphasis button it kept the page's text colour: 3.0:1 on the light
    error toast, 1.8:1 on the dark one (#924). */
-.toast .toast-action.ui-button {
+.toast .toast-action.ui-button,
+.toast .toast-close.ui-button {
   flex: none;
   color: inherit;
   border-color: currentColor;
 }
-.toast .toast-action.ui-button:hover:not([data-disabled]) {
+/* Dismiss sits at the end, quiet: no hairline of its own. */
+.toast .toast-close.ui-button {
+  margin: calc(-1 * var(--space-100)) calc(-1 * var(--space-200)) calc(-1 * var(--space-100)) auto;
+  border-color: transparent;
+}
+.toast .toast-action.ui-button:hover:not([data-disabled]),
+.toast .toast-close.ui-button:hover:not([data-disabled]) {
   background: color-mix(in srgb, currentColor 16%, transparent);
 }
-.toast .toast-action.ui-button:focus-visible {
+.toast .toast-action.ui-button:focus-visible,
+.toast .toast-close.ui-button:focus-visible {
   outline-color: currentColor;
 }
 
