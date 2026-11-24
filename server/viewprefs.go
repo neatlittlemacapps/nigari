@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -200,11 +201,30 @@ func cleanViewState(raw []byte, schema []map[string]any) (map[string]any, error)
 			out["foldedLanes"] = lanes
 		}
 	}
+	// A grouped table's or list's folded groups (spec 024, research R6):
+	// group keys, each person's own, as folded lanes are. Capped so one
+	// state row stays small; a view has as many groups as values at most.
+	if rawGroups, ok := in["foldedGroups"]; ok {
+		var groups []string
+		if err := json.Unmarshal(rawGroups, &groups); err != nil {
+			return nil, errors.New("foldedGroups must be a list")
+		}
+		if len(groups) > maxFoldedGroups {
+			return nil, fmt.Errorf("foldedGroups holds at most %d groups", maxFoldedGroups)
+		}
+		if len(groups) > 0 {
+			out["foldedGroups"] = groups
+		}
+	}
 	if len(out) == 0 {
 		return nil, nil
 	}
 	return out, nil
 }
+
+// maxFoldedGroups bounds foldedGroups: a relation or person grouping can
+// have hundreds of groups, not tens of thousands.
+const maxFoldedGroups = 5000
 
 // viewStateOf reads one person's state for one scope, or nil when there is
 // none. One row by primary key.

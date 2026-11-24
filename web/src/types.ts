@@ -365,6 +365,15 @@ export interface ViewDef {
   quickFilters?: string[];
   // board view: a second grouping drawn as lanes across the columns (spec 013).
   subGroupBy?: string;
+  // table and list views (spec 024, research R1): draw groupBy as folding
+  // groups. Without it a table or list is flat, whatever groupBy holds (a
+  // board changed into a table keeps its groupBy, spec 018).
+  grouped?: boolean;
+  // A grouped table or list: groups in reverse order, No value still last.
+  groupReverse?: boolean;
+  // A grouped table or list: also draw options with no rows. (A chart's
+  // showEmpty is about its No value group only.)
+  showEmptyGroups?: boolean;
   // How a click opens one of this view's rows (spec 007): beside the view in a
   // side peek, or (follow-up) over it in a centre peek. Missing = full page.
   openIn?: 'side_peek' | 'center_peek';

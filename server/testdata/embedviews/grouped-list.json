@@ -1,0 +1,25 @@
+{
+  "databaseViews": [
+    {
+      "id": "all",
+      "name": "All",
+      "type": "table",
+      "groupBy": "status"
+    }
+  ],
+  "local": "{\"v\": 2, \"viewId\": \"mine\", \"views\": [{\"id\": \"mine\", \"name\": \"By status\", \"type\": \"list\", \"grouped\": true, \"groupBy\": \"status\", \"groupReverse\": true, \"hiddenGroups\": [\"\"]}]}",
+  "expect": {
+    "viewId": "mine",
+    "views": [
+      {
+        "id": "mine",
+        "name": "By status",
+        "type": "list",
+        "grouped": true,
+        "groupBy": "status",
+        "groupReverse": true,
+        "hiddenGroups": [""]
+      }
+    ]
+  }
+}

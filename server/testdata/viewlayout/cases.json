@@ -152,12 +152,13 @@
      "status"
     ],
     "openIn": "side_peek",
-    "groupBy": "status"
+    "groupBy": "status",
+    "grouped": false
    },
    "needsDate": false
   },
   {
-   "name": "board back to table keeps the grouping and the lanes, unused",
+   "name": "board back to table stays grouped by its columns, the lanes kept unused (spec 024)",
    "schema": "full",
    "view": {
     "id": "v1",
@@ -216,7 +217,8 @@
     ],
     "openIn": "side_peek",
     "groupBy": "status",
-    "subGroupBy": "owner"
+    "subGroupBy": "owner",
+    "grouped": true
    },
    "needsDate": false
   },
@@ -278,7 +280,8 @@
      "status"
     ],
     "openIn": "side_peek",
-    "groupBy": "tags"
+    "groupBy": "tags",
+    "grouped": false
    },
    "needsDate": false
   },
@@ -340,7 +343,8 @@
      "status"
     ],
     "openIn": "side_peek",
-    "groupBy": "status"
+    "groupBy": "status",
+    "grouped": false
    },
    "needsDate": false
   },
@@ -357,7 +361,8 @@
     "id": "v",
     "name": "V",
     "type": "board",
-    "groupBy": "phase"
+    "groupBy": "phase",
+    "grouped": false
    },
    "needsDate": false
   },
@@ -374,7 +379,8 @@
     "id": "v",
     "name": "V",
     "type": "board",
-    "groupBy": "status"
+    "groupBy": "status",
+    "grouped": false
    },
    "needsDate": false
   },
@@ -391,7 +397,8 @@
     "id": "v",
     "name": "V",
     "type": "board",
-    "groupBy": "tags"
+    "groupBy": "tags",
+    "grouped": false
    },
    "needsDate": false
   },
@@ -408,7 +415,8 @@
    "want": {
     "id": "v",
     "name": "V",
-    "type": "board"
+    "type": "board",
+    "grouped": false
    },
    "needsDate": false
   },
@@ -1319,6 +1327,84 @@
     "type": "calendar",
     "groupBy": "status",
     "dateProp": "due"
+   },
+   "needsDate": false
+  },
+  {
+   "name": "board to list stays grouped by its columns (spec 024)",
+   "schema": "full",
+   "view": {
+    "id": "v1",
+    "name": "Work",
+    "type": "board",
+    "groupBy": "tags"
+   },
+   "type": "list",
+   "want": {
+    "id": "v1",
+    "name": "Work",
+    "type": "list",
+    "groupBy": "tags",
+    "grouped": true
+   },
+   "needsDate": false
+  },
+  {
+   "name": "chart to table is not grouped by the chart's grouping (spec 024)",
+   "schema": "full",
+   "view": {
+    "id": "v1",
+    "name": "Work",
+    "type": "chart",
+    "chartKind": "bar",
+    "groupBy": "status"
+   },
+   "type": "table",
+   "want": {
+    "id": "v1",
+    "name": "Work",
+    "type": "table",
+    "chartKind": "bar",
+    "groupBy": "status"
+   },
+   "needsDate": false
+  },
+  {
+   "name": "a flat table that was a board comes back flat (spec 024, spec 018 SC-002)",
+   "schema": "full",
+   "view": {
+    "id": "v1",
+    "name": "Work",
+    "type": "board",
+    "groupBy": "status",
+    "grouped": false
+   },
+   "type": "table",
+   "want": {
+    "id": "v1",
+    "name": "Work",
+    "type": "table",
+    "groupBy": "status"
+   },
+   "needsDate": false
+  },
+  {
+   "name": "a grouped table becomes a board and back, still grouped (spec 024)",
+   "schema": "full",
+   "view": {
+    "id": "v1",
+    "name": "Work",
+    "type": "table",
+    "groupBy": "status",
+    "grouped": true
+   },
+   "type": "board",
+   "want": {
+    "id": "v1",
+    "name": "Work",
+    "type": "board",
+    "groupBy": "status",
+    "grouped": true
    },
    "needsDate": false
   }

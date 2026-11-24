@@ -99,6 +99,7 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 		var orderErr errViewColOrder
 		var quickErr errViewQuickFilters
 		var subErr errViewSubGroup
+		var viewGroupErr errViewGroup
 		var groupErr errGroupFilter
 		var typeErr errViewType
 		switch {
@@ -110,6 +111,9 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 			return
 		case errors.As(err, &quickErr):
 			httpErrorCode(w, 400, "invalid_view_quick_filters", err.Error())
+			return
+		case errors.As(err, &viewGroupErr):
+			httpErrorCode(w, 400, "invalid_view_group", err.Error())
 			return
 		case errors.As(err, &subErr):
 			httpErrorCode(w, 400, "invalid_view_sub_group", err.Error())

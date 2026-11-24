@@ -68,6 +68,11 @@ var parityActs = []parityAct{
 	// itself, which passes every gate and writes nothing, so what is compared
 	// is who may move it.
 	{"place", "POST", "/api/pages/%s/place", `{"after":"%s"}`, "update_page", `{"page_id":"%[1]s","after":"%[1]s"}`, false},
+	// A row dragged into another group of a grouped table (spec 024): the
+	// move and the group's value in one request, behind the same page write
+	// gate. An agent does the same with update_page's after and
+	// set_properties; the move is what both doors gate alike.
+	{"place into a group", "POST", "/api/pages/%s/place", `{"after":"%s","propsPatch":{"x":"y"}}`, "update_page", `{"page_id":"%[1]s","after":"%[1]s"}`, false},
 	{"backlinks", "GET", "/api/pages/%s/backlinks", "", "get_links", `{"page_id":"%s"}`, false},
 	{"note", "POST", "/api/pages/%s/notes", `{"body":"A note"}`, "note", `{"page_id":"%s","text":"A note"}`, false},
 	// Every parity page's body is the one paragraph "x" (see the loop below),
@@ -96,6 +101,10 @@ var parityActs = []parityAct{
 		"set_view", `{"page_id":"%s","view_id":"v-parity","quick_filters":["status"]}`, true},
 	{"set a sub-group", "PUT", "/api/collections/%s", `{"views":[{"id":"v-parity","name":"To do","type":"table","filters":[{"property":"status","op":"is","value":"todo"}]},{"id":"v-board","name":"Board","type":"board","groupBy":"status","subGroupBy":"owner"}]}`,
 		"set_view", `{"page_id":"%s","type":"board","name":"Board","group_by":"status","sub_group_by":"owner"}`, true},
+	// A table grouped by a property (spec 024): one rule
+	// (checkViewGrouping) on both doors, behind the database's write gate.
+	{"group a table", "PUT", "/api/collections/%s", `{"views":[{"id":"v-parity","name":"To do","type":"table","grouped":true,"groupBy":"status","filters":[{"property":"status","op":"is","value":"todo"}]}]}`,
+		"set_view", `{"page_id":"%s","view_id":"v-parity","group_by":"status"}`, true},
 	// A chart's numbers (spec 004): a read, so the database's read gate
 	// decides on both doors; a read-scoped credential may aggregate.
 	{"aggregate", "POST", "/api/collections/%s/aggregate", `{"groupBy":"status"}`, "query_rows", `{"page_id":"%s","group_by":"status"}`, true},

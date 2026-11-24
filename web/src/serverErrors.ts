@@ -91,6 +91,10 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
     case 'invalid_view_sub_group':
       return t("A board's lanes need a select, person, relation, formula or rollup property other than its columns.");
 
+    // ---- a table's or list's grouping (spec 024) ----
+    case 'invalid_view_group':
+      return t('This grouping cannot be used: a table or list groups by a select, multi-select, status, relation, person, checkbox, date, formula or rollup, so the view was not saved.');
+
     // ---- charts (spec 004) ----
     case 'invalid_chart':
       return t('This chart cannot be drawn with these settings. Choose another grouping or value.');

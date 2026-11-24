@@ -10,12 +10,12 @@ No table or column changes. New keys inside existing JSON (R1, R6).
 | `groupBy` | property id | board, chart, now table/list | The grouping property; shared across layouts. |
 | `groupPeriod` | day, week, month, year | chart, now table/list | For a date: the period. Absent: month. |
 | `groupReverse` | bool, new | table, list | Groups in reverse order; No value stays last. |
-| `showEmpty` | bool | chart, now table/list | Draw groups with no rows (Q1). |
+| `showEmptyGroups` | bool, new | table, list | Draw groups with no rows (Q1). Not the chart's `showEmpty`, which means the No value group only. |
 | `hiddenGroups` | string[] (group keys) | chart, now table/list | Groups not drawn (Q1); shared. |
 | `statusGroups` | bool | chart, now table/list | A status grouped by its groups (To do, In progress, Complete) instead of its options. |
 
 Clearing a grouping removes `grouped`, `groupBy`, `groupPeriod`,
-`groupReverse`, `showEmpty` and `hiddenGroups` from a table or list (a board's
+`groupReverse`, `showEmptyGroups`, `hiddenGroups` and `statusGroups` from a table or list (a board's
 or chart's own keys are not touched on those layouts).
 
 ## Personal view state (per person, per view scope)
@@ -25,4 +25,4 @@ or chart's own keys are not touched on those layouts).
 | `foldedGroups` | string[], new | Group keys this person folded in this view (Q4). |
 
 Group key: option, page or person id; `true`/`false` (checkbox); the period's
-first day `YYYY-MM-DD` (date); `__unset__` (No value).
+key as a chart writes it (`2026-03-14`, `2026-W11` ISO week, `2026-03`, `2026`); a status group id with `statusGroups`; `""` (No value), as a chart's `hiddenGroups` already spells it, so a group hidden on a chart is hidden on the table made from it.

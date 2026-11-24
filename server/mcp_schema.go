@@ -454,6 +454,12 @@ type viewSpec struct {
 	ChartStyle        *map[string]any `json:"chart_style"`
 	// A status counted by its groups (spec 016, R8), stored as statusGroups.
 	StatusGroups *bool `json:"status_groups"`
+	// A grouped table or list in reverse order (spec 024), stored as
+	// groupReverse. Checked by checkViewGrouping.
+	GroupReverse *bool `json:"group_reverse"`
+	// A grouped table or list draws options with no rows (spec 024), stored
+	// as showEmptyGroups.
+	ShowEmptyGroups *bool `json:"show_empty_groups"`
 }
 
 var validFilterOps = map[string]bool{
@@ -557,6 +563,7 @@ func applyViewSpec(view map[string]any, spec viewSpec, schema []map[string]any) 
 	if spec.Name != "" {
 		view["name"] = spec.Name
 	}
+	groupByWas, _ := view["groupBy"].(string)
 	for key, val := range map[string]*string{
 		"groupBy": spec.GroupBy, "dateProp": spec.DateProp, "endDateProp": spec.EndDateProp,
 	} {
@@ -693,6 +700,21 @@ func applyViewSpec(view map[string]any, spec viewSpec, schema []map[string]any) 
 	if err := checkViewSubGroup(view, schema, spec.SubGroupBy != nil, spec.GroupBy != nil); err != nil {
 		return fmt.Errorf("sub_group_by: %w", err)
 	}
+	// A table or list groups (spec 024): group_by turns it on, and the
+	// grouping takes a chart's period, hidden_groups and
+	// status_groups, plus group_reverse and show_empty_groups. Judged by checkViewGrouping, the
+	// rule PUT /api/collections applies too.
+	if viewType == "table" || viewType == "list" {
+		applyGroupSpec(view, spec, groupByWas)
+		if err := groupArgsWithoutGrouping(view, spec); err != nil {
+			return err
+		}
+		if err := checkViewGrouping(view, schema, true); err != nil {
+			return fmt.Errorf("group_by: %w", err)
+		}
+	} else if spec.GroupReverse != nil || spec.ShowEmptyGroups != nil {
+		return fmt.Errorf("group_reverse and show_empty_groups are settings of a grouped table or list; this view is a %s", viewType)
+	}
 	if err := applyChartSpec(view, spec); err != nil {
 		return err
 	}
@@ -707,6 +729,12 @@ func applyChartSpec(view map[string]any, spec viewSpec) error {
 		spec.AggregateProperty != nil || spec.ShowEmpty != nil || spec.ShowZero != nil ||
 		spec.ChartSort != nil || spec.HiddenGroups != nil || spec.ChartStyle != nil || spec.StatusGroups != nil
 	if t, _ := view["type"].(string); t != "chart" {
+		// A table's or list's grouping took its arguments already
+		// (applyGroupSpec); only the chart's own are refused there.
+		if t == "table" || t == "list" {
+			chartArgs = spec.ChartKind != nil || spec.Aggregate != nil || spec.AggregateProperty != nil ||
+				spec.ShowEmpty != nil || spec.ShowZero != nil || spec.ChartSort != nil || spec.ChartStyle != nil
+		}
 		if chartArgs {
 			return fmt.Errorf("chart_kind, period, aggregate, aggregate_property, chart_sort, hidden_groups, show_empty, show_zero, chart_style and status_groups are settings of a chart view; this view is a %s", t)
 		}

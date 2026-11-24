@@ -728,24 +728,13 @@ func (s *Server) handleUpdatePage(w http.ResponseWriter, r *http.Request) {
 			httpError(w, 404, "page not found")
 			return
 		}
-		merged := map[string]json.RawMessage{}
-		json.Unmarshal([]byte(current), &merged)
-		before := map[string]json.RawMessage{}
-		json.Unmarshal([]byte(current), &before)
-		for k, v := range patch {
-			if string(v) == "null" {
-				delete(merged, k)
-			} else {
-				merged[k] = v
-			}
-		}
-		mergedJSON, err := json.Marshal(merged)
+		mergedJSON, diff, err := mergePropsPatch(current, patch)
 		if err != nil {
 			httpError(w, 500, err.Error())
 			return
 		}
 		sets = append(sets, "props = ?")
-		args = append(args, string(mergedJSON))
+		args = append(args, mergedJSON)
 		metaChanged = true
 
 		// Record WHAT changed, not just that something did.
@@ -759,11 +748,7 @@ func (s *Server) handleUpdatePage(w http.ResponseWriter, r *http.Request) {
 		// It also means the log finally covers the ordinary case — somebody
 		// moves a card on a board — and that a change made in the browser can
 		// be taken back the same way an agent's can.
-		if diff := propsDiff(before, patch); len(diff) > 0 {
-			if b, err := json.Marshal(diff); err == nil {
-				auditProps = string(b)
-			}
-		}
+		auditProps = diff
 	}
 
 	if len(body.ParentID) > 0 {
@@ -881,6 +866,35 @@ func (s *Server) handleUpdatePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, p)
+}
+
+// mergePropsPatch applies a field-level props patch to a page's stored props:
+// the keys sent replace theirs, a key set to null is removed, the others stay.
+// diff is what the activity log records for it ("" when nothing changed).
+// Shared by PATCH /api/pages/{id} (propsPatch) and the place route, which
+// takes the same patch for a row dragged into another group (spec 024, R4).
+func mergePropsPatch(current string, patch map[string]json.RawMessage) (merged string, diff string, err error) {
+	next := map[string]json.RawMessage{}
+	json.Unmarshal([]byte(current), &next)
+	before := map[string]json.RawMessage{}
+	json.Unmarshal([]byte(current), &before)
+	for k, v := range patch {
+		if string(v) == "null" {
+			delete(next, k)
+		} else {
+			next[k] = v
+		}
+	}
+	b, err := json.Marshal(next)
+	if err != nil {
+		return "", "", err
+	}
+	if d := propsDiff(before, patch); len(d) > 0 {
+		if db, err := json.Marshal(d); err == nil {
+			diff = string(db)
+		}
+	}
+	return string(b), diff, nil
 }
 
 // handleReindexSiblings renumbers a parent's children to 1,2,3,… so the

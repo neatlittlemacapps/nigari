@@ -100,3 +100,21 @@ removes the key. A group key is the value id (option, page, person), `true` /
 value, so a fold survives renames.
 
 **Rationale**: Q4; the same mechanism as folded lanes, already on both scopes.
+
+## R7. Changes made while building PR 1
+
+- **`showEmptyGroups`, not `showEmpty`.** A chart's `showEmpty` means "draw
+  the No value group", not "draw groups with no rows". Sharing the key would
+  have changed charts made from a grouped table. set_view takes
+  `show_empty_groups`.
+- **No value is `""`**, and a date's key is the chart's period key, so
+  `hiddenGroups` means the same on a chart and on a table (R6 said
+  `__unset__` and the period's first day). Weeks are ISO weeks, as the chart's.
+- **The place route takes `propsPatch`** (PATCH's own name for it), places
+  first and then writes the values, and logs two entries (`reorder_page`,
+  `set_properties`) instead of one: what an agent's two calls log, and the
+  activity log needs no new kind of entry. One request still means no
+  half-moved row, since the move is the only part that refuses.
+- **The layout switch marks a flat table.** Table or list → board sets
+  `grouped: false`, so board → table can tell a flat table that visited a
+  board (stays flat, `false` removed) from a board (grouped).

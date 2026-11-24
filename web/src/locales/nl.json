@@ -1314,6 +1314,7 @@
   "Save for everyone": "Opslaan voor iedereen",
   "Your change to this view was not saved": "Je wijziging aan deze weergave is niet opgeslagen",
   "A board's lanes need a select, person, relation, formula or rollup property other than its columns.": "De banen van een bord hebben een selectie-, persoon-, relatie-, formule- of rollup-eigenschap nodig die niet de kolommen vormt.",
+  "This grouping cannot be used: a table or list groups by a select, multi-select, status, relation, person, checkbox, date, formula or rollup, so the view was not saved.": "Deze groepering kan niet: een tabel of lijst groepeert op een keuze, meerkeuze, status, relatie, persoon, selectievakje, datum, formule of rollup, dus de weergave is niet opgeslagen.",
   "Clear {name}": "{name} wissen",
   "No sub-group": "Geen subgroep",
   "None": "Geen",

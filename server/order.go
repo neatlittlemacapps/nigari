@@ -2,6 +2,7 @@ package server
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -301,6 +302,10 @@ func (s *Server) handlePlacePage(w http.ResponseWriter, r *http.Request) {
 		After  string `json:"after"`
 		Before string `json:"before"`
 		ViewID string `json:"viewId"`
+		// A row dragged into another group of a grouped table (spec 024,
+		// research R4): the properties that make it that group's, as PATCH
+		// /api/pages/{id} takes them, written with the move in one request.
+		PropsPatch json.RawMessage `json:"propsPatch"`
 	}
 	if err := decodeJSON(w, r, &body); err != nil {
 		httpError(w, 400, "invalid JSON")
@@ -317,10 +322,26 @@ func (s *Server) handlePlacePage(w http.ResponseWriter, r *http.Request) {
 		writePlaceError(w, err)
 		return
 	}
+	var patch map[string]json.RawMessage
+	if len(body.PropsPatch) > 0 && string(body.PropsPatch) != "null" {
+		if err := json.Unmarshal(body.PropsPatch, &patch); err != nil {
+			httpError(w, 400, "propsPatch must be a JSON object")
+			return
+		}
+	}
+	// The move first: it is the part that refuses (an anchor that is not a
+	// sibling, a trashed page), and a refused move must not leave the row
+	// changed. The properties after it can only fail on the database itself.
 	pos, wrote, err := s.placePage(u, id, anchor, side, body.ViewID)
 	if err != nil {
 		writePlaceError(w, err)
 		return
+	}
+	if len(patch) > 0 {
+		if err := s.patchProps(u, id, patch); err != nil {
+			httpError(w, 500, err.Error())
+			return
+		}
 	}
 	if wrote {
 		detail := side + " " + anchor
@@ -330,6 +351,33 @@ func (s *Server) handlePlacePage(w http.ResponseWriter, r *http.Request) {
 		s.audit("human", u.ID, u.Name, "reorder_page", id, s.pageWorkspace(id), detail)
 	}
 	writeJSON(w, map[string]any{"id": id, "position": pos})
+}
+
+// patchProps writes a props patch to a page as PATCH /api/pages/{id} does
+// (mergePropsPatch), with its activity entry, its row update and webhook.
+// The caller has checked canWrite.
+func (s *Server) patchProps(u *user, id string, patch map[string]json.RawMessage) error {
+	var current string
+	if err := s.db.QueryRow(`SELECT props FROM pages WHERE id = ?`, id).Scan(&current); err != nil {
+		return err
+	}
+	merged, diff, err := mergePropsPatch(current, patch)
+	if err != nil {
+		return err
+	}
+	if _, err := s.db.Exec(`UPDATE pages SET props = ?, updated_at = ? WHERE id = ?`, merged, now(), id); err != nil {
+		return err
+	}
+	if diff != "" {
+		s.auditChanges("human", u.ID, u.Name, "set_properties", id, s.pageWorkspace(id), "", diff)
+	}
+	if err := s.reindexPage(id); err != nil {
+		return err
+	}
+	s.pagesChanged()
+	s.rowChanged(id)
+	s.fireWebhook("page.updated", id)
+	return nil
 }
 
 // placeCopyAfter puts a duplicated database row right after the row it was

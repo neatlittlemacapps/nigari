@@ -3,14 +3,18 @@
 ## POST /api/pages/{id}/place (changed)
 
 ```json
-{ "after": "<row id>", "viewId": "<view id>", "props": { "status": "doing" } }
+{ "after": "<row id>", "viewId": "<view id>", "propsPatch": { "status": "doing" } }
 ```
 
-- `props` is optional. Without it the route behaves as today (spec 022).
-- With it: the same gate (`canWrite` on the row), then the properties are set
-  as `PATCH /api/pages/{id}` sets them (same validation and errors), then the
-  row is placed. A refused value answers as PATCH does and nothing moves.
-- One audit entry (`reorder_page`, detail names the properties set).
+- `propsPatch` is optional and has the shape PATCH `/api/pages/{id}` takes
+  (a key set to `null` is removed). Without it the route behaves as today
+  (spec 022). Not an object: 400.
+- With it: the same gate (`canWrite` on the row), then the row is placed, then
+  the properties are written by `mergePropsPatch`, the function PATCH uses. The
+  move goes first because it is the part that refuses (an anchor that is not a
+  sibling, a trashed page): a refused move leaves the row's values unchanged.
+- Two audit entries, `reorder_page` and `set_properties`, as an agent doing the
+  same with `update_page` and `set_properties` gets; one webhook per change.
 
 ## set_view (changed, MCP)
 
@@ -18,9 +22,11 @@ On a view of type table or list:
 
 - `group_by: "<property id>"` groups the view (sets `grouped`); `""` removes
   the grouping. Refused with a sentence for a type that cannot group.
-- `period`, `show_empty`, `hidden_groups`, `status_groups` apply to the
-  grouping as they do to a chart.
-- `group_reverse: true|false` (new) flips the group order.
+- `period`, `hidden_groups`, `status_groups` apply to the grouping as they do
+  to a chart; `show_empty_groups: true|false` (new) draws groups with no rows.
+  A new `group_by` drops the old property's period, status groups and hidden
+  groups. On a table or list that is not grouped these arguments are refused.
+- `group_reverse: true|false` (new) flips the group order; No value stays last.
 - `type: "table"` or `"list"` on a board keeps its `group_by` and turns the
   grouping on; the answer says so.
 

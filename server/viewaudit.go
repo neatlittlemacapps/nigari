@@ -42,6 +42,9 @@ var viewAuditKeys = []string{
 	"type", "filters", "sort", "groupBy", "subGroupBy", "quickFilters",
 	"dateProp", "endDateProp", "groupPeriod", "agg", "aggProp",
 	"chartKind", "chartSort", "hiddenGroups", "showEmpty", "showZero", "subItemProp",
+	// A table's or list's grouping (spec 024): regrouping is a change of
+	// what the view shows, like a new sort.
+	"grouped", "groupReverse", "showEmptyGroups", "statusGroups",
 }
 
 // auditViewChanges writes the entries for one save. u is the person or the

@@ -16,6 +16,8 @@ export interface PersonalViewState {
   sort?: Sort | null;
   quickPicks?: Record<string, string>;
   foldedLanes?: string[];
+  /** Group keys of a grouped table or list this person folded (spec 024). */
+  foldedGroups?: string[];
 }
 
 interface SharedView {

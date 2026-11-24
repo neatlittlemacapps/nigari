@@ -1314,6 +1314,7 @@
   "Save for everyone": "Für alle speichern",
   "Your change to this view was not saved": "Deine Änderung an dieser Ansicht wurde nicht gespeichert",
   "A board's lanes need a select, person, relation, formula or rollup property other than its columns.": "Die Bahnen eines Boards brauchen eine Auswahl-, Personen-, Verknüpfungs-, Formel- oder Rollup-Eigenschaft, die nicht seine Spalten bildet.",
+  "This grouping cannot be used: a table or list groups by a select, multi-select, status, relation, person, checkbox, date, formula or rollup, so the view was not saved.": "Diese Gruppierung geht nicht: Eine Tabelle oder Liste wird nach einer Auswahl, Mehrfachauswahl, einem Status, einer Verknüpfung, Person, Checkbox, einem Datum, einer Formel oder einem Rollup gruppiert. Die Ansicht wurde nicht gespeichert.",
   "Clear {name}": "{name} leeren",
   "No sub-group": "Keine Untergruppe",
   "None": "Keine",

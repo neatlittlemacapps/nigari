@@ -1115,7 +1115,7 @@ Create a view, or change one.
 | `view_id` | string | no: omit to create |
 | `name` | string | no |
 | `type` | string | creating only |
-| `group_by` | string | board |
+| `group_by` | string | board; table, list to group them |
 | `date_prop` | string | calendar, timeline |
 | `end_date_prop` | string | timeline |
 | `filters` | array | no |
@@ -1126,15 +1126,17 @@ Create a view, or change one.
 | `quick_filters` | array of string | any but form and chart |
 | `sub_group_by` | string | board |
 | `chart_kind` | string | chart |
-| `period` | string | chart, by a date |
+| `period` | string | chart or grouped table/list, by a date |
 | `aggregate` | string | chart |
 | `aggregate_property` | string | chart, unless counting |
 | `chart_sort` | string | chart |
-| `hidden_groups` | array of string | chart |
+| `hidden_groups` | array of string | chart, grouped table/list |
 | `show_empty` | boolean | chart |
 | `show_zero` | boolean | chart |
 | `chart_style` | object | chart |
-| `status_groups` | boolean | chart, grouped by a status |
+| `status_groups` | boolean | chart or grouped table/list, by a status |
+| `group_reverse` | boolean | grouped table/list |
+| `show_empty_groups` | boolean | grouped table/list |
 | `embed_id` | string | no: the views of an embedded database |
 | `copy_of` | string | creating, with `embed_id` |
 
@@ -1213,6 +1215,24 @@ person, formula or rollup property that is not the board's `group_by`. `""`
 removes the lanes. Only a board has one. `get_collection` returns it as
 `subGroupBy`; the interface's own save checks the same rule, with the code
 `invalid_view_sub_group`.
+
+**A table or a list groups its rows** under a header per value when you pass
+`group_by`: a select, multi-select, status, relation, person, checkbox, date,
+formula or rollup property. Anything else is refused with a sentence that names
+the property and its type. A date takes `period` (`day`, `week`, `month`, the
+default, or `year`); a status takes `status_groups: true` to group by To do, In
+progress and Complete. `group_reverse: true` flips the order (No value stays
+last), `show_empty_groups: true` draws groups that have no rows, and
+`hidden_groups` lists group keys not drawn, the same keys a chart uses (`""` is
+No value). Choosing another `group_by` drops the old property's period, status
+groups and hidden groups. `group_by: ""` removes the whole grouping. The other
+grouping arguments on a table or list that is not grouped are refused: pass
+`group_by` first. `get_collection` shows a grouped view with `grouped: true`
+beside its `groupBy`; a table that has a `groupBy` and no `grouped` was a board
+once and is drawn flat. A board changed to a table or list with `type` stays
+grouped by its columns' property. Folding a group is each person's own and has
+no argument. The interface's own save checks the same rule, with the code
+`invalid_view_group`.
 
 **A chart** is built the way a person builds one in the interface's chart
 settings. `chart_kind` is `bar` (the default), `hbar` (horizontal bars), `line`,

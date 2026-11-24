@@ -20,6 +20,10 @@ export const LAYOUT_TYPES: ViewDef['type'][] = ['table', 'board', 'list', 'galle
 /** The property types a board makes columns from (applyViewSpec's list). */
 const BOARD_GROUP_TYPES = ['select', 'status', 'multiselect', 'relation'];
 
+/** The property types a table or list groups by (spec 024; rowGroupTypes in
+ *  server/viewgroup.go). */
+export const ROW_GROUP_TYPES = ['select', 'multiselect', 'status', 'relation', 'person', 'checkbox', 'date', 'formula', 'rollup'];
+
 export interface LayoutSwitch {
   view: ViewDef;
   /** A calendar or timeline on a database with no date property: the view
@@ -55,7 +59,19 @@ export function switchLayout(
     else delete out[key];
   };
   switch (type) {
+    case 'table':
+    case 'list':
+      // A board becomes a table or list grouped by its columns' property
+      // (spec 024, Q6). Only from a board: a chart groups by each row or by
+      // a period as often as not, and a table never drew that.
+      // A table or list that was flat when it became a board left
+      // grouped: false behind, so the round trip gives it back flat
+      // (spec 018, SC-002).
+      if (out.grouped === false) delete out.grouped;
+      else if (view.type === 'board' && ROW_GROUP_TYPES.includes(typeOf(out.groupBy) ?? '')) out.grouped = true;
+      break;
     case 'board':
+      if ((view.type === 'table' || view.type === 'list') && out.grouped !== true) out.grouped = false;
       if (!BOARD_GROUP_TYPES.includes(typeOf(out.groupBy) ?? '')) {
         setOrDrop('groupBy', first(isSingleOptionType) ?? first((t) => BOARD_GROUP_TYPES.includes(t)));
       }
