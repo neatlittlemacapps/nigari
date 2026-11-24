@@ -1177,6 +1177,35 @@ body:has(.icon-picker) .bn-side-menu {
   opacity: 0.5;
 }
 
+/* The title is a field, and has to say so (#268). Pointing at it lays the
+   hover wash under it; while it is being edited the wash stays and a bar in
+   the focus colour runs along its foot, so editing looks different from
+   resting in both themes (WCAG 2.4.7). The padding and the negative margin
+   cancel out: the text stays on the body's left edge, the wash reaches a
+   little past it. The ring every other field gets stays off (see the
+   writing-surface group below): around a 38px heading it read as a box. */
+.page-title:not([readonly]) {
+  cursor: text;
+  padding-inline: 8px;
+  margin-inline: -8px;
+  width: calc(100% + 16px);
+  border-radius: var(--radius-scale-lg);
+  transition: background-color 0.12s ease;
+}
+
+.page-title:not([readonly]):hover,
+.page-title:not([readonly]):focus {
+  background: var(--hover);
+}
+
+/* The bar is a second background layer, not a border (the textarea's height
+   is its scrollHeight, which a border would clip) and not a shadow. */
+.page-title:not([readonly]):focus {
+  background:
+    linear-gradient(var(--color-focus), var(--color-focus)) bottom / 100% 2px no-repeat,
+    var(--hover);
+}
+
 /* BlockNote integration */
 .bn-editor {
   background: transparent !important;
@@ -3670,7 +3699,8 @@ body.is-col-resizing {
    a green box around the entire document. No text program does that — in Bear,
    Notion and Word the CURSOR shows the focus, and that is an accepted focus
    indicator for text fields. The ring stays everywhere it is really needed:
-   buttons, menus, checkboxes. */
+   buttons, menus, checkboxes. The page title draws its own focus instead: a
+   wash and a bar along its foot (#268, next to .page-title). */
 .ProseMirror:focus-visible,
 .bn-editor:focus-visible,
 [contenteditable]:focus-visible,

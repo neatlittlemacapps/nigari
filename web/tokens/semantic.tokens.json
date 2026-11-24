@@ -287,10 +287,10 @@
         }
       },
       "muted": {
-        "$value": "{palette.stone.500}",
+        "$value": "{palette.stone.525}",
         "$extensions": {
           "io.github.neatlittlemacapps.nigari.css": "--muted",
-          "io.github.neatlittlemacapps.nigari.dark": "{palette.slate.500}",
+          "io.github.neatlittlemacapps.nigari.dark": "{palette.slate.475}",
           "io.github.neatlittlemacapps.nigari.contrast": [
             {
               "on": "{color.surface.default}",
@@ -303,10 +303,15 @@
             {
               "on": "{color.surface.raised}",
               "min": 4.5
+            },
+            {
+              "on": "{color.hover}",
+              "over": "{color.surface.sidebar}",
+              "min": 4.5
             }
           ]
         },
-        "$description": "Solid, never alpha: an emoji is drawn in the text colour's alpha."
+        "$description": "Solid, never alpha: an emoji is drawn in the text colour's alpha. Steps 525/475 rather than the bases: at 500 the sidebar's labels and its Search box read 4.1 to 4.4:1 in light and a board card's labels 4.2:1 in dark (#527, #761)."
       }
     },
     "accent": {

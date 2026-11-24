@@ -198,8 +198,11 @@
 :root {
   /* The ground everything sits on. The site's stone (#dcdbd3) was tried first
      and read as a muddy grey-beige behind a column of text — this is the same
-     warmth, lifted almost to the paper, so the sheet still stands off it. */
-  --ground: #f0efea;
+     warmth, lifted almost to the paper, so the sheet still stands off it. It
+     is the sidebar's surface: the sidebar stands on it, and a colour outside
+     the tokens is one the contrast check never sees (#527 measured the muted
+     labels at 4.43:1 on the old #f0efea). */
+  --ground: var(--color-surface-sidebar);
   --dot: rgba(28, 26, 21, 0.11);
   --sheet-line: rgba(28, 26, 21, 0.1);
   --sheet-drop: 0 1px 2px rgba(28, 26, 21, 0.05), 0 26px 60px -38px rgba(28, 26, 21, 0.45);
@@ -207,7 +210,6 @@
 }
 
 [data-theme='dark'] {
-  --ground: #07070a;
   /* A little stronger than on the site's hero: here the grid only shows in the
      empty part of the sidebar, faded at both ends, and at the hero's value it
      was all but gone. */
