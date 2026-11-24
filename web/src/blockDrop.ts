@@ -31,6 +31,7 @@ import { dropLineWidth } from './dropLine';
 import { closeEmptied, insertColumn, sourcesOf, wrapBeside } from './columnMoves';
 import { setOpening } from './columnOpening';
 import { sidewaysDwell } from './sidewaysDwell';
+import { scrollSpeed } from './dragScroll';
 import { t } from './i18n';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -372,6 +373,7 @@ export function blockDrop(editor: Editor): () => void {
     const v = view();
     if (v) forgetDragSource(v, e);
     origin = false;
+    stopScroll();
     items = null;
     hide();
   };
@@ -379,6 +381,7 @@ export function blockDrop(editor: Editor): () => void {
     const v = view();
     if (!v || !v.editable || !origin || !isBlockDrag(v) || copies(e)) return;
     origin = false;
+    stopScroll();
     // The target the line showed. Only a drop no dragover came before (none
     // fires between some drag starts and their drop) is decided here, from
     // fresh boxes.
@@ -397,6 +400,54 @@ export function blockDrop(editor: Editor): () => void {
     items = null;
     hide();
   };
+
+  // The page scrolls under a block held near its top or bottom edge (#810,
+  // dragScroll.ts). Every dragover anywhere on the page (the header above the
+  // page too, where the editor's own handlers hear nothing) notes where the
+  // pointer is; a frame loop scrolls while it is in an edge zone, because a
+  // resting pointer gets a dragover only every 350 ms or so. After each step
+  // the line is drawn again for the same pointer, over the lines that came
+  // into view, if the pointer is over this editor.
+  let pointer: { x: number; y: number } | null = null;
+  let scroller: Element | null = null;
+  let frame = 0;
+  const scrollerOf = (el: Element): Element => {
+    for (let e = el.parentElement; e; e = e.parentElement) {
+      const o = getComputedStyle(e).overflowY;
+      if ((o === 'auto' || o === 'scroll') && e.scrollHeight > e.clientHeight) return e;
+    }
+    return document.scrollingElement ?? document.documentElement;
+  };
+  const stopScroll = () => {
+    cancelAnimationFrame(frame);
+    frame = 0;
+    pointer = null;
+    scroller = null;
+  };
+  const step = () => {
+    frame = 0;
+    const v = view();
+    if (!origin || !pointer || !scroller || !v) return;
+    const r = scroller === document.scrollingElement ? { top: 0, bottom: window.innerHeight } : scroller.getBoundingClientRect();
+    const speed = scrollSpeed(pointer.y, Math.max(r.top, 0), Math.min(r.bottom, window.innerHeight));
+    if (!speed) return;
+    const before = scroller.scrollTop;
+    scroller.scrollTop += speed;
+    if (scroller.scrollTop === before) return; // at the end of the page
+    const under = document.elementFromPoint(pointer.x, pointer.y);
+    if (under && v.dom.contains(under)) overAt(pointer.x, pointer.y);
+    frame = requestAnimationFrame(step);
+  };
+  const onAnyOver = (e: DragEvent) => {
+    const v = view();
+    // Not BlockNote's own copies: for a pointer outside the editor it sends
+    // the editor a dragover of its own at the nearest point inside, which
+    // would read as the pointer having come back from the edge (measured).
+    if (!e.isTrusted || !v || !origin || !isBlockDrag(v)) return;
+    pointer = { x: e.clientX, y: e.clientY };
+    scroller ??= scrollerOf(v.dom);
+    if (!frame) frame = requestAnimationFrame(step);
+  };
   // A collaborator's edit during the drag moves the boxes too.
   const offChange = editor.onChange?.(() => {
     if (origin) onScroll();
@@ -414,6 +465,7 @@ export function blockDrop(editor: Editor): () => void {
   const drop = (e: DragEvent) => mine(e) && onDrop(e);
   document.addEventListener('dragstart', onStart, true);
   document.addEventListener('dragover', over, true);
+  document.addEventListener('dragover', onAnyOver, true);
   document.addEventListener('dragleave', leave, true);
   document.addEventListener('drop', drop, true);
   document.addEventListener('dragend', onEnd, true);
@@ -422,6 +474,8 @@ export function blockDrop(editor: Editor): () => void {
   return () => {
     document.removeEventListener('dragstart', onStart, true);
     document.removeEventListener('dragover', over, true);
+    document.removeEventListener('dragover', onAnyOver, true);
+    stopScroll();
     document.removeEventListener('dragleave', leave, true);
     document.removeEventListener('drop', drop, true);
     document.removeEventListener('dragend', onEnd, true);
