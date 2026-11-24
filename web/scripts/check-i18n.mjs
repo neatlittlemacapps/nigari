@@ -301,9 +301,15 @@ const UMLAUT = /[äöüßÄÖÜ]/;
 const GERMAN_LINE_STRONG =
   /(?<![\w-])(siehe|statt|jedoch|sondern|zunächst|zunaechst|nämlich|naemlich|außerdem|ausserdem|stattdessen|trotzdem|allerdings|eigentlich|überhaupt|ueberhaupt)(?![\w])/iu;
 
+// The German opening quote „ (U+201E). English never writes it, and the
+// select cell's "Anlegen: „{query}\"" walked past every other rule here (#806):
+// no umlaut, one word, and the JSX rule skips text holding a colon.
+const GERMAN_QUOTE = /\u201e/;
+
 function readsGerman(line) {
   if (/i18n-ok:\s*\S/.test(line)) return false;
   if (UMLAUT.test(line)) return true;
+  if (GERMAN_QUOTE.test(line)) return true;
   if (GERMAN_LINE_STRONG.test(line)) return true;
   return (line.match(GERMAN_WORDS) ?? []).length >= 2;
 }
@@ -314,6 +320,7 @@ for (const [line, german] of [
   ['// Zeiger-basiertes Ziehen statt des ruckeligen nativen Drags (siehe boardDrag).', true], // i18n-ok: test case
   ['/* URL als kompakter Verweis statt als volle Zeile Rohtext. */', true], // i18n-ok: test case
   ['/* siehe .tree-item.active: keine Kurzschreibweise */', true], // i18n-ok: test case
+  ['<Plus size={15} /> Anlegen: \u201e{query}"', true], // the line #806 found
   ['// Pointer-based dragging instead of the jerky native drag (see boardDrag).', false],
   ['// Start the stats: statement, state and status stay English.', false],
 ]) {
