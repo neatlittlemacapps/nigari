@@ -19,18 +19,18 @@ description: "Tasks for scrolling the page while a dragged block is held near it
 
 ## Phase 1: The speed (US1)
 
-- [ ] T001 [US1] [ui] `web/src/dragScroll.ts` (new): `SCROLL_EDGE`, `SCROLL_MAX`, `scrollSpeed(y, top, bottom)`, and `scrollParent` moved here from `web/src/rowDrag.ts` (its one caller, `startDrag`, imports it)
-- [ ] T002 [P] [US1] [test] `web/scripts/check-dragscroll.mjs` (new), in `npm run check` in `web/package.json`
+- [x] T001 [US1] [ui] `web/src/dragScroll.ts` (new): `SCROLL_EDGE`, `SCROLL_MAX`, `scrollSpeed(y, top, bottom)`, and `scrollParent` moved here from `web/src/rowDrag.ts` (its one caller, `startDrag`, imports it)
+- [x] T002 [P] [US1] [test] `web/scripts/check-dragscroll.mjs` (new), in `npm run check` in `web/package.json`
 
 ## Phase 2: The loop (US1, US2)
 
-- [ ] T003 [US1] [ui] `web/src/blockDrop.ts`: a document `dragover` listener (trusted events, a block drag from this editor only) notes the pointer and starts one frame loop; each frame scrolls `scrollParent` of the editor (else the document's scroller) by `scrollSpeed` and decides the line again with `overAt` when the pointer is over this editor
-- [ ] T004 [US2] [ui] `web/src/blockDrop.ts`: the loop stops at speed 0, at the end of the scroller, on `drop`, `dragend` and teardown
+- [x] T003 [US1] [ui] `web/src/blockDrop.ts`: a document `dragover` listener (trusted events, a block drag from this editor only) notes the pointer and starts one frame loop; each frame scrolls `scrollParent` of the editor (else the document's scroller) by `scrollSpeed` and decides the line again with `overAt` when the pointer is over this editor
+- [x] T004 [US2] [ui] `web/src/blockDrop.ts`: the loop stops at speed 0, at the end of the scroller, on `drop`, `dragend` and teardown
 
 ## Phase 3: Tests, wiki, reviews
 
-- [ ] T005 [test] `web/tests/block-drop-scroll.mjs` (new), in `web/tests/package.json`; mutation-checked
-- [ ] T006 [wiki] `wiki/editor-blocks.md` (dragging): holding a block at the top or bottom edge scrolls the page; `docs/decisions.md` (the speed ramp and the frame loop, with the options turned down)
+- [x] T005 [test] `web/tests/block-drop-scroll.mjs` (new), in `web/tests/package.json`; mutation-checked
+- [x] T006 [wiki] `wiki/editor-blocks.md` (dragging): holding a block at the top or bottom edge scrolls the page; `docs/decisions.md` (the speed ramp and the frame loop, with the options turned down)
 - [ ] T007 [test] Reviews: `/code-review`; `ux-ui-audit` does not apply (nothing drawn changes, said in the PR); the drag specs listed in plan.md pass; `scripts/agent-gate.sh`
 
 ## Dependencies

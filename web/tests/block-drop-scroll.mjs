@@ -67,7 +67,12 @@ await withFixture(async ({ page, api, base, workspace, path }) => {
     const from = await scrollTop();
     assert(from > 1000, `the page was not scrolled down to the database (${from})`);
     const x = h.x + 40;
-    await glide(h.x + h.width / 2, h.y + h.height / 2, x, 20);
+    // To just below the top zone, then onto the header in one move: the
+    // clock starts as the scrolling does.
+    const below = await page.evaluate(() => document.querySelector('.page-body').getBoundingClientRect().top + 80);
+    await glide(h.x + h.width / 2, h.y + h.height / 2, x, below);
+    assert.equal(await scrollTop(), from, `run ${run}: the page scrolled before the block reached the top zone`);
+    await page.mouse.move(x, 20);
     const t0 = Date.now();
     while ((await scrollTop()) > 0 && Date.now() - t0 < 4000) await sleep(50);
     const took = Date.now() - t0;
@@ -91,6 +96,9 @@ await withFixture(async ({ page, api, base, workspace, path }) => {
   }
 
   // SC-004: let go over the header part way up; the page stops at once.
+  // Two guards stop it, both in blockDrop.ts: stopScroll on drop and drag end,
+  // and the loop's own check that the drag is still on. This catches losing
+  // both, not one.
   {
     const h = await pickUp();
     await glide(h.x + h.width / 2, h.y + h.height / 2, h.x + 40, 20);

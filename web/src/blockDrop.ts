@@ -421,7 +421,10 @@ export function blockDrop(editor: Editor): () => void {
     frame = 0;
     const v = view();
     if (!origin || !pointer || !scroller || !v) return;
-    const r = scroller === document.scrollingElement ? { top: 0, bottom: window.innerHeight } : scroller.getBoundingClientRect();
+    const r = scroller === document.scrollingElement ? { top: 0, bottom: window.innerHeight, left: 0, right: window.innerWidth } : scroller.getBoundingClientRect();
+    // Only above, below or over the page itself: a block taken over the
+    // sidebar near the top is aimed at the sidebar, not the page (review).
+    if (pointer.x < r.left || pointer.x > r.right) return;
     const speed = scrollSpeed(pointer.y, Math.max(r.top, 0), Math.min(r.bottom, window.innerHeight));
     if (!speed) return;
     const before = scroller.scrollTop;

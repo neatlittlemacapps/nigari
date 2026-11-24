@@ -81,6 +81,11 @@ line was.
 - At the top or bottom of the page the scrolling stops; nothing jumps.
 - A short page that does not scroll: nothing happens.
 - A block in a peek panel scrolls the peek, the nearest thing that scrolls.
+- Held over the sidebar or anything else beside the page, nothing scrolls,
+  however high or low the pointer is.
+- While the page scrolls, holding a block at a column's edge does not make a
+  new column: the page moving counts as the block moving, so the short rest a
+  new column needs starts once the scrolling stops.
 - Two editors on one page (a page and its peek): only the one the drag
   started in scrolls.
 - A read-only page does not offer block drags, so nothing changes there.
