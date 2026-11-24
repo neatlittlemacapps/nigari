@@ -58,6 +58,7 @@ import ListView from './ListView';
 import BoardView from './BoardView';
 import { groupValueFor, UNSET, type Row } from '../collectionRow';
 import { defaultChartView } from '../chartDefaults';
+import { saveLine } from '../saveLine';
 import { copyDatabaseView, copyableViews, encodeEmbedLocal, moveView as moveEmbedView, newEmbedViewId, readEmbedLocal, removeView as removeEmbedView, withOpenView } from '../embedViews';
 
 // A chart (spec 004) brings Chart.js, about 60 KB gzip: loaded only when a
@@ -346,10 +347,13 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   const embedRef = useRef(embed);
   embedRef.current = embed;
 
+  // What the server last took: a refused save shows this again (#530).
+  const savedConfig = useRef<CollectionConfig | null>(null);
   const loadConfig = useCallback(() => {
     void api
       .getCollection(collectionId)
       .then((c) => {
+        savedConfig.current = c;
         setConfig(c);
         setViewId((v) => {
           // The open view survives tab switches and reloads; it only falls
@@ -616,29 +620,40 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // the moment somebody here resized a column.
   // Answers whether the save went through, so a dialog that saves (the schema
   // editor) can stay open with its edits when it did not.
+  // One save at a time, the changes made meanwhile sent together (#530).
+  const saves = useMemo(
+    () =>
+      saveLine<Partial<CollectionConfig>>(
+        (patch) => api.putCollection(collectionId, patch),
+        (patch) => {
+          if (savedConfig.current) savedConfig.current = { ...savedConfig.current, ...patch };
+        },
+        (e) => {
+          // A refused change (a reader's, or a chart setting the server cannot
+          // draw) used to stay on screen as if saved, until the next reload
+          // showed otherwise. Put back what is stored and say why (spec 004,
+          // FR-027; spec 007's pattern). What is stored is what the server
+          // last took, not the state before this one change: that put back
+          // changes made after it (#530). Every caller fires and forgets, so
+          // the refusal ends here.
+          // The lock is not part of a save (setLock keeps it on screen): it stays.
+          const saved = savedConfig.current;
+          if (saved) setConfig((c) => ({ ...saved, viewsLocked: c ? c.viewsLocked : saved.viewsLocked }));
+          toastError((e as Error).message);
+          // Somebody locked the views since this tab loaded them (spec 013): the
+          // config is reloaded, so the lock shows and its controls go.
+          if (e instanceof ApiError && e.code === 'views_locked') loadConfig();
+        },
+      ),
+    [collectionId, loadConfig],
+  );
   const saveConfig = async (next: CollectionConfig): Promise<boolean> => {
     const patch: Partial<CollectionConfig> = {};
     if (!config || next.schema !== config.schema) patch.schema = next.schema;
     if (!config || next.views !== config.views) patch.views = next.views;
-    const before = config;
     setConfig(next);
     if (!patch.schema && !patch.views) return true;
-    try {
-      await api.putCollection(collectionId, patch);
-      return true;
-    } catch (e) {
-      // A refused change (a reader's, or a chart setting the server cannot
-      // draw) used to stay on screen as if saved, until the next reload
-      // showed otherwise. Put back what is stored and say why (spec 004,
-      // FR-027; spec 007's pattern). Every caller fires and forgets, so the
-      // refusal ends here.
-      if (before) setConfig(before);
-      toastError((e as Error).message);
-      // Somebody locked the views since this tab loaded them (spec 013): the
-      // config is reloaded, so the lock shows and its controls go.
-      if (e instanceof ApiError && e.code === 'views_locked') loadConfig();
-      return false;
-    }
+    return saves.save(patch);
   };
 
   const addRow = async (presetProps?: Record<string, unknown>) => {
