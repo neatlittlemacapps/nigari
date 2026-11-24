@@ -654,7 +654,6 @@
   "Reopen": "Reabrir",
   "Reset": "Restablecer",
   "Reset the link": "Restablecer el enlace",
-  "Resolved": "Resuelto",
   "Restore": "Restaurar",
   "Restore the version from {when}? The current state is saved as a version first.": "¿Restaurar la versión de {when}? El estado actual se guardará como una versión primero.",
   "Restoring failed": "Error al restaurar",
@@ -1102,7 +1101,6 @@
   "→ Certificates & secrets → client secret.": "→ Certificados y secretos → secreto de cliente.",
   "→ Links": "→ Enlaces",
   "→ copy the token and paste it here. You set the hostname (e.g.": "→ copia el token y pégalo aquí. Tú configuras el nombre de host (ej.",
-  "⌘↵ to send": "⌘↵ para enviar",
   "⚠ Cloud agents (claude.ai, say) cannot reach": "⚠ Los agentes en la nube (ej. claude.ai) no pueden acceder a",
   "⚠ Google and Microsoft accept HTTPS redirect URIs only (localhost aside). Start a tunnel (the “Domain & proxy” tab) or enter a public HTTPS base URL under “General”. It then appears here on its own.": "⚠ Google y Microsoft solo aceptan URIs de redirección HTTPS (excepto localhost). Inicia un túnel (pestaña «Dominio y proxy») o introduce una URL base HTTPS pública en «General». Aparecerá aquí automáticamente.",
   "⚠ This is the URL of the running quick tunnel. It changes on every start. For OAuth that lasts, use a named tunnel or your own domain and enter it as the base URL.": "⚠ Esta es la URL del túnel rápido activo. Cambia en cada inicio. Para OAuth permanente, utiliza un túnel con nombre o tu propio dominio e introdúcelo como URL base.",
@@ -1379,7 +1377,6 @@
   "Until {time}": "Hasta {time}",
   "You": "Tú",
   "{names} reacted with {reaction}": "{names} reaccionó con {reaction}",
-  "⌘↵ to save": "⌘↵ para guardar",
   "edited a comment on": "editó un comentario en",
   "Add and switch": "Añadir y cambiar",
   "Change layout": "Cambiar diseño",
@@ -1411,5 +1408,10 @@
   "Views": "Vistas",
   "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "La fila junto a este lugar ya no existe o está en otra lista, así que no se colocó nada ahí. Recarga e inténtalo de nuevo.",
   "Show more": "Mostrar más",
-  "Emergency access by {name} ended.": "Acceso de emergencia de {name} finalizado."
+  "Emergency access by {name} ended.": "Acceso de emergencia de {name} finalizado.",
+  "Date property": "Propiedad de fecha",
+  "{chord} to send": "{chord} para enviar",
+  "{chord} to save": "{chord} para guardar",
+  "A comment needs some text": "Un comentario necesita algo de texto",
+  "Resolve": "Resolver"
 }
