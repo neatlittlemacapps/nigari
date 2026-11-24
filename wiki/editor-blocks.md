@@ -204,8 +204,10 @@ which stay put on the way.
 Drag the grip to move a block. While you drag, a line in the accent colour shows
 where it will land, and the block lands exactly there. Over a column the line
 stays in that column: above a column's first line it makes the block that
-column's new first line. Drag the gap between two columns to change their
-widths.
+column's new first line. Hold the block at the top or bottom edge of the page
+and the page scrolls that way, faster the nearer the edge, so a block can go
+to a place that was out of view. Drag the gap between two columns to change
+their widths.
 
 **Sideways makes columns.** Hold a dragged block at the left or right edge of a
 column for a moment (about half a second) and the line turns upright, and the

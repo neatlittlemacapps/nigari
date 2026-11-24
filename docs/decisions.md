@@ -7,6 +7,29 @@ entries are not edited away.
 
 ---
 
+## 2026-11-24 — A dragged block held at the page's edge scrolls the page, on a frame loop (#810, spec 025)
+
+- **The page scrolls itself while a block is held in a 72 px zone at its top
+  or bottom**, faster with the square of the depth, from 1 px to 24 px a frame
+  (about 1,400 px a second), at full speed over the header above the page.
+  The page scrolls inside `.page-body`, where the browser's own drag scrolling
+  does nothing (measured: 2 s held at the top, no scroll). Claude's default,
+  not asked: a page is far longer than a table, so the row drag's fixed 14 px
+  steps in 48 px would take over a minute across a long page and jump at the
+  zone's border. Measured: 1,185 px to the top in under 2 s.
+- **A frame loop, not a scroll per `dragover`.** A resting pointer gets a
+  `dragover` only every 350 ms or so, which would scroll in jerks. The loop
+  runs only while the pointer is in a zone and a block drag from this editor
+  is on, and stops on drop, drag end and at the end of the page.
+- **`scrollParent` is shared** by the block and row drags (`dragScroll.ts`);
+  the board and column drags scroll their own inner boxes and keep theirs.
+- **The "wrong block" seen while building this is not the scrolling.** A
+  first move of 20 px or more after pressing a handle lets BlockNote's side
+  menu switch to the block above before the drag starts, on a short page too:
+  #984, fixed on its own.
+
+---
+
 ## 2026-11-24 — A block chosen with the keys gets a thin ring beside its tint (#943)
 
 - **A 2px ring in the focus colour, only when keys made the choice** (owner,
