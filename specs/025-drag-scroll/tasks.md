@@ -31,7 +31,7 @@ description: "Tasks for scrolling the page while a dragged block is held near it
 
 - [x] T005 [test] `web/tests/block-drop-scroll.mjs` (new), in `web/tests/package.json`; mutation-checked
 - [x] T006 [wiki] `wiki/editor-blocks.md` (dragging): holding a block at the top or bottom edge scrolls the page; `docs/decisions.md` (the speed ramp and the frame loop, with the options turned down)
-- [ ] T007 [test] Reviews: `/code-review`; `ux-ui-audit` does not apply (nothing drawn changes, said in the PR); the drag specs listed in plan.md pass; `scripts/agent-gate.sh`
+- [x] T007 [test] Reviews: `/code-review`; `ux-ui-audit` does not apply (nothing drawn changes, said in the PR); the drag specs listed in plan.md pass; `scripts/agent-gate.sh`
 
 ## Dependencies
 
