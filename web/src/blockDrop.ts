@@ -236,6 +236,14 @@ export function blockDrop(editor: Editor): () => void {
   let shown = '';
   // The drag started at this editor's own handle (see the top of the file).
   let origin = false;
+  // What the line shows now: the drop commits exactly this (#820). Deciding
+  // again at the drop, from boxes read then, could disagree with the line:
+  // a column opening that was still closing had moved the layout 19px, a
+  // block dragged up a column's edge was dropped as a new column while the
+  // line showed it under the line above.
+  // `undefined`: no dragover has decided since the line was last hidden;
+  // `null`: one did and found no target, so the drop moves nothing (review).
+  let shownTarget: { target: Target; all: Item[]; ids: string[] } | null | undefined;
   // What a screen reader is told when a drop would make columns (T022): the
   // vertical line and the opening are only seen.
   // The region is put on the page when the drag starts, empty: one made and
@@ -276,6 +284,7 @@ export function blockDrop(editor: Editor): () => void {
     line?.remove();
     line = null;
     shown = '';
+    shownTarget = undefined;
     opening(null);
     say('');
   };
@@ -312,6 +321,7 @@ export function blockDrop(editor: Editor): () => void {
     const v = view();
     if (!v || !v.editable || !origin || !isBlockDrag(v)) return;
     const d = decide(v, e.clientX, e.clientY);
+    shownTarget = d;
     if (!d) {
       draw(null, 'none');
       opening(null);
@@ -350,8 +360,11 @@ export function blockDrop(editor: Editor): () => void {
     const v = view();
     if (!v || !v.editable || !origin || !isBlockDrag(v) || copies(e)) return;
     origin = false;
-    items = null; // fresh boxes for the drop itself
-    const d = decide(v, e.clientX, e.clientY);
+    // The target the line showed. Only a drop no dragover came before (none
+    // fires between some drag starts and their drop) is decided here, from
+    // fresh boxes.
+    if (shownTarget === undefined) items = null;
+    const d = shownTarget === undefined ? decide(v, e.clientX, e.clientY) : shownTarget;
     items = null;
     hide();
     e.preventDefault();

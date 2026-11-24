@@ -11,6 +11,7 @@ import { columnEnter } from '../columnEnter';
 import { dropLineWidth } from '../dropLine';
 import { blockDrop, computeDropPosition } from '../blockDrop';
 import { holdSideMenuWhileHovered } from '../sideMenuHold';
+import { guardBlockNote } from '../blockNoteGuards';
 import { en as coreEn } from '@blocknote/core/locales';
 import { BlockNoteView } from '@blocknote/mantine';
 import { api, ApiError, materializeQuery } from '../api';
@@ -1749,6 +1750,11 @@ function BlockContent({
   // The drop line and the drop of a dragged block use one decision (spec 021,
   // blockDrop.ts and dropTarget.ts).
   useEffect(() => blockDrop(editor), [editor]);
+
+  // Two corrections to BlockNote's pointer handling: a database's table is
+  // not one of its tables (#825), and a peek over the page shows its own
+  // handles (#826). blockNoteGuards.ts.
+  useEffect(() => guardBlockNote(editor as never), [editor]);
 
   // Enter inside a column stays in that column (#317, columnEnter.ts). No
   // label: it is what Enter already means, not a shortcut to list. Ahead of
