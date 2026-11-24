@@ -18,6 +18,7 @@
 // does. The grip is 28px wide and shows only on the row tapped last.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { scrollParent } from './dragScroll';
 
 /** A row as the table draws it: its page id, its parent (the database for a
  *  top-level row, another row for a sub-item in a tree) and its depth. */
@@ -158,15 +159,6 @@ const TOUCH_HOLD_SLOP = 10;
 const EDGE = 48;
 const EDGE_STEP = 14;
 const CLICK_AFTER_DRAG_MS = 300;
-
-/** The nearest ancestor that scrolls up and down: the page, a peek. */
-function scrollParent(el: HTMLElement): HTMLElement | null {
-  for (let p = el.parentElement; p; p = p.parentElement) {
-    const o = getComputedStyle(p).overflowY;
-    if ((o === 'auto' || o === 'scroll') && p.scrollHeight > p.clientHeight) return p;
-  }
-  return null;
-}
 
 function rowBoxes(body: HTMLElement) {
   return [...body.querySelectorAll<HTMLElement>(':scope > tr[data-row-id]')].map((tr) => {
