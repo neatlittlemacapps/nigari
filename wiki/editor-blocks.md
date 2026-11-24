@@ -190,8 +190,10 @@ mouse. Closing it puts the caret back where it was.
 
 A block you have chosen, with a click on its grip, with its menu open, while
 you drag it, or reached with the arrow keys, shows a soft tint of the accent
-colour. Nothing is marked while you only hover: the handles appearing are the
-sign.
+colour. Reached with the arrow keys (an image, a divider, a database), it also
+gets a thin ring in the focus colour, because there the faint tint is the only
+sign; chosen with the mouse it does not. Nothing is marked while you only
+hover: the handles appearing are the sign.
 
 The handles hold still while the pointer is on them, also beside a block in a
 column, so they can be reached from the text. In the second or third column

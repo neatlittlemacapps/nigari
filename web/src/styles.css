@@ -1042,6 +1042,17 @@ body:has(.icon-picker) .bn-side-menu {
   outline: var(--space-100) solid var(--color-primary-subtle);
   border-radius: var(--radius-scale-md);
 }
+/* Chosen with the keys, a thin ring in the focus colour joins the tint (#943,
+   owner 2026-11-24): there the tint is the only sign, and it is 1.16:1
+   against the page. 2px, right at the tint's edge, in place of the tint's
+   own outline (a ring under that see-through outline showed through it,
+   twice as thick; one set off from the content left a strip of page between
+   tint and ring, review). inputModality.ts sets data-input. */
+:root[data-input='keys'] .bn-container .ProseMirror-selectednode > .bn-block-content,
+:root[data-input='keys'] .bn-container .bn-block-content.ProseMirror-selectednode {
+  outline: calc(var(--space-100) / 2) solid var(--color-focus);
+  outline-offset: 0;
+}
 
 /* What the handle does, on hover (#818): the tooltip the rest of the app
    draws (ui/Button.css .ui-tooltip), here from CSS because the handle is
