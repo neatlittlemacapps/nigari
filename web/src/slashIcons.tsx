@@ -1,6 +1,8 @@
-import type { ComponentType, ReactElement, ReactNode } from 'react';
+import { useEffect, useState, type ComponentType, type ReactElement, type ReactNode } from 'react';
 import {
+  AddBlockButton,
   BlockColorsItem,
+  DragHandleButton,
   DragHandleMenu,
   useBlockNoteEditor,
   useComponentsContext,
@@ -16,6 +18,9 @@ import { SideMenuExtension } from '@blocknote/core/extensions';
 import { t } from './i18n';
 import { PRESETS } from './columnWidths';
 import { applyLayout, isCurrent, layoutOf } from './columnLayout';
+import { forgetKeyOpen, openedByKey } from './blockMenuKey';
+import { formatChord } from './keys';
+import { inLaterColumn } from './sideMenuPlace';
 
 // The editor's own menus take their icons from the same pairing as every
 // other menu (spec 010, research R4). BlockNote draws its / menu with
@@ -124,9 +129,36 @@ export function layoutSlashItems(editor: any) {
   }));
 }
 
+/** The block the open menu acts on gets the selection tint (#818), from a
+ *  <style> of our own: a class written onto the editor's DOM would make
+ *  ProseMirror redraw the node (see ColumnsBlock in blocks.tsx). This menu is
+ *  mounted only while it is open, so the tint goes when it closes. */
+function MenuTint() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const editor = useBlockNoteEditor<any, any, any>();
+  const block = useExtensionState(SideMenuExtension, { editor, selector: (state) => state?.block });
+  // A menu the keyboard opened gives the caret back to the text when it
+  // closes (blockMenuKey.ts); one opened by hand leaves the focus as before.
+  // Only if the focus has nowhere else to be: a click elsewhere that closed
+  // the menu keeps what it clicked (review).
+  useEffect(
+    () => () => {
+      if (!openedByKey()) return;
+      forgetKeyOpen();
+      const at = document.activeElement;
+      if (!at || at === document.body || at.closest('.bn-side-menu, .bn-menu-dropdown')) editor.focus();
+    },
+    [editor],
+  );
+  if (!block) return null;
+  const at = `.bn-container [data-id="${block.id.replace(/[^\w-]/g, '')}"] > .bn-block`;
+  return <style>{`${at} > .bn-block-content, ${at} > .react-renderer > .bn-block-content { background: var(--color-primary-subtle); outline: var(--space-100) solid var(--color-primary-subtle); border-radius: var(--radius-scale-md); }`}</style>;
+}
+
 function BlockMenu() {
   return (
     <DragHandleMenu>
+      <MenuTint />
       <ColumnLayoutItem />
       {(Object.keys(DRAG_HANDLE_FUNCTIONS) as DragHandleKey[]).map((key) => {
         const { Item, label } = DRAG_HANDLE_ITEMS[key];
@@ -142,7 +174,37 @@ function BlockMenu() {
   );
 }
 
-/** The side menu with the block menu above, for SideMenuController. */
+/** The handle, with what it does shown on hover (#818). In a wrapper of our
+ *  own: the button is BlockNote's, and a menu trigger as well. No tip while
+ *  the handle is being dragged: the pointer stays on it throughout. */
+function HandleWithTip() {
+  const [dragging, setDragging] = useState(false);
+  const tip = `${t('Drag to move')}\n${t('Click or {keys} to open the menu', { keys: formatChord('mod+/') })}`;
+  return (
+    <span
+      className="bn-handle-tip"
+      data-tip={dragging ? undefined : tip}
+      onDragStart={() => setDragging(true)}
+      onDragEnd={() => setDragging(false)}
+    >
+      <DragHandleButton dragHandleMenu={BlockMenu} />
+    </span>
+  );
+}
+
+/** The side menu with the block menu above, for SideMenuController. In a
+ *  later column the + and handle move left, past the resize grip, which takes
+ *  the gap (#820, owner 2026-11-24: the grip wins there). */
 export function SideMenuWithIcons(props: SideMenuProps) {
-  return <SideMenu {...props} dragHandleMenu={BlockMenu} />;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const editor = useBlockNoteEditor<any, any, any>();
+  const block = useExtensionState(SideMenuExtension, { editor, selector: (state) => state?.block });
+  return (
+    <SideMenu {...props}>
+      <span className="bn-side-menu-row" data-past-grip={(block && inLaterColumn(block.id, (id) => editor.getParentBlock(id))) || undefined}>
+        <AddBlockButton />
+        <HandleWithTip />
+      </span>
+    </SideMenu>
+  );
 }

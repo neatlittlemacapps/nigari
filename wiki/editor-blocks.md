@@ -110,7 +110,8 @@ removes the last columns only if they are empty, so
 nothing you wrote is deleted by a click. A column is one block, and a block can
 be indented into it, so a column can hold more than one thing.
 
-A thin line runs down the middle of the gap between columns. **Drag it** to
+A thin line runs down the middle of the gap between columns, from a little
+above the columns to a little below them. **Drag it**, anywhere in the gap, to
 change their widths. It is the same handle as a table's column border: the
 cursor turns into a column-resize arrow and the line thickens under the
 pointer. Where a page cannot be edited the line stays and the handle goes. The two columns beside the handle
@@ -180,11 +181,23 @@ Typing `:` followed by at least two letters opens the **emoji picker**; typing
 Hover a block and two controls appear in the left margin: **Add block** (`+`),
 which opens the slash menu (on the current block if it is empty, otherwise on a
 fresh paragraph below it), and **Open block menu** (the grip), which is also the
-drag handle. The menu holds **Delete** and **Colors** (text and background, nine
-named colours plus *Auto*).
+drag handle. Rest the pointer on the grip and it says so: *Drag to move*,
+*Click or ⌘/ to open the menu* (Ctrl+/ off a Mac). The menu holds **Delete**
+and **Colors** (text and background, nine named colours plus *Auto*).
+
+`⌘/` (`Ctrl+/`) opens the same menu for the line the caret is in, without the
+mouse. Closing it puts the caret back where it was.
+
+A block you have chosen, with a click on its grip, with its menu open, while
+you drag it, or reached with the arrow keys, shows a soft tint of the accent
+colour. Nothing is marked while you only hover: the handles appearing are the
+sign.
 
 The handles hold still while the pointer is on them, also beside a block in a
-column, so they can be reached from the text.
+column, so they can be reached from the text. In the second or third column
+the handles sit one gap further left, past the line that resizes the columns:
+the gap belongs to that line, and the pointer crosses it to reach the handles,
+which stay put on the way.
 
 Drag the grip to move a block. While you drag, a line in the accent colour shows
 where it will land, and the block lands exactly there. Over a column the line
@@ -193,9 +206,12 @@ column's new first line. Drag the gap between two columns to change their
 widths.
 
 **Sideways makes columns.** Hold a dragged block at the left or right edge of a
-column and the line turns upright, and the columns slide apart to show the room
+column for a moment (about half a second) and the line turns upright, and the
+columns slide apart to show the room
 the new column will take; move back over the text and they close again. Drop,
-and the block is a new column there.
+and the block is a new column there. Passing through an edge without stopping
+shows the ordinary line, so a block dragged up or down past a column does not
+become a column by accident.
 
 - A layout of two takes a new column at any edge, a layout of three only at
   the right edge of its last column, and four is the most.

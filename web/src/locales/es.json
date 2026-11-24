@@ -1414,5 +1414,8 @@
   "{chord} to send": "{chord} para enviar",
   "{chord} to save": "{chord} para guardar",
   "A comment needs some text": "Un comentario necesita algo de texto",
-  "Resolve": "Resolver"
+  "Resolve": "Resolver",
+  "Drag to move": "Arrastra para mover",
+  "Click or {keys} to open the menu": "Haz clic o pulsa {keys} para abrir el menú",
+  "Open the block’s menu": "Abrir el menú del bloque"
 }

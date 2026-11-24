@@ -1,0 +1,109 @@
+name: Umbrel store
+
+# Opens a pull request on the Umbrel store that moves it to one nigari release.
+# Only by hand (owner, 2026-11-23: "only build store version when I ask"):
+# releases no longer do this on their own. Start it from the Actions tab
+# ("Umbrel store", "Run workflow"), or `gh workflow run umbrel-store.yml`.
+# Leave the version empty for the latest release, or give one such as 2.1.66.
+#
+# The Umbrel store pins one release by version and image digest, so Umbrel
+# installs exactly the image that was built and offers an update only when
+# the version changes. The owner merges the pull request, so a release reaches
+# Umbrels only when the owner says so. It does not write nigari's own umbrel/
+# copy: a commit to main is a release, and a release that commits to main
+# would release again, forever.
+#
+# Needs the secret UMBREL_STORE_TOKEN: a fine-grained token for
+# neatlittlemacapps/yokogaki-umbrel only, Contents and Pull requests
+# read/write. Without it the job says so and fails, since asking for a store
+# version and getting none is not a success.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "nigari version for the store, e.g. 2.1.66. Empty: the latest release."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: umbrel-store
+  cancel-in-progress: false
+
+jobs:
+  umbrel-store:
+    runs-on: ubuntu-latest
+    env:
+      STORE: neatlittlemacapps/yokogaki-umbrel
+    steps:
+      - name: Pick the release
+        id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WANTED: ${{ inputs.version }}
+        run: |
+          set -eu
+          if [ -z "${WANTED}" ]; then
+            tag=$(gh release view --repo "${GITHUB_REPOSITORY}" --json tagName --jq .tagName)
+          else
+            tag="v${WANTED#v}"
+            gh release view "${tag}" --repo "${GITHUB_REPOSITORY}" --json tagName >/dev/null ||
+              { echo "There is no release ${tag}." >&2; exit 1; }
+          fi
+          case "${tag}" in v[0-9]*.[0-9]*.[0-9]*) ;; *) echo "Not a release version: ${tag}" >&2; exit 1 ;; esac
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+          echo "Store version: ${tag#v}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open a pull request on the Umbrel store
+        env:
+          GH_TOKEN: ${{ secrets.UMBREL_STORE_TOKEN }}
+          ver: ${{ steps.v.outputs.version }}
+        run: |
+          set -eu
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "UMBREL_STORE_TOKEN is not set; the Umbrel store was not updated." | tee -a "$GITHUB_STEP_SUMMARY" >&2
+            exit 1
+          fi
+          image="ghcr.io/${GITHUB_REPOSITORY}:${ver}"
+          # The index digest, covering amd64 and arm64: the one Umbrel pins.
+          digest=$(docker buildx imagetools inspect "${image}" --format '{{json .Manifest}}' | jq -r .digest)
+          case "${digest}" in sha256:*) ;; *) echo "No digest for ${image}" >&2; exit 1 ;; esac
+
+          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${STORE}.git" store
+          cd store
+          app=yokogaki-nigari
+          sed -i -E "s|^version: \".*\"$|version: \"${ver}\"|" "${app}/umbrel-app.yml"
+          sed -i -E "s|(releases/tag/)v[0-9.]+|\1v${ver}|" "${app}/umbrel-app.yml"
+          sed -i -E "s|(image: ghcr.io/[^:]+/nigari):[^@]+@sha256:[0-9a-f]+|\1:${ver}@${digest}|" "${app}/docker-compose.yml"
+          grep -q "version: \"${ver}\"" "${app}/umbrel-app.yml"
+          grep -q "nigari:${ver}@${digest}" "${app}/docker-compose.yml"
+          if git diff --quiet; then
+            echo "The store already pins ${ver}." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          branch="nigari-${ver}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${branch}"
+          git commit -qam "nigari ${ver}"
+          git push -f origin "${branch}"
+          if [ -z "$(gh pr list --repo "${STORE}" --head "${branch}" --json number --jq '.[].number')" ]; then
+            gh pr create --repo "${STORE}" --base main --head "${branch}" \
+              --title "nigari ${ver}" \
+              --body "Moves the store to nigari ${ver} (${digest}). Release notes: https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${ver}. Merge it and Umbrel offers the update within about 5 minutes."
+          fi
+          # Every one of these pull requests edits the same three lines (version,
+          # release notes, image pin), so two open at once cannot both be merged:
+          # the owner merges one and the other conflicts (found 2026-11-12, the
+          # store's #3 after its #2). The newest therefore supersedes the older
+          # ones: they are closed with a pointer, and their branches left alone.
+          # Only the branches this job makes (nigari-<version>) are touched.
+          gh pr list --repo "${STORE}" --state open --json number,headRefName \
+            --jq ".[] | select(.headRefName | test(\"^nigari-[0-9.]+$\")) | select(.headRefName != \"${branch}\") | .number" |
+            while read -r old; do
+              gh pr close "${old}" --repo "${STORE}" --comment "Superseded by nigari ${ver}: these pull requests change the same lines, so only the newest can be merged."
+            done
+          echo "Opened a pull request on ${STORE} for ${ver}." >> "$GITHUB_STEP_SUMMARY"
