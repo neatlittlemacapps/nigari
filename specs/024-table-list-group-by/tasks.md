@@ -69,25 +69,25 @@ Built with the changes in research R7: `showEmptyGroups` / `show_empty_groups` f
 **Goal**: a table drawn in groups with headers, counts and per-group totals.
 **Independent Test**: group a table of tasks by Status; one header per status with rows, option order, right counts, sorted rows.
 
-- [ ] T017 [US1] [ui] `web/src/components/ViewGroupMenu.tsx` (new): the Group popover moved out of `CollectionView.tsx`'s view bar, shown for board, table and list; for a table or list: property picker (groupable types), Order (as the property's order / reversed), Show empty groups (`ui/Switch`), Hidden groups with Show, Expand all, Collapse all, Remove grouping; a board keeps its column picker as today
-- [ ] T018 [US1] [ui] `web/src/components/RowGroupHeader.tsx` (new): one `<tr>` with a `<th scope="rowgroup" colSpan>` holding a `ui/Button` fold toggle (`aria-expanded`, Enter/Space), the value (an option as its chip, a person or page by name, No value, a period label), the count; right-click and its ⋯ open the header menu from T020; tokens only
-- [ ] T019 [US1] [ui] `web/src/components/CollectionView.tsx` `TableView`: when the view is grouped, `groupRows` (memoised on rows and settings) after the embed row limit (R5); one `<tbody>` per group: header, rows (a tree's sub-items under their parent, top-level rows grouped only, Q7), the group's totals row from the existing `footer` function on its rows; the overall foot row is not drawn while grouped; Group button lit when grouped
-- [ ] T020 [P] [US1] [ui] `web/src/actions/groupActions.ts` (new) and its renderer: Hide group; Collapse all, Expand all behind a separator; `web/src/menuIcons.ts`: `hideGroup`, `collapseAllGroups`, `expandAllGroups`, each its own icon; `web/scripts/check-content-actions.mjs` gains the group list with its place `groupHeader`; `check-menu-icons.mjs` passes
-- [ ] T021 [P] [US1] [i18n] `web/src/locales/de.json`, `nl.json`, `es.json`: every new string (Group menu, header menu, No value, Checked, Unchecked, count labels through `plural()`)
+- [x] T017 [US1] [ui] `web/src/components/ViewGroupMenu.tsx` (new): the Group popover moved out of `CollectionView.tsx`'s view bar, shown for board, table and list; for a table or list: property picker (groupable types), Order (as the property's order / reversed), Show empty groups (`ui/Switch`), Hidden groups with Show, Expand all, Collapse all, Remove grouping; a board keeps its column picker as today
+- [x] T018 [US1] [ui] `web/src/components/RowGroupHeader.tsx` (new): one `<tr>` with a `<th scope="rowgroup" colSpan>` holding a `ui/Button` fold toggle (`aria-expanded`, Enter/Space), the value (an option as its chip, a person or page by name, No value, a period label), the count; right-click and its ⋯ open the header menu from T020; tokens only
+- [x] T019 [US1] [ui] `web/src/components/CollectionView.tsx` `TableView`: when the view is grouped, `groupRows` (memoised on rows and settings) after the embed row limit (R5); one `<tbody>` per group: header, rows (a tree's sub-items under their parent, top-level rows grouped only, Q7), the group's totals row from the existing `footer` function on its rows; the overall foot row is not drawn while grouped; Group button lit when grouped
+- [x] T020 [P] [US1] [ui] `web/src/actions/groupActions.ts` (new) and its renderer: Hide group; Collapse all, Expand all behind a separator; `web/src/menuIcons.ts`: `hideGroup`, `collapseAllGroups`, `expandAllGroups`, each its own icon; `web/scripts/check-content-actions.mjs` gains the group list with its place `groupHeader`; `check-menu-icons.mjs` passes
+- [x] T021 [P] [US1] [i18n] `web/src/locales/de.json`, `nl.json`, `es.json`: every new string (Group menu, header menu, No value, Checked, Unchecked, count labels through `plural()`)
 
 ### Phase 6: User Story 2 - Fold groups (P1)
 
 **Goal**: folding is each person's own and survives a reload.
 **Independent Test**: fold a group, reload, still folded; another person sees it open.
 
-- [ ] T022 [US2] [ui] `web/src/viewState.ts`: `withGroupFolded(state, key, folded)` and `withAllGroupsFolded(state, keys | null)` beside `withLaneFolded`; `CollectionView.tsx` wires the header toggle, Expand all and Collapse all through the personal state (both scopes), allowed on a locked view and for a reader
+- [x] T022 [US2] [ui] `web/src/viewState.ts`: `withGroupFolded(state, key, folded)` and `withAllGroupsFolded(state, keys | null)` beside `withLaneFolded`; `CollectionView.tsx` wires the header toggle, Expand all and Collapse all through the personal state (both scopes), allowed on a locked view and for a reader
 
 ### Phase 7: User Story 5 - Order, empty and hidden groups (P2)
 
 **Goal**: flip the order, show empty groups, hide one and bring it back.
 **Independent Test**: hide a group from its header menu; it is listed under Hidden groups; Show brings it back.
 
-- [ ] T023 [US5] [ui] `CollectionView.tsx` / `ViewGroupMenu.tsx`: Order, Show empty groups, Hide group and Show save the view for everyone (`saveViews`), refused with the lock's message while locked
+- [x] T023 [US5] [ui] `CollectionView.tsx` / `ViewGroupMenu.tsx`: Order, Show empty groups, Hide group and Show save the view for everyone (`saveViews`), refused with the lock's message while locked
 
 ### Phase 8: User Story 6 - Drag within and between groups (P2)
 
@@ -97,6 +97,15 @@ Built with the changes in research R7: `showEmptyGroups` / `show_empty_groups` f
 - [ ] T024 [US6] [ui] `web/src/rowDrag.ts` and `TableView`: drop spots know their group; within a group, today's `placePage`; into another group, `placePage` with `groupDropPatch`'s props; refused (no line) where the patch is null; a sorted view gives way as in spec 022; a multi-value row dragged from one of its groups replaces only that value
 - [ ] T025 [test] `web/tests/table-groups.mjs` (new, in `web/tests/package.json`): group by Status; headers, counts and per-group totals right; filter and sort apply inside groups; a tagged row in two groups; fold, reload, folded; another account sees it open; Collapse all / Expand all; Order flipped; hide and show a group; Show empty groups; drag within a group and into another (value and place after reload); a formula grouping refuses the cross-group drop; a reader folds but cannot drag; a board switched to a table stays grouped, an old converted table stays flat; phone width; light and dark. Rerun `view-layout.mjs`, `view-settings.mjs`, `board-lanes.mjs`, `embed-views.mjs`, `row-handle.mjs`, `view-lock.mjs`
 - [ ] T026 [perf] Measure SC-002 in `table-groups.mjs`'s set-up: 5,000 rows, time to draw flat and grouped, fold and unfold; record the numbers in the PR
+
+**PR 2 split in two** (2026-11-24, while building): PR 2a is T017–T023 and the
+grouped-table part of T025 (`web/tests/table-groups.mjs`): headers, totals,
+folding, the Group menu, hidden and empty groups, order. While a table is
+grouped its rows do not move. PR 2b is T024 (drag within and between groups),
+the drag part of T025, and T026 (the 5,000-row measurement). Reason: the drop
+between groups changes how a drag reads the table's rows (one tbody per group
+now), and 2a was already the larger half; two reviewable pull requests
+instead of one.
 
 **Checkpoint (PR 2)**: gate, `check-bundle.mjs` under the cap (number in the PR), `/code-review`, `ux-ui-audit` light and dark at desktop and phone width.
 

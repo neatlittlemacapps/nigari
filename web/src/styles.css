@@ -3631,15 +3631,23 @@ body.is-col-resizing {
 /* A grouped table (spec 024): one header per group, its rows, its totals.
    The header spans the table; its fold button and ⋯ are ui/Button. */
 
-.db-group-head > th {
+/* Not a column heading: the group's value reads as the cells do, not in the
+   headings' small capitals (theme.css styles every th of the table, with a
+   brand font, so this needs the extra weight to win). */
+.db-table tbody.db-group .db-group-head > th {
   text-align: left;
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--color-text-default);
   font-weight: 600;
   padding: var(--space-150) var(--space-100) var(--space-50);
   border-top: 1px solid var(--color-border-default);
   background: var(--color-surface-default);
 }
 
-.db-group:first-of-type .db-group-head > th {
+.db-table tbody.db-group:first-of-type .db-group-head > th {
   border-top: 0;
 }
 
