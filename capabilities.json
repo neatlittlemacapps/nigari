@@ -44,7 +44,7 @@
     "pages.order": {
       "summary": "Put sibling pages in a chosen order, a database's rows included",
       "agent": "allowed",
-      "note": "update_page and create_page take after or before (a sibling's id), the same placePage as the route (spec 022). The sidebar's raw position on PATCH and reindex-siblings are the browser's own housekeeping.",
+      "note": "update_page and create_page take after or before (a sibling's id), the same placePage as the route (spec 022). The route also takes propsPatch for a row dragged into another group of a grouped table (spec 024); an agent sets the value with set_properties. The sidebar's raw position on PATCH and reindex-siblings are the browser's own housekeeping.",
       "rest": ["POST /api/pages/{id}/place", "POST /api/reindex-siblings"],
       "mcp": ["update_page", "create_page"],
       "wiki": "wiki/pages.md"
@@ -109,7 +109,7 @@
     "collections": {
       "summary": "Read and change a database: schema, views (charts among them), rows, and the counts and totals a chart shows",
       "agent": "allowed",
-      "note": "A chart's numbers come from one function on both doors (POST …/aggregate, query_rows group_by). Saving a chart as a picture is drawn in the browser from those same numbers, so it has no route and no tool. get_collection, set_view and delete_view take embed_id for the views an embedded database has in a document (set_view also copy_of), and create_rows takes embed. A property's visibility on a row's page (pageVisibility, spec 015) is part of the schema: PUT …/{id} and update_schema (and create_database) check it with one function. So is a status property's options and their groups (spec 016): prepareStatusSchema guesses, orders and checks them on the same three doors, and a new row starts in To-do by whichever door makes it. A view's layout (its type) changes on the views PUT and set_view with view_id (spec 018): checkViewType is the one type rule both apply, and switchViewLayout fills the new type's defaults the way the browser's switchLayout does (shared cases in server/testdata/viewlayout).",
+      "note": "A chart's numbers come from one function on both doors (POST …/aggregate, query_rows group_by). Saving a chart as a picture is drawn in the browser from those same numbers, so it has no route and no tool. get_collection, set_view and delete_view take embed_id for the views an embedded database has in a document (set_view also copy_of), and create_rows takes embed. A property's visibility on a row's page (pageVisibility, spec 015) is part of the schema: PUT …/{id} and update_schema (and create_database) check it with one function. So is a status property's options and their groups (spec 016): prepareStatusSchema guesses, orders and checks them on the same three doors, and a new row starts in To-do by whichever door makes it. A view's layout (its type) changes on the views PUT and set_view with view_id (spec 018): checkViewType is the one type rule both apply, and switchViewLayout fills the new type's defaults the way the browser's switchLayout does (shared cases in server/testdata/viewlayout). A table or list grouped by a property (spec 024) is checked by checkViewGrouping on the views PUT and set_view (group_by, group_reverse, show_empty_groups).",
       "rest": ["GET /api/collections/{id}", "PUT /api/collections/{id}", "GET /api/collections/{id}/rows", "POST /api/collections/{id}/aggregate"],
       "mcp": ["get_collection", "update_schema", "set_view", "delete_view", "query_rows", "create_rows"],
       "wiki": "wiki/collections.md"

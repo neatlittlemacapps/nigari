@@ -105,7 +105,23 @@ func switchViewLayout(view map[string]any, typ string, schema []map[string]any) 
 	}
 	isDate := func(t string) bool { return t == "date" }
 	switch typ {
+	case "table", "list":
+		// A board becomes a table or list grouped by its columns' property
+		// (spec 024, Q6), so the change keeps how the rows were sorted out.
+		// Only from a board: a chart's grouping is often by each row or by a
+		// period, and a table was never grouped by it.
+		// A table or list that was flat when it became a board left
+		// grouped: false behind, so the round trip gives it back flat
+		// (spec 018, SC-002).
+		if was, has := out["grouped"].(bool); has && !was {
+			delete(out, "grouped")
+		} else if old == "board" && rowGroupTypes[propType(out["groupBy"])] {
+			out["grouped"] = true
+		}
 	case "board":
+		if (old == "table" || old == "list") && out["grouped"] != true {
+			out["grouped"] = false
+		}
 		if !boardGroupTypes[propType(out["groupBy"])] {
 			g := first(func(t string) bool { return t == "select" || t == "status" }, "")
 			if g == "" {
@@ -236,7 +252,7 @@ func chartSettingsFor(kind string, schema []map[string]any, current map[string]a
 
 // layoutDefaultsSaid names, for set_view's answer, the default the switch
 // chose (FR-009): the grouping of a board or chart, the date of a calendar or
-// timeline.
+// timeline, the grouping a table or list kept from a board (spec 024).
 func layoutDefaultsSaid(view map[string]any, schema []map[string]any) string {
 	name := func(id any) string {
 		s, _ := id.(string)
@@ -262,6 +278,12 @@ func layoutDefaultsSaid(view map[string]any, schema []map[string]any) string {
 		}
 		if g := name(view["groupBy"]); g != "" {
 			parts = append(parts, "grouped by "+g)
+		}
+	case "table", "list":
+		if on, _ := view["grouped"].(bool); on {
+			if g := name(view["groupBy"]); g != "" {
+				parts = append(parts, "grouped by "+g)
+			}
 		}
 	case "calendar", "timeline":
 		if d := name(view["dateProp"]); d != "" {

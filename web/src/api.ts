@@ -431,11 +431,18 @@ export const api = {
   // Puts a page just after or before a sibling (spec 022): the server finds
   // the neighbour on the other side and writes one position. For a database's
   // rows that is the order every view without a sort shows. viewId is the
-  // view the move was made in, for the activity log.
-  placePage: (id: string, spot: { anchor: string; side: 'after' | 'before' }, viewId?: string) =>
+  // view the move was made in, for the activity log. propsPatch, as PATCH
+  // takes it, gives the row the values of the group it was dropped into
+  // (spec 024): the move and the value in one request.
+  placePage: (
+    id: string,
+    spot: { anchor: string; side: 'after' | 'before' },
+    viewId?: string,
+    propsPatch?: Record<string, unknown>,
+  ) =>
     req<{ id: string; position: number }>(`/api/pages/${id}/place`, {
       method: 'POST',
-      body: JSON.stringify({ [spot.side]: spot.anchor, viewId }),
+      body: JSON.stringify({ [spot.side]: spot.anchor, viewId, propsPatch }),
     }),
   reindexSiblings: (parentId: string | null, workspaceId?: string) =>
     req<{ reindexed: number }>('/api/reindex-siblings', {

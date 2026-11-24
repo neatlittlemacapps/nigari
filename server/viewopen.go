@@ -174,6 +174,20 @@ func normalizeViews(raw []byte, schema []map[string]any, stored []map[string]any
 				return nil, err
 			}
 		}
+		// A table's or list's grouping (spec 024): strict for a view this
+		// save adds or whose grouping it changes, so a stored grouping a
+		// later schema change broke is dropped rather than refused.
+		groupWas := ""
+		if storedView, ok := storedByID[vid]; ok {
+			groupWas = groupingSignature(storedView)
+		}
+		groupNow := groupingSignature(view)
+		if err := checkViewGrouping(view, schema, storedByID[vid] == nil || groupWas != groupNow); err != nil {
+			return nil, errViewGroup{fmt.Sprintf("%s: %s", name, err.Error())}
+		}
+		if groupingSignature(view) != groupNow {
+			changed = true
+		}
 		id, _ := view["id"].(string)
 		old, known := before[id]
 		if err := checkChartView(view, schema, !known || old != chartSignature(view)); err != nil {

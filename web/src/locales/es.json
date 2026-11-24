@@ -1315,6 +1315,7 @@
   "Save for everyone": "Guardar para todos",
   "Your change to this view was not saved": "Tu cambio en esta vista no se guardó",
   "A board's lanes need a select, person, relation, formula or rollup property other than its columns.": "Los carriles de un tablero necesitan una propiedad de selección, persona, relación, fórmula o rollup distinta de sus columnas.",
+  "This grouping cannot be used: a table or list groups by a select, multi-select, status, relation, person, checkbox, date, formula or rollup, so the view was not saved.": "Esta agrupación no se puede usar: una tabla o lista se agrupa por una selección, selección múltiple, estado, relación, persona, casilla, fecha, fórmula o rollup, así que la vista no se guardó.",
   "Clear {name}": "Borrar {name}",
   "No sub-group": "Sin subgrupo",
   "None": "Ninguno",

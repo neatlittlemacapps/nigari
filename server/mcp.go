@@ -451,7 +451,7 @@ var mcpTools = []map[string]any{
 	},
 	{
 		"name":        "set_view",
-		"description": "Create a view on a database, or change one. Without view_id it creates (type is then required); with view_id it MERGES into the existing view — what you do not pass stays as it is. A board needs group_by (a select, a multiselect or a relation property; a row with several tags appears under each of them); a calendar and a timeline need date_prop; a chart needs group_by unless chart_kind is number (group_by \"__row\" draws one bar per row, with aggregate sum and aggregate_property). To put a chart into a document, embed_database with its view_id. type with view_id changes the view's layout: every other setting stays (a table's widths and order, a board's lanes, a chart's settings, kept unused and back when the type returns), and what the new type needs is filled in when the view has none that works (a board: the first select or status; a calendar or timeline: the first date property; a chart: a count by the first property it can group by) — the answer names what was chosen, and a group_by or date_prop in the same call wins. A calendar or timeline on a database with no date property is refused: add one with update_schema first. table: column_order sets this view's column order without changing other views or the schema; get_collection returns it on the view as colOrder. Call get_collection for the ids. Refused while the database's views are locked (get_collection's views_locked); only a person can unlock. With embed_id, acts on the views of a database embedded in a document (page_id is then the document): they belong to the document and change nothing on the database. copy_of starts a view from one of the database's views. An embed cannot show a form.",
+		"description": "Create a view on a database, or change one. Without view_id it creates (type is then required); with view_id it MERGES into the existing view — what you do not pass stays as it is. A board needs group_by (a select, a multiselect or a relation property; a row with several tags appears under each of them); a calendar and a timeline need date_prop; a chart needs group_by unless chart_kind is number (group_by \"__row\" draws one bar per row, with aggregate sum and aggregate_property). To put a chart into a document, embed_database with its view_id. type with view_id changes the view's layout: every other setting stays (a table's widths and order, a board's lanes, a chart's settings, kept unused and back when the type returns), and what the new type needs is filled in when the view has none that works (a board: the first select or status; a calendar or timeline: the first date property; a chart: a count by the first property it can group by) — the answer names what was chosen, and a group_by or date_prop in the same call wins. A calendar or timeline on a database with no date property is refused: add one with update_schema first. table: column_order sets this view's column order without changing other views or the schema; get_collection returns it on the view as colOrder. A table or list groups its rows with group_by (and period for a date, show_empty_groups, hidden_groups, group_reverse, status_groups); group_by \"\" removes the grouping. A board changed to a table or list stays grouped by its columns' property. Call get_collection for the ids. Refused while the database's views are locked (get_collection's views_locked); only a person can unlock. With embed_id, acts on the views of a database embedded in a document (page_id is then the document): they belong to the document and change nothing on the database. copy_of starts a view from one of the database's views. An embed cannot show a form.",
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{
 				"page_id":            map[string]any{"type": "string"},
@@ -460,16 +460,18 @@ var mcpTools = []map[string]any{
 				"copy_of":            map[string]any{"type": "string", "description": "Creating with embed_id only: the id of one of the database's views to start from; the other arguments then change the copy. The copy is named \"Copy of <name>\" unless you pass name. The database's view is not changed."},
 				"name":               map[string]any{"type": "string"},
 				"type":               map[string]any{"type": "string", "description": "table | board | gallery | calendar | timeline | list | form | chart. Required when creating; with view_id it changes the layout."},
-				"group_by":           map[string]any{"type": "string", "description": "board: the property to group columns by. chart: the property to group by (select, multiselect, person, checkbox, date or relation), or \"__row\" for one bar per row valued by aggregate_property (aggregate sum, not count). Pass \"\" to clear."},
+				"group_by":           map[string]any{"type": "string", "description": "board: the property to group columns by. table or list: the property to group rows by (select, multi-select, status, relation, person, checkbox, date, formula or rollup); a person sees the rows under a header per value. chart: the property to group by (select, multiselect, person, checkbox, date or relation), or \"__row\" for one bar per row valued by aggregate_property (aggregate sum, not count). Pass \"\" to clear."},
 				"chart_kind":         map[string]any{"type": "string", "enum": chartKinds, "description": "chart: bar (default), hbar (horizontal bars), line, donut, or number (one big value, no group_by needed)."},
-				"period":             map[string]any{"type": "string", "enum": chartPeriods, "description": "chart grouped by a date: day, week, month (default) or year."},
+				"period":             map[string]any{"type": "string", "enum": chartPeriods, "description": "chart, or table or list grouped by a date: day, week, month (default) or year."},
 				"aggregate":          map[string]any{"type": "string", "enum": chartAggs, "description": "chart: count (default) of rows, or sum, avg, min or max of aggregate_property."},
 				"aggregate_property": map[string]any{"type": "string", "description": "chart: the number, formula or rollup property sum, avg, min and max read."},
 				"chart_sort":         map[string]any{"type": "string", "enum": chartSorts, "description": "chart: auto (the property's own order; time for dates), label_asc, label_desc, value_asc or value_desc."},
-				"hidden_groups":      map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "chart: group keys not drawn (\"\" is No value). Hidden groups are left out of the drawing and its total, not out of query_rows. Pass [] to show all."},
+				"hidden_groups":      map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "chart, or grouped table or list: group keys not drawn (\"\" is No value; an option, person or page id; true or false for a checkbox; for a date the period's key: YYYY-MM-DD for a day, YYYY-Www for an ISO week, YYYY-MM for a month, YYYY for a year; todo, in_progress or complete with status_groups). Hidden groups are left out of the drawing and its total, not out of query_rows. Pass [] to show all."},
 				"show_empty":         map[string]any{"type": "boolean", "description": "chart: whether the No value group is drawn (default true)."},
 				"show_zero":          map[string]any{"type": "boolean", "description": "chart (bar, hbar, line): draw select and checkbox options that have no rows, at zero."},
-				"status_groups":      map[string]any{"type": "boolean", "description": "chart grouped by a status: true counts its groups (todo, in_progress, complete) instead of its options. Ignored for any other property."},
+				"status_groups":      map[string]any{"type": "boolean", "description": "chart or table or list grouped by a status: true groups by its status groups (todo, in_progress, complete) instead of its options."},
+				"group_reverse":      map[string]any{"type": "boolean", "description": "grouped table or list: true draws the groups in reverse order (No value stays last)."},
+				"show_empty_groups":  map[string]any{"type": "boolean", "description": "grouped table or list: true also draws the options that have no rows (default false)."},
 				"chart_style":        map[string]any{"type": "object", "description": "chart: how it looks, merged into what is stored. palette (auto, colorful, colorless, blue, yellow, green, purple, teal, orange, pink, red), height (small, medium, large, xlarge), legend (bottom, right, none), labels (values on the chart, true/false), center (a donut's total in its centre), center_label (≤ 60 characters), caption (≤ 280), title (a number chart's, ≤ 120). A key set to null is removed."},
 				"date_prop":          map[string]any{"type": "string", "description": "calendar/timeline: the date property"},
 				"end_date_prop":      map[string]any{"type": "string", "description": "timeline: optional end date, otherwise one-day bars"},
@@ -850,9 +852,12 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		HiddenGroups      *[]string       `json:"hidden_groups"`
 		ChartStyle        *map[string]any `json:"chart_style"`
 		// A status counted by its groups (spec 016): query_rows and set_view.
-		StatusGroups *bool           `json:"status_groups"`
-		Rows         json.RawMessage `json:"rows"`
-		Updates      json.RawMessage `json:"updates"`
+		StatusGroups *bool `json:"status_groups"`
+		// A table's or list's grouping (spec 024): set_view.
+		GroupReverse    *bool           `json:"group_reverse"`
+		ShowEmptyGroups *bool           `json:"show_empty_groups"`
+		Rows            json.RawMessage `json:"rows"`
+		Updates         json.RawMessage `json:"updates"`
 		// Agent parity A3.
 		RevisionID string `json:"revision_id"`
 		CommentID  string `json:"comment_id"`
@@ -1340,7 +1345,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 				ChartKind: args.ChartKind, Period: args.Period, Aggregate: args.Aggregate,
 				AggregateProperty: args.AggregateProperty, ShowEmpty: args.ShowEmpty, ShowZero: args.ShowZero,
 				ChartSort: args.ChartSort, HiddenGroups: args.HiddenGroups, ChartStyle: args.ChartStyle,
-				StatusGroups: args.StatusGroups}
+				StatusGroups: args.StatusGroups, GroupReverse: args.GroupReverse, ShowEmptyGroups: args.ShowEmptyGroups}
 			// embed_id: the views of an embed in the document page_id
 			// (spec 014). page_id passed canWrite above; the database is
 			// gated inside (embedViewOf).
