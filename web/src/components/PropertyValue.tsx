@@ -90,7 +90,7 @@ export function idList(value: unknown): string[] {
 function chip(opt: PropOption | undefined, fallback: string) {
   const color = opt?.color ?? '#999';
   return (
-    <span className="prop-chip" style={{ background: color + '2e', color }}>
+    <span className="prop-chip" style={{ background: color + '2e', color }} title={opt?.name ?? fallback}>
       {opt?.name ?? fallback}
     </span>
   );
@@ -320,7 +320,7 @@ function SelectCell({
                     : filtered.map(renderOpt)}
                   {query && !exact && onOptionsChange && (
                     <button className="select-create" onClick={create}>
-                      <Plus size={15} /> Anlegen: „{query}"
+                      <Plus size={15} /> {t('Create “{name}”', { name: query })}
                     </button>
                   )}
                   {filtered.length === 0 && !query && (

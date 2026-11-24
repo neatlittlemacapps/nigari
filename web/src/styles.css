@@ -2752,6 +2752,30 @@ body:has(.icon-picker) .bn-side-menu {
   white-space: nowrap;
 }
 
+/* A relation or select cell keeps its chips inside the column (#813). Both
+   wrappers were inline-block, so they grew with the chips, the 100% above
+   measured the chips themselves and a long name drew over the next columns;
+   a select chip broke its name over several lines instead. As blocks they
+   take the column's width, and every chip cuts its name with an ellipsis and
+   shows it whole on hover (its title). */
+.db-table td .relation-value,
+.db-table td .select-cell {
+  display: block;
+}
+.db-table td .select-cell-value {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.db-table td .select-cell-value > span {
+  min-width: 0;
+}
+.db-table td .select-cell-value .prop-chip {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* The counted remainder. Deliberately quiet — it is a hint that there is more,
    not a value in its own right. */
 .relation-more {
@@ -2981,6 +3005,18 @@ body.is-col-resizing {
 .db-table .db-title-col {
   min-width: 200px;
   max-width: 420px;
+}
+
+/* One text size and weight in every cell (#814): the table's 14px. The name
+   is a button and a date an input, and both took the browser's own 13.3px or
+   the inputs' 13px, the name in medium weight too, so the Name column read as
+   another typeface beside the text cells. Chips keep their smaller label size.
+   A phone still raises the date input to 16px (the iOS zoom rule). */
+.db-table .db-title-link,
+.db-table .db-title-input,
+.db-table td .prop-input {
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 /* The leading checkbox column (TableView): as wide as its box. Its name is
@@ -6467,7 +6503,7 @@ body.is-col-resizing {
   }
 }
 
-/* ---- W44b: „Agents & MCP" im Sidebar-Footer — schillernder Farbtext ---- */
+/* ---- W44b: "Agents & MCP" in the sidebar footer: shimmering coloured text ---- */
 
 .agents-menu-item {
   display: flex;
@@ -6518,7 +6554,7 @@ body.is-col-resizing {
   to { background-position: -300% 0; }
 }
 
-/* ---- W45: Index „Baum · Agent-Sicht" ---- */
+/* ---- W45: Index "tree · agent view" ---- */
 
 .index-modes {
   display: inline-flex;

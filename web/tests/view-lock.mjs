@@ -17,9 +17,14 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
   const settings = toolbar.getByRole('button', { name: 'Settings', exact: true });
   const menu = page.getByRole('menu', { name: /view settings$/ });
   const marker = toolbar.getByRole('button', { name: 'Views locked' });
+  // The menu that is open, not one still fading out: right after an item
+  // closed the menu, its popup stays in the page for its exit animation, so a
+  // wait on the role alone passed at once and the Escape that followed went
+  // to the button before the new menu had opened. That was #574, not the
+  // config reload it was blamed on.
   const openSettings = async () => {
     await settings.click();
-    await menu.waitFor();
+    await menu.and(page.locator('[data-open]')).waitFor();
   };
   const menuItems = async () => {
     await openSettings();
@@ -189,12 +194,11 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
 
   // ---- Unlock from Settings ----
   await openSettings();
-  // The unlock's own change event reloads the views about 400 ms later; a
-  // menu opened before that reload was left open by Escape (flaky here).
-  const reloaded = page.waitForResponse((r) => r.url().endsWith(path) && r.request().method() === 'GET');
+  // The unlock's own change event reloads the views about 400 ms later. The
+  // menu below opens before that reload on purpose: Escape still closes it
+  // (#574).
   await menu.getByRole('menuitem', { name: 'Unlock views' }).click();
   await marker.waitFor({ state: 'detached' });
-  await reloaded;
   assert.equal((await api('GET', path)).viewsLocked, null);
   items = await menuItems();
   assert(items.includes('Rename view') && items.includes('Lock views'), `after unlocking: ${items}`);
