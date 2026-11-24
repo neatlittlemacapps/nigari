@@ -33,3 +33,13 @@ export function scrollSpeed(y: number, top: number, bottom: number, edge: number
   if (y > bottom - zone) return ramp(y - (bottom - zone));
   return 0;
 }
+
+/** The nearest ancestor that scrolls up and down: the page, a peek. Shared by
+ *  the block drag (blockDrop.ts) and the table row drag (rowDrag.ts). */
+export function scrollParent(el: Element): HTMLElement | null {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const o = getComputedStyle(p).overflowY;
+    if ((o === 'auto' || o === 'scroll') && p.scrollHeight > p.clientHeight) return p;
+  }
+  return null;
+}

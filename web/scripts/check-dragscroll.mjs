@@ -50,6 +50,7 @@ try {
   check('the middle holds still', at(400), 0);
   check('just outside the top zone holds still', at(80 + 72), 0);
   check('just inside the top zone creeps up', at(80 + 71), -1);
+  check('12px into the top zone: at most 2px a frame (SC-002)', Math.abs(at(80 + 60)) <= 2, true);
   check('halfway into the top zone: a quarter speed up', at(80 + 36), -6);
   check('at the top edge: full speed up', at(80), -SCROLL_MAX);
   check('over the header above: full speed up', at(20), -SCROLL_MAX);

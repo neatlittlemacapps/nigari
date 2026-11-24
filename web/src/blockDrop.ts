@@ -31,7 +31,7 @@ import { dropLineWidth } from './dropLine';
 import { closeEmptied, insertColumn, sourcesOf, wrapBeside } from './columnMoves';
 import { setOpening } from './columnOpening';
 import { sidewaysDwell } from './sidewaysDwell';
-import { scrollSpeed } from './dragScroll';
+import { scrollParent, scrollSpeed } from './dragScroll';
 import { t } from './i18n';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -411,13 +411,6 @@ export function blockDrop(editor: Editor): () => void {
   let pointer: { x: number; y: number } | null = null;
   let scroller: Element | null = null;
   let frame = 0;
-  const scrollerOf = (el: Element): Element => {
-    for (let e = el.parentElement; e; e = e.parentElement) {
-      const o = getComputedStyle(e).overflowY;
-      if ((o === 'auto' || o === 'scroll') && e.scrollHeight > e.clientHeight) return e;
-    }
-    return document.scrollingElement ?? document.documentElement;
-  };
   const stopScroll = () => {
     cancelAnimationFrame(frame);
     frame = 0;
@@ -434,6 +427,9 @@ export function blockDrop(editor: Editor): () => void {
     const before = scroller.scrollTop;
     scroller.scrollTop += speed;
     if (scroller.scrollTop === before) return; // at the end of the page
+    // The boxes moved with the page; the scroll event that says so comes
+    // only on the next frame, after this line would have been drawn.
+    items = null;
     const under = document.elementFromPoint(pointer.x, pointer.y);
     if (under && v.dom.contains(under)) overAt(pointer.x, pointer.y);
     frame = requestAnimationFrame(step);
@@ -445,7 +441,7 @@ export function blockDrop(editor: Editor): () => void {
     // would read as the pointer having come back from the edge (measured).
     if (!e.isTrusted || !v || !origin || !isBlockDrag(v)) return;
     pointer = { x: e.clientX, y: e.clientY };
-    scroller ??= scrollerOf(v.dom);
+    scroller ??= scrollParent(v.dom) ?? document.scrollingElement ?? document.documentElement;
     if (!frame) frame = requestAnimationFrame(step);
   };
   // A collaborator's edit during the drag moves the boxes too.
