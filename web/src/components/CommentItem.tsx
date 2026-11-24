@@ -6,6 +6,7 @@ import type { Comment, CommentVersion } from '../types';
 import { formatMoment, formatRelative } from '../format';
 import { t } from '../i18n';
 import { Button } from '../ui/Button';
+import { formatChord } from '../keys';
 import { Popover } from '../ui/Popover';
 import { COMMENT_REACTIONS, reactionGlyph, reactionName } from '../commentReactions';
 import { initials, nameColor } from '../avatar';
@@ -182,7 +183,10 @@ export default function CommentItem({
             }}
           />
           <div className="cp-edit-foot">
-            <span className="cp-hint">{t('⌘↵ to save')}</span>
+            {/* Emptied, Save is off: say why rather than leave it dead (#741). */}
+            <span className="cp-hint">
+              {draft.trim() ? t('{chord} to save', { chord: formatChord('mod+enter') }) : t('A comment needs some text')}
+            </span>
             <Button emphasis="low" size="sm" onClick={stopEdit}>
               {t('Cancel')}
             </Button>
@@ -273,7 +277,8 @@ export default function CommentItem({
         <div className="cp-actions">
           {canWrite && (
             <Button emphasis="low" size="sm" className="cp-act" title={c.resolvedAt ? t('Reopen') : t('Mark as resolved')} onClick={() => void toggleResolve()}>
-              <Check size={13} /> {c.resolvedAt ? t('Reopen') : t('Resolved')}
+              {/* "Resolve", the action: "Resolved" read as the comment's state (#741). */}
+              <Check size={13} /> {c.resolvedAt ? t('Reopen') : t('Resolve')}
             </Button>
           )}
           {mine && canWrite && (

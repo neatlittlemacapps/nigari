@@ -195,6 +195,11 @@
   max-width: none;
   max-height: 72vh;
 }
+/* A row in a sheet is a touch target: 44px, the app's rule for touch (#745;
+   they were 30px). */
+.ui-menu-positioner[data-sheet] .ui-menu-item {
+  min-height: 44px; /* token-ok: the touch target size, as in styles.css */
+}
 
 @media (prefers-reduced-motion: no-preference) {
   .ui-menu {

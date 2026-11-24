@@ -28,6 +28,35 @@ Replaces "Each release proposes itself to the Umbrel store" (2026-11-12).
 
 ---
 
+## 2026-11-23 — BlockNote's pointer handling is corrected by swapping two plugin-view methods (#825, #826), and a drop commits the line it showed (#820)
+
+- **#825 and #826 swap one method each on BlockNote's plugin views**
+  (`web/src/blockNoteGuards.ts`): the table handles skip a database's table,
+  and the side menu asks `editorOwner.ts` which editor is on top under the
+  pointer. Both views call these methods through `this.<name>` and remove
+  their listeners through the same property, so a swap is used on every call
+  and cleaned up with the editor. The views are not exported; they are found
+  among ProseMirror's `pluginViews` by the method they carry, and the
+  development build warns when one is missing after a BlockNote upgrade
+  (`block-guards.mjs` fails then too). Turned down: stopping the events
+  before BlockNote sees them (`sideMenuHold.ts` records why: other code
+  listens to the same mousemove, and Playwright no longer saw a drag start);
+  stopping mousemove and mouseup at the database block (ProseMirror finishes a
+  text selection on a mouseup that would then never come); rendering the peek
+  before the page in the DOM so it wins BlockNote's tie (it changes the Tab
+  order and what a screen reader reads first); a patched copy of BlockNote
+  (nothing else is patched, and an upgrade would drop it silently).
+- **A drop commits the target the line showed** (`blockDrop.ts`). It used to
+  decide again at the drop from boxes read then. While a column opening was
+  still closing, the layout sat 19px to the right, so a block dragged up a
+  column's edge past a database dropped as a new column while the line showed
+  it under the line above (measured). Only a drop with no dragover before it
+  is decided at the drop. Turned down: waiting for the opening to settle
+  before the drop (a drop cannot wait), and reading the boxes on every
+  dragover (SC-003's per-step budget).
+
+---
+
 ## 2026-11-23 — Every pull request says what the code graph showed, and a check holds it to that (#926)
 
 - **A `## CodeGraph` section in every pull request, checked by its own

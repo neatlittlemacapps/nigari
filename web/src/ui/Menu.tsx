@@ -47,6 +47,9 @@ function useNarrow(enabled: boolean): boolean {
 // dialog closed (dialog-escape.mjs caught it). After the close, Base UI has
 // put focus back on the trigger, which is what the dialog then returns to.
 const AfterClose = createContext<((run: () => void) => void) | null>(null);
+// Whether the menu is a phone's bottom sheet. Its submenus are sheets too:
+// they used to open as a small popover over the sheet's rows (#745).
+const Sheet = createContext(false);
 
 /** True at or below phone width (SHEET_MAX_WIDTH, the same breakpoint as the
  *  top bar's narrow-only rule). For items that exist only on a phone: they are
@@ -101,6 +104,7 @@ export function Menu({ trigger, label, children, open, onOpenChange, anchorPoint
   };
   return (
     <AfterClose.Provider value={afterClose}>
+    <Sheet.Provider value={sheet}>
     <BaseMenu.Root
       open={open}
       onOpenChange={onOpenChange ? (o) => onOpenChange(o) : undefined}
@@ -136,6 +140,7 @@ export function Menu({ trigger, label, children, open, onOpenChange, anchorPoint
         </BaseMenu.Positioner>
       </BaseMenu.Portal>
     </BaseMenu.Root>
+    </Sheet.Provider>
     </AfterClose.Provider>
   );
 }
@@ -237,6 +242,7 @@ export function MenuSubmenu({
   children: ReactNode;
   disabled?: boolean;
 }) {
+  const sheet = useContext(Sheet);
   return (
     <BaseMenu.SubmenuRoot>
       <BaseMenu.SubmenuTrigger className={itemClass()} disabled={disabled}>
@@ -246,7 +252,7 @@ export function MenuSubmenu({
         <ChevronRight className="ui-menu-chevron" size={14} aria-hidden />
       </BaseMenu.SubmenuTrigger>
       <BaseMenu.Portal>
-        <BaseMenu.Positioner className="ui-menu-positioner" side="right" align="start" sideOffset={2} collisionPadding={8}>
+        <BaseMenu.Positioner className="ui-menu-positioner" side="right" align="start" sideOffset={2} collisionPadding={8} data-sheet={sheet ? '' : undefined}>
           <BaseMenu.Popup className="ui-menu" data-nav-skip="">{children}</BaseMenu.Popup>
         </BaseMenu.Positioner>
       </BaseMenu.Portal>
@@ -314,6 +320,7 @@ export function MenuValueSubmenu({
   /** The submenu's accessible name, translated. */
   actionsLabel: string;
 }) {
+  const sheet = useContext(Sheet);
   return (
     <BaseMenu.SubmenuRoot>
       <BaseMenu.SubmenuTrigger
@@ -333,7 +340,7 @@ export function MenuValueSubmenu({
         </span>
       </BaseMenu.SubmenuTrigger>
       <BaseMenu.Portal>
-        <BaseMenu.Positioner className="ui-menu-positioner" side="right" align="start" sideOffset={2} collisionPadding={8}>
+        <BaseMenu.Positioner className="ui-menu-positioner" side="right" align="start" sideOffset={2} collisionPadding={8} data-sheet={sheet ? '' : undefined}>
           <BaseMenu.Popup className="ui-menu" data-nav-skip="" aria-label={actionsLabel}>
             {children}
           </BaseMenu.Popup>
