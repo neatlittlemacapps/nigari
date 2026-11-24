@@ -47,6 +47,7 @@ const bundle = join(tmp, 'propertyActions.mjs');
 const reasonsBundle = join(tmp, 'propertyActionReasons.mjs');
 const rowBundle = join(tmp, 'rowActions.mjs');
 const rowReasonsBundle = join(tmp, 'rowActionReasons.mjs');
+const groupBundle = join(tmp, 'groupActions.mjs');
 const ROW_PLACES = ['table', 'boardCard'];
 
 /** Where a row choice is drawn when not by the renderer. */
@@ -72,6 +73,35 @@ function rowRenderFailures(actions, read) {
   const board = stripComments(read('components/BoardView.tsx'));
   for (const part of ['MenuItem', 'MenuSubmenu', 'MenuCheckboxItem', 'MenuRadioItem']) {
     if (new RegExp(`<${part}[\\s>]`).test(board)) fails.push(`BoardView.tsx: a <${part}> of its own; add the action to rowActions.ts instead`);
+  }
+  return fails;
+}
+
+/** All four rules for a grouped table's groups (src/actions/groupActions.ts,
+ *  spec 024): one place, the header, so nothing is left out anywhere. Its
+ *  renderer is GroupActionItems.tsx; the header's menu is
+ *  <GroupActionItems place="groupHeader"> in RowGroupHeader.tsx, with no items
+ *  of its own. */
+function groupFailures(actions, sectionsOf, SUBMENU_ABOVE, read) {
+  const fails = [];
+  const fns = new Map();
+  for (const a of actions) {
+    if (!a.places.includes('groupHeader')) fails.push(`groups: ${a.id} is in no place`);
+    if (fns.has(a.fn)) fails.push(`groups: ${a.id} and ${fns.get(a.fn)} share the function ${a.fn}`);
+    fns.set(a.fn, a.id);
+  }
+  for (const sec of sectionsOf('groupHeader', actions)) {
+    if (sec.actions.length > SUBMENU_ABOVE && !sec.submenu) fails.push(`groups: group "${sec.group}" has ${sec.actions.length} actions on the first level`);
+  }
+  const renderer = read('components/GroupActionItems.tsx');
+  for (const a of actions) {
+    if (!renderer.includes(`case '${a.id}'`)) fails.push(`GroupActionItems.tsx: no case for ${a.id}`);
+    if (!renderer.includes(`fn="${a.fn}"`)) fails.push(`GroupActionItems.tsx: ${a.id} is not drawn with fn="${a.fn}"`);
+  }
+  const header = stripComments(read('components/RowGroupHeader.tsx'));
+  if (!/<GroupActionItems[^>]*place="groupHeader"/.test(header)) fails.push('RowGroupHeader.tsx: its menu is not drawn by <GroupActionItems place="groupHeader">');
+  for (const part of ['MenuItem', 'MenuSubmenu', 'MenuCheckboxItem', 'MenuRadioItem']) {
+    if (new RegExp(`<${part}[\\s>]`).test(header)) fails.push(`RowGroupHeader.tsx: a <${part}> of its own; add the action to groupActions.ts instead`);
   }
   return fails;
 }
@@ -153,11 +183,17 @@ try {
       [join(src, 'actions/rowActionReasons.ts'), '--bundle', '--format=esm', '--outfile=' + rowReasonsBundle],
       { stdio: ['ignore', 'ignore', 'pipe'] },
     );
+    execFileSync(
+      join(web, 'node_modules/esbuild/bin/esbuild'),
+      [join(src, 'actions/groupActions.ts'), '--bundle', '--format=esm', '--outfile=' + groupBundle],
+      { stdio: ['ignore', 'ignore', 'pipe'] },
+    );
   } catch (e) {
     console.error(String(e.stderr ?? e));
     process.exit(1);
   }
   const rows = await import(rowBundle);
+  const groups = await import(groupBundle);
   const { ROW_LEFT_OUT } = await import(rowReasonsBundle);
   const { PROPERTY_ACTIONS, menuSections, SUBMENU_ABOVE } = await import(bundle);
   const { PROPERTY_LEFT_OUT } = await import(reasonsBundle);
@@ -202,7 +238,23 @@ try {
       process.exit(1);
     }
   }
-  if (SUBMENU_ABOVE !== 3 || rows.SUBMENU_ABOVE !== 3) {
+  // The group list, on the real files with one thing broken each.
+  const groupBroken = [
+    ['a group action the renderer forgot', (f) => (f.endsWith('GroupActionItems.tsx') ? real(f).replace("case 'expandAll':", "case 'gone':") : real(f))],
+    ['a header menu with an item of its own', (f) => (f.endsWith('RowGroupHeader.tsx') ? real(f) + '\n<MenuItem fn="x">x</MenuItem>' : real(f))],
+    ['a header without the renderer', (f) => (f.endsWith('RowGroupHeader.tsx') ? real(f).replace('<GroupActionItems', '<Other') : real(f))],
+  ];
+  for (const [name, read] of groupBroken) {
+    if (groupFailures(groups.GROUP_ACTIONS, groups.groupMenuSections, groups.SUBMENU_ABOVE, read).length === 0) {
+      console.error(`  ✗ self-test "${name}" passed; the check is broken`);
+      process.exit(1);
+    }
+  }
+  if (groupFailures([{ id: 'a', fn: 'x', group: 'g', places: ['groupHeader'] }, { id: 'b', fn: 'x', group: 'h', places: ['groupHeader'] }], groups.groupMenuSections, 3, real).length === 0) {
+    console.error('  ✗ self-test "group: one function twice" passed; the check is broken');
+    process.exit(1);
+  }
+  if (SUBMENU_ABOVE !== 3 || rows.SUBMENU_ABOVE !== 3 || groups.SUBMENU_ABOVE !== 3) {
     console.error(`  ✗ SUBMENU_ABOVE is ${SUBMENU_ABOVE}; the owner's rule is "beyond 3" (docs/decisions.md 2026-11-13)`);
     process.exit(1);
   }
@@ -238,6 +290,9 @@ try {
   // ---- rules 3 and 4 for rows ----
   failures.push(...rowRenderFailures(rows.ROW_ACTIONS, (f) => readFileSync(join(src, f), 'utf8')));
 
+  // ---- the groups of a grouped table ----
+  failures.push(...groupFailures(groups.GROUP_ACTIONS, groups.groupMenuSections, groups.SUBMENU_ABOVE, (f) => readFileSync(join(src, f), 'utf8')));
+
   if (failures.length) {
     for (const f of failures) console.error(`  ✗ ${f}`);
     console.error(`\n  FAILED — a menu of a property does not follow its action list (src/actions/propertyActions.ts).`);
@@ -245,7 +300,7 @@ try {
   }
   const shape = PLACES.map((p) => `${p} ${menuSections(p).map((s) => (s.submenu ? `[${s.actions.length}▸]` : s.actions.length)).join('|')}`).join(', ');
   const rowShape = ROW_PLACES.map((p) => `${p} ${rows.rowMenuSections(p).map((s) => (s.submenu ? `[${s.actions.length}▸]` : s.actions.length)).join('|')}`).join(', ');
-  console.log(`  content actions: properties ${PROPERTY_ACTIONS.length} actions; ${shape}; rows ${rows.ROW_ACTIONS.length} actions; ${rowShape}`);
+  console.log(`  content actions: properties ${PROPERTY_ACTIONS.length} actions; ${shape}; rows ${rows.ROW_ACTIONS.length} actions; ${rowShape}; groups ${groups.GROUP_ACTIONS.length} actions`);
 } finally {
   rmSync(tmp, { recursive: true, force: true });
 }

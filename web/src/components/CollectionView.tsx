@@ -3,7 +3,10 @@ import type { PeekMode } from '../peek';
 import { api, ApiError } from '../api';
 import { serverMessage } from '../serverErrors';
 import { usePersonalViews } from '../usePersonalViews';
-import { hasPersonalChange, mergeViewState, viewScope, withFoldedLane, withPersonalEdit, withQuickPick, withoutViewChanges } from '../viewState';
+import { hasPersonalChange, mergeViewState, viewScope, withFoldedGroups, withFoldedLane, withPersonalEdit, withQuickPick, withoutViewChanges } from '../viewState';
+import { groupRows, type GroupProp, type GroupSettings } from '../rowGroups';
+import ViewGroupMenu from './ViewGroupMenu';
+import RowGroupHeader, { useGroupLabel } from './RowGroupHeader';
 import { laneIsReadOnly, quickFilterProps } from '../quickFilters';
 import QuickFilters from './QuickFilters';
 import ViewChangeBar from './ViewChangeBar';
@@ -1020,6 +1023,44 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // A filter that actually narrows the rows (an unfinished one does not).
   const viewFiltered = (view.filters ?? []).some((f) => filterIsArmed(f, isDateProp(f.property)));
 
+  // A grouped table (spec 024): the groups are worked out from the rows the
+  // view already shows, in TableView. What to hide is the view's, saved for
+  // everyone; what is folded is the person's own (foldedGroups), as a
+  // board's lanes are.
+  const groupProp = view.type === 'table' && view.grouped && view.groupBy ? schema.find((p) => p.id === view.groupBy) : undefined;
+  const groupSettings: GroupSettings = {
+    period: view.groupPeriod,
+    statusGroups: view.statusGroups,
+    reverse: view.groupReverse,
+    showEmpty: view.showEmptyGroups,
+    hidden: view.hiddenGroups,
+  };
+  const foldGroups = personalScope
+    ? (keys: readonly string[], folded: boolean) => personal.setState(personalScope, withFoldedGroups(personalState, keys, folded))
+    : undefined;
+  // Collapse all folds the groups the rows make now; Expand all opens every
+  // group this person folded, also ones no row is in today.
+  const foldAllGroups =
+    groupProp && foldGroups
+      ? (folded: boolean) =>
+          foldGroups(
+            folded
+              ? groupRows(viewRows, (r) => r.props[groupProp.id], groupProp as GroupProp, groupSettings).map((g) => g.key)
+              : (personalState?.foldedGroups ?? []),
+            folded,
+          )
+      : undefined;
+  const rowGrouping: TableGrouping | undefined = groupProp
+    ? {
+        prop: groupProp,
+        settings: groupSettings,
+        folded: new Set(personalState?.foldedGroups ?? []),
+        onFold: foldGroups,
+        onFoldAll: foldAllGroups,
+        onHide: mayChangeViews ? (key) => updateView({ hiddenGroups: [...(view.hiddenGroups ?? []), key] }) : undefined,
+      }
+    : undefined;
+
   const viewSwitcher = (
     <div className={'collection-toolbar' + (narrowScreen ? ' has-view-picker' : '')}>
       {narrowScreen ? (
@@ -1127,6 +1168,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             view={ownFilterSort ? { ...view, ...ownFilterSort } : view}
             onChange={updateView}
             canGroup={!viewsLock}
+            onFoldAllGroups={foldAllGroups}
           />
         )}
         {/* Everything that configures the view and the database, in one menu
@@ -1392,7 +1434,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           // In a sorted view only where the sort can go as the person's own
           // change: elsewhere (an embed with no place for personal state) it
           // would go for everyone, on the first move of a drag (code review).
-          onPlaceRow={canEdit && (!serverSort || !!personalScope) ? (id, spot) => void placeRow(id, spot) : undefined}
+          // While grouped, rows do not move yet: a drop between groups also
+          // changes the row's value, which comes with PR 2b (spec 024, T024).
+          onPlaceRow={canEdit && !rowGrouping && (!serverSort || !!personalScope) ? (id, spot) => void placeRow(id, spot) : undefined}
+          grouping={rowGrouping}
           onRowDragStart={serverSort ? dropSortForDrag : undefined}
           onAddRowBelow={canEdit ? (id, above) => void addRowNextTo(id, above) : undefined}
           onDuplicateRow={canEdit ? (id) => void duplicateRow(id) : undefined}
@@ -1787,16 +1832,26 @@ function FilterSortControls({
   view,
   onChange,
   canGroup = true,
+  onFoldAllGroups,
 }: {
   schema: PropDef[];
   view: ViewDef;
   onChange: (patch: Partial<ViewDef>) => void;
+  /** Fold or open every group of a grouped table, for this person. */
+  onFoldAllGroups?: (folded: boolean) => void;
   /** A board's grouping is the database's view setting even in a document,
    *  so the views lock takes it away there too (spec 013). */
   canGroup?: boolean;
 }) {
   const [open, setOpen] = useState<'filter' | 'sort' | 'group' | null>(null);
   const narrow = useNarrowScreen();
+  // A board groups into columns, a table into groups of rows (spec 024).
+  const groupable = view.type === 'board' || view.type === 'table';
+  const groupLit = view.type === 'board' ? !!view.groupBy : !!view.grouped;
+  const groupLabelOf = useGroupLabel(
+    view.type === 'table' && view.grouped ? schema.find((p) => p.id === view.groupBy) : undefined,
+    view.groupPeriod,
+  );
   // Escape closes the popover (#745), and the press is marked handled so a
   // dialog the database sits in stays open.
   useEffect(() => {
@@ -1985,11 +2040,11 @@ function FilterSortControls({
           project. */}
       {/* An icon on a phone too, like Filter and Sort: with its word it
           squeezed the view picker to "B…" (#921). */}
-      {view.type === 'board' && canGroup && (
+      {groupable && canGroup && (
         narrow ? (
           <Button
             size="sm"
-            tone={view.groupBy ? 'primary' : 'neutral'}
+            tone={groupLit ? 'primary' : 'neutral'}
             icon={<Columns3 size={14} />}
             label={t('Group')}
             {...pop('group')}
@@ -1997,7 +2052,7 @@ function FilterSortControls({
         ) : (
           <Button
             size="sm"
-            tone={view.groupBy ? 'primary' : 'neutral'}
+            tone={groupLit ? 'primary' : 'neutral'}
             icon={<Columns3 size={14} />}
             {...pop('group')}
           >
@@ -2208,27 +2263,7 @@ function FilterSortControls({
               </>
             )}
             {open === 'group' && (
-              <div className="fs-row">
-                <select
-                  className="prop-select"
-                  value={view.groupBy ?? ''}
-                  onChange={(e) => onChange({ groupBy: e.target.value })}
-                >
-                  {/* A relation belongs here as much as a select does: "one
-                      column per system" is the same question as "one column per
-                      status", just answered by another database. */}
-                  {schema
-                    .filter(
-                      (p) =>
-                        isOptionType(p.type) || p.type === 'relation',
-                    )
-                    .map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
+              <ViewGroupMenu schema={schema} view={view} onChange={onChange} labelOf={groupLabelOf} onFoldAll={onFoldAllGroups} />
             )}
           </div>
         </Portal>
@@ -2248,6 +2283,20 @@ function FilterSortControls({
  *  then the two columns would share one width. Cosmetic, and not worth a
  *  guard that would have to be kept in step on both sides. */
 const TITLE_COL = '__title';
+
+/** A table grouped by a property (spec 024): the groups are worked out here,
+ *  from the rows as drawn. */
+type TableGrouping = {
+  prop: PropDef;
+  settings: GroupSettings;
+  /** The keys this person folded. */
+  folded: ReadonlySet<string>;
+  /** Absent where folding cannot be kept (an embed without a place). */
+  onFold?: (keys: readonly string[], folded: boolean) => void;
+  onFoldAll?: (folded: boolean) => void;
+  /** Hide a group for everyone. Absent for someone who may not change the view. */
+  onHide?: (key: string) => void;
+};
 
 function TableView({
   rows,
@@ -2274,6 +2323,7 @@ function TableView({
   rowLimit,
   revealed,
   onShowMore,
+  grouping,
 }: {
   rows: Row[];
   schema: PropDef[];
@@ -2314,6 +2364,8 @@ function TableView({
   /** Rows made from the embed, drawn even past the limit. */
   revealed?: ReadonlySet<string>;
   onShowMore?: () => void;
+  /** Grouped by a property: one header and its rows per group. */
+  grouping?: TableGrouping;
 }) {
   // What a click on a row does follows the view (spec 007, pageOpen.ts).
   const openRow = useOpenRow({ onNavigate, onOpenInNewTab });
@@ -2503,7 +2555,9 @@ function TableView({
     }, 0);
   };
   const { drag: rowDrag, startDrag: startRowDrag, consumeClick: consumeRowClick } = useRowDrag(drawn, (id, spot) => onPlaceRow?.(id, spot), onRowDragStart);
-  const rowBody = useRef<HTMLTableSectionElement>(null);
+  // The whole table, not one <tbody>: a grouped table has one per group,
+  // and the row keys and Edit property find a row in any of them.
+  const rowBody = useRef<HTMLTableElement>(null);
   useRowKeys({
     body: rowBody,
     rows: drawn,
@@ -2549,12 +2603,12 @@ function TableView({
   // Per-column footer aggregate: numeric columns (number/rollup/formula) show a
   // sum, everything else a count of filled cells — a lightweight Notion-style
   // calc row so a table gives totals at a glance.
-  const footer = (p: PropDef): string => {
+  const footer = (p: PropDef, list: readonly Row[] = rows): string => {
     const isNumeric = p.type === 'number' || p.type === 'rollup' || p.type === 'formula';
     if (isNumeric) {
       let sum = 0;
       let any = false;
-      for (const r of rows) {
+      for (const r of list) {
         const n = Number(r.props[p.id]);
         if (r.props[p.id] != null && r.props[p.id] !== '' && !Number.isNaN(n)) {
           sum += n;
@@ -2564,7 +2618,7 @@ function TableView({
       if (!any) return '';
       return 'Σ ' + String(Math.round(sum * 1e6) / 1e6);
     }
-    const filled = rows.filter((r) => {
+    const filled = list.filter((r) => {
       const v = r.props[p.id];
       if (Array.isArray(v)) return v.length > 0;
       return v !== undefined && v !== '' && v !== null && v !== false;
@@ -2572,9 +2626,116 @@ function TableView({
     return filled ? t('{n} filled', { n: filled }) : '';
   };
 
+  // One row of the table, wherever it is drawn: in the one body, or under
+  // its group's header.
+  const renderRow = ({ row: r, depth, hasKids }: (typeof ordered)[number], i: number) => (
+      <tr
+        key={r.id}
+        data-row-id={r.id}
+        className={rowClass(i, r.id)}
+        onPointerDown={(e) => {
+          if (e.pointerType !== 'touch') return;
+          freshTap.current = tappedRow === r.id ? null : r.id;
+          setTappedRow(r.id);
+        }}
+        onContextMenu={(e) => {
+          // A field being typed in keeps the browser's own menu (paste,
+          // spelling).
+          if ((e.target as HTMLElement).closest('input, textarea, [contenteditable="true"]')) return;
+          e.preventDefault();
+          // A finger held on the handle is a drag, not a long-press menu.
+          if (rowDrag || (e.target as HTMLElement).closest('.db-row-handle')) return;
+          openRowMenu(r.id, r.title, { x: e.clientX, y: e.clientY }, e.currentTarget.querySelector<HTMLElement>('.db-title-link'));
+        }}
+      >
+        <RowGutter
+          rowId={r.id}
+          title={r.title}
+          onAddBelow={onAddRowBelow && ((id, above) => tapReachesButtons(id) && onAddRowBelow(id, above))}
+          onHandleDown={onPlaceRow && depth === 0 ? startRowDrag : undefined}
+          onHandleClick={(e, id) => {
+            if (!tapReachesButtons(id) || consumeRowClick(id)) return;
+            const b = e.currentTarget.getBoundingClientRect();
+            openRowMenu(id, r.title, { x: b.left, y: b.bottom }, e.currentTarget as HTMLElement);
+          }}
+        />
+        {lead && (
+          <td className="db-check-col" data-prop-id={lead.id}>
+            <LeadCheckBox prop={lead} title={r.title} value={r.props[lead.id]} onChange={(v) => onSetProp(r.id, lead.id, v)} />
+          </td>
+        )}
+        <td className="db-title-col" style={colStyle(TITLE_COL)}>
+          <span className="db-title-inner" style={depth ? { paddingLeft: depth * 20 } : undefined}>
+            {subItemProp ? (
+              hasKids ? (
+                <button
+                  className="db-tree-toggle"
+                  onClick={() => toggleTree(r.id)}
+                  aria-label={collapsed.has(r.id) ? t('Expand') : t('Collapse')}
+                >
+                  {collapsed.has(r.id) ? '▸' : '▾'}
+                </button>
+              ) : (
+                <span className="db-tree-spacer" />
+              )
+            ) : null}
+            {editTitleId === r.id && onTitleDone ? (
+              <RowTitleInput initial={r.title} onDone={(title) => onTitleDone(r.id, title)} />
+            ) : (
+              <button
+                className="db-title-link"
+                onClick={(e) => openRow(e, r.id)}
+                onAuxClick={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
+              >
+                {r.icon && <span className="inline-icon"><PageIcon icon={r.icon} size={14} /> </span>}
+                {r.title || t('Untitled')}
+              </button>
+            )}
+            {/* Presence was drawn on the board card and nowhere else, so
+                anybody working in the table saw nothing at all — which is
+                most of the time. The mark belongs wherever a row is
+                listed, not only where it happens to be a card. */}
+            <AgentDot pageId={r.id} />
+          </span>
+          {!!r.tags?.length && (
+            <span className="db-row-tags">
+              {r.tags.map((t) => (
+                <span key={t} className={'row-tag ' + tagColorClass(t, tagColors)}>#{t}</span>
+              ))}
+            </span>
+          )}
+        </td>
+        {cols.map((p) => (
+          <td key={p.id} data-prop-id={p.id} style={colStyle(p.id)}>
+            <PropertyValue
+              def={p}
+              value={r.props[p.id]}
+              onChange={(v) => onSetProp(r.id, p.id, v)}
+              onOptionsChange={(opts) => onSetOptions(p.id, opts)}
+              maxChips={2}
+            />
+          </td>
+        ))}
+      </tr>
+  );
+
+  // A grouped table (spec 024, Q7): the top-level rows as drawn are grouped
+  // (after a document's row limit, research R5), each with its sub-items
+  // below it. A row with several values is in each of its groups.
+  const blocks: (typeof ordered)[] = [];
+  for (const o of ordered) {
+    if (o.depth === 0 || blocks.length === 0) blocks.push([o]);
+    else blocks[blocks.length - 1].push(o);
+  }
+  const groups = grouping
+    ? groupRows(blocks, (b) => b[0].row.props[grouping.prop.id], grouping.prop as GroupProp, grouping.settings)
+    : [];
+  const labelOf = useGroupLabel(grouping?.prop, grouping?.settings.period);
+  const span = cols.length + (lead ? 1 : 0) + 2;
+
   return (
     <div className="table-wrap">
-      <table className="db-table">
+      <table className="db-table" ref={rowBody}>
         <thead ref={theadRef}>
           <tr>
             <RowGutterHead />
@@ -2618,97 +2779,47 @@ function TableView({
             ))}
           </tr>
         </thead>
-        <tbody ref={rowBody}>
-          {ordered.map(({ row: r, depth, hasKids }, i) => (
-            <tr
-              key={r.id}
-              data-row-id={r.id}
-              className={rowClass(i, r.id)}
-              onPointerDown={(e) => {
-                if (e.pointerType !== 'touch') return;
-                freshTap.current = tappedRow === r.id ? null : r.id;
-                setTappedRow(r.id);
-              }}
-              onContextMenu={(e) => {
-                // A field being typed in keeps the browser's own menu (paste,
-                // spelling).
-                if ((e.target as HTMLElement).closest('input, textarea, [contenteditable="true"]')) return;
-                e.preventDefault();
-                // A finger held on the handle is a drag, not a long-press menu.
-                if (rowDrag || (e.target as HTMLElement).closest('.db-row-handle')) return;
-                openRowMenu(r.id, r.title, { x: e.clientX, y: e.clientY }, e.currentTarget.querySelector<HTMLElement>('.db-title-link'));
-              }}
-            >
-              <RowGutter
-                rowId={r.id}
-                title={r.title}
-                onAddBelow={onAddRowBelow && ((id, above) => tapReachesButtons(id) && onAddRowBelow(id, above))}
-                onHandleDown={onPlaceRow && depth === 0 ? startRowDrag : undefined}
-                onHandleClick={(e, id) => {
-                  if (!tapReachesButtons(id) || consumeRowClick(id)) return;
-                  const b = e.currentTarget.getBoundingClientRect();
-                  openRowMenu(id, r.title, { x: b.left, y: b.bottom }, e.currentTarget as HTMLElement);
+        {groups.map((g) => {
+          const folded = grouping!.folded.has(g.key);
+          const groupRowsDrawn = g.rows.flat();
+          return (
+            <tbody key={g.key} className="db-group" data-group-key={g.key}>
+              <RowGroupHeader
+                colSpan={span}
+                label={labelOf(g.key)}
+                count={g.rows.length}
+                folded={folded}
+                onFold={grouping!.onFold && ((f) => grouping!.onFold!([g.key], f))}
+                actions={{
+                  hideGroup: grouping!.onHide && (() => grouping!.onHide!(g.key)),
+                  collapseAll: grouping!.onFoldAll && (() => grouping!.onFoldAll!(true)),
+                  expandAll: grouping!.onFoldAll && (() => grouping!.onFoldAll!(false)),
                 }}
               />
-              {lead && (
-                <td className="db-check-col" data-prop-id={lead.id}>
-                  <LeadCheckBox prop={lead} title={r.title} value={r.props[lead.id]} onChange={(v) => onSetProp(r.id, lead.id, v)} />
-                </td>
+              {!folded && groupRowsDrawn.map(renderRow)}
+              {/* The group's own totals, from the same sums as the table's
+                  foot (Frank's choice 2: header value and count, totals per
+                  group). */}
+              {!folded && g.rows.length > 0 && (
+                <tr className="db-calc-row db-group-calc">
+                  <td className="db-row-gutter" />
+                  {lead && <LeadCheckFoot prop={lead} rows={groupRowsDrawn.map((o) => o.row)} />}
+                  <td className="db-title-col db-calc-cell" />
+                  {cols.map((p) => (
+                    <td key={p.id} className="db-calc-cell">
+                      {footer(
+                        p,
+                        groupRowsDrawn.map((o) => o.row),
+                      )}
+                    </td>
+                  ))}
+                </tr>
               )}
-              <td className="db-title-col" style={colStyle(TITLE_COL)}>
-                <span className="db-title-inner" style={depth ? { paddingLeft: depth * 20 } : undefined}>
-                  {subItemProp ? (
-                    hasKids ? (
-                      <button
-                        className="db-tree-toggle"
-                        onClick={() => toggleTree(r.id)}
-                        aria-label={collapsed.has(r.id) ? t('Expand') : t('Collapse')}
-                      >
-                        {collapsed.has(r.id) ? '▸' : '▾'}
-                      </button>
-                    ) : (
-                      <span className="db-tree-spacer" />
-                    )
-                  ) : null}
-                  {editTitleId === r.id && onTitleDone ? (
-                    <RowTitleInput initial={r.title} onDone={(title) => onTitleDone(r.id, title)} />
-                  ) : (
-                    <button
-                      className="db-title-link"
-                      onClick={(e) => openRow(e, r.id)}
-                      onAuxClick={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
-                    >
-                      {r.icon && <span className="inline-icon"><PageIcon icon={r.icon} size={14} /> </span>}
-                      {r.title || t('Untitled')}
-                    </button>
-                  )}
-                  {/* Presence was drawn on the board card and nowhere else, so
-                      anybody working in the table saw nothing at all — which is
-                      most of the time. The mark belongs wherever a row is
-                      listed, not only where it happens to be a card. */}
-                  <AgentDot pageId={r.id} />
-                </span>
-                {!!r.tags?.length && (
-                  <span className="db-row-tags">
-                    {r.tags.map((t) => (
-                      <span key={t} className={'row-tag ' + tagColorClass(t, tagColors)}>#{t}</span>
-                    ))}
-                  </span>
-                )}
-              </td>
-              {cols.map((p) => (
-                <td key={p.id} data-prop-id={p.id} style={colStyle(p.id)}>
-                  <PropertyValue
-                    def={p}
-                    value={r.props[p.id]}
-                    onChange={(v) => onSetProp(r.id, p.id, v)}
-                    onOptionsChange={(opts) => onSetOptions(p.id, opts)}
-                    maxChips={2}
-                  />
-                </td>
-              ))}
-            </tr>
-          ))}
+            </tbody>
+          );
+        })}
+        <tbody>
+          {!grouping && ordered.map(renderRow)}
           {rows.length === 0 && (
             <tr>
               <td colSpan={schema.length + 2} className="db-empty">
@@ -2717,7 +2828,7 @@ function TableView({
             </tr>
           )}
         </tbody>
-        {rows.length > 0 && (
+        {rows.length > 0 && !grouping && (
           <tfoot>
             <tr className="db-calc-row">
               <td className="db-row-gutter" />

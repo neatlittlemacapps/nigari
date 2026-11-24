@@ -1418,5 +1418,18 @@
   "Resolve": "Erledigen",
   "Drag to move": "Ziehen zum Verschieben",
   "Click or {keys} to open the menu": "Klicken oder {keys} öffnet das Menü",
-  "Open the block’s menu": "Menü des Blocks öffnen"
+  "Open the block’s menu": "Menü des Blocks öffnen",
+  "Collapse all groups": "Alle Gruppen einklappen",
+  "Collapse group": "Gruppe einklappen",
+  "Expand all groups": "Alle Gruppen ausklappen",
+  "Expand group": "Gruppe ausklappen",
+  "Group actions": "Gruppenaktionen",
+  "Hidden groups": "Ausgeblendete Gruppen",
+  "Hide group": "Gruppe ausblenden",
+  "No grouping": "Keine Gruppierung",
+  "Remove grouping": "Gruppierung entfernen",
+  "Reverse order": "Umgekehrte Reihenfolge",
+  "Show": "Anzeigen",
+  "Show empty groups": "Leere Gruppen anzeigen",
+  "Week of {day}": "Woche vom {day}"
 }

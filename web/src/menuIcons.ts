@@ -36,6 +36,8 @@ import {
   ChartLine,
   ChartPie,
   ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
   CircleMinus,
   CodeXml,
   Columns2,
@@ -226,6 +228,10 @@ export const MENU_ICONS = {
   openInSidePeek: PanelRightOpen,
   openInCenterPeek: PictureInPicture2,
   addRowBelow: BetweenHorizontalStart,
+  // A grouped table's or list's groups (spec 024): fold every group, or
+  // open them all again. The person's own, not the view's.
+  collapseAll: ChevronsDownUp,
+  expandAll: ChevronsUpDown,
 
   // Workspaces and the account
   workspaceSettings: Settings2,

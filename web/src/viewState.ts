@@ -152,6 +152,25 @@ export function withFoldedLane(
   return Object.keys(next).length ? next : null;
 }
 
+/** The state with groups of a grouped table or list folded or unfolded
+ *  (spec 024, US2): `keys` one group's key, or every group's for Collapse
+ *  all and Expand all. Folding is the person's own, as a board's lanes are. */
+export function withFoldedGroups(
+  personal: PersonalViewState | null | undefined,
+  keys: readonly string[],
+  folded: boolean,
+): PersonalViewState | null {
+  const groups = new Set(personal?.foldedGroups ?? []);
+  for (const k of keys) {
+    if (folded) groups.add(k);
+    else groups.delete(k);
+  }
+  const next: PersonalViewState = { ...(personal ?? {}) };
+  if (groups.size) next.foldedGroups = [...groups];
+  else delete next.foldedGroups;
+  return Object.keys(next).length ? next : null;
+}
+
 /** The scope of a view on its database's page, or inside one embed. */
 export function viewScope(viewId: string, embed?: { pageId: string; blockId: string } | null): string {
   return embed ? `embed:${embed.pageId}:${embed.blockId}:${viewId}` : viewId;
