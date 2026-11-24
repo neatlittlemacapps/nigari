@@ -21,15 +21,18 @@ How to install it, and why it is set up the way it is, is in the wiki:
 
 ## Releases and what is still missing
 
-- **Updating to a new release** happens on its own: after each release, the
-  `umbrel-store` job in `.github/workflows/release.yml` opens a pull request
-  on the store repository with the new `version`, release-notes link and
+- **Updating to a new release** happens when the owner asks for it, not on
+  every release (owner, 2026-11-23). The workflow
+  `.github/workflows/umbrel-store.yml`, started by hand (Actions, "Umbrel
+  store", "Run workflow", version empty for the latest release), opens a pull
+  request on the store repository with that `version`, release-notes link and
   pinned image (`ghcr.io/neatlittlemacapps/nigari:<version>@sha256:<digest>`,
   the index digest covering amd64 and arm64). Merge it, and Umbrel offers the
   update within about 5 minutes. The job needs the secret `UMBREL_STORE_TOKEN`
   in nigari (a fine-grained token for `yokogaki-umbrel` only, Contents and
-  Pull requests read/write); without it the release still passes and the
-  job's summary says the store was not updated.
+  Pull requests read/write); without it the run fails and its summary says the
+  store was not updated. A newer store pull request closes the older open
+  ones, which change the same lines.
 - **The version here is not kept current.** The store repository is where the
   pinned release lives. This copy keeps its first pin (2.1.15): a commit to
   `main` is a release, so a release that updated this folder would release

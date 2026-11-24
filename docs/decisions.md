@@ -7,6 +7,27 @@ entries are not edited away.
 
 ---
 
+## 2026-11-23 — The Umbrel store is updated only when the owner asks
+
+Owner: "No I mean only build store version when I ask". Since 2026-11-12 every
+release opened a store pull request and closed the one before it; with several
+releases a day that was a pull request the owner did not want each time.
+Replaces "Each release proposes itself to the Umbrel store" (2026-11-12).
+
+- **The store job moved out of `release.yml` into `umbrel-store.yml`,
+  started by hand** (`workflow_dispatch`), with an optional version that
+  defaults to the latest release. A release no longer touches the store.
+- **It still closes older open `nigari-<version>` store pull requests**
+  (2026-11-12, "A newer Umbrel store pull request closes the older ones").
+- **Without `UMBREL_STORE_TOKEN` the run now fails.** In a release a missing
+  store update must not fail the release; here the store update is the whole
+  point of the run, so a silent pass would mislead.
+- Rejected: a version input on `release.yml`'s own `workflow_dispatch` (a
+  manual release run would build and publish a new release too); a store pull
+  request only every Nth release (still not when the owner asks).
+
+---
+
 ## 2026-11-23 — BlockNote's pointer handling is corrected by swapping two plugin-view methods (#825, #826), and a drop commits the line it showed (#820)
 
 - **#825 and #826 swap one method each on BlockNote's plugin views**
@@ -33,6 +54,8 @@ entries are not edited away.
   is decided at the drop. Turned down: waiting for the opening to settle
   before the drop (a drop cannot wait), and reading the boxes on every
   dragover (SC-003's per-step budget).
+
+---
 
 ## 2026-11-23 — Every pull request says what the code graph showed, and a check holds it to that (#926)
 
