@@ -67,13 +67,15 @@ await withFixture(async ({ page, api, base, workspace, path }) => {
     const from = await scrollTop();
     assert(from > 1000, `the page was not scrolled down to the database (${from})`);
     const x = h.x + 40;
-    // To just below the top zone, then onto the header in one move: the
-    // clock starts as the scrolling does.
+    // To just below the top zone, then onto the header: the clock starts as
+    // the pointer enters the zone. A few steps, not one jump: Playwright
+    // hands the page a drag move's dragover only with the next one.
     const below = await page.evaluate(() => document.querySelector('.page-body').getBoundingClientRect().top + 80);
     await glide(h.x + h.width / 2, h.y + h.height / 2, x, below);
     assert.equal(await scrollTop(), from, `run ${run}: the page scrolled before the block reached the top zone`);
-    await page.mouse.move(x, 20);
     const t0 = Date.now();
+    await glide(x, below, x, 20, 6);
+    await page.mouse.move(x + 1, 20);
     while ((await scrollTop()) > 0 && Date.now() - t0 < 4000) await sleep(50);
     const took = Date.now() - t0;
     assert.equal(await scrollTop(), 0, `run ${run}: the page did not reach its top while the block was held over the header (SC-001)`);
