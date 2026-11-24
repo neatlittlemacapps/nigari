@@ -7,6 +7,48 @@ entries are not edited away.
 
 ---
 
+## 2026-11-24 — A chosen block is tinted, ⌘/ opens its menu, and the column gap belongs to the resize grip (#818, #820)
+
+- **The selection is nigari's soft tint, shown only when a block is chosen**
+  (owner, 2026-11-24: option 4, `--color-primary-subtle`; "There should not
+  be a hover ring. The handle appearing is the affordance"). BlockNote's 4px
+  blue outline on a selected node is replaced in `styles.css`; the block an
+  open menu acts on is tinted by a `<style>` the menu writes (`MenuTint` in
+  `slashIcons.tsx`), not by a class on the editor's DOM (that makes
+  ProseMirror redraw the node, see ColumnsBlock). Turned down: a focus ring
+  on click or keyboard selection (the owner declined it), a tint on hover.
+- **⌘/ opens the block menu of the caret's line** (`blockMenuKey.ts`), the
+  same chord as a table row's menu. BlockNote has no call for "show the side
+  menu for this block"; its side-menu view is asked what it asks on a mouse
+  move, with a point on the caret's line, and the handle it draws is clicked.
+  Closing that menu gives the caret back. Turned down: a menu of our own
+  rendered from the keyboard (a second copy of the block menu to keep in
+  step).
+- **The gap between columns belongs to the resize grip** (owner,
+  2026-11-24: "ok, as long as the divider line … is higher", "Longer"). The
+  grip now fills the gap and reaches 8px past the row; the handle of a line in
+  a later column moves one gap further left, over the column before, so the
+  pointer crosses the grip on its way to it. Over the grip, and on the handle,
+  BlockNote's side menu keeps the block it shows (`holdOnHandleAndGrip` in
+  `blockNoteGuards.ts`): BlockNote resolved the grip to the columns block and,
+  from its right edge, to the last column. The same hold mends a phone bug
+  found on the way: the mouse move a tap sends ahead of its click moved the
+  menu to the last column, so a tap on a first column's handle opened another
+  line's menu. Decided at the point BlockNote looks, not on the event's
+  target: the two differ by a fraction of a pixel at the grip's edge.
+  Turned down: the handle winning the gap (the owner chose the grip), and
+  freezing the menu from `sideMenuHold.ts` on the grip (it decides on the
+  event target, which disagreed with BlockNote at the edge, measured).
+- **A sideways drop waits for a 0.4 s rest at its edge** (owner, 2026-11-24;
+  `sidewaysDwell.ts`). Passing through shows the ordinary line, so a block
+  dragged along a column no longer becomes a column. Applies to both
+  sideways drops, a new column and a layout beside a block. No timer: the
+  browser repeats dragover while the pointer rests. Turned down: a narrower
+  edge (the edges are already 16px, and a narrower one is harder to hit on
+  purpose).
+
+---
+
 ## 2026-11-23 — The Umbrel store is updated only when the owner asks
 
 Owner: "No I mean only build store version when I ask". Since 2026-11-12 every

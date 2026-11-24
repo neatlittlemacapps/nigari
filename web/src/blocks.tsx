@@ -664,7 +664,12 @@ function ColumnsBlock({ block, editor }: { block: ColumnsBlockData; editor: Colu
           // One element is both the divider and its handle, so the line can
           // never drift away from the thing that drags it. Where the page cannot
           // be edited it is the line alone: no role, no focus, no handlers.
-          const place = { left: centre - 6, top: tracks.top, height: tracks.height };
+          // The target fills the whole gap, so a pointer between the columns is
+          // always on it. Its line reaches past the row (styles.css): the 1px
+          // line ended with the text and was easy to miss (owner 2026-11-24,
+          // "Longer"). The target itself stays within the row, off the lines
+          // above and below (review).
+          const place = { left: centre - tracks.gap / 2, width: tracks.gap, top: tracks.top, height: tracks.height };
           if (!editable) {
             return <div key={i} className="bn-columns-grip is-static" aria-hidden="true" style={place} />;
           }

@@ -1413,5 +1413,8 @@
   "{chord} to send": "{chord} om te verzenden",
   "{chord} to save": "{chord} om op te slaan",
   "A comment needs some text": "Een opmerking heeft wat tekst nodig",
-  "Resolve": "Oplossen"
+  "Resolve": "Oplossen",
+  "Drag to move": "Sleep om te verplaatsen",
+  "Click or {keys} to open the menu": "Klik of druk op {keys} om het menu te openen",
+  "Open the block’s menu": "Menu van het blok openen"
 }

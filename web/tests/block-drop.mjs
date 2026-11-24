@@ -12,6 +12,21 @@ import { eventually, withFixture } from './fixture.mjs';
 // that would offer a new column comes with PR 2).
 // SC-005: a layout takes no room above it, and its presets are in the block
 // menu of its lines (owner, 2026-11-21), not on a bar over the page.
+
+// From a line's text left onto its handle in 2px steps, as a hand does;
+// returns where the pointer stopped. The handle is 10px left of the text,
+// or, in a second or third column, one column gap further, past the resize
+// grip that fills the gap (#820, owner 2026-11-24).
+const toHandle = async (page, from) => {
+  const y = from.y + 12;
+  let px = from.x + 8;
+  for (; px >= from.x - 10; px -= 2) await page.mouse.move(px, y);
+  const h = await page.locator('.bn-side-menu [draggable="true"]').first().boundingBox();
+  const stop = h ? Math.round(h.x + h.width / 2) : px;
+  for (; px > stop; px -= 2) await page.mouse.move(px, y);
+  return px;
+};
+
 await withFixture(async ({ page, api, base, workspace }) => {
   page.setDefaultTimeout(15000);
   const para = (id, text, children = []) => ({ id, type: 'paragraph', props: {}, content: [{ type: 'text', text, styles: {} }], children });
@@ -38,10 +53,10 @@ await withFixture(async ({ page, api, base, workspace }) => {
   const drag = async (x, y) => {
     const from = await text('mover');
     await page.mouse.move(from.x + 10, from.y + 10);
-    for (let px = from.x + 8; px >= from.x - 10; px -= 2) await page.mouse.move(px, from.y + 12);
+    const hx = await toHandle(page, from);
     await page.mouse.down();
     const steps = 30;
-    for (let i = 1; i <= steps; i++) await page.mouse.move(from.x - 10 + (x - from.x + 10) * i / steps, from.y + 12 + (y - from.y - 12) * i / steps);
+    for (let i = 1; i <= steps; i++) await page.mouse.move(hx + (x - hx) * i / steps, from.y + 12 + (y - from.y - 12) * i / steps);
     const line = await page.evaluate(() => {
       const l = document.querySelector('.nigari-drop-line');
       if (!l) return null;
@@ -308,12 +323,19 @@ await withFixture(async ({ page, api, base, workspace }) => {
   const lift = async (id = 'mover') => {
     const from = await text(id);
     await page.mouse.move(from.x + 10, from.y + 10);
-    for (let px = from.x + 8; px >= from.x - 10; px -= 2) await page.mouse.move(px, from.y + 12);
+    const x = await toHandle(page, from);
     await page.mouse.down();
-    return { x: from.x - 10, y: from.y + 12 };
+    return { x, y: from.y + 12 };
   };
-  const glide = async (from, x, y) => {
+  // Moves on to (x, y) and rests there half a second, nudging by half a
+  // pixel so dragover keeps coming: a sideways drop is offered only after a
+  // rest at its edge (#820, owner 2026-11-24). `pass` moves on without it.
+  const glide = async (from, x, y, { pass = false } = {}) => {
     for (let i = 1; i <= 25; i++) await page.mouse.move(from.x + (x - from.x) * i / 25, from.y + (y - from.y) * i / 25);
+    if (!pass) for (let i = 0; i < 6; i++) {
+      await page.waitForTimeout(90);
+      await page.mouse.move(x + (i % 2) / 2, y);
+    }
     return { x, y };
   };
   const theLine = () => page.evaluate(() => {
@@ -338,9 +360,14 @@ await withFixture(async ({ page, api, base, workspace }) => {
   await open([layout('cols', [para('x', 'Left'), para('y', 'Right')])], 'y');
   let r = await row('cols');
   let at = await lift();
-  at = await glide(at, r.x + r.width - 4, r.y + 10);
+  // Passing through the edge shows the ordinary line: a column waits for a
+  // rest there (#820, owner 2026-11-24).
+  at = await glide(at, r.x + r.width - 4, r.y + 10, { pass: true });
   let line = await theLine();
-  assert(line && line.vertical, 'no vertical line at the right edge of the last column');
+  assert(line && !line.vertical, 'passing through an edge offered a new column at once');
+  at = await glide(at, r.x + r.width - 4, r.y + 10);
+  line = await theLine();
+  assert(line && line.vertical, 'no vertical line at the right edge of the last column after a rest there');
   await settled(async () => (await tracks('cols')) === 3, 'the columns did not slide apart for the new column');
   // Back over a column's text: the horizontal line, and the columns close.
   const yText = await text('y');
