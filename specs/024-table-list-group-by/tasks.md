@@ -13,7 +13,7 @@ description: "Tasks for grouping tables and lists, in three pull requests"
 - Playwright `table-groups.mjs` (new).
 - Every new test is mutation-checked (it fails with its fix taken out).
 
-**Issues**: none yet
+**Issues**: parent #823; tasks T001–T034 are #945–#978
 
 **Delivery**: three pull requests, each from its own branch off `main`.
 - PR 1: server, agents and the pure grouping module (US7, the server half of US1, US2, US5, US6).
