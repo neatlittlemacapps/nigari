@@ -146,6 +146,10 @@ added on the REST side and missing on the MCP side, found later one by one.
 - Features go through Spec Kit: `/speckit-specify`, `/speckit-clarify`,
   `/speckit-plan`, `/speckit-tasks`, then `/speckit-implement`. Specs live in
   `specs/NNN-name/`; the constitution is `.specify/memory/constitution.md`.
+  Agents start these skills themselves (owner, 2026-11-24): their
+  `disable-model-invocation` flag is removed, so a Spec Kit upgrade that
+  brings it back must drop it again. The owner's go before a spec starts
+  still applies.
 - **Specs stay lean** (constitution IV, owner 2026-11-06). A spec or plan holds
   what the code cannot tell: intent, requirements, decisions with the options
   turned down. It does not copy what the code graph regenerates (file lists,
