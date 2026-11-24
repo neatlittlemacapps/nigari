@@ -136,6 +136,15 @@ await withFixture(async ({ page, api, base, workspace }) => {
   await page.getByRole('menuitem', { name: 'Open', exact: true }).waitFor();
   await page.keyboard.press('Escape');
 
+  // Every group hidden: the table says so instead of drawing nothing.
+  const all = await api('GET', path);
+  await api('PUT', path, { ...all, views: all.views.map((v) => (v.id === 'table' ? { ...v, hiddenGroups: ['a', 'b', ''] } : v)) });
+  await page.reload();
+  await page.getByText('Every group is hidden. Show one from the Group menu.').waitFor();
+  await api('PUT', path, { ...all, views: all.views.map((v) => (v.id === 'table' ? { ...v, hiddenGroups: undefined } : v)) });
+  await page.reload();
+  await page.locator('.db-group-head').first().waitFor();
+
   // No grouping: a flat table with its foot again.
   await groupMenu();
   await page.locator('.view-group-menu select').selectOption('');

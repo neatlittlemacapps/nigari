@@ -1431,5 +1431,6 @@
   "Reverse order": "Umgekehrte Reihenfolge",
   "Show": "Anzeigen",
   "Show empty groups": "Leere Gruppen anzeigen",
-  "Week of {day}": "Woche vom {day}"
+  "Week of {day}": "Woche vom {day}",
+  "Every group is hidden. Show one from the Group menu.": "Alle Gruppen sind ausgeblendet. Zeige eine über das Gruppieren-Menü an."
 }

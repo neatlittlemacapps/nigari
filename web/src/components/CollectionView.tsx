@@ -2040,7 +2040,7 @@ function FilterSortControls({
           project. */}
       {/* An icon on a phone too, like Filter and Sort: with its word it
           squeezed the view picker to "B…" (#921). */}
-      {groupable && canGroup && (
+      {groupable && (canGroup || (view.type === 'table' && !!view.grouped && !!onFoldAllGroups)) && (
         narrow ? (
           <Button
             size="sm"
@@ -2263,7 +2263,7 @@ function FilterSortControls({
               </>
             )}
             {open === 'group' && (
-              <ViewGroupMenu schema={schema} view={view} onChange={onChange} labelOf={groupLabelOf} onFoldAll={onFoldAllGroups} />
+              <ViewGroupMenu schema={schema} view={view} onChange={canGroup ? onChange : undefined} labelOf={groupLabelOf} onFoldAll={onFoldAllGroups} />
             )}
           </div>
         </Portal>
@@ -2543,9 +2543,15 @@ function TableView({
   // Focus goes to the editor, not back to the handle; and it opens once the
   // menu has closed, or the menu's own closing would take the click.
   const editCell = (id: string, propId: string) => {
+    // In a grouped table a row with several values is drawn once per group:
+    // the cell to edit is in the copy the menu was opened from (code review).
+    const from = rowMenuReturn.current?.closest<HTMLElement>(`tr[data-row-id="${CSS.escape(id)}"]`) ?? null;
     rowMenuReturn.current = null;
     window.setTimeout(() => {
-      const cell = rowBody.current?.querySelector<HTMLElement>(`tr[data-row-id="${CSS.escape(id)}"] td[data-prop-id="${CSS.escape(propId)}"]`);
+      const prop = `td[data-prop-id="${CSS.escape(propId)}"]`;
+      const cell =
+        from?.querySelector<HTMLElement>(prop) ??
+        rowBody.current?.querySelector<HTMLElement>(`tr[data-row-id="${CSS.escape(id)}"] ${prop}`);
       const target = cell?.querySelector<HTMLElement>('button, input, select, textarea, [tabindex]');
       cell?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
       if (target) {
@@ -2820,6 +2826,15 @@ function TableView({
         })}
         <tbody>
           {!grouping && ordered.map(renderRow)}
+          {/* Rows, but every group they fall in is hidden: say so, rather
+              than draw an empty table (code review). */}
+          {rows.length > 0 && grouping && groups.length === 0 && (
+            <tr>
+              <td colSpan={span} className="db-empty">
+                {t('Every group is hidden. Show one from the Group menu.')}
+              </td>
+            </tr>
+          )}
           {rows.length === 0 && (
             <tr>
               <td colSpan={schema.length + 2} className="db-empty">

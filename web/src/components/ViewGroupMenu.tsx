@@ -31,13 +31,31 @@ export default function ViewGroupMenu({
 }: {
   schema: PropDef[];
   view: ViewDef;
-  onChange: (patch: Partial<ViewDef>) => void;
+  /** Absent while the views are locked: only folding is offered, which is
+   *  the person's own (spec 024, T022). */
+  onChange?: (patch: Partial<ViewDef>) => void;
   /** How a hidden group's key reads (its option, person, period…). */
   labelOf?: (key: string) => ReactNode;
   /** Fold or open every group, for this person. Absent where folding
    *  cannot be kept, or when nothing is grouped. */
   onFoldAll?: (folded: boolean) => void;
 }) {
+  if (!onChange) {
+    return (
+      <div className="view-group-menu">
+        {onFoldAll && (
+          <div className="view-group-actions">
+            <Button size="sm" emphasis="low" onClick={() => onFoldAll(false)}>
+              {t('Expand all groups')}
+            </Button>
+            <Button size="sm" emphasis="low" onClick={() => onFoldAll(true)}>
+              {t('Collapse all groups')}
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
   if (view.type === 'board') {
     return (
       <div className="fs-row">
