@@ -7,6 +7,24 @@ entries are not edited away.
 
 ---
 
+## 2026-11-24 — A block chosen with the keys gets a thin ring beside its tint (#943)
+
+- **A 2px ring in the focus colour, only when keys made the choice** (owner,
+  2026-11-24: "perhaps a thin ring is acceptable", after #943 measured the
+  tint at 1.16:1 against the page, under SC 1.4.11's 3:1 where it is the only
+  sign). `inputModality.ts` keeps `data-input="keys" | "pointer"` on the
+  page's root from the last pointer press or the last key that moves the
+  caret (arrows, Tab, Home/End, Page Up/Down; not typing, not a ⌘/Ctrl chord,
+  not a key inside a menu, so a block the mouse chose does not start ringing
+  on ⌘C or ↓ in its menu), and `styles.css` draws
+  the ring for `ProseMirror-selectednode` under `keys`. This amends the entry
+  below ("no ring"): the mouse still gets none. Turned down: `:focus-visible`
+  (a ProseMirror node selection is not focus), a stronger tint (it would be
+  loud for the mouse too), and a box-shadow under the tint's see-through
+  outline (it showed through, twice as thick, seen in the screenshot).
+
+---
+
 ## 2026-11-24 — A chosen block is tinted, ⌘/ opens its menu, and the column gap belongs to the resize grip (#818, #820)
 
 - **The selection is nigari's soft tint, shown only when a block is chosen**

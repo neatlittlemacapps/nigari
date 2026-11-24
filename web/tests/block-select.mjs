@@ -11,6 +11,8 @@ import { withFixture, eventually } from './fixture.mjs';
 //   and closing it gives the caret back to that line.
 // - #820: the divider between two columns takes the whole gap and reaches
 //   past the row, and over it the handle of the column right of it stays put.
+// - #943: a block chosen with the arrow keys gets a thin ring in the focus
+//   colour as well (the tint alone is 1.16:1); one chosen with the mouse not.
 // - A tap on the handle on a phone opens the menu of the line it belongs to.
 //   The mouse move a phone sends ahead of the tap's click moved the handle to
 //   the layout's last column first.
@@ -130,6 +132,37 @@ await withFixture(async ({ page, api, base, workspace }) => {
   await eventually(() => tinted('y')).catch(() => assert.fail('the handle reached past the divider is not the middle column’s'));
   await page.keyboard.press('Escape');
 
+  // ---- #943: chosen with the arrow keys, a thin ring joins the tint; not with the mouse ----
+  {
+    const ringed = await api('POST', '/api/pages', { title: 'Ring', workspaceId: workspace.id });
+    await api('PATCH', `/api/pages/${ringed.id}`, { content: [para('above', 'Above'), { id: 'rule', type: 'divider', props: {}, children: [] }, para('below', 'Below')] });
+    await page.goto(`${base}/p/${ringed.id}`);
+    await page.locator('[data-id="below"] .bn-inline-content').waitFor();
+    const ring = () => page.evaluate(() => {
+      const s = getComputedStyle(document.querySelector('[data-id="rule"] > .bn-block > .bn-block-content'));
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--color-focus)';
+      document.body.append(probe);
+      const focus = getComputedStyle(probe).color;
+      probe.remove();
+      return { colour: s.outlineColor, width: s.outlineWidth, focus };
+    });
+    await page.locator('[data-id="above"] .bn-inline-content').click();
+    await page.keyboard.press('End');
+    await page.keyboard.press('ArrowDown');
+    await page.locator('[data-id="rule"].ProseMirror-selectednode, [data-id="rule"] .ProseMirror-selectednode').first().waitFor().catch(() => assert.fail('the arrow key did not choose the divider'));
+    let r = await ring();
+    assert(r.colour === r.focus && r.width === '2px', `a block chosen with the keys has no thin ring: ${JSON.stringify(r)}`);
+    assert(await tinted('rule'), 'a block chosen with the keys lost its tint');
+    await page.locator('[data-id="rule"] .bn-block-content').click();
+    // Still chosen, and tinted, by the mouse now (review: a click that lost
+    // the choice would pass the next line for the wrong reason).
+    await page.locator('[data-id="rule"].ProseMirror-selectednode, [data-id="rule"] .ProseMirror-selectednode').first().waitFor();
+    assert(await tinted('rule'), 'a block chosen with the mouse is not tinted');
+    r = await ring();
+    assert(r.colour !== r.focus, `a block chosen with the mouse has the ring: ${JSON.stringify(r)}`);
+  }
+
   // ---- a phone: a tap on the handle opens that line's menu ----
   {
     const phone = await page.context().browser().newContext({ storageState: await page.context().storageState(), hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 }, locale: 'en-US' });
@@ -150,4 +183,4 @@ await withFixture(async ({ page, api, base, workspace }) => {
   }
 });
 
-console.log('Block selection: the soft tint only while a block is chosen, the handle’s tooltip, ⌘/ for its menu, the divider filling the column gap, and a tap opening its own line’s menu (#818, #820).');
+console.log('Block selection: the soft tint only while a block is chosen, the handle’s tooltip, ⌘/ for its menu, the divider filling the column gap, a thin ring only for a block the keys chose, and a tap opening its own line’s menu (#818, #820, #943).');

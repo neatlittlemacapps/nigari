@@ -1042,6 +1042,17 @@ body:has(.icon-picker) .bn-side-menu {
   outline: var(--space-100) solid var(--color-primary-subtle);
   border-radius: var(--radius-scale-md);
 }
+/* Chosen with the keys, a thin ring in the focus colour joins the tint (#943,
+   owner 2026-11-24): there the tint is the only sign, and it is 1.16:1
+   against the page. 2px, right at the tint's edge, in place of the tint's
+   own outline (a ring under that see-through outline showed through it,
+   twice as thick; one set off from the content left a strip of page between
+   tint and ring, review). inputModality.ts sets data-input. */
+:root[data-input='keys'] .bn-container .ProseMirror-selectednode > .bn-block-content,
+:root[data-input='keys'] .bn-container .bn-block-content.ProseMirror-selectednode {
+  outline: calc(var(--space-100) / 2) solid var(--color-focus);
+  outline-offset: 0;
+}
 
 /* What the handle does, on hover (#818): the tooltip the rest of the app
    draws (ui/Button.css .ui-tooltip), here from CSS because the handle is
@@ -2741,6 +2752,30 @@ body:has(.icon-picker) .bn-side-menu {
   white-space: nowrap;
 }
 
+/* A relation or select cell keeps its chips inside the column (#813). Both
+   wrappers were inline-block, so they grew with the chips, the 100% above
+   measured the chips themselves and a long name drew over the next columns;
+   a select chip broke its name over several lines instead. As blocks they
+   take the column's width, and every chip cuts its name with an ellipsis and
+   shows it whole on hover (its title). */
+.db-table td .relation-value,
+.db-table td .select-cell {
+  display: block;
+}
+.db-table td .select-cell-value {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.db-table td .select-cell-value > span {
+  min-width: 0;
+}
+.db-table td .select-cell-value .prop-chip {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* The counted remainder. Deliberately quiet — it is a hint that there is more,
    not a value in its own right. */
 .relation-more {
@@ -2970,6 +3005,18 @@ body.is-col-resizing {
 .db-table .db-title-col {
   min-width: 200px;
   max-width: 420px;
+}
+
+/* One text size and weight in every cell (#814): the table's 14px. The name
+   is a button and a date an input, and both took the browser's own 13.3px or
+   the inputs' 13px, the name in medium weight too, so the Name column read as
+   another typeface beside the text cells. Chips keep their smaller label size.
+   A phone still raises the date input to 16px (the iOS zoom rule). */
+.db-table .db-title-link,
+.db-table .db-title-input,
+.db-table td .prop-input {
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 /* The leading checkbox column (TableView): as wide as its box. Its name is
@@ -6456,7 +6503,7 @@ body.is-col-resizing {
   }
 }
 
-/* ---- W44b: „Agents & MCP" im Sidebar-Footer — schillernder Farbtext ---- */
+/* ---- W44b: "Agents & MCP" in the sidebar footer: shimmering coloured text ---- */
 
 .agents-menu-item {
   display: flex;
@@ -6507,7 +6554,7 @@ body.is-col-resizing {
   to { background-position: -300% 0; }
 }
 
-/* ---- W45: Index „Baum · Agent-Sicht" ---- */
+/* ---- W45: Index "tree · agent view" ---- */
 
 .index-modes {
   display: inline-flex;

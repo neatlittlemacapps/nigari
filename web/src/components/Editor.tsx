@@ -12,6 +12,7 @@ import { dropLineWidth } from '../dropLine';
 import { blockDrop, computeDropPosition } from '../blockDrop';
 import { holdSideMenuWhileHovered } from '../sideMenuHold';
 import { guardBlockNote } from '../blockNoteGuards';
+import { followInput } from '../inputModality';
 import { openBlockMenu } from '../blockMenuKey';
 import { en as coreEn } from '@blocknote/core/locales';
 import { BlockNoteView } from '@blocknote/mantine';
@@ -1757,6 +1758,10 @@ function BlockContent({
   // (#826), and the handle stays put on itself and over the columns' resize
   // grip (#820). blockNoteGuards.ts.
   useEffect(() => guardBlockNote(editor as never), [editor]);
+
+  // A block chosen with the keys gets a thin ring beside its tint (#943,
+  // inputModality.ts).
+  useEffect(() => followInput(), []);
 
   // ⌘/ opens the block menu of the caret's line (#818, blockMenuKey.ts): the
   // handle shows only under a pointer. Not while the caret is in a database
