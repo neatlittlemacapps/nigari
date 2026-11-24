@@ -1023,6 +1023,61 @@ body:has(.icon-picker) .bn-side-menu {
   color: var(--editor-side-menu-icon);
 }
 
+/* A selected block (#818, owner 2026-11-24). BlockNote outlines a block that
+   is selected as a whole in 4px of fixed blue: loud, and drawn whenever a
+   database or image was merely arrived at. nigari shows a selection as the
+   soft tint it uses for every chosen item (spec 020, "faint tint"), and only
+   when the block really is selected: its handle clicked, its menu open (the
+   <style> BlockMenu writes, slashIcons.tsx), dragged, or reached with the
+   arrow keys. Nothing on hover and no ring: the handle appearing is the hint
+   ("There should not be a hover ring"). The outline of the same tint carries
+   it a little past the content, as padding would without moving the text. */
+.bn-container .ProseMirror-selectednode > .bn-block-content > *,
+.bn-container .bn-block-content.ProseMirror-selectednode > * {
+  outline: none;
+}
+.bn-container .ProseMirror-selectednode > .bn-block-content,
+.bn-container .bn-block-content.ProseMirror-selectednode {
+  background: var(--color-primary-subtle);
+  outline: var(--space-100) solid var(--color-primary-subtle);
+  border-radius: var(--radius-scale-md);
+}
+
+/* What the handle does, on hover (#818): the tooltip the rest of the app
+   draws (ui/Button.css .ui-tooltip), here from CSS because the handle is
+   BlockNote's button and a menu trigger at once. Shown after a short rest,
+   gone while its menu is open or a drag runs. */
+.bn-container .bn-side-menu [data-tip] {
+  position: relative;
+  display: inline-flex;
+}
+.bn-container .bn-side-menu [data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + var(--space-100));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--layer-tooltip);
+  white-space: pre;
+  pointer-events: none;
+  padding: var(--space-100) var(--space-200);
+  border-radius: var(--radius-scale-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text-default);
+  box-shadow: var(--shadow-overlay);
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+}
+.bn-container .bn-side-menu [data-tip]:hover:not(:has([aria-expanded='true']))::after {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--motion-duration-fast) ease 500ms;
+}
+
 .icon-picker-tabs {
   display: flex;
   align-items: center;
@@ -10334,8 +10389,11 @@ body:has(.live-down) .update-banner {
 .bn-columns-grip::before {
   content: '';
   position: absolute;
-  top: 0;
-  bottom: 0;
+  /* Past the row, above and below: the line ended with the text and was
+     easy to miss (owner 2026-11-24, "Longer"). Only the line: the target
+     stays within the row, off the lines around it. */
+  top: calc(-1 * var(--space-200));
+  bottom: calc(-1 * var(--space-200));
   left: 50%;
   width: 1px;
   margin-left: -0.5px;
@@ -10357,10 +10415,40 @@ body:has(.live-down) .update-banner {
    block and its content and the class on that wrapper is not ours to rely on.
    The second form matches through any single wrapper; keeping both means an
    upgrade that adds or drops one does not silently stack the columns. */
+/* The gap between columns, read by the grip (which fills it, blocks.tsx) and
+   by the handle of a block in a later column (below), which steps past it. */
+.bn-container {
+  --columns-gap: 18px;
+}
+/* The handle of a block in a second or third column sits in the gap, where
+   the grip that resizes the columns is: two targets on one spot, and the grip
+   won (#820, owner 2026-11-24). So that handle steps one gap further left, over
+   the end of the column before, and a pointer coming from the text crosses the
+   grip and reaches the handle; while it crosses, the handle stays where it is
+   (blockNoteGuards.ts, holdOnHandleAndGrip). */
+.bn-container .bn-side-menu-row {
+  display: inline-flex;
+  align-items: center;
+}
+/* The menu itself moves, not only its buttons, and the floating box BlockNote
+   wraps it in, which stays where it was, lets the pointer through: either box
+   would still cover the gap and keep the pointer off the grip. Only where a
+   pointer hovers: a finger taps the handle where it is and crosses nothing,
+   and on a phone's narrow columns the moved handle covered the text of the
+   column before. */
+@media (hover: hover) {
+  .bn-container .bn-side-menu:has(> [data-past-grip]) {
+    transform: translateX(calc(-1 * var(--columns-gap)));
+    pointer-events: auto;
+  }
+  .bn-container div:has(> .bn-side-menu > [data-past-grip]) {
+    pointer-events: none;
+  }
+}
 .bn-block:has(> .bn-block-content[data-content-type='columns']) > .bn-block-group,
 .bn-block:has(> * > .bn-block-content[data-content-type='columns']) > .bn-block-group {
   display: grid;
-  gap: 18px;
+  gap: var(--columns-gap);
   align-items: start;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

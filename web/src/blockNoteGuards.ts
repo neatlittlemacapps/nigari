@@ -1,5 +1,5 @@
-// Two corrections to BlockNote's own pointer handling, each made by swapping
-// one method on the editor's plugin view (#825, #826).
+// Three corrections to BlockNote's own pointer handling, each made by swapping
+// one method on the editor's plugin view (#825, #826, #820).
 //
 // Both of BlockNote's views call these methods through `this.<name>`, and
 // remove their listeners through the same property when the editor goes, so
@@ -86,7 +86,50 @@ function ownerOnTop(view: View) {
   menu.nigariGuarded = true;
 }
 
-/** Installs both for one editor, once it is on the page. */
+/**
+ * #820: on the handle, and over the resize grip between two columns, the side
+ * menu stays as it is.
+ *
+ * - The grip fills the gap, and the handle of a line in the column right of
+ *   it sits just left of the grip (styles.css, [data-past-grip]), so the
+ *   pointer crosses the grip on its way from the line to its handle.
+ *   BlockNote, asked what is under the grip, finds the columns block and,
+ *   from its right edge, the LAST column, and the handle jumped there.
+ * - The handle itself: BlockNote looks through it. A mouse on it is held by
+ *   sideMenuHold.ts, but a tap is not (a finger is left alone there), and the
+ *   mouse move a phone sends ahead of the tap's click moved the menu, in a
+ *   layout to the last column, before the click arrived.
+ *
+ * Decided at the point BlockNote itself looks, rather than on the event's
+ * own target: the two disagree by a fraction of a pixel at the grip's edge.
+ */
+function holdOnHandleAndGrip(view: View) {
+  const menu = pluginView(view, 'updateStateFromMousePos');
+  if (!menu) return warn('side menu');
+  if (menu.nigariHeld) return;
+  const original = menu.updateStateFromMousePos;
+  menu.updateStateFromMousePos = () => {
+    const at = menu.mousePos;
+    // BlockNote asks again after every change to the document too, so a
+    // handle never acts on a block that is gone: a held handle lets that
+    // through (review).
+    const id = menu.state?.block?.id;
+    const shown = typeof id === 'string' && view.dom.querySelector(`[data-id="${CSS.escape(id)}"]`);
+    if (at && menu.state?.show && shown) {
+      const root: Document | ShadowRoot = view.root;
+      const under = root.elementsFromPoint(at.x, at.y);
+      const container = view.dom.closest('.bn-container');
+      if (under[0]?.closest('.bn-side-menu') && container?.contains(under[0])) return;
+      // The first thing under the point inside the editor, as BlockNote
+      // picks it: what is on top can be a floating layer.
+      if (under.find((el) => view.dom.contains(el))?.closest('.bn-columns-grip')) return;
+    }
+    original();
+  };
+  menu.nigariHeld = true;
+}
+
+/** Installs all three for one editor, once it is on the page. */
 export function guardBlockNote(editor: { prosemirrorView?: View; onMount?: (cb: () => void) => (() => void) | void }): () => void {
   const install = () => {
     // Before it mounts, tiptap hands out a stand-in view with no plugin views.
@@ -94,6 +137,7 @@ export function guardBlockNote(editor: { prosemirrorView?: View; onMount?: (cb: 
     if (!view || !Array.isArray(view.pluginViews)) return false;
     skipDatabaseTables(view);
     ownerOnTop(view);
+    holdOnHandleAndGrip(view);
     return true;
   };
   install();

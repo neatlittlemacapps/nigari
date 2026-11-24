@@ -34,17 +34,22 @@ await withFixture(async ({ page, api, base, workspace }) => {
 
   const text = (id) => page.locator(`[data-id="${id}"] .bn-inline-content`).first().boundingBox();
   // Where the side menu is: its right edge sits at the text's left edge of
-  // the block it belongs to, its top 3px above that block's line.
+  // the block it belongs to, its top 3px above that block's line. In the
+  // second and third column it sits one column gap further left, past the
+  // resize grip that fills the gap (#820, owner 2026-11-24: the grip wins
+  // the gap), so `past` is that gap there.
   const menu = () => page.evaluate(() => {
     const m = document.querySelector('.bn-side-menu');
     if (!m) return null;
     const r = m.getBoundingClientRect();
-    return { right: Math.round(r.right), top: Math.round(r.top) };
+    const gap = parseFloat(getComputedStyle(document.querySelector('.bn-container')).getPropertyValue('--columns-gap'));
+    return { right: Math.round(r.right), top: Math.round(r.top), past: m.querySelector('[data-past-grip]') ? gap : 0 };
   });
+  const later = (id) => /^[bc]\d$/.test(id);
   const besides = async (id) => {
     const t = await text(id);
     const m = await menu();
-    return m !== null && Math.abs(m.right - t.x) <= 1 && Math.abs(m.top - t.y) <= 4;
+    return m !== null && (m.past > 0) === later(id) && Math.abs(m.right + m.past - t.x) <= 1 && Math.abs(m.top - t.y) <= 4;
   };
 
   // ---- #808: walk to the handle of a block in each column ----
@@ -53,7 +58,8 @@ await withFixture(async ({ page, api, base, workspace }) => {
     const y = t.y + t.height / 2;
     await page.mouse.move(t.x + 10, y);
     await eventually(() => besides(id));
-    for (let x = t.x + 8; x >= t.x - 38; x -= 2) {
+    // Across the grip, in a later column, and on over the whole handle.
+    for (let x = t.x + 8; x >= t.x - 38 - (later(id) ? 18 : 0); x -= 2) {
       await page.mouse.move(x, y);
       assert(await besides(id), `the handle of ${id} moved away when the pointer was ${Math.round(t.x - x)}px left of its text`);
     }
@@ -78,13 +84,13 @@ await withFixture(async ({ page, api, base, workspace }) => {
   // ---- #808 + #809: drag Plan › Tasks out of its column, watch the line ----
   const from = await text('b2');
   await page.mouse.move(from.x + 10, from.y + 10);
-  for (let x = from.x + 8; x >= from.x - 10; x -= 2) await page.mouse.move(x, from.y + 12);
+  for (let x = from.x + 8; x >= from.x - 28; x -= 2) await page.mouse.move(x, from.y + 12);
   await page.mouse.down();
   const to = await text('bottom');
   const steps = 40;
   let line = null;
   for (let i = 1; i <= steps; i++) {
-    await page.mouse.move(from.x - 10 + (to.x + 30 - from.x + 10) * i / steps, from.y + 12 + (to.y + to.height * 0.8 - from.y - 12) * i / steps);
+    await page.mouse.move(from.x - 28 + (to.x + 30 - from.x + 28) * i / steps, from.y + 12 + (to.y + to.height * 0.8 - from.y - 12) * i / steps);
     if (i === steps - 5) {
       line = await page.evaluate(() => {
         // A block from the handle: nigari draws the line (spec 021, blockDrop.ts).
