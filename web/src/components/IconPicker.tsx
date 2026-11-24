@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Trash2, Upload as UploadIcon } from 'lucide-react';
 import Portal from './Portal';
 import { EMOJI_GROUPS } from '../emojiData';
-import { LUCIDE_SET, LUCIDE_NAMES } from '../lucideSet';
+import { lucideFailed, lucideIcon, lucideNames, useLucide } from '../lucideLoader';
 import { api } from '../api';
 import { toastError } from '../toast';
 import { makeLucide, makeMdi } from '../pageIcon';
@@ -75,6 +75,7 @@ export default function IconPicker({ onPick, onRemove, onClose, pageId, anchor }
   // Icons set (~7.4k, lazily fetched the first time this tab is used).
   const [lib, setLib] = useState<'lucide' | 'mdi'>('lucide');
   const mdiReady = useMdi(tab === 'icon' && lib === 'mdi');
+  const lucideReady = useLucide(tab === 'icon' && lib !== 'mdi');
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -103,12 +104,12 @@ export default function IconPicker({ onPick, onRemove, onClose, pageId, anchor }
 
   const iconResults = useMemo(() => {
     const query = q.trim().toLowerCase().replace(/[-\s]/g, '');
-    const all = lib === 'mdi' ? (mdiReady ? mdiNames() : []) : LUCIDE_NAMES;
+    const all = lib === 'mdi' ? (mdiReady ? mdiNames() : []) : lucideReady ? lucideNames() : [];
     if (!query) return lib === 'mdi' ? all.slice(0, 600) : all;
     const hits = all.filter((n) => n.toLowerCase().includes(query));
     // MDI is huge — cap the rendered grid so typing stays responsive.
     return lib === 'mdi' ? hits.slice(0, 600) : hits;
-  }, [q, lib, mdiReady]);
+  }, [q, lib, mdiReady, lucideReady]);
 
   const doUpload = async (file?: File | null) => {
     if (!file) return;
@@ -217,7 +218,8 @@ export default function IconPicker({ onPick, onRemove, onClose, pageId, anchor }
                   </button>
                 );
               }
-              const Cmp = LUCIDE_SET[name];
+              const Cmp = lucideIcon(name);
+              if (!Cmp) return null;
               return (
                 <button
                   key={name}
@@ -234,7 +236,7 @@ export default function IconPicker({ onPick, onRemove, onClose, pageId, anchor }
         {tab === 'icon' && lib === 'mdi' && !mdiReady && (
           <div className="icon-empty">{t('Loading Material icons…')}</div>
         )}
-        {tab === 'icon' && (lib !== 'mdi' || mdiReady) && iconResults.length === 0 && (
+        {tab === 'icon' && (lib === 'mdi' ? mdiReady : lucideReady || lucideFailed()) && iconResults.length === 0 && (
           <div className="icon-empty">{t('No matches')}</div>
         )}
 
