@@ -56,14 +56,26 @@ type errViewGroup struct{ msg string }
 
 func (e errViewGroup) Error() string { return e.msg }
 
-// clearGrouping removes a table's or list's grouping. groupBy goes too: on a
-// table it means nothing without the switch, and a board made from the table
-// later picks its own columns (switchViewLayout).
-func clearGrouping(view map[string]any) {
-	for _, k := range groupingKeys {
+// ungroup turns a table's or list's grouping off. Only the keys that are a
+// table's own go: groupBy, groupPeriod, hiddenGroups and statusGroups are
+// shared with a board and a chart, which keep them for when the view returns
+// to that layout (as a board's groupBy stays, unused, on a table).
+func ungroup(view map[string]any) {
+	for _, k := range []string{"grouped", "groupReverse", "showEmptyGroups"} {
 		delete(view, k)
 	}
 }
+
+// groupArgsGiven says whether a set_view call shapes a grouping, so a check
+// of a stale stored grouping is strict only for a call that sets one.
+func groupArgsGiven(spec viewSpec) bool {
+	return spec.GroupBy != nil || spec.Period != nil || spec.ShowEmptyGroups != nil || spec.StatusGroups != nil ||
+		spec.GroupReverse != nil || spec.HiddenGroups != nil
+}
+
+// maxHiddenGroups is a chart's cap on hiddenGroups (aggregate.go), kept for a
+// table's so one view cannot grow without limit.
+const maxHiddenGroups = 500
 
 // checkViewGrouping validates a table's or list's grouping in place. Other
 // layouts are left to their own checks (a board's columns, a chart's
@@ -82,13 +94,12 @@ func checkViewGrouping(view map[string]any, schema []map[string]any, strict bool
 		if strict {
 			return errViewGroup{msg}
 		}
-		clearGrouping(view)
+		ungroup(view)
 		return nil
 	}
 	raw, has := view["grouped"]
 	if !has || raw == nil {
-		delete(view, "grouped")
-		delete(view, "groupReverse")
+		ungroup(view)
 		return nil
 	}
 	on, isBool := raw.(bool)
@@ -96,8 +107,7 @@ func checkViewGrouping(view map[string]any, schema []map[string]any, strict bool
 		return refuse("grouped must be true or false")
 	}
 	if !on {
-		delete(view, "grouped")
-		delete(view, "groupReverse")
+		ungroup(view)
 		return nil
 	}
 	id, _ := view["groupBy"].(string)
@@ -143,7 +153,9 @@ func checkViewGrouping(view map[string]any, schema []map[string]any, strict bool
 			if strict {
 				return errViewGroup{fmt.Sprintf("status groups are for a status property; %q is a %s property", name, pt)}
 			}
-			delete(view, "statusGroups")
+			if !ok {
+				delete(view, "statusGroups")
+			}
 		}
 	}
 	for _, k := range []string{"groupReverse", "showEmptyGroups"} {
@@ -160,6 +172,12 @@ func checkViewGrouping(view map[string]any, schema []map[string]any, strict bool
 	}
 	if h, has := view["hiddenGroups"]; has && h != nil {
 		list, ok := h.([]any)
+		if ok && len(list) > maxHiddenGroups {
+			if strict {
+				return errViewGroup{fmt.Sprintf("hidden groups holds %d keys, at most %d", len(list), maxHiddenGroups)}
+			}
+			ok = false
+		}
 		if ok {
 			for _, k := range list {
 				if _, isString := k.(string); !isString {
@@ -182,14 +200,14 @@ func checkViewGrouping(view map[string]any, schema []map[string]any, strict bool
 
 // applyGroupSpec merges set_view's grouping arguments into a table or list,
 // under the keys the interface stores (data-model.md). group_by sets the
-// property and turns grouping on; "" removes the whole grouping. The other
+// property and turns grouping on; "" turns it off (ungroup). The other
 // arguments are those a chart takes for its grouping, plus group_reverse
 // and show_empty_groups. groupByWas is the view's groupBy before this call.
 // checkViewGrouping then judges the result.
 func applyGroupSpec(view map[string]any, spec viewSpec, groupByWas string) {
 	if spec.GroupBy != nil {
 		if *spec.GroupBy == "" {
-			clearGrouping(view)
+			ungroup(view)
 		} else {
 			// Another property: the period, status groups and hidden groups
 			// were the old property's and mean nothing for this one.

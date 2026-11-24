@@ -168,9 +168,11 @@ export function groupDropPatch(
   const lane = (k: string) => (k === NO_VALUE ? LANE_NO_VALUE : k);
   const v = laneValue(prop, lane(to));
   if (v === null) return null;
-  if (Array.isArray(v) && Array.isArray(current)) {
+  // The row's present value decides the shape too: several people on a
+  // property not marked multiple are still a list, and must stay one.
+  if (Array.isArray(current)) {
     const kept = current.filter((x) => String(x) !== from && String(x) !== to);
-    return { [propId]: to === NO_VALUE ? [] : [...kept, to] };
+    return { [propId]: to === NO_VALUE ? kept : [...kept, to] };
   }
   return { [propId]: v };
 }

@@ -44,15 +44,21 @@ func TestSetViewGroupsATableAndRefusesWhatCannotGroup(t *testing.T) {
 		t.Errorf("a refused grouping changed the views:\nbefore %s\nafter  %s", before, after)
 	}
 
-	// "" removes the whole grouping.
+	// "" turns the grouping off; the keys a board and a chart share stay.
+	if _, err := callTool(t, f.s, f.agent, "set_view", `{"page_id":"`+f.col+`","view_id":"t","group_by":"due","period":"week","hidden_groups":["2026-W11"],"group_reverse":true}`); err != nil {
+		t.Fatalf("regroup: %v", err)
+	}
 	if _, err := callTool(t, f.s, f.agent, "set_view", `{"page_id":"`+f.col+`","view_id":"t","group_by":""}`); err != nil {
 		t.Fatalf("ungroup: %v", err)
 	}
 	v = viewOf(t, f, "t")
-	for _, k := range groupingKeys {
+	for _, k := range []string{"grouped", "groupReverse", "showEmptyGroups"} {
 		if _, has := v[k]; has {
 			t.Errorf("ungrouped table still has %s: %v", k, v)
 		}
+	}
+	if v["groupPeriod"] != "week" {
+		t.Errorf("ungrouping lost the shared keys a chart keeps: %v", v)
 	}
 	if _, err := callTool(t, f.s, f.agent, "set_view", `{"page_id":"`+f.col+`","view_id":"t","period":"week"}`); err == nil || !strings.Contains(err.Error(), "pass group_by") {
 		t.Errorf("period on a flat table: %v", err)
@@ -100,6 +106,20 @@ func TestPutViewsChecksAGroupingAndDropsAStaleOne(t *testing.T) {
 	}
 	if v := f.storedViews(t); strings.Contains(v, "grouped") || !strings.Contains(v, "Renamed") {
 		t.Errorf("stale grouping kept, or the rename lost: %s", v)
+	}
+	// Over set_view too: a rename of a view whose grouping went stale is
+	// not refused (code review).
+	if _, err := f.s.db.Exec(`UPDATE collections SET views = ? WHERE page_id = ?`,
+		`[{"id":"t","name":"Table","type":"table","grouped":true,"groupBy":"system"}]`, f.col); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := callTool(t, f.s, f.agent, "set_view", `{"page_id":"`+f.col+`","view_id":"t","name":"Again"}`); err != nil {
+		t.Errorf("set_view rename of a stale grouping: %v", err)
+	}
+	// hiddenGroups is capped as a chart's is.
+	many := strings.Repeat(`"k",`, 501)
+	if code, _ := put(`[{"id":"t","name":"Table","type":"table","grouped":true,"groupBy":"status","hiddenGroups":[` + many[:len(many)-1] + `]}]`); code != 400 {
+		t.Errorf("501 hidden groups: %d, want 400", code)
 	}
 }
 

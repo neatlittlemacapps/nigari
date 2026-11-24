@@ -331,17 +331,12 @@ func (s *Server) handlePlacePage(w http.ResponseWriter, r *http.Request) {
 	}
 	// The move first: it is the part that refuses (an anchor that is not a
 	// sibling, a trashed page), and a refused move must not leave the row
-	// changed. The properties after it can only fail on the database itself.
+	// changed. The properties after it can only fail on the database itself
+	// (or a row deleted in between).
 	pos, wrote, err := s.placePage(u, id, anchor, side, body.ViewID)
 	if err != nil {
 		writePlaceError(w, err)
 		return
-	}
-	if len(patch) > 0 {
-		if err := s.patchProps(u, id, patch); err != nil {
-			httpError(w, 500, err.Error())
-			return
-		}
 	}
 	if wrote {
 		detail := side + " " + anchor
@@ -350,6 +345,14 @@ func (s *Server) handlePlacePage(w http.ResponseWriter, r *http.Request) {
 		}
 		s.audit("human", u.ID, u.Name, "reorder_page", id, s.pageWorkspace(id), detail)
 	}
+	if len(patch) > 0 {
+		if err := s.patchProps(u, id, patch); err != nil {
+			// The move stands and is logged; the browser reloads the rows on
+			// an error, so it draws what the server holds.
+			httpError(w, 500, err.Error())
+			return
+		}
+	}
 	writeJSON(w, map[string]any{"id": id, "position": pos})
 }
 
@@ -357,15 +360,25 @@ func (s *Server) handlePlacePage(w http.ResponseWriter, r *http.Request) {
 // (mergePropsPatch), with its activity entry, its row update and webhook.
 // The caller has checked canWrite.
 func (s *Server) patchProps(u *user, id string, patch map[string]json.RawMessage) error {
+	// Read and write in one transaction, as PATCH does, so a change another
+	// device makes to another property of the row in between is not lost.
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 	var current string
-	if err := s.db.QueryRow(`SELECT props FROM pages WHERE id = ?`, id).Scan(&current); err != nil {
+	if err := tx.QueryRow(`SELECT props FROM pages WHERE id = ?`, id).Scan(&current); err != nil {
 		return err
 	}
 	merged, diff, err := mergePropsPatch(current, patch)
 	if err != nil {
 		return err
 	}
-	if _, err := s.db.Exec(`UPDATE pages SET props = ?, updated_at = ? WHERE id = ?`, merged, now(), id); err != nil {
+	if _, err := tx.Exec(`UPDATE pages SET props = ?, updated_at = ? WHERE id = ?`, merged, now(), id); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
 		return err
 	}
 	if diff != "" {

@@ -709,7 +709,7 @@ func applyViewSpec(view map[string]any, spec viewSpec, schema []map[string]any) 
 		if err := groupArgsWithoutGrouping(view, spec); err != nil {
 			return err
 		}
-		if err := checkViewGrouping(view, schema, true); err != nil {
+		if err := checkViewGrouping(view, schema, groupArgsGiven(spec)); err != nil {
 			return fmt.Errorf("group_by: %w", err)
 		}
 	} else if spec.GroupReverse != nil || spec.ShowEmptyGroups != nil {

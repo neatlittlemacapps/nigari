@@ -80,7 +80,8 @@ try {
   check('drop: select into No value clears it', rg.groupDropPatch('s', select, 'a', '', 'a'), { s: '' });
   check('drop: same group writes nothing', rg.groupDropPatch('s', select, 'a', 'a', 'a'), null);
   check('drop: multi-select keeps the other values', rg.groupDropPatch('m', multi, 'a', 'b', ['a', 'c']), { m: ['c', 'b'] });
-  check('drop: multi-select into No value empties it', rg.groupDropPatch('m', multi, 'a', '', ['a', 'c']), { m: [] });
+  check('drop: multi-select into No value takes off only the group it left', rg.groupDropPatch('m', multi, 'a', '', ['a', 'c']), { m: ['c'] });
+  check('drop: several people on a single-person property stay a list', rg.groupDropPatch('p', person, 'u1', 'u2', ['u1', 'u3']), { p: ['u3', 'u2'] });
   check('drop: checkbox', rg.groupDropPatch('x', box, 'false', 'true', false), { x: true });
   check('drop: person', rg.groupDropPatch('p', person, 'u1', 'u2', 'u1'), { p: 'u2' });
   check('drop: a date group is many days, refused', rg.groupDropPatch('d', date, '2026-01', '2026-03', '2026-01-02'), null);
