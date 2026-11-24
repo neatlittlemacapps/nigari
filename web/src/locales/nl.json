@@ -633,7 +633,6 @@
   "Reopen": "Heropenen",
   "Reset": "Resetten",
   "Reset the link": "De link resetten",
-  "Resolved": "Opgelost",
   "Restore": "Herstellen",
   "Restore the version from {when}? The current state is saved as a version first.": "De versie van {when} herstellen? De huidige staat wordt eerst als versie opgeslagen.",
   "Restoring failed": "Herstellen mislukt",
@@ -1080,7 +1079,6 @@
   "→ Certificates & secrets → client secret.": "→ Certificates & secrets → client secret.",
   "→ Links": "→ Links",
   "→ copy the token and paste it here. You set the hostname (e.g.": "→ kopieer het token en plak het hier. De hostnaam stel je zelf in (bijv.",
-  "⌘↵ to send": "⌘↵ om te verzenden",
   "⚠ Cloud agents (claude.ai, say) cannot reach": "⚠ Cloud-agents (bijvoorbeeld claude.ai) kunnen niet bij",
   "⚠ Google and Microsoft accept HTTPS redirect URIs only (localhost aside). Start a tunnel (the “Domain & proxy” tab) or enter a public HTTPS base URL under “General”. It then appears here on its own.": "⚠ Google en Microsoft accepteren alleen HTTPS-redirect-URI's (localhost uitgezonderd). Start een tunnel (het tabblad “Domein en proxy”) of voer een openbare HTTPS-basis-URL in onder “Algemeen”. Die verschijnt hier dan vanzelf.",
   "⚠ This is the URL of the running quick tunnel. It changes on every start. For OAuth that lasts, use a named tunnel or your own domain and enter it as the base URL.": "⚠ Dit is de URL van de lopende snelle tunnel. Die verandert bij elke start. Gebruik voor duurzame OAuth een benoemde tunnel of je eigen domein en voer dat in als basis-URL.",
@@ -1379,7 +1377,6 @@
   "Until {time}": "Tot {time}",
   "You": "Jij",
   "{names} reacted with {reaction}": "{names} reageerde met {reaction}",
-  "⌘↵ to save": "⌘↵ om op te slaan",
   "edited a comment on": "bewerkte een opmerking op",
   "Add and switch": "Toevoegen en wisselen",
   "Change layout": "Indeling wijzigen",
@@ -1411,5 +1408,13 @@
   "Views": "Weergaven",
   "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "De rij naast deze plek bestaat niet meer of staat in een andere lijst, dus er is niets neergezet. Herlaad en probeer het opnieuw.",
   "Show more": "Meer tonen",
-  "Emergency access by {name} ended.": "Noodtoegang van {name} beëindigd."
+  "Emergency access by {name} ended.": "Noodtoegang van {name} beëindigd.",
+  "Date property": "Datumeigenschap",
+  "{chord} to send": "{chord} om te verzenden",
+  "{chord} to save": "{chord} om op te slaan",
+  "A comment needs some text": "Een opmerking heeft wat tekst nodig",
+  "Resolve": "Oplossen",
+  "Drag to move": "Sleep om te verplaatsen",
+  "Click or {keys} to open the menu": "Klik of druk op {keys} om het menu te openen",
+  "Open the block’s menu": "Menu van het blok openen"
 }

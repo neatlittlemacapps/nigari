@@ -79,7 +79,7 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
 
   // A resolved comment keeps its reactions and can still be reacted to.
   await item(theirsId).hover();
-  await item(theirsId).getByRole('button', { name: 'Resolved' }).click();
+  await item(theirsId).getByRole('button', { name: 'Resolve' }).click();
   await panel.getByText(/Show 1 resolved/).click();
   await item(theirsId).hover();
   await item(theirsId).getByRole('button', { name: 'Add reaction' }).click();

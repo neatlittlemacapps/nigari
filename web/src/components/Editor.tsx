@@ -12,6 +12,7 @@ import { dropLineWidth } from '../dropLine';
 import { blockDrop, computeDropPosition } from '../blockDrop';
 import { holdSideMenuWhileHovered } from '../sideMenuHold';
 import { guardBlockNote } from '../blockNoteGuards';
+import { openBlockMenu } from '../blockMenuKey';
 import { en as coreEn } from '@blocknote/core/locales';
 import { BlockNoteView } from '@blocknote/mantine';
 import { api, ApiError, materializeQuery } from '../api';
@@ -1751,10 +1752,31 @@ function BlockContent({
   // blockDrop.ts and dropTarget.ts).
   useEffect(() => blockDrop(editor), [editor]);
 
-  // Two corrections to BlockNote's pointer handling: a database's table is
-  // not one of its tables (#825), and a peek over the page shows its own
-  // handles (#826). blockNoteGuards.ts.
+  // Three corrections to BlockNote's pointer handling: a database's table is
+  // not one of its tables (#825), a peek over the page shows its own handles
+  // (#826), and the handle stays put on itself and over the columns' resize
+  // grip (#820). blockNoteGuards.ts.
   useEffect(() => guardBlockNote(editor as never), [editor]);
+
+  // ⌘/ opens the block menu of the caret's line (#818, blockMenuKey.ts): the
+  // handle shows only under a pointer. Not while the caret is in a database
+  // inside the page: there the same chord is its row's menu (useRowKeys.ts).
+  // Only for the editor the caret is in: a peek over the page registers the
+  // same key (review).
+  useShortcut({
+    id: 'block.menu',
+    keys: ['mod+/'],
+    scope: 'editor',
+    whileTyping: true,
+    when: () =>
+      canEdit &&
+      focusedKey('content') === 'body' &&
+      !!editor.domElement?.contains(document.activeElement) &&
+      !document.activeElement?.closest('.bn-db-embed'),
+    label: () => t('Open the block’s menu'),
+    group: () => t('Page'),
+    run: () => openBlockMenu(editor),
+  });
 
   // Enter inside a column stays in that column (#317, columnEnter.ts). No
   // label: it is what Enter already means, not a shortcut to list. Ahead of

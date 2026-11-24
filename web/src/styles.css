@@ -1023,6 +1023,61 @@ body:has(.icon-picker) .bn-side-menu {
   color: var(--editor-side-menu-icon);
 }
 
+/* A selected block (#818, owner 2026-11-24). BlockNote outlines a block that
+   is selected as a whole in 4px of fixed blue: loud, and drawn whenever a
+   database or image was merely arrived at. nigari shows a selection as the
+   soft tint it uses for every chosen item (spec 020, "faint tint"), and only
+   when the block really is selected: its handle clicked, its menu open (the
+   <style> BlockMenu writes, slashIcons.tsx), dragged, or reached with the
+   arrow keys. Nothing on hover and no ring: the handle appearing is the hint
+   ("There should not be a hover ring"). The outline of the same tint carries
+   it a little past the content, as padding would without moving the text. */
+.bn-container .ProseMirror-selectednode > .bn-block-content > *,
+.bn-container .bn-block-content.ProseMirror-selectednode > * {
+  outline: none;
+}
+.bn-container .ProseMirror-selectednode > .bn-block-content,
+.bn-container .bn-block-content.ProseMirror-selectednode {
+  background: var(--color-primary-subtle);
+  outline: var(--space-100) solid var(--color-primary-subtle);
+  border-radius: var(--radius-scale-md);
+}
+
+/* What the handle does, on hover (#818): the tooltip the rest of the app
+   draws (ui/Button.css .ui-tooltip), here from CSS because the handle is
+   BlockNote's button and a menu trigger at once. Shown after a short rest,
+   gone while its menu is open or a drag runs. */
+.bn-container .bn-side-menu [data-tip] {
+  position: relative;
+  display: inline-flex;
+}
+.bn-container .bn-side-menu [data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + var(--space-100));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--layer-tooltip);
+  white-space: pre;
+  pointer-events: none;
+  padding: var(--space-100) var(--space-200);
+  border-radius: var(--radius-scale-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text-default);
+  box-shadow: var(--shadow-overlay);
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+}
+.bn-container .bn-side-menu [data-tip]:hover:not(:has([aria-expanded='true']))::after {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--motion-duration-fast) ease 500ms;
+}
+
 .icon-picker-tabs {
   display: flex;
   align-items: center;
@@ -1175,6 +1230,35 @@ body:has(.icon-picker) .bn-side-menu {
 .page-title::placeholder {
   color: var(--muted);
   opacity: 0.5;
+}
+
+/* The title is a field, and has to say so (#268). Pointing at it lays the
+   hover wash under it; while it is being edited the wash stays and a bar in
+   the focus colour runs along its foot, so editing looks different from
+   resting in both themes (WCAG 2.4.7). The padding and the negative margin
+   cancel out: the text stays on the body's left edge, the wash reaches a
+   little past it. The ring every other field gets stays off (see the
+   writing-surface group below): around a 38px heading it read as a box. */
+.page-title:not([readonly]) {
+  cursor: text;
+  padding-inline: 8px;
+  margin-inline: -8px;
+  width: calc(100% + 16px);
+  border-radius: var(--radius-scale-lg);
+  transition: background-color 0.12s ease;
+}
+
+.page-title:not([readonly]):hover,
+.page-title:not([readonly]):focus {
+  background: var(--hover);
+}
+
+/* The bar is a second background layer, not a border (the textarea's height
+   is its scrollHeight, which a border would clip) and not a shadow. */
+.page-title:not([readonly]):focus {
+  background:
+    linear-gradient(var(--color-focus), var(--color-focus)) bottom / 100% 2px no-repeat,
+    var(--hover);
 }
 
 /* BlockNote integration */
@@ -2029,8 +2113,9 @@ body:has(.icon-picker) .bn-side-menu {
    its toolbar keeps to filter, sort and New, and folds away until it is
    reached for (spec 012, US5, research R11), so a document reads as text:
    shown while the pointer is over the embed, while focus is inside it, and
-   while a menu or popover from it is open (data-menu-open; the menus are
-   portaled, so neither :hover nor :focus-within can see them). Opacity, not
+   while a menu or popover from it is open (a button in it says
+   aria-expanded="true"; the menus are portaled, so neither :hover nor
+   :focus-within can see them, #531). Opacity, not
    visibility: the buttons keep their box, so nothing moves when they appear,
    and stay in the tab order and the accessibility tree, so one Tab from the
    view reveals them. Only where there IS a pointer: on a touch screen nothing
@@ -2044,14 +2129,14 @@ body:has(.icon-picker) .bn-side-menu {
   }
   .bn-db-embed:hover .collection-scroll.is-embed .collection-actions,
   .bn-db-embed:focus-within .collection-scroll.is-embed .collection-actions,
-  .collection-scroll.is-embed .collection-actions[data-menu-open] {
+  .collection-scroll.is-embed .collection-actions:has([aria-expanded='true']) {
     opacity: 1;
   }
   /* The marker says it while the buttons are folded, and gives way once
      they show it themselves. */
   .bn-db-embed:hover .embed-view-state,
   .bn-db-embed:focus-within .embed-view-state,
-  .collection-toolbar:has(.collection-actions[data-menu-open]) .embed-view-state {
+  .collection-toolbar:has(.collection-actions [aria-expanded='true']) .embed-view-state {
     visibility: hidden;
   }
 }
@@ -2903,7 +2988,8 @@ body.is-col-resizing {
 /* A heading drawn as an icon (ColHead's icon): the name is read out and is
    the tooltip, but not drawn. */
 .th-hidden-name,
-.lead-check .ui-checkbox-label {
+.lead-check .ui-checkbox-label,
+.toast-say {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -3668,7 +3754,8 @@ body.is-col-resizing {
    a green box around the entire document. No text program does that — in Bear,
    Notion and Word the CURSOR shows the focus, and that is an accepted focus
    indicator for text fields. The ring stays everywhere it is really needed:
-   buttons, menus, checkboxes. */
+   buttons, menus, checkboxes. The page title draws its own focus instead: a
+   wash and a bar along its foot (#268, next to .page-title). */
 .ProseMirror:focus-visible,
 .bn-editor:focus-visible,
 [contenteditable]:focus-visible,
@@ -5193,34 +5280,39 @@ body.is-col-resizing {
   font-size: 13.5px;
   box-shadow: var(--shadow);
   max-width: 90vw;
+  /* The message and its buttons on one line, and clickable, which the
+     toaster itself is not: every toast has Dismiss since #933. */
+  display: flex;
+  align-items: center;
+  gap: var(--space-200);
+  pointer-events: auto;
 }
 .toast-error {
   background: var(--color-destructive);
   color: var(--color-on-destructive);
 }
 
-/* A toast with an action (spec 005): the message and its button on one line,
-   and clickable, which the toaster itself is not. */
-.toast-with-action {
-  display: flex;
-  align-items: center;
-  gap: var(--space-200);
-  pointer-events: auto;
-}
-
 /* The toast's button is drawn in the toast's own text colour, with a hairline
    of it, so it reads on ink and on the error colour alike. As a plain
    low-emphasis button it kept the page's text colour: 3.0:1 on the light
    error toast, 1.8:1 on the dark one (#924). */
-.toast .toast-action.ui-button {
+.toast .toast-action.ui-button,
+.toast .toast-close.ui-button {
   flex: none;
   color: inherit;
   border-color: currentColor;
 }
-.toast .toast-action.ui-button:hover:not([data-disabled]) {
+/* Dismiss sits at the end, quiet: no hairline of its own. */
+.toast .toast-close.ui-button {
+  margin: calc(-1 * var(--space-100)) calc(-1 * var(--space-200)) calc(-1 * var(--space-100)) auto;
+  border-color: transparent;
+}
+.toast .toast-action.ui-button:hover:not([data-disabled]),
+.toast .toast-close.ui-button:hover:not([data-disabled]) {
   background: color-mix(in srgb, currentColor 16%, transparent);
 }
-.toast .toast-action.ui-button:focus-visible {
+.toast .toast-action.ui-button:focus-visible,
+.toast .toast-close.ui-button:focus-visible {
   outline-color: currentColor;
 }
 
@@ -10297,8 +10389,11 @@ body:has(.live-down) .update-banner {
 .bn-columns-grip::before {
   content: '';
   position: absolute;
-  top: 0;
-  bottom: 0;
+  /* Past the row, above and below: the line ended with the text and was
+     easy to miss (owner 2026-11-24, "Longer"). Only the line: the target
+     stays within the row, off the lines around it. */
+  top: calc(-1 * var(--space-200));
+  bottom: calc(-1 * var(--space-200));
   left: 50%;
   width: 1px;
   margin-left: -0.5px;
@@ -10320,10 +10415,40 @@ body:has(.live-down) .update-banner {
    block and its content and the class on that wrapper is not ours to rely on.
    The second form matches through any single wrapper; keeping both means an
    upgrade that adds or drops one does not silently stack the columns. */
+/* The gap between columns, read by the grip (which fills it, blocks.tsx) and
+   by the handle of a block in a later column (below), which steps past it. */
+.bn-container {
+  --columns-gap: 18px;
+}
+/* The handle of a block in a second or third column sits in the gap, where
+   the grip that resizes the columns is: two targets on one spot, and the grip
+   won (#820, owner 2026-11-24). So that handle steps one gap further left, over
+   the end of the column before, and a pointer coming from the text crosses the
+   grip and reaches the handle; while it crosses, the handle stays where it is
+   (blockNoteGuards.ts, holdOnHandleAndGrip). */
+.bn-container .bn-side-menu-row {
+  display: inline-flex;
+  align-items: center;
+}
+/* The menu itself moves, not only its buttons, and the floating box BlockNote
+   wraps it in, which stays where it was, lets the pointer through: either box
+   would still cover the gap and keep the pointer off the grip. Only where a
+   pointer hovers: a finger taps the handle where it is and crosses nothing,
+   and on a phone's narrow columns the moved handle covered the text of the
+   column before. */
+@media (hover: hover) {
+  .bn-container .bn-side-menu:has(> [data-past-grip]) {
+    transform: translateX(calc(-1 * var(--columns-gap)));
+    pointer-events: auto;
+  }
+  .bn-container div:has(> .bn-side-menu > [data-past-grip]) {
+    pointer-events: none;
+  }
+}
 .bn-block:has(> .bn-block-content[data-content-type='columns']) > .bn-block-group,
 .bn-block:has(> * > .bn-block-content[data-content-type='columns']) > .bn-block-group {
   display: grid;
-  gap: 18px;
+  gap: var(--columns-gap);
   align-items: start;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

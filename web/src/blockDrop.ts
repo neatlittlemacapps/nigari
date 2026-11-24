@@ -30,6 +30,7 @@ import { dropTarget, lineFor, staysPut, type Box, type Item, type Line, type Tar
 import { dropLineWidth } from './dropLine';
 import { closeEmptied, insertColumn, sourcesOf, wrapBeside } from './columnMoves';
 import { setOpening } from './columnOpening';
+import { sidewaysDwell } from './sidewaysDwell';
 import { t } from './i18n';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -244,6 +245,9 @@ export function blockDrop(editor: Editor): () => void {
   // `undefined`: no dragover has decided since the line was last hidden;
   // `null`: one did and found no target, so the drop moves nothing (review).
   let shownTarget: { target: Target; all: Item[]; ids: string[] } | null | undefined;
+  // How long the pointer has rested at a sideways edge (#820).
+  const dwell = sidewaysDwell();
+  let rest: ReturnType<typeof setTimeout> | undefined;
   // What a screen reader is told when a drop would make columns (T022): the
   // vertical line and the opening are only seen.
   // The region is put on the page when the drag starts, empty: one made and
@@ -285,6 +289,8 @@ export function blockDrop(editor: Editor): () => void {
     line = null;
     shown = '';
     shownTarget = undefined;
+    dwell.reset();
+    clearTimeout(rest);
     opening(null);
     say('');
   };
@@ -293,7 +299,19 @@ export function blockDrop(editor: Editor): () => void {
     const ids = draggedIds(v.state);
     // Sideways only where there is room for columns side by side (FR-010).
     const sideways = v.dom.getBoundingClientRect().width >= SIDEWAYS_MIN_WIDTH;
-    const target = dropTarget(items, x, y, ids, { sideways });
+    let target = dropTarget(items, x, y, ids, { sideways });
+    // A new column, or a layout beside a block, only after a short rest at
+    // that edge (#820, sidewaysDwell.ts); until then the line it would be
+    // without sideways drops.
+    const edge = target?.kind === 'column' ? `column:${target.id}:${target.at}` : target?.kind === 'beside' ? `beside:${target.id}:${target.edge}` : null;
+    const now = performance.now();
+    clearTimeout(rest);
+    if (!dwell.ready(edge, now) && edge) {
+      target = dropTarget(items, x, y, ids, { sideways: false });
+      // Asked again when the wait is over: dragover can come too seldom
+      // for the 0.4 s (review).
+      rest = setTimeout(() => overAt(x, y), dwell.left(now) + 20);
+    }
     return target ? { target, all: items, ids } : null;
   };
   const draw = (box: Box | null, key: string) => {
@@ -317,10 +335,11 @@ export function blockDrop(editor: Editor): () => void {
     line.style.height = `${box.bottom - box.top}px`;
   };
 
-  const onOver = (e: DragEvent) => {
+  const onOver = (e: DragEvent) => overAt(e.clientX, e.clientY);
+  function overAt(x: number, y: number) {
     const v = view();
     if (!v || !v.editable || !origin || !isBlockDrag(v)) return;
-    const d = decide(v, e.clientX, e.clientY);
+    const d = decide(v, x, y);
     shownTarget = d;
     if (!d) {
       draw(null, 'none');
@@ -334,7 +353,7 @@ export function blockDrop(editor: Editor): () => void {
     // close again.
     opening(to.kind === 'column' ? { id: to.id, at: to.at } : null);
     say(to.kind === 'column' ? sayColumn() : to.kind === 'beside' ? sayBeside() : '');
-  };
+  }
   const onLeave = (e: DragEvent) => {
     const v = view();
     if (!v || !(e.relatedTarget instanceof Node) || !v.dom.contains(e.relatedTarget)) hide();

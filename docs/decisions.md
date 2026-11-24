@@ -7,6 +7,69 @@ entries are not edited away.
 
 ---
 
+## 2026-11-24 — A chosen block is tinted, ⌘/ opens its menu, and the column gap belongs to the resize grip (#818, #820)
+
+- **The selection is nigari's soft tint, shown only when a block is chosen**
+  (owner, 2026-11-24: option 4, `--color-primary-subtle`; "There should not
+  be a hover ring. The handle appearing is the affordance"). BlockNote's 4px
+  blue outline on a selected node is replaced in `styles.css`; the block an
+  open menu acts on is tinted by a `<style>` the menu writes (`MenuTint` in
+  `slashIcons.tsx`), not by a class on the editor's DOM (that makes
+  ProseMirror redraw the node, see ColumnsBlock). Turned down: a focus ring
+  on click or keyboard selection (the owner declined it), a tint on hover.
+- **⌘/ opens the block menu of the caret's line** (`blockMenuKey.ts`), the
+  same chord as a table row's menu. BlockNote has no call for "show the side
+  menu for this block"; its side-menu view is asked what it asks on a mouse
+  move, with a point on the caret's line, and the handle it draws is clicked.
+  Closing that menu gives the caret back. Turned down: a menu of our own
+  rendered from the keyboard (a second copy of the block menu to keep in
+  step).
+- **The gap between columns belongs to the resize grip** (owner,
+  2026-11-24: "ok, as long as the divider line … is higher", "Longer"). The
+  grip now fills the gap and reaches 8px past the row; the handle of a line in
+  a later column moves one gap further left, over the column before, so the
+  pointer crosses the grip on its way to it. Over the grip, and on the handle,
+  BlockNote's side menu keeps the block it shows (`holdOnHandleAndGrip` in
+  `blockNoteGuards.ts`): BlockNote resolved the grip to the columns block and,
+  from its right edge, to the last column. The same hold mends a phone bug
+  found on the way: the mouse move a tap sends ahead of its click moved the
+  menu to the last column, so a tap on a first column's handle opened another
+  line's menu. Decided at the point BlockNote looks, not on the event's
+  target: the two differ by a fraction of a pixel at the grip's edge.
+  Turned down: the handle winning the gap (the owner chose the grip), and
+  freezing the menu from `sideMenuHold.ts` on the grip (it decides on the
+  event target, which disagreed with BlockNote at the edge, measured).
+- **A sideways drop waits for a 0.4 s rest at its edge** (owner, 2026-11-24;
+  `sidewaysDwell.ts`). Passing through shows the ordinary line, so a block
+  dragged along a column no longer becomes a column. Applies to both
+  sideways drops, a new column and a layout beside a block. No timer: the
+  browser repeats dragover while the pointer rests. Turned down: a narrower
+  edge (the edges are already 16px, and a narrower one is harder to hit on
+  purpose).
+
+---
+
+## 2026-11-23 — The Umbrel store is updated only when the owner asks
+
+Owner: "No I mean only build store version when I ask". Since 2026-11-12 every
+release opened a store pull request and closed the one before it; with several
+releases a day that was a pull request the owner did not want each time.
+Replaces "Each release proposes itself to the Umbrel store" (2026-11-12).
+
+- **The store job moved out of `release.yml` into `umbrel-store.yml`,
+  started by hand** (`workflow_dispatch`), with an optional version that
+  defaults to the latest release. A release no longer touches the store.
+- **It still closes older open `nigari-<version>` store pull requests**
+  (2026-11-12, "A newer Umbrel store pull request closes the older ones").
+- **Without `UMBREL_STORE_TOKEN` the run now fails.** In a release a missing
+  store update must not fail the release; here the store update is the whole
+  point of the run, so a silent pass would mislead.
+- Rejected: a version input on `release.yml`'s own `workflow_dispatch` (a
+  manual release run would build and publish a new release too); a store pull
+  request only every Nth release (still not when the owner asks).
+
+---
+
 ## 2026-11-23 — BlockNote's pointer handling is corrected by swapping two plugin-view methods (#825, #826), and a drop commits the line it showed (#820)
 
 - **#825 and #826 swap one method each on BlockNote's plugin views**
@@ -33,6 +96,8 @@ entries are not edited away.
   is decided at the drop. Turned down: waiting for the opening to settle
   before the drop (a drop cannot wait), and reading the boxes on every
   dragover (SC-003's per-step budget).
+
+---
 
 ## 2026-11-23 — Every pull request says what the code graph showed, and a check holds it to that (#926)
 

@@ -633,7 +633,6 @@
   "Reopen": "Wieder öffnen",
   "Reset": "Zurücksetzen",
   "Reset the link": "Link zurücksetzen",
-  "Resolved": "Erledigt",
   "Restore": "Wiederherstellen",
   "Restore the version from {when}? The current state is saved as a version first.": "Diese Version vom {when} wiederherstellen? Der aktuelle Stand wird als Version gesichert.",
   "Restoring failed": "Wiederherstellen fehlgeschlagen",
@@ -1080,7 +1079,6 @@
   "→ Certificates & secrets → client secret.": "→ Zertifikate & Geheimnisse → Client-Secret.",
   "→ Links": "→ Links",
   "→ copy the token and paste it here. You set the hostname (e.g.": "→ Token kopieren und hier einfügen. Den Hostname (z. B.",
-  "⌘↵ to send": "⌘↵ zum Senden",
   "⚠ Cloud agents (claude.ai, say) cannot reach": "⚠ Cloud-Agents (z. B. claude.ai) erreichen nicht",
   "⚠ Google and Microsoft accept HTTPS redirect URIs only (localhost aside). Start a tunnel (the “Domain & proxy” tab) or enter a public HTTPS base URL under “General”. It then appears here on its own.": "⚠ Google & Microsoft akzeptieren nur HTTPS-Redirect-URIs (außer localhost). Starte einen Tunnel (Tab „Domain & Proxy“) oder trage unter „Allgemein“ eine öffentliche HTTPS-Basis-URL ein. Dann erscheint sie hier automatisch.",
   "⚠ This is the URL of the running quick tunnel. It changes on every start. For OAuth that lasts, use a named tunnel or your own domain and enter it as the base URL.": "⚠ Das ist die URL des laufenden Quick-Tunnels. Sie wechselt bei jedem Start. Für dauerhaftes OAuth einen benannten Tunnel oder eine eigene Domain nutzen und als Basis-URL eintragen.",
@@ -1379,7 +1377,6 @@
   "Until {time}": "Bis {time}",
   "You": "Du",
   "{names} reacted with {reaction}": "{names} hat mit {reaction} reagiert",
-  "⌘↵ to save": "⌘↵ zum Speichern",
   "edited a comment on": "hat einen Kommentar bearbeitet auf",
   "Add and switch": "Hinzufügen und wechseln",
   "Change layout": "Darstellung ändern",
@@ -1411,5 +1408,13 @@
   "Views": "Ansichten",
   "The row next to this spot is gone or in another list, so nothing was put there. Reload and try again.": "Die Zeile neben dieser Stelle gibt es nicht mehr oder sie steht in einer anderen Liste, darum wurde dort nichts eingefügt. Lade neu und versuche es noch einmal.",
   "Show more": "Mehr anzeigen",
-  "Emergency access by {name} ended.": "Notfallzugriff von {name} beendet."
+  "Emergency access by {name} ended.": "Notfallzugriff von {name} beendet.",
+  "Date property": "Datumseigenschaft",
+  "{chord} to send": "{chord} zum Senden",
+  "{chord} to save": "{chord} zum Speichern",
+  "A comment needs some text": "Ein Kommentar braucht etwas Text",
+  "Resolve": "Erledigen",
+  "Drag to move": "Ziehen zum Verschieben",
+  "Click or {keys} to open the menu": "Klicken oder {keys} öffnet das Menü",
+  "Open the block’s menu": "Menü des Blocks öffnen"
 }
