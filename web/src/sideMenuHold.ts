@@ -14,7 +14,7 @@
 // the handle, the handle does not move. BlockNote has that switch already, the
 // one it throws while the block menu is open: freezeMenu / unfreezeMenu. It is
 // thrown here when the pointer moves onto the side menu and released on the
-// first move off it. A drag from the handle keeps it thrown (no pointer events
+// first move off it, unless a press on the handle is still down (#984). A drag from the handle keeps it thrown (no pointer events
 // fire during a drag), which is right: the handle belongs to the dragged block
 // until the drop, and the next move after the drop releases it.
 //

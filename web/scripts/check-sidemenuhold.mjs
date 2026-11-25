@@ -60,7 +60,8 @@ try {
   // ---- #984: a press on the handle holds until the drag starts ----
   check('a quick move off the handle with the button down keeps the hold', at({ held: true, pressed: true }), null);
   check('the button up again, off the handle: release', at({ held: true, pressed: false }), 'release');
-  check('a press does not hold a handle that was never held', at({ pressed: true }), null);
+  check('a press while the block menu is open still yields to BlockNote', at({ held: true, pressed: true, blockMenuOpen: true }), 'yield');
+  check('a touch with a press recorded is still left alone', at({ held: true, pressed: true, pointerType: 'touch' }), null);
 
   // ---- a finger is left alone ----
   check('a touch on the handle does not hold it', at({ onOwnMenu: true, pointerType: 'touch' }), null);
