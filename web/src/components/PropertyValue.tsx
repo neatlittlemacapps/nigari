@@ -87,7 +87,7 @@ export function idList(value: unknown): string[] {
   return typeof value === 'string' && value !== '' ? [value] : [];
 }
 
-function chip(opt: PropOption | undefined, fallback: string) {
+export function chip(opt: PropOption | undefined, fallback: string) {
   const color = opt?.color ?? '#999';
   return (
     <span className="prop-chip" style={{ background: color + '2e', color }} title={opt?.name ?? fallback}>

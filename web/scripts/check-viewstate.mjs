@@ -93,6 +93,10 @@ try {
   check('fold a lane', vs.withFoldedLane(null, 'ada', true), { foldedLanes: ['ada'] });
   check('unfold the last lane', vs.withFoldedLane({ foldedLanes: ['ada'] }, 'ada', false), null);
   check('folding keeps the picks', vs.withFoldedLane({ quickPicks: { owner: 'ada' } }, 'x', true), { quickPicks: { owner: 'ada' }, foldedLanes: ['x'] });
+  check('fold a group', vs.withFoldedGroups(null, ['todo'], true), { foldedGroups: ['todo'] });
+  check('collapse all keeps the folded one once', vs.withFoldedGroups({ foldedGroups: ['todo'] }, ['todo', 'done', ''], true), { foldedGroups: ['todo', 'done', ''] });
+  check('expand all leaves nothing', vs.withFoldedGroups({ foldedGroups: ['todo', ''] }, ['todo', ''], false), null);
+  check('a group fold keeps the lanes', vs.withFoldedGroups({ foldedLanes: ['x'] }, ['a'], true), { foldedLanes: ['x'], foldedGroups: ['a'] });
 
   // ---- Scopes ----
   check('a view on its page', vs.viewScope('v1'), 'v1');
