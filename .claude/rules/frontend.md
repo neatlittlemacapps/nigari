@@ -55,3 +55,31 @@ paths:
   big file imports, not inline.
 - **After a visible change**, run the affected Playwright spec in `web/tests/`
   and note which wiki screenshots are now stale (`check-wiki.mjs` lists them).
+- **How it looks is checked, not only measured** (owner, 2026-11-25,
+  `docs/decisions.md`). The ux-ui-audit measures contrast and tap sizes; it
+  never says a screen looks wrong. So:
+  - **A new layout starts with mockups the owner approves**, before it is
+    built (a new view, a new panel, a phone form of something).
+  - **Every visible change** is looked at on screenshots, light and dark, at
+    1280 and 390 px wide, against the checklist below, and the screenshots go
+    into the pull request. Measure what can be measured (left edges in the
+    browser), do not eyeball it.
+  - **The look checklist:**
+    1. *One left edge.* Things that belong together start on the same line:
+       a header's text where its rows' content starts, controls in the same
+       slot as the controls below them. Measure it.
+    2. *No indent ladders.* Hierarchy comes from weight, size, colour, a
+       line or a label, not from pushing content right; on a phone never.
+       Lines (borders) start and end where the content does, not over empty
+       gutters.
+    3. *Spacing rhythm.* Gaps from the tokens; the same relation gets the same
+       gap; groups are further apart than the items in them.
+    4. *Quiet secondary things.* One thing leads. Totals, counts and meta are
+       muted and light; no grey band or bold where nothing needs it. Nothing
+       says what something next to it already says.
+    5. *A phone gets the main thing first.* No slivers, no one-word-per-line,
+       no empty columns eating the width.
+    6. *The same thing looks the same* across table, list, board and
+       document.
+    7. *Empty and edge states look meant*: no rows, one row, a long title, a
+       hidden or folded group, dark mode.

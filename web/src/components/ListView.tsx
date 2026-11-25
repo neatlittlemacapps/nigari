@@ -139,6 +139,7 @@ export default function ListView({
               <Fragment key={g.key}>
                 <RowGroupHeader
                   list
+                  leadCheck={!!check}
                   label={labelOf(g.key)}
                   count={g.rows.length}
                   folded={folded}

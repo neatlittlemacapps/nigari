@@ -2845,10 +2845,13 @@ function TableView({
                   <td className="db-title-col db-calc-cell" />
                   {cols.map((p) => (
                     <td key={p.id} className="db-calc-cell">
-                      {footer(
-                        p,
-                        groupRowsDrawn.map((o) => o.row),
-                      )}
+                      {/* The grouping column's total says only what the
+                          header already does ("2 filled" under To do). */}
+                      {p.id !== grouping!.prop.id &&
+                        footer(
+                          p,
+                          groupRowsDrawn.map((o) => o.row),
+                        )}
                     </td>
                   ))}
                 </tr>

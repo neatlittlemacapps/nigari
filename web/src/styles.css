@@ -3665,6 +3665,31 @@ body.is-col-resizing {
   gap: var(--space-100);
 }
 
+/* One left edge (the look checklist): the fold arrow takes the rows'
+   leading slot and the name starts where the rows' content does. In a
+   table the arrow has the header's gutter cell, over the rows' handles and
+   without a line, so the header's line starts at the table's edge as the
+   rows' do; the name sits at the cells' padding. */
+.db-group-fold {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.db-table tbody.db-group .db-group-head > th {
+  padding-left: 10px; /* token-ok: the cells' own padding (.db-table td), so the name starts with their content */
+}
+
+.db-table .db-row-gutter.db-group-gutter {
+  vertical-align: middle;
+  padding-top: 0;
+}
+
+.db-table .db-group-gutter .db-group-fold {
+  justify-content: flex-end;
+  width: 100%;
+}
+
 .db-group-count {
   font-size: var(--font-size-xs);
   font-weight: 400;
@@ -3698,8 +3723,29 @@ body.is-col-resizing {
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-text-default);
-  padding: var(--space-150) var(--space-100) var(--space-50);
+  padding: var(--space-150) 12px var(--space-50); /* token-ok: the list row's own inset (.list-row), so the header shares its left edge */
   border-top: 1px solid var(--color-border-default);
+}
+
+/* In a list the arrow sits over the rows' icons and the name over their
+   titles: the same slots and the same gap as a row (.list-row, and the
+   phone grid's column gap, both 10px). */
+.list-group-head .db-group-head-inner {
+  gap: var(--space-250);
+}
+
+.list-group-head .db-group-fold {
+  width: 22px; /* token-ok: the row icon's slot, .list-row-icon */
+  justify-content: center;
+}
+
+.list-group-lead {
+  flex: none;
+  width: 32px; /* token-ok: the leading checkbox's slot, .list-row-check */
+}
+
+.list-group-head .db-group-count {
+  margin-left: calc(-1 * var(--space-150)); /* token-ok: the count stays close to its name, as in a table */
 }
 
 .list-group-head:first-child {
@@ -3720,6 +3766,12 @@ body.is-col-resizing {
    would pile up there. */
 .db-group-calc {
   position: static;
+}
+
+/* A group's totals are a quiet line under its rows, not the foot's band:
+   one grey band per group made the table heavy (the look checklist). */
+.db-group-calc .db-calc-cell {
+  background: transparent;
 }
 
 .view-group-menu {

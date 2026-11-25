@@ -73,6 +73,7 @@ function periodLabel(key: string, period: string | undefined): string {
 export default function RowGroupHeader({
   colSpan,
   list,
+  leadCheck,
   label,
   count,
   folded,
@@ -84,6 +85,10 @@ export default function RowGroupHeader({
    *  table row; the rows it heads follow it, not inside it, so a phone's
    *  grid still lines up their cells. */
   list?: boolean;
+  /** The list's rows lead with a checkbox: the header keeps that slot
+   *  empty, so its arrow sits over the rows' icons and its name over their
+   *  titles. */
+  leadCheck?: boolean;
   label: ReactNode;
   count: number;
   folded: boolean;
@@ -100,18 +105,27 @@ export default function RowGroupHeader({
     setMenuAt({ x: e.clientX, y: e.clientY });
     setOpen(true);
   };
+  const fold = (
+    <span className="db-group-fold">
+      {onFold && (
+        <Button
+          emphasis="low"
+          size="sm"
+          label={folded ? t('Expand group') : t('Collapse group')}
+          icon={folded ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+          aria-expanded={!folded}
+          onClick={() => onFold(!folded)}
+        />
+      )}
+    </span>
+  );
   const inner = (
         <div className="db-group-head-inner">
-          {onFold && (
-            <Button
-              emphasis="low"
-              size="sm"
-              label={folded ? t('Expand group') : t('Collapse group')}
-              icon={folded ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-              aria-expanded={!folded}
-              onClick={() => onFold(!folded)}
-            />
-          )}
+          {list && leadCheck && <span className="list-group-lead" />}
+          {/* The fold arrow takes the rows' leading slot (a table's handle
+              gutter, a list's icon), so the name starts where the rows'
+              content starts (the look checklist: one left edge). */}
+          {list && fold}
           {/* In a list the header is a div among the rows, not a th: a
               heading lets a screen reader name the group and jump between
               groups (code review). */}
@@ -147,9 +161,14 @@ export default function RowGroupHeader({
       </div>
     );
   }
+  // In a table the arrow has a cell of its own in the handle gutter, as the
+  // rows' handles do, with no line: the header's line then starts at the
+  // table's edge, where the rows' lines start, instead of jutting out over
+  // the gutter (the look checklist: no indent).
   return (
     <tr className="db-group-head" onContextMenu={onContextMenu}>
-      <th colSpan={colSpan} scope="rowgroup">
+      <td className="db-row-gutter db-group-gutter">{fold}</td>
+      <th colSpan={(colSpan ?? 2) - 1} scope="rowgroup">
         {inner}
       </th>
     </tr>
