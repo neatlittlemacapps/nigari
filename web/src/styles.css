@@ -2691,6 +2691,18 @@ body:has(.icon-picker) .bn-side-menu {
   overscroll-behavior-x: contain;
 }
 
+/* On a database page the row gutter (spec 022, 52px: the + and the handle)
+   hangs into the page's 48px margin, as it does in a document (spec 023,
+   FR-003), so the grid starts on the same edge as the view tabs and the page
+   title instead of 52px in (#982, owner's choice D5, 2026-11-25). The gutter
+   is 4px wider than the margin; its buttons sit at its right, so those 4px
+   are empty. On a phone the margin is 14px: the table reaches the screen's
+   edge and the gutter stays whole, so a tapped row's buttons stay on screen. */
+.collection-scroll:not(.is-embed) .table-wrap {
+  padding-left: 0;
+  margin-left: calc(48px - 52px); /* token-ok: the page margin less the row gutter's width (.db-table .db-row-gutter) */
+}
+
 /* Cells read at the type scale's body size (spec 012, #131): the 13.5px they
    had made a table in a document look a size smaller than the paragraph
    above it. Set on the table so the cells inherit it; headers are the 12px
@@ -3648,9 +3660,22 @@ body.is-col-resizing {
   letter-spacing: normal;
   color: var(--color-text-default);
   font-weight: 600;
-  padding: var(--space-150) var(--space-100) var(--space-50);
-  border-top: 1px solid var(--color-border-default);
+  padding: var(--space-150) var(--space-100) var(--space-150);
   background: var(--color-surface-default);
+}
+
+/* Groups are set apart by white space, not a line (owner's choice D6,
+   2026-11-25): the header and its gutter cell draw no borders, and every
+   group after the first starts a step further down. Its own headings row
+   (D1) then opens the group's grid. */
+.db-table tbody.db-group .db-group-head > th,
+.db-table tbody.db-group .db-group-head > td {
+  border: 0;
+}
+
+.db-table tbody.db-group + tbody.db-group .db-group-head > th,
+.db-table tbody.db-group + tbody.db-group .db-group-head > td {
+  padding-top: var(--space-600);
 }
 
 .db-table tbody.db-group:first-of-type .db-group-head > th {
@@ -5328,6 +5353,12 @@ body.is-col-resizing {
 
   .table-wrap {
     padding: 12px 14px calc(40px + env(safe-area-inset-bottom));
+  }
+
+  /* A database page's table reaches the screen's edge here (#982): no 4px
+     pull into a margin that is not there. */
+  .collection-scroll:not(.is-embed) .table-wrap {
+    margin-left: 0;
   }
 
   .gallery {
