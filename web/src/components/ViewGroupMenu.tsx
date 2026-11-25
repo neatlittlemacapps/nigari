@@ -87,9 +87,11 @@ export default function ViewGroupMenu({
           value={grouped ? view.groupBy : ''}
           onChange={(e) => {
             const id = e.target.value;
-            // A new property's groups are not the old one's: what was hidden
-            // there means nothing here.
-            if (id) onChange({ grouped: true, groupBy: id, ...(id !== view.groupBy ? { hiddenGroups: undefined, groupPeriod: undefined } : {}) });
+            // A new property's groups are not the old one's: what was hidden,
+            // the period and status groups mean nothing here, as set_view's
+            // applyGroupSpec drops them (code review: status groups left on a
+            // date were refused, so the grouping could not be changed).
+            if (id) onChange({ grouped: true, groupBy: id, ...(id !== view.groupBy ? { hiddenGroups: undefined, groupPeriod: undefined, statusGroups: undefined } : {}) });
             else onChange({ grouped: false });
           }}
         >

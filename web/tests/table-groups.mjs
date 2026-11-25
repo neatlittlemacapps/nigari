@@ -191,6 +191,12 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
   const readerDoing = reader.locator('.db-group-head', { has: reader.locator('.db-group-name', { hasText: /^Doing$/ }) });
   await readerDoing.getByRole('button', { name: 'Collapse group' }).click();
   await readerDoing.getByRole('button', { name: 'Expand group' }).waitFor();
+  // Their Group menu folds and opens, and offers nothing that would change
+  // the view (code review: the full menu offered saves the server refused).
+  await reader.locator('.collection-toolbar').getByRole('button', { name: 'Group', exact: true }).click();
+  await reader.locator('.view-group-menu').getByRole('button', { name: 'Collapse all groups' }).waitFor();
+  assert.equal(await reader.locator('.view-group-menu select').count(), 0, 'a reader is offered Group by');
+  await reader.keyboard.press('Escape');
   await readerCtx.close();
 
   // Grouped by a formula, no drop into another group can write a value: no

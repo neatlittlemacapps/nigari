@@ -112,8 +112,15 @@ export default function RowGroupHeader({
               onClick={() => onFold(!folded)}
             />
           )}
-          <span className="db-group-name">{label}</span>
-          <span className="db-group-count" aria-label={plural(count, '{n} row', '{n} rows')}>
+          {/* In a list the header is a div among the rows, not a th: a
+              heading lets a screen reader name the group and jump between
+              groups (code review). */}
+          <span className="db-group-name" {...(list ? { role: 'heading', 'aria-level': 3 } : {})}>
+            {label}
+          </span>
+          {/* aria-label is ignored on a plain span: as an image the count is
+              read as "2 rows", not "2" (code review). */}
+          <span className="db-group-count" role="img" aria-label={plural(count, '{n} row', '{n} rows')}>
             {count}
           </span>
           {hasActions && (

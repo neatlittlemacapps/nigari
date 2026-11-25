@@ -324,7 +324,94 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "b92e6b3ee6d2",
+        "web/src/components/CollectionView.tsx": "17fe9101dbe3",
+        "web/src/tokens.css": "71dfd9e6471e",
+        "web/src/theme.css": "3feaedbcede5"
+      }
+    },
+    {
+      "id": "collection-grouped",
+      "page": "views.md",
+      "caption": "A table grouped by Status: each group has a header with its count, a fold arrow and its own totals.",
+      "shows": [
+        "web/src/components/CollectionView.tsx",
+        "web/src/components/RowGroupHeader.tsx",
+        "web/src/tokens.css",
+        "web/src/theme.css"
+      ],
+      "steps": [
+        {
+          "goto": "/"
+        },
+        {
+          "waitFor": ".sidebar"
+        },
+        {
+          "click": ".sidebar >> text=Tasks"
+        },
+        {
+          "wait": 900
+        },
+        {
+          "click": ".view-tab >> text=Grouped"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "waitFor": ".db-group-head"
+        }
+      ],
+      "takenAt": {
+        "web/src/components/CollectionView.tsx": "17fe9101dbe3",
+        "web/src/components/RowGroupHeader.tsx": "42fa112a12a7",
+        "web/src/tokens.css": "71dfd9e6471e",
+        "web/src/theme.css": "3feaedbcede5"
+      }
+    },
+    {
+      "id": "group-menu",
+      "page": "views.md",
+      "caption": "The Group menu of a grouped table: the property, the order, empty and hidden groups, and folding every group.",
+      "shows": [
+        "web/src/components/ViewGroupMenu.tsx",
+        "web/src/tokens.css",
+        "web/src/theme.css"
+      ],
+      "steps": [
+        {
+          "goto": "/"
+        },
+        {
+          "waitFor": ".sidebar"
+        },
+        {
+          "click": ".sidebar >> text=Tasks"
+        },
+        {
+          "wait": 900
+        },
+        {
+          "click": ".view-tab >> text=Grouped"
+        },
+        {
+          "wait": 800
+        },
+        {
+          "waitFor": ".db-group-head"
+        },
+        {
+          "click": ".collection-toolbar >> button.ui-button:has-text(\"Group\")"
+        },
+        {
+          "waitFor": ".view-group-menu"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "takenAt": {
+        "web/src/components/ViewGroupMenu.tsx": "0b5efd2a024d",
         "web/src/tokens.css": "71dfd9e6471e",
         "web/src/theme.css": "3feaedbcede5"
       }
@@ -361,7 +448,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "b92e6b3ee6d2",
+        "web/src/components/CollectionView.tsx": "17fe9101dbe3",
         "web/src/components/BoardView.tsx": "92f2f572fee2",
         "web/src/cardLayout.ts": "81a08ba36ba8",
         "web/src/tokens.css": "71dfd9e6471e",
@@ -398,7 +485,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "b92e6b3ee6d2",
+        "web/src/components/CollectionView.tsx": "17fe9101dbe3",
         "web/src/tokens.css": "71dfd9e6471e",
         "web/src/theme.css": "3feaedbcede5"
       }
@@ -442,7 +529,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "b92e6b3ee6d2",
+        "web/src/components/CollectionView.tsx": "17fe9101dbe3",
         "web/src/components/ChartFigure.tsx": "d8d497a63489",
         "web/src/components/ChartView.css": "ad6a7c9c7acf",
         "web/src/components/ChartSettings.tsx": "845dc5779885",
@@ -505,7 +592,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "b92e6b3ee6d2",
+        "web/src/components/CollectionView.tsx": "17fe9101dbe3",
         "web/src/components/ChartSettings.tsx": "845dc5779885",
         "web/src/components/ChartSettings.css": "16a9584f65dc",
         "web/src/components/ChartPane.tsx": "1fbe458f0d0b",

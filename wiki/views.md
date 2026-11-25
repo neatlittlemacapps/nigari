@@ -284,6 +284,10 @@ chip, a person or page by name), and how many rows it holds. In a table each
 group also has its own totals row, as the table's foot would; a list has none.
 The rows inside a group keep the view's filter and sort.
 
+![A table grouped by Status: each group has a header with its count, a fold arrow and its own totals.](img/collection-grouped.png)
+
+![The Group menu of a grouped table: the property, the order, empty and hidden groups, and folding every group.](img/group-menu.png)
+
 - **Order.** The groups come in the property's own order: a select's options as
   they are listed, a status's options, a date from early to late. Rows with no
   value make a group of their own, **No** and the property's name (**No

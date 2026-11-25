@@ -137,7 +137,7 @@ which PR 3's screenshots and tests take up.
 **Independent Test**: group by Due, by month; 12 and 29 August share August.
 
 - [x] T029 [US4] [ui] `ViewGroupMenu.tsx`: for a date property a period choice (`ui/ToggleGroup` or a select: Day, Week, Month, Year; month default); `RowGroupHeader` labels: a day by `formatDay`, a week "Week of {day}", a month by `formatMonth`, a year as its number
-- [x] T030 [US4] [test] `web/tests/table-groups.mjs`: date grouping by month and week with the account's week start; a cross-group drag on a date grouping refused
+- [x] T030 [US4] [test] `web/tests/table-groups.mjs`: date grouping by month and by ISO week (FR-010 as amended, research R7); a cross-group drag on a date grouping refused
 
 ### Phase 11: Polish
 

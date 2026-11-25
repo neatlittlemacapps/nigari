@@ -1167,7 +1167,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             schema={schema}
             view={ownFilterSort ? { ...view, ...ownFilterSort } : view}
             onChange={updateView}
-            canGroup={!viewsLock}
+            // Who may change the view: a reader, or a document's embed the
+            // viewer may not save, gets the fold-only menu (code review: the
+            // full menu offered changes the server then refused).
+            canGroup={mayChangeViews}
             onFoldAllGroups={foldAllGroups}
           />
         )}
