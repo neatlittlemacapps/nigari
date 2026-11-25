@@ -128,22 +128,22 @@ which PR 3's screenshots and tests take up.
 **Goal**: the same headers in a list, without totals.
 **Independent Test**: group a list by Status; headers, counts and folding.
 
-- [ ] T027 [US3] [ui] `web/src/components/ListView.tsx`: takes the grouping and the fold handlers; headers (`RowGroupHeader` in its list form, a `div` row spanning the grid with the same button and menu) between rows; the phone grid unchanged; `ChartView`'s table alternative stays flat
-- [ ] T028 [US3] [test] `web/tests/table-groups.mjs`: a grouped list on desktop and phone, folding, hidden groups
+- [x] T027 [US3] [ui] `web/src/components/ListView.tsx`: takes the grouping and the fold handlers; headers (`RowGroupHeader` in its list form, a `div` row spanning the grid with the same button and menu) between rows; the phone grid unchanged; `ChartView`'s table alternative stays flat
+- [x] T028 [US3] [test] `web/tests/table-groups.mjs`: a grouped list on desktop and phone, folding, hidden groups
 
 ### Phase 10: User Story 4 - Group by a date (P2)
 
 **Goal**: a date groups by day, week, month or year.
 **Independent Test**: group by Due, by month; 12 and 29 August share August.
 
-- [ ] T029 [US4] [ui] `ViewGroupMenu.tsx`: for a date property a period choice (`ui/ToggleGroup` or a select: Day, Week, Month, Year; month default); `RowGroupHeader` labels: a day by `formatDay`, a week "Week of {day}", a month by `formatMonth`, a year as its number
-- [ ] T030 [US4] [test] `web/tests/table-groups.mjs`: date grouping by month and week with the account's week start; a cross-group drag on a date grouping refused
+- [x] T029 [US4] [ui] `ViewGroupMenu.tsx`: for a date property a period choice (`ui/ToggleGroup` or a select: Day, Week, Month, Year; month default); `RowGroupHeader` labels: a day by `formatDay`, a week "Week of {day}", a month by `formatMonth`, a year as its number
+- [x] T030 [US4] [test] `web/tests/table-groups.mjs`: date grouping by month and week with the account's week start; a cross-group drag on a date grouping refused
 
 ### Phase 11: Polish
 
 - [ ] T031 [P] [wiki] `wiki/views.md`: grouping a table or list (Group menu, folding, order, empty and hidden groups, dates, drag between groups); `wiki/mcp-tools.md`: `set_view` grouping parameters
 - [ ] T032 [P] [wiki] `wiki/screenshots.json`: a grouped table and the Group menu (light and dark), shot with `web/scripts/shoot-wiki.mjs`; retake shots `check-wiki.mjs` reports stale
-- [ ] T033 [ui] Follow-up issue for two levels of grouping (Q3) and a per-group + New (spec Assumptions), linked from #823
+- [x] T033 [ui] Follow-up issue for two levels of grouping (Q3) and a per-group + New (spec Assumptions), linked from #823
 - [ ] T034 [backend] Release after PR 3 merges; close #823 once its table and list parts are done; handoff comment on #643
 
 **Checkpoint (PR 3)**: gate, bundle, `/code-review`, `ux-ui-audit`.

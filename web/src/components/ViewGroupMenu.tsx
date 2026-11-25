@@ -6,9 +6,10 @@ import { Switch } from '../ui/Switch';
 
 // The Group popover of the view bar (spec 024, T017), moved out of
 // CollectionView.tsx (over 1,400 lines, frontend rules). A board picks the
-// property its columns are made from, as before. A table picks the property
-// its rows are grouped by, or none, and then how the groups are shown: the
-// order, empty groups, hidden groups, and every group folded or open.
+// property its columns are made from, as before. A table or list picks the
+// property its rows are grouped by, or none, and then how the groups are
+// shown: a date's period, the order, empty groups, hidden groups, and every
+// group folded or open.
 //
 // Everything but folding is the view's and is saved for everyone (onChange,
 // the same updateView the other controls use, so the views lock applies).
@@ -75,6 +76,7 @@ export default function ViewGroupMenu({
     );
   }
   const grouped = !!view.grouped && !!view.groupBy && schema.some((p) => p.id === view.groupBy);
+  const groupProp = grouped ? schema.find((p) => p.id === view.groupBy) : undefined;
   const hidden = view.hiddenGroups ?? [];
   return (
     <div className="view-group-menu">
@@ -101,6 +103,26 @@ export default function ViewGroupMenu({
       </div>
       {grouped && (
         <>
+          {groupProp?.type === 'date' && (
+            // The chart's choice and words (ChartSettings): a date groups by
+            // day, week, month or year, month unless chosen. Another period
+            // makes other groups: what was hidden by the old one goes. A
+            // native select, as Group by above: ui/Select's list opened
+            // under this popover.
+            <div className="fs-row">
+              <select
+                className="prop-select"
+                aria-label={t('Period')}
+                value={view.groupPeriod ?? 'month'}
+                onChange={(e) => onChange({ groupPeriod: e.target.value as ViewDef['groupPeriod'], hiddenGroups: undefined })}
+              >
+                <option value="day">{t('Day')}</option>
+                <option value="week">{t('Week')}</option>
+                <option value="month">{t('Month')}</option>
+                <option value="year">{t('Year')}</option>
+              </select>
+            </div>
+          )}
           <Switch label={t('Reverse order')} checked={!!view.groupReverse} onCheckedChange={(on) => onChange({ groupReverse: on || undefined })} />
           <Switch label={t('Show empty groups')} checked={!!view.showEmptyGroups} onCheckedChange={(on) => onChange({ showEmptyGroups: on || undefined })} />
           {hidden.length > 0 && (

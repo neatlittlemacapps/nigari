@@ -5,6 +5,7 @@ import { statusGroupLabel, STATUS_GROUPS } from '../statusGroups';
 import { formatDay, formatMonth } from '../format';
 import { t, plural } from '../i18n';
 import type { PropDef, StatusGroup } from '../types';
+import type { GroupSettings } from '../rowGroups';
 import { Button } from '../ui/Button';
 import { Menu } from '../ui/Menu';
 import { chip } from './PropertyValue';
@@ -17,6 +18,20 @@ import { GroupActionItems, type GroupActionHandlers } from './GroupActionItems';
 // right-click), drawn from the group action list. One <tr> heading its own
 // <tbody>, so a screen reader hears the rows as belonging to it. In a module
 // of its own: CollectionView.tsx is over 1,400 lines (frontend rules).
+
+/** A table or list grouped by a property (spec 024): the groups are worked
+ *  out in the view, from the rows as drawn. */
+export type RowGrouping = {
+  prop: PropDef;
+  settings: GroupSettings;
+  /** The keys this person folded. */
+  folded: ReadonlySet<string>;
+  /** Absent where folding cannot be kept (an embed without a place). */
+  onFold?: (keys: readonly string[], folded: boolean) => void;
+  onFoldAll?: (folded: boolean) => void;
+  /** Hide a group for everyone. Absent for someone who may not change the view. */
+  onHide?: (key: string) => void;
+};
 
 /** How a group's key reads in its header: the option's chip, a person's or
  *  page's name, Checked / Unchecked, a status group, a period of a date, or
@@ -57,13 +72,18 @@ function periodLabel(key: string, period: string | undefined): string {
 
 export default function RowGroupHeader({
   colSpan,
+  list,
   label,
   count,
   folded,
   onFold,
   actions,
 }: {
-  colSpan: number;
+  colSpan?: number;
+  /** In a list (T027): a row of the list's grid across its width, not a
+   *  table row; the rows it heads follow it, not inside it, so a phone's
+   *  grid still lines up their cells. */
+  list?: boolean;
   label: ReactNode;
   count: number;
   folded: boolean;
@@ -74,17 +94,13 @@ export default function RowGroupHeader({
   const [menuAt, setMenuAt] = useState<{ x: number; y: number } | null>(null);
   const [open, setOpen] = useState(false);
   const hasActions = !!(actions.hideGroup || actions.collapseAll || actions.expandAll);
-  return (
-    <tr
-      className="db-group-head"
-      onContextMenu={(e) => {
-        if (!hasActions) return;
-        e.preventDefault();
-        setMenuAt({ x: e.clientX, y: e.clientY });
-        setOpen(true);
-      }}
-    >
-      <th colSpan={colSpan} scope="rowgroup">
+  const onContextMenu = (e: React.MouseEvent) => {
+    if (!hasActions) return;
+    e.preventDefault();
+    setMenuAt({ x: e.clientX, y: e.clientY });
+    setOpen(true);
+  };
+  const inner = (
         <div className="db-group-head-inner">
           {onFold && (
             <Button
@@ -116,6 +132,18 @@ export default function RowGroupHeader({
             </Menu>
           )}
         </div>
+  );
+  if (list) {
+    return (
+      <div className="db-group-head list-group-head" onContextMenu={onContextMenu}>
+        {inner}
+      </div>
+    );
+  }
+  return (
+    <tr className="db-group-head" onContextMenu={onContextMenu}>
+      <th colSpan={colSpan} scope="rowgroup">
+        {inner}
       </th>
     </tr>
   );

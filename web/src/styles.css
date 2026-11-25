@@ -3690,6 +3690,32 @@ body.is-col-resizing {
   }
 }
 
+/* A grouped list's header (spec 024, T027): the table's header, as a row of
+   the list. On a phone it spans the list's grid, and its name stays in view
+   while the list scrolls sideways (db-group-head-inner is sticky). */
+.list-group-head {
+  grid-column: 1 / -1;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-default);
+  padding: var(--space-150) var(--space-100) var(--space-50);
+  border-top: 1px solid var(--color-border-default);
+}
+
+.list-group-head:first-child {
+  border-top: 0;
+}
+
+/* The header's own line divides the groups: the row above it drops its own,
+   or the two draw a double line. */
+.list-row:has(+ .list-group-head) {
+  border-bottom: none;
+}
+
+.list-view > .db-empty {
+  grid-column: 1 / -1;
+}
+
 /* Every group has its totals: none of them sticks to the foot, or they
    would pile up there. */
 .db-group-calc {

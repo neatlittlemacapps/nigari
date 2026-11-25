@@ -6,7 +6,7 @@ import { usePersonalViews } from '../usePersonalViews';
 import { hasPersonalChange, mergeViewState, viewScope, withFoldedGroups, withFoldedLane, withPersonalEdit, withQuickPick, withoutViewChanges } from '../viewState';
 import { groupAcceptsDrops, groupDropPatch, groupRows, type GroupProp, type GroupSettings } from '../rowGroups';
 import ViewGroupMenu from './ViewGroupMenu';
-import RowGroupHeader, { useGroupLabel } from './RowGroupHeader';
+import RowGroupHeader, { useGroupLabel, type RowGrouping } from './RowGroupHeader';
 import { laneIsReadOnly, quickFilterProps } from '../quickFilters';
 import QuickFilters from './QuickFilters';
 import ViewChangeBar from './ViewChangeBar';
@@ -1027,7 +1027,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // view already shows, in TableView. What to hide is the view's, saved for
   // everyone; what is folded is the person's own (foldedGroups), as a
   // board's lanes are.
-  const groupProp = view.type === 'table' && view.grouped && view.groupBy ? schema.find((p) => p.id === view.groupBy) : undefined;
+  const groupProp = (view.type === 'table' || view.type === 'list') && view.grouped && view.groupBy ? schema.find((p) => p.id === view.groupBy) : undefined;
   const groupSettings: GroupSettings = {
     period: view.groupPeriod,
     statusGroups: view.statusGroups,
@@ -1382,6 +1382,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           onOpenInNewTab={onOpenInNewTab}
           onSetProp={setRowProp}
           onSetOptions={setPropOptions}
+          grouping={rowGrouping}
         />
         {moreRows}
         </>
@@ -1851,11 +1852,12 @@ function FilterSortControls({
 }) {
   const [open, setOpen] = useState<'filter' | 'sort' | 'group' | null>(null);
   const narrow = useNarrowScreen();
-  // A board groups into columns, a table into groups of rows (spec 024).
-  const groupable = view.type === 'board' || view.type === 'table';
+  // A board groups into columns, a table or list into groups of rows (spec 024).
+  const rowsGroup = view.type === 'table' || view.type === 'list';
+  const groupable = view.type === 'board' || rowsGroup;
   const groupLit = view.type === 'board' ? !!view.groupBy : !!view.grouped;
   const groupLabelOf = useGroupLabel(
-    view.type === 'table' && view.grouped ? schema.find((p) => p.id === view.groupBy) : undefined,
+    rowsGroup && view.grouped ? schema.find((p) => p.id === view.groupBy) : undefined,
     view.groupPeriod,
   );
   // Escape closes the popover (#745), and the press is marked handled so a
@@ -2046,7 +2048,7 @@ function FilterSortControls({
           project. */}
       {/* An icon on a phone too, like Filter and Sort: with its word it
           squeezed the view picker to "B…" (#921). */}
-      {groupable && (canGroup || (view.type === 'table' && !!view.grouped && !!onFoldAllGroups)) && (
+      {groupable && (canGroup || (rowsGroup && !!view.grouped && !!onFoldAllGroups)) && (
         narrow ? (
           <Button
             size="sm"
@@ -2290,19 +2292,7 @@ function FilterSortControls({
  *  guard that would have to be kept in step on both sides. */
 const TITLE_COL = '__title';
 
-/** A table grouped by a property (spec 024): the groups are worked out here,
- *  from the rows as drawn. */
-type TableGrouping = {
-  prop: PropDef;
-  settings: GroupSettings;
-  /** The keys this person folded. */
-  folded: ReadonlySet<string>;
-  /** Absent where folding cannot be kept (an embed without a place). */
-  onFold?: (keys: readonly string[], folded: boolean) => void;
-  onFoldAll?: (folded: boolean) => void;
-  /** Hide a group for everyone. Absent for someone who may not change the view. */
-  onHide?: (key: string) => void;
-};
+type TableGrouping = RowGrouping;
 
 function TableView({
   rows,
