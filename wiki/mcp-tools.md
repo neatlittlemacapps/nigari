@@ -1173,6 +1173,18 @@ being incomplete, so a board with `group_by: ""` comes back as `a board needs
 group_by`, and a calendar or timeline with `date_prop: ""` likewise. To be rid
 of the grouping you delete the view.
 
+**A table or list groups its rows** with `group_by` (spec 024): a select,
+multi-select, status, relation, person, checkbox, date, formula or rollup. Here
+`group_by: ""` does take the grouping away, and the view draws its rows flat
+again. With a date, `period` picks `day`, `week` (ISO weeks), `month` (the
+default) or `year`. `group_reverse` turns the groups' order round (No value stays
+last), `show_empty_groups` also draws a select's, status's or checkbox's groups
+that no row is in, `status_groups` groups a status by its three groups, and
+`hidden_groups` names the groups not drawn, by key (`""` for No value). Another
+`group_by` forgets the old property's `period`, `status_groups` and
+`hidden_groups`. Folding a group is each person's own and is not part of the
+view. A board changed to a table or list stays grouped by its columns' property.
+
 Filters take the same operators `query_rows` does. A board people actually work
 in usually needs one: without a filter the finished column grows forever and
 pushes the work aside. On a status, use `group_is_not` with `["complete"]`. It
