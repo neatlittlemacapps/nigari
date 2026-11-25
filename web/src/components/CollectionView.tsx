@@ -694,7 +694,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     });
   };
 
-  const { editTitleId, addRowNextTo, finishTitle, placeRow, duplicateRow, dropSortForDrag } = useTableRowActions({
+  const { editTitleId, addRowNextTo, finishTitle, placeRow, patchRow, duplicateRow, dropSortForDrag } = useTableRowActions({
     collectionId,
     setRows,
     loadRows,
@@ -1440,7 +1440,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             canEdit && (!serverSort || !!personalScope)
               ? // Into an empty or folded group there is no row to place it
                 // by: the value alone (spec 024).
-                (id, spot, patch) => void (spot ? placeRow(id, spot, patch) : patch && setRowProps(id, patch))
+                (id, spot, patch) => void (spot ? placeRow(id, spot, patch) : patch && patchRow(id, patch))
               : undefined
           }
           grouping={rowGrouping}
@@ -2595,9 +2595,13 @@ function TableView({
   const { drag: rowDrag, startDrag: startRowDrag, consumeClick: consumeRowClick } = useRowDrag(
     drawn,
     (id, drop) => {
-      const patch = drop.from !== undefined && drop.to !== undefined && drop.from !== drop.to ? dropPatch(id, drop.from, drop.to) : null;
-      if (patch) onPlaceRow?.(id, drop.spot, patch);
-      else if (drop.spot) onPlaceRow?.(id, drop.spot);
+      if (drop.from !== undefined && drop.to !== undefined && drop.from !== drop.to) {
+        // Into another group: with its value, or not at all. A patch that
+        // came out null by the release (the row changed meanwhile) must not
+        // turn into a plain move next to another group's row (code review).
+        const patch = dropPatch(id, drop.from, drop.to);
+        if (patch) onPlaceRow?.(id, drop.spot, patch);
+      } else if (drop.spot) onPlaceRow?.(id, drop.spot);
     },
     onRowDragStart,
     grouping ? { groups: drawnGroups, accepts: (id, from, to) => dropPatch(id, from, to) !== null } : undefined,
@@ -2621,7 +2625,8 @@ function TableView({
           // in a grouped table, among the rows of the group the focused copy
           // of the row is in (a keyboard move changes no value).
           const key = grouping ? document.activeElement?.closest<HTMLElement>('tbody[data-group-key]')?.dataset.groupKey : undefined;
-          const inGroup = key !== undefined ? drawnGroups.find((g) => g.key === key)?.rows : undefined;
+          const runIds = new Set(drawn.slice(0, inRun).map((d) => d.id));
+          const inGroup = key !== undefined ? drawnGroups.find((g) => g.key === key)?.rows.filter((r) => runIds.has(r.id)) : undefined;
           const run = inGroup ?? drawn.slice(0, inRun);
           const list = onRowDragStart ? run.filter((d) => (d.depth ?? 0) === 0).sort((a, b) => (at.get(a.id) ?? 0) - (at.get(b.id) ?? 0)) : run;
           const spot = rowStep(list, id, dir);

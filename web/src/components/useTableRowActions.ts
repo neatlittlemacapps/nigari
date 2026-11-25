@@ -96,6 +96,23 @@ export function useTableRowActions({
     }
   };
 
+  // A row dropped into an empty or folded group (spec 024): no row to place
+  // it by, so the value alone. A refusal reads the rows again, as a refused
+  // move does (code review: the row stayed drawn in the group it never
+  // joined).
+  const patchRow = async (id: string, propsPatch: Record<string, unknown>) => {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, props: { ...r.props, ...propsPatch } } : r)));
+    const reload = sortDropped.current;
+    sortDropped.current = false;
+    try {
+      await api.updatePage(id, { propsPatch });
+      if (reload) void loadRows();
+    } catch (e) {
+      fail(e);
+      void loadRows();
+    }
+  };
+
   // Duplicate in a row's menu: the copy lands right below its row (the
   // server places it, research R3), and the rows are read again.
   const duplicateRow = async (id: string) => {
@@ -117,5 +134,5 @@ export function useTableRowActions({
     dropSort();
   };
 
-  return { editTitleId, addRowNextTo, finishTitle, placeRow, duplicateRow, dropSortForDrag };
+  return { editTitleId, addRowNextTo, finishTitle, placeRow, patchRow, duplicateRow, dropSortForDrag };
 }

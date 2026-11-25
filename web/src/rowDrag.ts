@@ -122,17 +122,18 @@ export function groupAt(boxes: readonly { top: number; bottom: number }[], y: nu
  *  dragged in from elsewhere. The dragged row may be drawn there too (a row
  *  with several values is in each of its groups): it and its sub-items are
  *  passed over, as the gap after a sibling's sub-items is after the sibling.
- *  Null when the group has no other row: the drop then writes the value and
- *  leaves the row's place as it is. */
+ *  Null when the gap is inside another row's sub-items (as rowSpot: the line
+ *  there would name a place the row cannot take, code review), or when the
+ *  group has no other row. */
 export function spotAmong(rows: readonly DrawnRow[], dragId: string, gap: number): RowSpot | null {
   const byId = new Map(rows.map((r) => [r.id, r]));
   const top = (r: DrawnRow) => atLevel(byId, r, null);
   for (let i = Math.max(0, gap); i < rows.length; i++) {
     const t = top(rows[i]);
     if (!t || t.id === dragId) continue;
-    // A top-level row below: just before it. A sub-item of another row
-    // (the gap is inside that row's tree): just after that row.
-    return t === rows[i] ? { anchor: t.id, side: 'before' } : { anchor: t.id, side: 'after' };
+    // A top-level row below: just before it. A sub-item of another row:
+    // the gap is inside that row's tree, no place for this row.
+    return t === rows[i] ? { anchor: t.id, side: 'before' } : null;
   }
   for (let i = Math.min(gap, rows.length) - 1; i >= 0; i--) {
     const t = top(rows[i]);
@@ -158,7 +159,13 @@ export function groupDrop(
     const spot = rowSpot(g.rows, dragId, gap);
     return spot ? { spot, group: g.key } : null;
   }
-  return { spot: spotAmong(g.rows, dragId, gap), group: g.key };
+  const spot = spotAmong(g.rows, dragId, gap);
+  // No spot in a group with rows of its own: the gap offers nothing. In a
+  // group without (empty, folded, or only the dragged row's copy) the drop
+  // writes the value alone.
+  const others = g.rows.some((r) => r.id !== dragId && (r.parentId ?? null) === null);
+  if (!spot && others) return null;
+  return { spot, group: g.key };
 }
 
 /** The list with row `id` moved to `spot`, as the table shows it at once
