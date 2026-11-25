@@ -103,8 +103,9 @@ column. Someone who can only read the database sees plain headings, and so
 does a database shown inside a document: its columns are the database's own,
 arranged on its own page.
 
-**Moving a row.** Each row has a narrow margin on its left with two buttons
-that show when you point at the row: a **+** and a grip. Drag the grip up or
+**Moving a row.** Each row has two buttons in the page's margin, just left of
+the table, that show when you point at the row: a **+** and a grip. The table
+itself starts on the same edge as the view tabs above it. Drag the grip up or
 down: the row fades, a line marks the gap it will land in, and it lands there
 when you let go. The table scrolls along near its top or bottom edge; Escape,
 or letting go outside the table, puts it back. The new place belongs to the
@@ -279,10 +280,12 @@ width, so the properties after it are only a short swipe away.
 **Group** in the settings bar groups a table's or a list's rows by a
 property: a select, multi-select, status, relation, person, checkbox, date,
 formula or rollup. **No grouping** takes it away. Each group starts with a
-header: a fold arrow, the group's value as the cells show it (an option as its
-chip, a person or page by name), and how many rows it holds. In a table each
-group also has its own totals row, as the table's foot would; a list has none.
-The rows inside a group keep the view's filter and sort.
+header: a fold arrow in the page's margin, then the group's value as the cells
+show it (an option as its chip, a person or page by name), and how many rows it
+holds. In a table each open group repeats the column headings under its header,
+so it reads on its own, and ends with its own totals line, as the table's foot
+would; a list has neither. Groups are set apart by white space. The rows inside
+a group keep the view's filter and sort.
 
 ![A table grouped by Status: each group has a header with its count, a fold arrow and its own totals.](img/collection-grouped.png)
 
@@ -320,7 +323,9 @@ The rows inside a group keep the view's filter and sort.
   property. A table made from a board before grouping existed stays flat.
 
 **Not built yet:** a second level of grouping, and a **+ New** in each group's
-header that fills in that group's value (#996). A table of several thousand rows
+header that fills in that group's value (#996); **+ New group** under the last
+group (#1005); choosing a column's calculation, or none, for the foot and the
+group totals (#1004). A table of several thousand rows
 takes seconds to draw again when grouping is turned on or off (#994).
 
 ### `gallery`
