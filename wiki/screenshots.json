@@ -324,7 +324,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "17fe9101dbe3",
+        "web/src/components/CollectionView.tsx": "dc8a9dc99aa4",
         "web/src/tokens.css": "71dfd9e6471e",
         "web/src/theme.css": "3feaedbcede5"
       }
@@ -363,8 +363,8 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "17fe9101dbe3",
-        "web/src/components/RowGroupHeader.tsx": "42fa112a12a7",
+        "web/src/components/CollectionView.tsx": "dc8a9dc99aa4",
+        "web/src/components/RowGroupHeader.tsx": "a339476ba006",
         "web/src/tokens.css": "71dfd9e6471e",
         "web/src/theme.css": "3feaedbcede5"
       }
@@ -411,7 +411,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/ViewGroupMenu.tsx": "0b5efd2a024d",
+        "web/src/components/ViewGroupMenu.tsx": "89df992ae572",
         "web/src/tokens.css": "71dfd9e6471e",
         "web/src/theme.css": "3feaedbcede5"
       }
@@ -448,7 +448,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "17fe9101dbe3",
+        "web/src/components/CollectionView.tsx": "dc8a9dc99aa4",
         "web/src/components/BoardView.tsx": "92f2f572fee2",
         "web/src/cardLayout.ts": "81a08ba36ba8",
         "web/src/tokens.css": "71dfd9e6471e",
@@ -485,7 +485,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "17fe9101dbe3",
+        "web/src/components/CollectionView.tsx": "dc8a9dc99aa4",
         "web/src/tokens.css": "71dfd9e6471e",
         "web/src/theme.css": "3feaedbcede5"
       }
@@ -529,7 +529,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "17fe9101dbe3",
+        "web/src/components/CollectionView.tsx": "dc8a9dc99aa4",
         "web/src/components/ChartFigure.tsx": "d8d497a63489",
         "web/src/components/ChartView.css": "ad6a7c9c7acf",
         "web/src/components/ChartSettings.tsx": "845dc5779885",
@@ -592,7 +592,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "17fe9101dbe3",
+        "web/src/components/CollectionView.tsx": "dc8a9dc99aa4",
         "web/src/components/ChartSettings.tsx": "845dc5779885",
         "web/src/components/ChartSettings.css": "16a9584f65dc",
         "web/src/components/ChartPane.tsx": "1fbe458f0d0b",
