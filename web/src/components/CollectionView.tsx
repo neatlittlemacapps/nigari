@@ -4,7 +4,7 @@ import { api, ApiError } from '../api';
 import { serverMessage } from '../serverErrors';
 import { usePersonalViews } from '../usePersonalViews';
 import { hasPersonalChange, mergeViewState, viewScope, withFoldedGroups, withFoldedLane, withPersonalEdit, withQuickPick, withoutViewChanges } from '../viewState';
-import { groupRows, type GroupProp, type GroupSettings } from '../rowGroups';
+import { groupAcceptsDrops, groupDropPatch, groupRows, type GroupProp, type GroupSettings } from '../rowGroups';
 import ViewGroupMenu from './ViewGroupMenu';
 import RowGroupHeader, { useGroupLabel } from './RowGroupHeader';
 import { laneIsReadOnly, quickFilterProps } from '../quickFilters';
@@ -15,7 +15,7 @@ import Portal from './Portal';
 import { anchoredMenuStyle } from '../anchoredMenu';
 import { sortComparator } from '../viewSort';
 import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } from '../columnDrag';
-import { rowStep, useRowDrag, type DrawnRow, type RowSpot } from '../rowDrag';
+import { rowStep, useRowDrag, type DrawnGroup, type DrawnRow, type RowSpot } from '../rowDrag';
 import { RowGutter, RowGutterHead } from './RowHandle';
 import { RowMenu } from './RowMenu';
 import { RowTitleInput } from './RowTitleInput';
@@ -1436,7 +1436,13 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           // would go for everyone, on the first move of a drag (code review).
           // While grouped, rows do not move yet: a drop between groups also
           // changes the row's value, which comes with PR 2b (spec 024, T024).
-          onPlaceRow={canEdit && !rowGrouping && (!serverSort || !!personalScope) ? (id, spot) => void placeRow(id, spot) : undefined}
+          onPlaceRow={
+            canEdit && (!serverSort || !!personalScope)
+              ? // Into an empty or folded group there is no row to place it
+                // by: the value alone (spec 024).
+                (id, spot, patch) => void (spot ? placeRow(id, spot, patch) : patch && setRowProps(id, patch))
+              : undefined
+          }
           grouping={rowGrouping}
           onRowDragStart={serverSort ? dropSortForDrag : undefined}
           onAddRowBelow={canEdit ? (id, above) => void addRowNextTo(id, above) : undefined}
@@ -2345,8 +2351,11 @@ function TableView({
   onSetProp: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
   /** Move a row next to another (spec 022). Absent: rows do not move here (a
-   *  reader, or a view whose order is not the database's own). */
-  onPlaceRow?: (id: string, spot: RowSpot) => void;
+   *  reader, or a view whose order is not the database's own). In a grouped
+   *  table a drop into another group adds `patch`, the values that make the
+   *  row that group's (spec 024); `spot` is null for a group with no row to
+   *  place it by. */
+  onPlaceRow?: (id: string, spot: RowSpot | null, patch?: Record<string, unknown>) => void;
   /** A press on a handle became a drag: a sorted view gives way to the rows'
    *  own order here (spec 022, US2). */
   onRowDragStart?: () => void;
@@ -2560,7 +2569,39 @@ function TableView({
       }
     }, 0);
   };
-  const { drag: rowDrag, startDrag: startRowDrag, consumeClick: consumeRowClick } = useRowDrag(drawn, (id, spot) => onPlaceRow?.(id, spot), onRowDragStart);
+  // A grouped table (spec 024, Q7): the top-level rows as drawn are grouped
+  // (after a document's row limit, research R5), each with its sub-items
+  // below it. A row with several values is in each of its groups.
+  const blocks: (typeof ordered)[] = [];
+  for (const o of ordered) {
+    if (o.depth === 0 || blocks.length === 0) blocks.push([o]);
+    else blocks[blocks.length - 1].push(o);
+  }
+  const groups = grouping
+    ? groupRows(blocks, (b) => b[0].row.props[grouping.prop.id], grouping.prop as GroupProp, grouping.settings)
+    : [];
+  // What a drag reads of the groups: the rows drawn under each header (none
+  // while folded), and whether a row may go into another group, which is
+  // whether a drop there can write a value (FR-011).
+  const drawnGroups: DrawnGroup[] = groups.map((g) => ({
+    key: g.key,
+    rows: grouping!.folded.has(g.key) ? [] : g.rows.flat().map((o) => ({ id: o.row.id, parentId: o.parent, depth: o.depth })),
+  }));
+  const dropPatch = (id: string, from: string, to: string) => {
+    if (!grouping || !groupAcceptsDrops(grouping.prop as GroupProp, grouping.settings)) return null;
+    const row = rows.find((r) => r.id === id);
+    return row ? groupDropPatch(grouping.prop.id, grouping.prop as GroupProp, from, to, row.props[grouping.prop.id], grouping.settings) : null;
+  };
+  const { drag: rowDrag, startDrag: startRowDrag, consumeClick: consumeRowClick } = useRowDrag(
+    drawn,
+    (id, drop) => {
+      const patch = drop.from !== undefined && drop.to !== undefined && drop.from !== drop.to ? dropPatch(id, drop.from, drop.to) : null;
+      if (patch) onPlaceRow?.(id, drop.spot, patch);
+      else if (drop.spot) onPlaceRow?.(id, drop.spot);
+    },
+    onRowDragStart,
+    grouping ? { groups: drawnGroups, accepts: (id, from, to) => dropPatch(id, from, to) !== null } : undefined,
+  );
   // The whole table, not one <tbody>: a grouped table has one per group,
   // and the row keys and Edit property find a row in any of them.
   const rowBody = useRef<HTMLTableElement>(null);
@@ -2576,8 +2617,12 @@ function TableView({
     onMove: onPlaceRow
       ? (id, dir) => {
           const at = new Map(rows.map((r) => [r.id, r.position ?? 0]));
-          // Only among the unbroken run at the top in a document (spec 023).
-          const run = drawn.slice(0, inRun);
+          // Only among the unbroken run at the top in a document (spec 023);
+          // in a grouped table, among the rows of the group the focused copy
+          // of the row is in (a keyboard move changes no value).
+          const key = grouping ? document.activeElement?.closest<HTMLElement>('tbody[data-group-key]')?.dataset.groupKey : undefined;
+          const inGroup = key !== undefined ? drawnGroups.find((g) => g.key === key)?.rows : undefined;
+          const run = inGroup ?? drawn.slice(0, inRun);
           const list = onRowDragStart ? run.filter((d) => (d.depth ?? 0) === 0).sort((a, b) => (at.get(a.id) ?? 0) - (at.get(b.id) ?? 0)) : run;
           const spot = rowStep(list, id, dir);
           if (!spot) return false;
@@ -2725,17 +2770,6 @@ function TableView({
       </tr>
   );
 
-  // A grouped table (spec 024, Q7): the top-level rows as drawn are grouped
-  // (after a document's row limit, research R5), each with its sub-items
-  // below it. A row with several values is in each of its groups.
-  const blocks: (typeof ordered)[] = [];
-  for (const o of ordered) {
-    if (o.depth === 0 || blocks.length === 0) blocks.push([o]);
-    else blocks[blocks.length - 1].push(o);
-  }
-  const groups = grouping
-    ? groupRows(blocks, (b) => b[0].row.props[grouping.prop.id], grouping.prop as GroupProp, grouping.settings)
-    : [];
   const labelOf = useGroupLabel(grouping?.prop, grouping?.settings.period);
   const span = cols.length + (lead ? 1 : 0) + 2;
 
