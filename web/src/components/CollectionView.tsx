@@ -6,7 +6,7 @@ import { usePersonalViews } from '../usePersonalViews';
 import { hasPersonalChange, mergeViewState, viewScope, withFoldedGroups, withFoldedLane, withPersonalEdit, withQuickPick, withoutViewChanges } from '../viewState';
 import { groupAcceptsDrops, groupDropPatch, groupRows, type GroupProp, type GroupSettings } from '../rowGroups';
 import ViewGroupMenu from './ViewGroupMenu';
-import RowGroupHeader, { useGroupLabel } from './RowGroupHeader';
+import RowGroupHeader, { useGroupLabel, type RowGrouping } from './RowGroupHeader';
 import { laneIsReadOnly, quickFilterProps } from '../quickFilters';
 import QuickFilters from './QuickFilters';
 import ViewChangeBar from './ViewChangeBar';
@@ -1027,7 +1027,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
   // view already shows, in TableView. What to hide is the view's, saved for
   // everyone; what is folded is the person's own (foldedGroups), as a
   // board's lanes are.
-  const groupProp = view.type === 'table' && view.grouped && view.groupBy ? schema.find((p) => p.id === view.groupBy) : undefined;
+  const groupProp = (view.type === 'table' || view.type === 'list') && view.grouped && view.groupBy ? schema.find((p) => p.id === view.groupBy) : undefined;
   const groupSettings: GroupSettings = {
     period: view.groupPeriod,
     statusGroups: view.statusGroups,
@@ -1167,7 +1167,10 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             schema={schema}
             view={ownFilterSort ? { ...view, ...ownFilterSort } : view}
             onChange={updateView}
-            canGroup={!viewsLock}
+            // Who may change the view: a reader, or a document's embed the
+            // viewer may not save, gets the fold-only menu (code review: the
+            // full menu offered changes the server then refused).
+            canGroup={mayChangeViews}
             onFoldAllGroups={foldAllGroups}
           />
         )}
@@ -1382,6 +1385,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           onOpenInNewTab={onOpenInNewTab}
           onSetProp={setRowProp}
           onSetOptions={setPropOptions}
+          grouping={rowGrouping}
         />
         {moreRows}
         </>
@@ -1851,11 +1855,12 @@ function FilterSortControls({
 }) {
   const [open, setOpen] = useState<'filter' | 'sort' | 'group' | null>(null);
   const narrow = useNarrowScreen();
-  // A board groups into columns, a table into groups of rows (spec 024).
-  const groupable = view.type === 'board' || view.type === 'table';
+  // A board groups into columns, a table or list into groups of rows (spec 024).
+  const rowsGroup = view.type === 'table' || view.type === 'list';
+  const groupable = view.type === 'board' || rowsGroup;
   const groupLit = view.type === 'board' ? !!view.groupBy : !!view.grouped;
   const groupLabelOf = useGroupLabel(
-    view.type === 'table' && view.grouped ? schema.find((p) => p.id === view.groupBy) : undefined,
+    rowsGroup && view.grouped ? schema.find((p) => p.id === view.groupBy) : undefined,
     view.groupPeriod,
   );
   // Escape closes the popover (#745), and the press is marked handled so a
@@ -2046,7 +2051,7 @@ function FilterSortControls({
           project. */}
       {/* An icon on a phone too, like Filter and Sort: with its word it
           squeezed the view picker to "B…" (#921). */}
-      {groupable && (canGroup || (view.type === 'table' && !!view.grouped && !!onFoldAllGroups)) && (
+      {groupable && (canGroup || (rowsGroup && !!view.grouped && !!onFoldAllGroups)) && (
         narrow ? (
           <Button
             size="sm"
@@ -2290,19 +2295,7 @@ function FilterSortControls({
  *  guard that would have to be kept in step on both sides. */
 const TITLE_COL = '__title';
 
-/** A table grouped by a property (spec 024): the groups are worked out here,
- *  from the rows as drawn. */
-type TableGrouping = {
-  prop: PropDef;
-  settings: GroupSettings;
-  /** The keys this person folded. */
-  folded: ReadonlySet<string>;
-  /** Absent where folding cannot be kept (an embed without a place). */
-  onFold?: (keys: readonly string[], folded: boolean) => void;
-  onFoldAll?: (folded: boolean) => void;
-  /** Hide a group for everyone. Absent for someone who may not change the view. */
-  onHide?: (key: string) => void;
-};
+type TableGrouping = RowGrouping;
 
 function TableView({
   rows,
@@ -2403,7 +2396,8 @@ function TableView({
     const id = focusAfter.current;
     if (!id) return;
     focusAfter.current = null;
-    const el = theadRef.current?.querySelector<HTMLElement>(`[data-col-id="${CSS.escape(id)}"] .th-label`);
+    // The whole table: a grouped table has its headings under each group.
+    const el = rowBody.current?.querySelector<HTMLElement>(`[data-col-id="${CSS.escape(id)}"] .th-label`);
     el?.focus();
   }, [idsKey]);
   const setColumns = (next: string[], focus: string) => {
@@ -2775,55 +2769,62 @@ function TableView({
       </tr>
   );
 
+  // The column headings. A flat table draws them once in its <thead>; a
+  // grouped one under each open group's header instead (owner's choice D1,
+  // 2026-11-25, as Notion does): each group reads on its own, without
+  // scrolling back up to see what a column is. Each copy is whole (resize,
+  // move, the property's menu): the column drag and the resize read the row
+  // and the heading they start from.
+  const headRow = (className?: string) => (
+    <tr className={className}>
+      <RowGutterHead />
+      {lead && (
+        <LeadCheckHead
+          prop={lead}
+          changes={propertyChanges?.(lead)}
+          onHide={onSetColumns && onHideColumn ? () => onHideColumn(lead.id) : undefined}
+        />
+      )}
+      <th className="db-title-col" style={colStyle(TITLE_COL)}>
+        <ColHead
+          label={t('Name')}
+          onResize={onSetColWidths ? startResize(TITLE_COL) : undefined}
+          onReset={resetCol(TITLE_COL)}
+        />
+      </th>
+      {cols.map((p, i) => (
+        <th key={p.id} data-col-id={p.id} className={headClass(i, p.id)} style={colStyle(p.id)}>
+          <ColHead
+            label={p.name}
+            onResize={onSetColWidths ? startResize(p.id) : undefined}
+            onReset={resetCol(p.id)}
+            changes={propertyChanges?.(p)}
+            moves={
+              onSetColumns && onHideColumn
+                ? {
+                    onStartDrag: (e) => startColDrag(e, p.id),
+                    consumeClick: () => consumeColClick(p.id),
+                    onMoveLeft: i > 0 ? () => setColumns(moveColumn(ids, p.id, -1), p.id) : undefined,
+                    onMoveRight: i < ids.length - 1 ? () => setColumns(moveColumn(ids, p.id, 1), p.id) : undefined,
+                    onHide: () => {
+                      focusAfter.current = ids[i + 1] ?? ids[i - 1] ?? null;
+                      onHideColumn(p.id);
+                    },
+                  }
+                : undefined
+            }
+          />
+        </th>
+      ))}
+    </tr>
+  );
   const labelOf = useGroupLabel(grouping?.prop, grouping?.settings.period);
   const span = cols.length + (lead ? 1 : 0) + 2;
 
   return (
     <div className="table-wrap">
       <table className="db-table" ref={rowBody}>
-        <thead ref={theadRef}>
-          <tr>
-            <RowGutterHead />
-            {lead && (
-              <LeadCheckHead
-                prop={lead}
-                changes={propertyChanges?.(lead)}
-                onHide={onSetColumns && onHideColumn ? () => onHideColumn(lead.id) : undefined}
-              />
-            )}
-            <th className="db-title-col" style={colStyle(TITLE_COL)}>
-              <ColHead
-                label={t('Name')}
-                onResize={onSetColWidths ? startResize(TITLE_COL) : undefined}
-                onReset={resetCol(TITLE_COL)}
-              />
-            </th>
-            {cols.map((p, i) => (
-              <th key={p.id} data-col-id={p.id} className={headClass(i, p.id)} style={colStyle(p.id)}>
-                <ColHead
-                  label={p.name}
-                  onResize={onSetColWidths ? startResize(p.id) : undefined}
-                  onReset={resetCol(p.id)}
-                  changes={propertyChanges?.(p)}
-                  moves={
-                    onSetColumns && onHideColumn
-                      ? {
-                          onStartDrag: (e) => startColDrag(e, p.id),
-                          consumeClick: () => consumeColClick(p.id),
-                          onMoveLeft: i > 0 ? () => setColumns(moveColumn(ids, p.id, -1), p.id) : undefined,
-                          onMoveRight: i < ids.length - 1 ? () => setColumns(moveColumn(ids, p.id, 1), p.id) : undefined,
-                          onHide: () => {
-                            focusAfter.current = ids[i + 1] ?? ids[i - 1] ?? null;
-                            onHideColumn(p.id);
-                          },
-                        }
-                      : undefined
-                  }
-                />
-              </th>
-            ))}
-          </tr>
-        </thead>
+        <thead ref={theadRef}>{!grouping && headRow()}</thead>
         {groups.map((g) => {
           const folded = grouping!.folded.has(g.key);
           const groupRowsDrawn = g.rows.flat();
@@ -2841,6 +2842,7 @@ function TableView({
                   expandAll: grouping!.onFoldAll && (() => grouping!.onFoldAll!(false)),
                 }}
               />
+              {!folded && headRow('db-group-cols')}
               {!folded && groupRowsDrawn.map(renderRow)}
               {/* The group's own totals, from the same sums as the table's
                   foot (Frank's choice 2: header value and count, totals per
@@ -2852,10 +2854,13 @@ function TableView({
                   <td className="db-title-col db-calc-cell" />
                   {cols.map((p) => (
                     <td key={p.id} className="db-calc-cell">
-                      {footer(
-                        p,
-                        groupRowsDrawn.map((o) => o.row),
-                      )}
+                      {/* The grouping column's total says only what the
+                          header already does ("2 filled" under To do). */}
+                      {p.id !== grouping!.prop.id &&
+                        footer(
+                          p,
+                          groupRowsDrawn.map((o) => o.row),
+                        )}
                     </td>
                   ))}
                 </tr>

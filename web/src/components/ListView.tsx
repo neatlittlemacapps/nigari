@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import type { PropDef, PropOption } from '../types';
 import PropertyValue from './PropertyValue';
 import { LeadCheckBox } from './TableCheckColumn';
@@ -5,6 +6,8 @@ import { tagColorClass } from '../tags';
 import { PageIcon } from '../pageIcon';
 import { t } from '../i18n';
 import { openPageAux, useOpenRow } from '../pageOpen';
+import { groupRows, type GroupProp } from '../rowGroups';
+import RowGroupHeader, { useGroupLabel, type RowGrouping } from './RowGroupHeader';
 
 interface Row {
   id: string;
@@ -33,6 +36,7 @@ export default function ListView({
   onOpenInNewTab,
   onSetProp,
   onSetOptions,
+  grouping,
 }: {
   rows: Row[];
   schema: PropDef[];
@@ -42,9 +46,14 @@ export default function ListView({
   onOpenInNewTab?: (id: string) => void;
   onSetProp: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
+  /** Grouped by a property (spec 024, T027): a header before each group's
+   *  rows, as in a table, without totals. A chart's list of its rows stays
+   *  flat (it passes none). */
+  grouping?: RowGrouping;
 }) {
   // What a click on a row does follows the view (spec 007, pageOpen.ts).
   const openRow = useOpenRow({ onNavigate, onOpenInNewTab });
+  const labelOf = useGroupLabel(grouping?.prop, grouping?.settings.period);
   if (rows.length === 0) {
     return <div className="db-empty">{emptyLabel}</div>;
   }
@@ -59,14 +68,7 @@ export default function ListView({
   // properties after it line up in the phone grid.
   const anyTags = rows.some((r) => (r.tags?.length ?? 0) > 0);
 
-  return (
-    <div
-      className="list-view"
-      data-check={check ? '' : undefined}
-      data-tags={anyTags ? '' : undefined}
-      data-props={inline.length}
-    >
-      {rows.map((r) => (
+  const renderRow = (r: Row) => (
         <div
           key={r.id}
           className="list-row"
@@ -115,7 +117,49 @@ export default function ListView({
           )}
           </span>
         </div>
-      ))}
+  );
+
+  // The headers sit among the rows, each before its group's, never around
+  // them: on a phone the rows are subgrids of the list's one grid, and a
+  // wrapper would cut them off from it.
+  const groups = grouping ? groupRows(rows, (r) => r.props?.[grouping.prop.id], grouping.prop as GroupProp, grouping.settings) : [];
+
+  return (
+    <div
+      className="list-view"
+      data-check={check ? '' : undefined}
+      data-tags={anyTags ? '' : undefined}
+      data-props={inline.length}
+      data-grouped={grouping ? '' : undefined}
+    >
+      {grouping
+        ? groups.map((g) => {
+            const folded = grouping.folded.has(g.key);
+            return (
+              <Fragment key={g.key}>
+                <RowGroupHeader
+                  list
+                  leadCheck={!!check}
+                  label={labelOf(g.key)}
+                  count={g.rows.length}
+                  folded={folded}
+                  onFold={grouping.onFold && ((f) => grouping.onFold!([g.key], f))}
+                  actions={{
+                    hideGroup: grouping.onHide && (() => grouping.onHide!(g.key)),
+                    collapseAll: grouping.onFoldAll && (() => grouping.onFoldAll!(true)),
+                    expandAll: grouping.onFoldAll && (() => grouping.onFoldAll!(false)),
+                  }}
+                />
+                {/* A row with several values is in each of its groups: the
+                    key keeps the copies apart. */}
+                {!folded && g.rows.map((r) => <Fragment key={r.id}>{renderRow(r)}</Fragment>)}
+              </Fragment>
+            );
+          })
+        : rows.map(renderRow)}
+      {/* Rows, but every group they fall in is hidden: say so, rather than
+          draw an empty list (as the table does). */}
+      {grouping && groups.length === 0 && <div className="db-empty">{t('Every group is hidden. Show one from the Group menu.')}</div>}
     </div>
   );
 }

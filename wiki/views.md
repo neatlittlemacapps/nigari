@@ -103,8 +103,9 @@ column. Someone who can only read the database sees plain headings, and so
 does a database shown inside a document: its columns are the database's own,
 arranged on its own page.
 
-**Moving a row.** Each row has a narrow margin on its left with two buttons
-that show when you point at the row: a **+** and a grip. Drag the grip up or
+**Moving a row.** Each row has two buttons in the page's margin, just left of
+the table, that show when you point at the row: a **+** and a grip. The table
+itself starts on the same edge as the view tabs above it. Drag the grip up or
 down: the row fades, a line marks the gap it will land in, and it lands there
 when you let go. The table scrolls along near its top or bottom edge; Escape,
 or letting go outside the table, puts it back. The new place belongs to the
@@ -273,6 +274,59 @@ properties don't fit beside the title, the whole list scrolls sideways
 together, the way a table does, so each property stays in the same place from
 line to line. A long title is cut off at about 60% of the screen's
 width, so the properties after it are only a short swipe away.
+
+### Grouping a table or list
+
+**Group** in the settings bar groups a table's or a list's rows by a
+property: a select, multi-select, status, relation, person, checkbox, date,
+formula or rollup. **No grouping** takes it away. Each group starts with a
+header: a fold arrow in the page's margin, then the group's value as the cells
+show it (an option as its chip, a person or page by name), and how many rows it
+holds. In a table each open group repeats the column headings under its header,
+so it reads on its own, and ends with its own totals line, as the table's foot
+would; a list has neither. Groups are set apart by white space. The rows inside
+a group keep the view's filter and sort.
+
+![A table grouped by Status: each group has a header with its count, a fold arrow and its own totals.](img/collection-grouped.png)
+
+![The Group menu of a grouped table: the property, the order, empty and hidden groups, and folding every group.](img/group-menu.png)
+
+- **Order.** The groups come in the property's own order: a select's options as
+  they are listed, a status's options, a date from early to late. Rows with no
+  value make a group of their own, **No** and the property's name (**No
+  Status**), always last. **Reverse order** in the Group menu turns the order
+  round; **No Status** stays last.
+- **A row with several values** (tags, people) appears in each of its groups.
+- **Dates** group by **Month** unless you choose **Day**, **Week** or **Year**
+  in the Group menu. A week is shown as *Week of* its Monday, and weeks are
+  counted from Monday whatever your week starts on.
+- **A status** groups by its options; agents can group it by its three groups
+  (To-do, In progress, Complete) with `status_groups`.
+- **Folding** is your own: fold a group with its arrow, or every group with
+  **Collapse all groups** in the Group menu or a header's ⋯. It stays folded
+  for you after a reload and on your other devices, and stays open for
+  everyone else.
+- **Hiding** is the view's, for everyone who opens it: **Hide group** in a
+  header's ⋯. The Group menu lists the hidden groups, each with **Show**.
+- **Show empty groups** also draws the groups no row is in, where they are
+  known without rows: a select's options, a status's options, a checkbox's two.
+- **Dragging** (tables): a row dragged within its group moves in the database's
+  order, as in a table without groups. Dragged into another group, it takes
+  that group's value and lands where you drop it, in one change. A row with
+  several values loses only the value of the group you dragged it out of. Into
+  an empty or folded group it takes the value alone. Where a drop cannot write
+  a value (a formula, a rollup, a date grouped by a period, a status grouped by
+  its groups), no line shows in another group and the drop does nothing;
+  moving within a group still works. **⌘⇧↑/↓** (Ctrl+Shift on Windows) moves a
+  row among its own group and never changes a value.
+- **A board turned into a table or list** stays grouped by its columns'
+  property. A table made from a board before grouping existed stays flat.
+
+**Not built yet:** a second level of grouping, and a **+ New** in each group's
+header that fills in that group's value (#996); **+ New group** under the last
+group (#1005); choosing a column's calculation, or none, for the foot and the
+group totals (#1004). A table of several thousand rows
+takes seconds to draw again when grouping is turned on or off (#994).
 
 ### `gallery`
 
@@ -549,7 +603,7 @@ the right, in this order:
 | --- | --- |
 | **Filter** | The conditions a row must meet. Shows the count: `Filter (2)`. |
 | **Sort** | One property, ascending or descending. |
-| **Group** | Board only: which property makes the columns. |
+| **Group** | A board: which property makes the columns. A table or list: the property its rows are grouped by, a date's period, the order, empty and hidden groups, and folding them all (see [Grouping a table or list](#grouping-a-table-or-list)). |
 | **Settings** (the sliders icon) | Everything else that configures the view, and the database's properties; see below. |
 | **＋ New** | Creates an *Untitled* row and keeps you in the view; a click opens it. Every view except a form has it. |
 

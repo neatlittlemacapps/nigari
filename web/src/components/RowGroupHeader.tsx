@@ -5,6 +5,7 @@ import { statusGroupLabel, STATUS_GROUPS } from '../statusGroups';
 import { formatDay, formatMonth } from '../format';
 import { t, plural } from '../i18n';
 import type { PropDef, StatusGroup } from '../types';
+import type { GroupSettings } from '../rowGroups';
 import { Button } from '../ui/Button';
 import { Menu } from '../ui/Menu';
 import { chip } from './PropertyValue';
@@ -17,6 +18,20 @@ import { GroupActionItems, type GroupActionHandlers } from './GroupActionItems';
 // right-click), drawn from the group action list. One <tr> heading its own
 // <tbody>, so a screen reader hears the rows as belonging to it. In a module
 // of its own: CollectionView.tsx is over 1,400 lines (frontend rules).
+
+/** A table or list grouped by a property (spec 024): the groups are worked
+ *  out in the view, from the rows as drawn. */
+export type RowGrouping = {
+  prop: PropDef;
+  settings: GroupSettings;
+  /** The keys this person folded. */
+  folded: ReadonlySet<string>;
+  /** Absent where folding cannot be kept (an embed without a place). */
+  onFold?: (keys: readonly string[], folded: boolean) => void;
+  onFoldAll?: (folded: boolean) => void;
+  /** Hide a group for everyone. Absent for someone who may not change the view. */
+  onHide?: (key: string) => void;
+};
 
 /** How a group's key reads in its header: the option's chip, a person's or
  *  page's name, Checked / Unchecked, a status group, a period of a date, or
@@ -57,13 +72,23 @@ function periodLabel(key: string, period: string | undefined): string {
 
 export default function RowGroupHeader({
   colSpan,
+  list,
+  leadCheck,
   label,
   count,
   folded,
   onFold,
   actions,
 }: {
-  colSpan: number;
+  colSpan?: number;
+  /** In a list (T027): a row of the list's grid across its width, not a
+   *  table row; the rows it heads follow it, not inside it, so a phone's
+   *  grid still lines up their cells. */
+  list?: boolean;
+  /** The list's rows lead with a checkbox: the header keeps that slot
+   *  empty, so its arrow sits over the rows' icons and its name over their
+   *  titles. */
+  leadCheck?: boolean;
   label: ReactNode;
   count: number;
   folded: boolean;
@@ -74,30 +99,42 @@ export default function RowGroupHeader({
   const [menuAt, setMenuAt] = useState<{ x: number; y: number } | null>(null);
   const [open, setOpen] = useState(false);
   const hasActions = !!(actions.hideGroup || actions.collapseAll || actions.expandAll);
-  return (
-    <tr
-      className="db-group-head"
-      onContextMenu={(e) => {
-        if (!hasActions) return;
-        e.preventDefault();
-        setMenuAt({ x: e.clientX, y: e.clientY });
-        setOpen(true);
-      }}
-    >
-      <th colSpan={colSpan} scope="rowgroup">
+  const onContextMenu = (e: React.MouseEvent) => {
+    if (!hasActions) return;
+    e.preventDefault();
+    setMenuAt({ x: e.clientX, y: e.clientY });
+    setOpen(true);
+  };
+  const fold = (
+    <span className="db-group-fold">
+      {onFold && (
+        <Button
+          emphasis="low"
+          size="sm"
+          label={folded ? t('Expand group') : t('Collapse group')}
+          icon={folded ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+          aria-expanded={!folded}
+          onClick={() => onFold(!folded)}
+        />
+      )}
+    </span>
+  );
+  const inner = (
         <div className="db-group-head-inner">
-          {onFold && (
-            <Button
-              emphasis="low"
-              size="sm"
-              label={folded ? t('Expand group') : t('Collapse group')}
-              icon={folded ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-              aria-expanded={!folded}
-              onClick={() => onFold(!folded)}
-            />
-          )}
-          <span className="db-group-name">{label}</span>
-          <span className="db-group-count" aria-label={plural(count, '{n} row', '{n} rows')}>
+          {list && leadCheck && <span className="list-group-lead" />}
+          {/* The fold arrow takes the rows' leading slot (a table's handle
+              gutter, a list's icon), so the name starts where the rows'
+              content starts (the look checklist: one left edge). */}
+          {list && fold}
+          {/* In a list the header is a div among the rows, not a th: a
+              heading lets a screen reader name the group and jump between
+              groups (code review). */}
+          <span className="db-group-name" {...(list ? { role: 'heading', 'aria-level': 3 } : {})}>
+            {label}
+          </span>
+          {/* aria-label is ignored on a plain span: as an image the count is
+              read as "2 rows", not "2" (code review). */}
+          <span className="db-group-count" role="img" aria-label={plural(count, '{n} row', '{n} rows')}>
             {count}
           </span>
           {hasActions && (
@@ -116,6 +153,23 @@ export default function RowGroupHeader({
             </Menu>
           )}
         </div>
+  );
+  if (list) {
+    return (
+      <div className="db-group-head list-group-head" onContextMenu={onContextMenu}>
+        {inner}
+      </div>
+    );
+  }
+  // In a table the arrow has a cell of its own in the handle gutter, as the
+  // rows' handles do, with no line: the header's line then starts at the
+  // table's edge, where the rows' lines start, instead of jutting out over
+  // the gutter (the look checklist: no indent).
+  return (
+    <tr className="db-group-head" onContextMenu={onContextMenu}>
+      <td className="db-row-gutter db-group-gutter">{fold}</td>
+      <th colSpan={(colSpan ?? 2) - 1} scope="rowgroup">
+        {inner}
       </th>
     </tr>
   );

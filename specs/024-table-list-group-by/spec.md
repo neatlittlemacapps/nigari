@@ -183,8 +183,11 @@ the August group.
 1. **Given** a date property, **When** it is chosen in the Group menu,
    **Then** a period choice appears (day, week, month, year; month by
    default), and groups are the periods that hold rows, oldest first.
-2. **Given** the person's week start and region, **When** grouped by week,
-   **Then** weeks and labels follow them.
+2. **Given** a grouping by week, **Then** the weeks are ISO weeks (Monday to
+   Sunday), labelled "Week of" their Monday in the person's date format.
+   *Amended while building (research R7): the keys are the chart's period
+   keys, so a table, a list and a chart agree on a week, and hidden groups
+   stored by key stay valid for everyone whatever their week start.*
 
 ---
 
@@ -311,7 +314,8 @@ shows it grouped.
   is on; a group MUST be hideable from its header's menu and shown again from
   the Group menu; hidden groups are part of the view.
 - **FR-010**: A date grouping MUST offer day, week, month and year (month by
-  default), with labels and week starts from the person's preferences.
+  default), with labels in the person's date format. Weeks are ISO weeks
+  (amended while building, research R7: the chart's keys, shared by everyone).
 - **FR-011**: In a grouped table a drag within a group MUST move the row in the
   shared order; a drag to another group MUST set the row's value to that
   group's in one change, keeping a multi-value row's other values, and MUST

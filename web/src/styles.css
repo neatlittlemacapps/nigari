@@ -2691,6 +2691,18 @@ body:has(.icon-picker) .bn-side-menu {
   overscroll-behavior-x: contain;
 }
 
+/* On a database page the row gutter (spec 022, 52px: the + and the handle)
+   hangs into the page's 48px margin, as it does in a document (spec 023,
+   FR-003), so the grid starts on the same edge as the view tabs and the page
+   title instead of 52px in (#982, owner's choice D5, 2026-11-25). The gutter
+   is 4px wider than the margin; its buttons sit at its right, so those 4px
+   are empty. On a phone the margin is 14px: the table reaches the screen's
+   edge and the gutter stays whole, so a tapped row's buttons stay on screen. */
+.collection-scroll:not(.is-embed) .table-wrap {
+  padding-left: 0;
+  margin-left: calc(48px - 52px); /* token-ok: the page margin less the row gutter's width (.db-table .db-row-gutter) */
+}
+
 /* Cells read at the type scale's body size (spec 012, #131): the 13.5px they
    had made a table in a document look a size smaller than the paragraph
    above it. Set on the table so the cells inherit it; headers are the 12px
@@ -3648,9 +3660,22 @@ body.is-col-resizing {
   letter-spacing: normal;
   color: var(--color-text-default);
   font-weight: 600;
-  padding: var(--space-150) var(--space-100) var(--space-50);
-  border-top: 1px solid var(--color-border-default);
+  padding: var(--space-150) var(--space-100) var(--space-150);
   background: var(--color-surface-default);
+}
+
+/* Groups are set apart by white space, not a line (owner's choice D6,
+   2026-11-25): the header and its gutter cell draw no borders, and every
+   group after the first starts a step further down. Its own headings row
+   (D1) then opens the group's grid. */
+.db-table tbody.db-group .db-group-head > th,
+.db-table tbody.db-group .db-group-head > td {
+  border: 0;
+}
+
+.db-table tbody.db-group + tbody.db-group .db-group-head > th,
+.db-table tbody.db-group + tbody.db-group .db-group-head > td {
+  padding-top: var(--space-600);
 }
 
 .db-table tbody.db-group:first-of-type .db-group-head > th {
@@ -3663,6 +3688,31 @@ body.is-col-resizing {
   display: inline-flex;
   align-items: center;
   gap: var(--space-100);
+}
+
+/* One left edge (the look checklist): the fold arrow takes the rows'
+   leading slot and the name starts where the rows' content does. In a
+   table the arrow has the header's gutter cell, over the rows' handles and
+   without a line, so the header's line starts at the table's edge as the
+   rows' do; the name sits at the cells' padding. */
+.db-group-fold {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.db-table tbody.db-group .db-group-head > th {
+  padding-left: 10px; /* token-ok: the cells' own padding (.db-table td), so the name starts with their content */
+}
+
+.db-table .db-row-gutter.db-group-gutter {
+  vertical-align: middle;
+  padding-top: 0;
+}
+
+.db-table .db-group-gutter .db-group-fold {
+  justify-content: flex-end;
+  width: 100%;
 }
 
 .db-group-count {
@@ -3690,10 +3740,63 @@ body.is-col-resizing {
   }
 }
 
+/* A grouped list's header (spec 024, T027): the table's header, as a row of
+   the list. On a phone it spans the list's grid, and its name stays in view
+   while the list scrolls sideways (db-group-head-inner is sticky). */
+.list-group-head {
+  grid-column: 1 / -1;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-default);
+  padding: var(--space-150) 12px var(--space-50); /* token-ok: the list row's own inset (.list-row), so the header shares its left edge */
+  border-top: 1px solid var(--color-border-default);
+}
+
+/* In a list the arrow sits over the rows' icons and the name over their
+   titles: the same slots and the same gap as a row (.list-row, and the
+   phone grid's column gap, both 10px). */
+.list-group-head .db-group-head-inner {
+  gap: var(--space-250);
+}
+
+.list-group-head .db-group-fold {
+  width: 22px; /* token-ok: the row icon's slot, .list-row-icon */
+  justify-content: center;
+}
+
+.list-group-lead {
+  flex: none;
+  width: 32px; /* token-ok: the leading checkbox's slot, .list-row-check */
+}
+
+.list-group-head .db-group-count {
+  margin-left: calc(-1 * var(--space-150)); /* token-ok: the count stays close to its name, as in a table */
+}
+
+.list-group-head:first-child {
+  border-top: 0;
+}
+
+/* The header's own line divides the groups: the row above it drops its own,
+   or the two draw a double line. */
+.list-row:has(+ .list-group-head) {
+  border-bottom: none;
+}
+
+.list-view > .db-empty {
+  grid-column: 1 / -1;
+}
+
 /* Every group has its totals: none of them sticks to the foot, or they
    would pile up there. */
 .db-group-calc {
   position: static;
+}
+
+/* A group's totals are a quiet line under its rows, not the foot's band:
+   one grey band per group made the table heavy (the look checklist). */
+.db-group-calc .db-calc-cell {
+  background: transparent;
 }
 
 .view-group-menu {
@@ -5250,6 +5353,12 @@ body.is-col-resizing {
 
   .table-wrap {
     padding: 12px 14px calc(40px + env(safe-area-inset-bottom));
+  }
+
+  /* A database page's table reaches the screen's edge here (#982): no 4px
+     pull into a margin that is not there. */
+  .collection-scroll:not(.is-embed) .table-wrap {
+    margin-left: 0;
   }
 
   .gallery {

@@ -122,6 +122,8 @@ await call('PUT', `/api/collections/${tasks}`, {
     // A chart (spec 004): the sum of the effort per status, as a donut, so the
     // wiki shows a chart that says more than a count.
     { id: 'chart', name: 'Chart', type: 'chart', chartKind: 'donut', groupBy: 'status', agg: 'sum', aggProp: 'effort' },
+    // A table grouped by Status (spec 024), for views.md's grouping section.
+    { id: 'grouped', name: 'Grouped', type: 'table', grouped: true, groupBy: 'status' },
   ],
 });
 

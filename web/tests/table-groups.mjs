@@ -139,6 +139,7 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
   const serverRows = async () => (await api('GET', `${path}/rows?limit=50`)).rows;
   const statusOf = async (title) => (await serverRows()).find((r) => r.title === title)?.props.status;
   const order = async () => (await serverRows()).map((r) => r.title).join('|');
+  const serverRowsOf = async (id) => (await api('GET', `/api/collections/${id}/rows?limit=50`)).rows;
 
   // Within a group: the shared order, as in a flat table; the value stays.
   await grab('To do', 'Plan tasks');
@@ -190,6 +191,12 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
   const readerDoing = reader.locator('.db-group-head', { has: reader.locator('.db-group-name', { hasText: /^Doing$/ }) });
   await readerDoing.getByRole('button', { name: 'Collapse group' }).click();
   await readerDoing.getByRole('button', { name: 'Expand group' }).waitFor();
+  // Their Group menu folds and opens, and offers nothing that would change
+  // the view (code review: the full menu offered saves the server refused).
+  await reader.locator('.collection-toolbar').getByRole('button', { name: 'Group', exact: true }).click();
+  await reader.locator('.view-group-menu').getByRole('button', { name: 'Collapse all groups' }).waitFor();
+  assert.equal(await reader.locator('.view-group-menu select').count(), 0, 'a reader is offered Group by');
+  await reader.keyboard.press('Escape');
   await readerCtx.close();
 
   // Grouped by a formula, no drop into another group can write a value: no
@@ -257,7 +264,141 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
   assert.equal(await page.locator('.db-table > tfoot').count(), 1, 'the flat table has no foot');
   assert.equal(await page.locator('.db-table tr[data-row-id]').count(), 5);
 
-  console.log('table-groups: headers, totals, folding, hide and show, order, empty groups, drag within and between groups, into an empty group, several values, a reader, a formula grouping');
+
+  // ---- Lists, dates, layouts, phone and dark (PR 3: T025's rest, T028, T030) ----
+  const notes = await api('POST', '/api/pages', { title: 'Grouped notes', type: 'collection', workspaceId: workspace.id });
+  const notesPath = `/api/collections/${notes.id}`;
+  await api('PUT', notesPath, {
+    schema: [
+      { id: 'status', name: 'Status', type: 'select', options },
+      { id: 'due', name: 'Due', type: 'date' },
+    ],
+    views: [
+      { id: 'list', name: 'List', type: 'list', grouped: true, groupBy: 'status' },
+      { id: 'board', name: 'Board', type: 'board', groupBy: 'status' },
+      // A table made before spec 024 from a board: its groupBy is kept from
+      // the board, unused, and it must stay flat (SC-004).
+      { id: 'old', name: 'Old table', type: 'table', groupBy: 'status' },
+    ],
+  });
+  // 2 and 4 March 2026 are in ISO week 10, 20 March in week 12.
+  for (const [title, props] of [
+    ['Monday note', { status: 'todo', due: '2026-03-02' }],
+    ['Wednesday note', { status: 'todo', due: '2026-03-04' }],
+    ['Later note', { status: 'doing', due: '2026-03-20' }],
+    ['April note', { status: 'done', due: '2026-04-15' }],
+    ['Undated note', {}],
+  ]) await api('POST', '/api/pages', { parentId: notes.id, title, props });
+  const notesView = async (id) => (await api('GET', notesPath)).views.find((v) => v.id === id);
+  const tab = (name) => page.locator('.view-tab', { hasText: new RegExp(`^${name}$`) });
+  const listGroup = (name) => page.locator('.list-group-head', { has: page.locator('.db-group-name', { hasText: new RegExp(`^${name}$`) }) });
+  const listRowsAfter = (name) => listGroup(name).evaluate((head) => {
+    const out = [];
+    for (let el = head.nextElementSibling; el && el.classList.contains('list-row'); el = el.nextElementSibling) out.push(el.querySelector('.list-row-title')?.textContent);
+    return out;
+  });
+
+  // A grouped list: a header with its count before each group's rows.
+  await page.goto(`${base}/p/${notes.id}`);
+  await page.locator('.list-group-head').first().waitFor();
+  assert.deepEqual(await heads(), [
+    { name: 'To do', count: 2 },
+    { name: 'Doing', count: 1 },
+    { name: 'Done', count: 1 },
+    { name: 'No Status', count: 1 },
+  ]);
+  assert.deepEqual(await listRowsAfter('To do'), ['Monday note', 'Wednesday note']);
+  // Folding, the person's own, as in a table.
+  await listGroup('To do').getByRole('button', { name: 'Collapse group' }).click();
+  await eventually(async () => (await listRowsAfter('To do')).length === 0);
+  await listGroup('To do').getByRole('button', { name: 'Expand group' }).click();
+  await eventually(async () => (await listRowsAfter('To do')).length === 2);
+  // Hidden from the header's menu, for everyone.
+  await listGroup('Done').hover();
+  await listGroup('Done').getByRole('button', { name: 'Group actions' }).click();
+  await page.getByRole('menuitem', { name: 'Hide group' }).click();
+  await eventually(async () => JSON.stringify((await notesView('list')).hiddenGroups) === '["done"]');
+  await eventually(async () => (await listGroup('Done').count()) === 0);
+
+  // A date groups by month unless another period is chosen; the Group menu
+  // offers the period, and a new period forgets what the old one hid.
+  await groupMenu();
+  await page.locator('.view-group-menu select').first().selectOption('due');
+  await eventually(async () => (await notesView('list')).groupBy === 'due');
+  await eventually(async () => (await heads()).length === 3);
+  assert.deepEqual((await heads()).map((h) => h.count), [3, 1, 1], 'by month: March 3, April 1, No Due 1');
+  assert.match((await heads())[0].name, /March 2026/);
+  const period = page.locator('.view-group-menu').getByRole('combobox', { name: 'Period' });
+  assert.equal(await period.inputValue(), 'month');
+  await period.selectOption('week');
+  await eventually(async () => (await notesView('list')).groupPeriod === 'week');
+  await eventually(async () => (await heads()).length === 4);
+  assert.deepEqual((await heads()).map((h) => h.count), [2, 1, 1, 1], 'by ISO week: week 10 has 2, week 12, April and No Due 1');
+  assert.match((await heads())[0].name, /^Week of /);
+  await closePopover();
+
+  // Grouped by a date's period, a drop into another group cannot write a
+  // value: a table refuses it with no line (FR-011).
+  const withDate = await api('GET', notesPath);
+  const put = await api('PUT', notesPath, { schema: withDate.schema, views: [...withDate.views, { id: 'bydate', name: 'By date', type: 'table', grouped: true, groupBy: 'due', groupPeriod: 'month' }] });
+  await eventually(async () => !!(await notesView('bydate')));
+  await page.reload();
+  await tab('By date').click();
+  await page.locator('tbody.db-group').first().waitFor();
+  await grab('March 2026', 'Monday note');
+  await glideTo(rowIn('April 2026', 'April note'), 0.25);
+  assert.equal(await page.locator('.row-drop-before, .row-drop-after, .row-drop-into').count(), 0, 'a date grouping shows a drop into another group');
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+  assert.equal((await serverRowsOf(notes.id)).find((r) => r.title === 'Monday note')?.props.due, '2026-03-02', 'a refused drop changed the date');
+
+  // A table from before grouping stays flat; a board turned into a table is
+  // grouped by its columns' property.
+  await tab('Old table').click();
+  await page.locator('.db-table tr[data-row-id]').first().waitFor();
+  assert.equal(await page.locator('.db-group-head').count(), 0, 'an old converted table is grouped');
+  await tab('Board').click();
+  await page.locator('.collection-toolbar').getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('menu', { name: /view settings$/ }).getByRole('menuitem', { name: /^Layout/ }).hover();
+  await page.getByRole('menuitemradio', { name: 'Table', exact: true }).click();
+  await eventually(async () => (await notesView('board')).type === 'table' && (await notesView('board')).grouped === true);
+  await eventually(async () => (await heads()).map((h) => h.name).join('|') === 'To do|Doing|Done|No Status');
+
+  // At phone width, in light and dark: the headers span the list and read
+  // clearly (their text against their own background).
+  const contrast = (el) => {
+    const rgb = (c) => c.match(/[\d.]+/g).slice(0, 3).map(Number).map((v) => v / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    const lum = (c) => { const [r, g, b] = rgb(c); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    let bg = 'rgba(0, 0, 0, 0)';
+    for (let n = el; n && /rgba\(0, 0, 0, 0\)|transparent/.test(bg); n = n.parentElement) bg = getComputedStyle(n).backgroundColor;
+    const [a, b] = [lum(getComputedStyle(el).color), lum(bg)].sort((x, y) => y - x);
+    return (a + 0.05) / (b + 0.05);
+  };
+  // Views are tabs on a wide screen and one menu on a phone: pick at full
+  // width, then narrow.
+  const onPhone = async (view, scheme) => {
+    await page.setViewportSize({ width: 1200, height: 900 });
+    await tab(view).click();
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.setViewportSize({ width: 390, height: 800 });
+    await page.locator('.db-group-head').first().waitFor();
+  };
+  for (const scheme of ['light', 'dark']) {
+    await onPhone('List', scheme);
+    const list = await page.locator('.list-view').boundingBox();
+    const head = await page.locator('.list-group-head').first().boundingBox();
+    assert.ok(head.width >= list.width - 2, `${scheme}: a list header does not span the list on a phone (${head.width} of ${list.width})`);
+    const ratio = await page.locator('.list-group-head .db-group-name').first().evaluate(contrast);
+    assert.ok(ratio >= 4.5, `${scheme}: a group header's text has contrast ${ratio.toFixed(2)}`);
+    // A view named after its layout takes the new layout's name.
+    await onPhone((await notesView('board')).name, scheme);
+    const tableRatio = await page.locator('tbody.db-group .db-group-name').first().evaluate(contrast);
+    assert.ok(tableRatio >= 4.5, `${scheme}: a table group header's text has contrast ${tableRatio.toFixed(2)}`);
+  }
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.setViewportSize({ width: 1200, height: 900 });
+
+  console.log('table-groups: headers, totals, folding, hide and show, order, empty groups, drag within and between groups, into an empty group, several values, a reader, a formula grouping, a grouped list, dates by month and week, old and converted tables, phone, light and dark');
 
   // SC-002 (T026): grouping, folding and unfolding 5,000 rows, timed against
   // the flat table's draw. Only with MEASURE set: 5,000 rows take a while to

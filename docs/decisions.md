@@ -7,6 +7,30 @@ entries are not edited away.
 
 ---
 
+## 2026-11-25 — How things look is checked, not only measured: mockups first, a look checklist on screenshots
+
+- **What went wrong.** The owner, on a table on a phone: "Clearly the
+  indentations and the way this looks is sucky". Every check passed: the
+  ux-ui-audit measures contrast, tap sizes, focus and names, never whether a
+  screen reads well. Spec 024's grouped table went ahead without the owner's
+  yes on its mockups, and its group headers lined up with nothing (the name
+  at 377 px between the handles at 365 and the first column at 393).
+- **Decided (owner, "yes" to A + B):** a new layout gets mockups the owner
+  approves before it is built (B), and every visible change is checked
+  against a written look checklist on light and dark screenshots at desktop
+  and phone width, which go into the pull request (A). The checklist is in
+  `.claude/rules/frontend.md`, so every session reads it.
+- **Turned down for now:** the design-critique skill on every pull request
+  (C): more time per change for a second opinion that is still a model's
+  taste; it can be added if A and B do not catch enough.
+- **First use:** spec 024 PR 3. The group header's arrow moved into the rows'
+  leading slot and its name to where the rows' content starts (one left edge,
+  measured to the pixel); the header's line no longer juts out over the
+  handle gutter; a group's totals lost their grey band and the grouping
+  column's own total.
+
+---
+
 ## 2026-11-24 — A dragged block held at the page's edge scrolls the page, on a frame loop (#810, spec 025)
 
 - **The page scrolls itself while a block is held in a 72 px zone at its top
