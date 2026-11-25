@@ -2960,6 +2960,12 @@ body.is-row-moving * {
   box-shadow: inset 0 calc(-1 * var(--editor-drop-line-width)) 0 var(--color-focus); /* token-ok: the drop line, drawn from its own tokens, not a shadow */
 }
 
+/* A group with no row drawn (empty, or folded) takes a dragged row as a
+   whole: the line goes under its header (spec 024). */
+.db-table tr.row-drop-into > th {
+  box-shadow: inset 0 calc(-1 * var(--editor-drop-line-width)) 0 var(--color-focus); /* token-ok: the drop line, drawn from its own tokens, not a shadow */
+}
+
 /* The grip on a column's right edge. -10px is the cell's own horizontal padding,
    so the grip ends exactly ON the border and every pixel of it lies INSIDE the
    cell: anything hanging over the edge paints correctly and is not hit-testable,

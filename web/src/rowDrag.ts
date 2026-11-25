@@ -103,6 +103,71 @@ export function rowSpot(rows: readonly DrawnRow[], dragId: string, gap: number):
   return spot;
 }
 
+/** One group of a grouped table (spec 024) as the drag reads it: its key and
+ *  its rows as drawn under its header, in order (none while folded). */
+export interface DrawnGroup {
+  key: string;
+  rows: readonly DrawnRow[];
+}
+
+/** Which group's box y falls in: the first whose bottom is below y, the last
+ *  past them all; -1 without groups. The boxes touch (one tbody after the
+ *  other), so every y names exactly one group. */
+export function groupAt(boxes: readonly { top: number; bottom: number }[], y: number): number {
+  for (let i = 0; i < boxes.length; i++) if (y < boxes[i].bottom) return i;
+  return boxes.length - 1;
+}
+
+/** The spot gap `gap` names in another group's rows for a top-level row
+ *  dragged in from elsewhere. The dragged row may be drawn there too (a row
+ *  with several values is in each of its groups): it and its sub-items are
+ *  passed over, as the gap after a sibling's sub-items is after the sibling.
+ *  Null when the gap is inside another row's sub-items (as rowSpot: the line
+ *  there would name a place the row cannot take, code review), or when the
+ *  group has no other row. */
+export function spotAmong(rows: readonly DrawnRow[], dragId: string, gap: number): RowSpot | null {
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const top = (r: DrawnRow) => atLevel(byId, r, null);
+  for (let i = Math.max(0, gap); i < rows.length; i++) {
+    const t = top(rows[i]);
+    if (!t || t.id === dragId) continue;
+    // A top-level row below: just before it. A sub-item of another row:
+    // the gap is inside that row's tree, no place for this row.
+    return t === rows[i] ? { anchor: t.id, side: 'before' } : null;
+  }
+  for (let i = Math.min(gap, rows.length) - 1; i >= 0; i--) {
+    const t = top(rows[i]);
+    if (t && t.id !== dragId) return { anchor: t.id, side: 'after' };
+  }
+  return null;
+}
+
+/** Where a drop in a grouped table goes: within the row's own group, a move
+ *  as in a flat table (null where it would not move); into another group,
+ *  that group and the spot among its rows (spot null: an empty or folded
+ *  group, the value alone). Null where nothing would happen. */
+export function groupDrop(
+  groups: readonly DrawnGroup[],
+  dragId: string,
+  from: string,
+  to: number,
+  gap: number,
+): { spot: RowSpot | null; group: string } | null {
+  const g = groups[to];
+  if (!g) return null;
+  if (g.key === from) {
+    const spot = rowSpot(g.rows, dragId, gap);
+    return spot ? { spot, group: g.key } : null;
+  }
+  const spot = spotAmong(g.rows, dragId, gap);
+  // No spot in a group with rows of its own: the gap offers nothing. In a
+  // group without (empty, folded, or only the dragged row's copy) the drop
+  // writes the value alone.
+  const others = g.rows.some((r) => r.id !== dragId && (r.parentId ?? null) === null);
+  if (!spot && others) return null;
+  return { spot, group: g.key };
+}
+
 /** The list with row `id` moved to `spot`, as the table shows it at once
  *  while the server saves the move. An unknown id or anchor changes nothing. */
 export function applySpot<T extends { id: string }>(list: readonly T[], id: string, spot: RowSpot): T[] {
@@ -138,14 +203,20 @@ export interface RowDragState {
   id: string;
 }
 
-const DROP_CLASSES = ['row-drop-before', 'row-drop-after'];
+const DROP_CLASSES = ['row-drop-before', 'row-drop-after', 'row-drop-into'];
 
-/** Puts the drop line on the gap: above row `gap`, or below the last row. */
+/** Puts the drop line on the gap: above row `gap`, or below the last row. A
+ *  group with no row drawn (empty, or folded) marks its header instead: the
+ *  row goes into it. */
 function paintGap(body: HTMLElement, painted: HTMLElement | null, gap: number, show: boolean): HTMLElement | null {
   painted?.classList.remove(...DROP_CLASSES);
   if (!show) return null;
   const trs = body.querySelectorAll<HTMLElement>(':scope > tr[data-row-id]');
-  if (trs.length === 0) return null;
+  if (trs.length === 0) {
+    const head = body.querySelector<HTMLElement>(':scope > tr:not([data-row-id])');
+    head?.classList.add('row-drop-into');
+    return head;
+  }
   const tr = gap < trs.length ? trs[gap] : trs[trs.length - 1];
   tr.classList.add(gap < trs.length ? 'row-drop-before' : 'row-drop-after');
   return tr;
@@ -167,14 +238,64 @@ function rowBoxes(body: HTMLElement) {
   });
 }
 
+function box(el: HTMLElement) {
+  const b = el.getBoundingClientRect();
+  return { top: b.top, bottom: b.bottom };
+}
+
+/** A grouped table's groups for the drag: what is drawn in each, and
+ *  whether a row may go from one group into another (a formula grouping,
+ *  or a value no drop can write, refuses: no line is drawn). */
+export interface RowDragGroups {
+  groups: readonly DrawnGroup[];
+  accepts: (id: string, from: string, to: string) => boolean;
+}
+
+/** Where a drop lands: the spot (null: into an empty or folded group, the
+ *  value alone), and in a grouped table the group it came from and the one
+ *  it goes to. */
+export interface RowDrop {
+  spot: RowSpot | null;
+  from?: string;
+  to?: string;
+}
+
+/** The group bodies of a grouped table, in the order of `groups`, each with
+ *  its box and its rows' boxes. A tbody whose key is not a group is left out. */
+function readGroups(table: HTMLElement, groups: readonly DrawnGroup[]) {
+  const byKey = new Map<string, HTMLElement>();
+  for (const b of table.querySelectorAll<HTMLElement>(':scope > tbody[data-group-key]')) byKey.set(b.dataset.groupKey ?? '', b);
+  const bodies: HTMLElement[] = [];
+  const boxes: { top: number; bottom: number }[] = [];
+  const rects: { top: number; bottom: number }[][] = [];
+  const at: number[] = [];
+  groups.forEach((g, i) => {
+    const b = byKey.get(g.key);
+    if (!b) return;
+    bodies.push(b);
+    boxes.push(box(b));
+    rects.push(rowBoxes(b));
+    at.push(i);
+  });
+  return { bodies, boxes, rects, at };
+}
+
 /** Dragging a table row by its handle. `rows` is the table as drawn, in
  *  order; rows are found by `data-row-id` in the tbody the drag started in.
- *  `onDrop(id, spot)` is called on a release over the table when the spot
- *  moves the row; Escape, or a release anywhere else, cancels. `onStart` is
+ *  `onDrop(id, drop)` is called on a release over the table when the spot
+ *  moves the row; Escape, or a release anywhere else, cancels. In a grouped
+ *  table (`grouped`, spec 024) each group is its own tbody: the drag reads
+ *  them all, the pointer picks the group, and a drop into another group says
+ *  so (`drop.from`, `drop.to`). `onStart` is
  *  called once the press has become a drag: a sorted view draws its rows in
  *  their own order then (spec 022, US2), and the boxes are read again as soon
  *  as the rows change. */
-export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot: RowSpot) => void, onStart?: () => void) {
+export function useRowDrag(
+  rows: readonly DrawnRow[],
+  onDrop: (id: string, drop: RowDrop) => void,
+  onStart?: () => void,
+  grouped?: RowDragGroups,
+) {
   const [drag, setDrag] = useState<RowDragState | null>(null);
   const dropRef = useRef(onDrop);
   dropRef.current = onDrop;
@@ -182,6 +303,8 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
   rowsRef.current = rows;
   const startRef = useRef(onStart);
   startRef.current = onStart;
+  const groupedRef = useRef(grouped);
+  groupedRef.current = grouped;
   const live = useRef<{
     id: string;
     startX: number;
@@ -191,17 +314,23 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
     armed: boolean;
     holdTimer: number | null;
     body: HTMLElement;
+    /** In a grouped table: the group the row was taken from, the table, and
+     *  each group's body, box and row boxes, read with `rects`. */
+    from: string | null;
+    table: HTMLElement | null;
+    groups: ReturnType<typeof readGroups> | null;
     // Row boxes are read once, when the drag starts, and moved by the scroll
     // since: reading every row's box on each pointer move is layout work per
     // pixel (the #810 lesson).
     rects: { top: number; bottom: number }[];
     scroller: HTMLElement | null;
     scrollTop0: number;
-    spot: RowSpot | null;
+    drop: RowDrop | null;
     /** The rows the boxes were read for. */
     rowsAt: readonly DrawnRow[];
-    /** The gap the line is on, and the row carrying it. */
-    gap: number;
+    /** The gap the line is on ("group:gap" in a grouped table), and the row
+     *  carrying it. */
+    gap: string;
     painted: HTMLElement | null;
     /** Started, and waiting for the rows to be drawn again (onStart). */
     waiting: boolean;
@@ -249,8 +378,9 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
         // may sit on a row that moved.
         l.rowsAt = rowsRef.current;
         l.rects = rowBoxes(l.body);
+        if (l.table && groupedRef.current) l.groups = readGroups(l.table, groupedRef.current.groups);
         l.scrollTop0 = l.scroller?.scrollTop ?? 0;
-        l.gap = -1;
+        l.gap = '';
       }
       if (l.scroller) {
         const r = l.scroller.getBoundingClientRect();
@@ -258,11 +388,26 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
         else if (r.bottom - e.clientY < EDGE) l.scroller.scrollTop += EDGE_STEP;
       }
       const shift = l.scroller ? l.scroller.scrollTop - l.scrollTop0 : 0;
-      const gap = rowGap(l.rects, e.clientY + shift);
-      if (gap === l.gap) return;
+      const y = e.clientY + shift;
+      const g = groupedRef.current;
+      if (l.groups && g && l.from !== null) {
+        const gi = groupAt(l.groups.boxes, y);
+        if (gi < 0) return;
+        const gap = rowGap(l.groups.rects[gi], y);
+        const key = gi + ':' + gap;
+        if (key === l.gap) return;
+        const d = groupDrop(g.groups, l.id, l.from, l.groups.at[gi], gap);
+        const ok = !!d && (d.group === l.from || g.accepts(l.id, l.from, d.group));
+        l.drop = ok && d ? { spot: d.spot, from: l.from, to: d.group } : null;
+        l.gap = key;
+        l.painted = paintGap(l.groups.bodies[gi], l.painted, gap, ok);
+        return;
+      }
+      const gap = rowGap(l.rects, y);
+      if (String(gap) === l.gap) return;
       const spot = rowSpot(rowsRef.current, l.id, gap);
-      l.spot = spot;
-      l.gap = gap;
+      l.drop = spot ? { spot } : null;
+      l.gap = String(gap);
       l.painted = paintGap(l.body, l.painted, gap, !!spot);
     };
 
@@ -272,9 +417,9 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
       cancel();
       if (!l.started) return;
       draggedAt.current = { id: l.id, at: Date.now() };
-      const r = l.body.getBoundingClientRect();
+      const r = (l.table ?? l.body).getBoundingClientRect();
       const over = e.clientY >= r.top - EDGE && e.clientY <= r.bottom + EDGE && e.clientX >= r.left && e.clientX <= r.right;
-      if (e.type === 'pointerup' && over && l.spot) dropRef.current(l.id, l.spot);
+      if (e.type === 'pointerup' && over && l.drop) dropRef.current(l.id, l.drop);
     };
 
     const onKey = (e: KeyboardEvent) => {
@@ -312,6 +457,9 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
     if (!body) return;
     const touch = e.pointerType === 'touch' || e.pointerType === 'pen';
     const scroller = scrollParent(body);
+    const g = groupedRef.current;
+    const from = g && body.dataset.groupKey !== undefined ? body.dataset.groupKey : null;
+    const table = from !== null ? body.closest('table') : null;
     const l = {
       id,
       startX: e.clientX,
@@ -321,12 +469,15 @@ export function useRowDrag(rows: readonly DrawnRow[], onDrop: (id: string, spot:
       armed: !touch,
       holdTimer: null as number | null,
       body,
+      from,
+      table,
+      groups: table && g ? readGroups(table, g.groups) : null,
       rects: rowBoxes(body),
       scroller,
       scrollTop0: scroller?.scrollTop ?? 0,
-      spot: null as RowSpot | null,
+      drop: null as RowDrop | null,
       rowsAt: rowsRef.current,
-      gap: -1,
+      gap: '',
       painted: null as HTMLElement | null,
       waiting: false,
     };

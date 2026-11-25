@@ -95,6 +95,42 @@ try {
   check('in a tree, c1 down skips c2\'s sub-items: after c2', rd.rowStep(tree, 'c1', 1), { anchor: 'c2', side: 'after' });
   check('in a tree, P2 up: before P1', rd.rowStep(tree, 'P2', -1), { anchor: 'P1', side: 'before' });
 
+  // ---- A grouped table (spec 024): which group, and where in it ----
+  const boxes = [
+    { top: 0, bottom: 100 },
+    { top: 100, bottom: 160 },
+    { top: 160, bottom: 300 },
+  ];
+  check('above every group: the first', rd.groupAt(boxes, -20), 0);
+  check('on the seam: the group below', rd.groupAt(boxes, 100), 1);
+  check('past every group: the last', rd.groupAt(boxes, 900), 2);
+  check('no groups: none', rd.groupAt([], 10), -1);
+
+  const row = (id, parentId = null) => ({ id, parentId });
+  const todo = [row('A'), row('B')];
+  // T is in both groups (two tags); D has a sub-item d1.
+  const doing = [row('C'), row('T'), row('t1', 'T'), row('D'), row('d1', 'D')];
+  check('into another group, top gap: before its first row', rd.spotAmong(doing, 'A', 0), { anchor: 'C', side: 'before' });
+  check('into another group, last gap: after its last row', rd.spotAmong(doing, 'A', 5), { anchor: 'D', side: 'after' });
+  check('inside a row\'s tree: no place (the line would lie)', rd.spotAmong(doing, 'A', 4), null);
+  check('a copy of the dragged row there is passed over, with its sub-items', rd.spotAmong(doing, 'T', 1), { anchor: 'D', side: 'before' });
+  check('the copy at the end: after the row above it', rd.spotAmong([row('C'), row('T')], 'T', 2), { anchor: 'C', side: 'after' });
+  check('an empty group: no place, the value alone', rd.spotAmong([], 'A', 0), null);
+  check('a group holding only the dragged row: no place', rd.spotAmong([row('T')], 'T', 0), null);
+
+  const groups = [
+    { key: 'todo', rows: todo },
+    { key: 'doing', rows: doing },
+    { key: 'done', rows: [] },
+  ];
+  check('within its group: a move as in a flat table', rd.groupDrop(groups, 'A', 'todo', 0, 2), { spot: { anchor: 'B', side: 'after' }, group: 'todo' });
+  check('within its group, where it is: nothing', rd.groupDrop(groups, 'A', 'todo', 0, 0), null);
+  check('into another group: its key and the spot', rd.groupDrop(groups, 'A', 'todo', 1, 0), { spot: { anchor: 'C', side: 'before' }, group: 'doing' });
+  check('into an empty group: its key, no spot', rd.groupDrop(groups, 'A', 'todo', 2, 0), { spot: null, group: 'done' });
+  check('an unknown group: nothing', rd.groupDrop(groups, 'A', 'todo', 7, 0), null);
+  check('inside another row\'s tree in another group: nothing', rd.groupDrop(groups, 'A', 'todo', 1, 4), null);
+  check('a group holding only the dragged row\'s copy: its key, no spot', rd.groupDrop([{ key: 'x', rows: [row('T')] }], 'T', 'y', 0, 0), { spot: null, group: 'x' });
+
   // ---- What the table shows at once, before the server answers ----
   const ids = (l) => l.map((r) => r.id).join('');
   check('B after D', ids(rd.applySpot(flat, 'B', { anchor: 'D', side: 'after' })), 'ACDB');

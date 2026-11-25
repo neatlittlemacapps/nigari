@@ -78,12 +78,34 @@ export function useTableRowActions({
   // A row moved next to another: shown in its new place at once, then saved;
   // the server names the neighbours, so a filter's hidden rows keep their
   // places. On a refusal the rows are read again.
-  const placeRow = async (id: string, spot: RowSpot) => {
-    setRows((prev) => applySpot(prev, id, spot));
+  // propsPatch: a row dropped into another group of a grouped table takes
+  // that group's values in the same request (spec 024, research R4).
+  const placeRow = async (id: string, spot: RowSpot, propsPatch?: Record<string, unknown>) => {
+    setRows((prev) => {
+      const moved = applySpot(prev, id, spot);
+      return propsPatch ? moved.map((r) => (r.id === id ? { ...r, props: { ...r.props, ...propsPatch } } : r)) : moved;
+    });
     const reload = sortDropped.current;
     sortDropped.current = false;
     try {
-      await api.placePage(id, spot, rowViewId());
+      await api.placePage(id, spot, rowViewId(), propsPatch);
+      if (reload) void loadRows();
+    } catch (e) {
+      fail(e);
+      void loadRows();
+    }
+  };
+
+  // A row dropped into an empty or folded group (spec 024): no row to place
+  // it by, so the value alone. A refusal reads the rows again, as a refused
+  // move does (code review: the row stayed drawn in the group it never
+  // joined).
+  const patchRow = async (id: string, propsPatch: Record<string, unknown>) => {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, props: { ...r.props, ...propsPatch } } : r)));
+    const reload = sortDropped.current;
+    sortDropped.current = false;
+    try {
+      await api.updatePage(id, { propsPatch });
       if (reload) void loadRows();
     } catch (e) {
       fail(e);
@@ -112,5 +134,5 @@ export function useTableRowActions({
     dropSort();
   };
 
-  return { editTitleId, addRowNextTo, finishTitle, placeRow, duplicateRow, dropSortForDrag };
+  return { editTitleId, addRowNextTo, finishTitle, placeRow, patchRow, duplicateRow, dropSortForDrag };
 }

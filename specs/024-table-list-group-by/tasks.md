@@ -94,9 +94,9 @@ Built with the changes in research R7: `showEmptyGroups` / `show_empty_groups` f
 **Goal**: reorder inside a group; drop into another group to change the value.
 **Independent Test**: drag a To do row into In progress: status In progress, at the drop spot.
 
-- [ ] T024 [US6] [ui] `web/src/rowDrag.ts` and `TableView`: drop spots know their group; within a group, today's `placePage`; into another group, `placePage` with `groupDropPatch`'s props; refused (no line) where the patch is null; a sorted view gives way as in spec 022; a multi-value row dragged from one of its groups replaces only that value
+- [x] T024 [US6] [ui] `web/src/rowDrag.ts` and `TableView`: drop spots know their group; within a group, today's `placePage`; into another group, `placePage` with `groupDropPatch`'s props; refused (no line) where the patch is null; a sorted view gives way as in spec 022; a multi-value row dragged from one of its groups replaces only that value
 - [ ] T025 [test] `web/tests/table-groups.mjs` (new, in `web/tests/package.json`): group by Status; headers, counts and per-group totals right; filter and sort apply inside groups; a tagged row in two groups; fold, reload, folded; another account sees it open; Collapse all / Expand all; Order flipped; hide and show a group; Show empty groups; drag within a group and into another (value and place after reload); a formula grouping refuses the cross-group drop; a reader folds but cannot drag; a board switched to a table stays grouped, an old converted table stays flat; phone width; light and dark. Rerun `view-layout.mjs`, `view-settings.mjs`, `board-lanes.mjs`, `embed-views.mjs`, `row-handle.mjs`, `view-lock.mjs`
-- [ ] T026 [perf] Measure SC-002 in `table-groups.mjs`'s set-up: 5,000 rows, time to draw flat and grouped, fold and unfold; record the numbers in the PR
+- [x] T026 [perf] Measure SC-002 in `table-groups.mjs`'s set-up: 5,000 rows, time to draw flat and grouped, fold and unfold; record the numbers in the PR
 
 **PR 2 split in two** (2026-11-24, while building): PR 2a is T017–T023 and the
 grouped-table part of T025 (`web/tests/table-groups.mjs`): headers, totals,
@@ -106,6 +106,16 @@ the drag part of T025, and T026 (the 5,000-row measurement). Reason: the drop
 between groups changes how a drag reads the table's rows (one tbody per group
 now), and 2a was already the larger half; two reviewable pull requests
 instead of one.
+
+**PR 2b, as built** (2026-11-25): a drop into an empty or folded group writes
+the value alone, since there is no row in it to place the row by; the line is
+drawn under that group's header. The keyboard move (mod+shift+↑/↓) steps
+among the rows of the group the focused copy is in and never changes a value:
+the value is changed by editing it, or by a drag. T026's numbers are in the
+pull request; switching a 5,000-row table back to flat takes about 30 s on
+`main` as well, filed as #994. T025 stays open for its last items (a board
+switched to a table, an old converted table, phone width, light and dark),
+which PR 3's screenshots and tests take up.
 
 **Checkpoint (PR 2)**: gate, `check-bundle.mjs` under the cap (number in the PR), `/code-review`, `ux-ui-audit` light and dark at desktop and phone width.
 
