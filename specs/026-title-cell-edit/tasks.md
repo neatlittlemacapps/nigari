@@ -13,7 +13,7 @@ description: "Tasks for editing a table row's name in its cell and opening the r
   390 px.
 - Both mutation-checked (they fail with their fix taken out).
 
-**Issues**: none yet
+**Issues**: parent #981; tasks T001–T019 are #1009–#1027
 
 **Delivery**: one pull request from `claude/spec-026-title-cell-edit` (the spec,
 plan and code together).
