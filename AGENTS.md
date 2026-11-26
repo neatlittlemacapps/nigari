@@ -178,6 +178,9 @@ added on the REST side and missing on the MCP side, found later one by one.
   turn. Breaking: data is lost, nigari does not start, or a core task
   (editing, saving, signing in) cannot be done.
 - Small fixes can skip the spec: an issue, a branch, a pull request.
+- **One bug for each feature** (owner, 2026-11-26): after a feature pull
+  request merges, fix and close at least one open bug, in its own small pull
+  request, before the next feature. The backlog grew faster than it shrank.
 - **A bug found while working gets an issue at once** (owner, 2026-10-30),
   and when its turn comes it is fixed in its own small pull request, not
   folded into a feature. Its place in the queue is its Priority; it is raised

@@ -7,6 +7,24 @@ entries are not edited away.
 
 ---
 
+## 2026-11-26 — One bug closed for each feature
+
+- **Why.** The owner: "I do see we create more tickets then we solve".
+  Measured the same evening: 179 issues opened and 184 closed since 20
+  November, which looks even, but both numbers include the task issues each
+  spec opens and closes. The backlog itself grows: 68 open, 25 of them bugs,
+  39 without a priority. Reviews and audits file bugs (#1029, #1031, #1032 on
+  this day alone) faster than features close them.
+- **Decided (owner, "b"):** after each feature pull request merges, at least
+  one open bug is fixed and closed in its own small pull request before the
+  next feature goes on. Pick a small one among the highest priority. This adds
+  to "work goes by Priority" (2026-11-03); it does not replace it.
+- **Turned down:** A, a bug sprint before the next feature (the feature
+  waits a session or two); C, carrying on by Priority alone (unprioritized
+  bugs keep piling up).
+
+---
+
 ## 2026-11-26 — A table row's Open button stays at the cell's end; the side peek narrows to 38%
 
 - **Why.** Spec 026 (#981) puts a row's Open button, Close for the row in
