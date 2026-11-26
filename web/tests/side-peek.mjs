@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { withFixture } from './fixture.mjs';
+import { withFixture, openTableRow } from './fixture.mjs';
 
 // A view can open its rows in a side peek (spec 007, #177). What must hold: a
 // click opens the row beside the view and the view stays; another row swaps
@@ -32,7 +32,7 @@ await withFixture(async ({ page, api, base, path }) => {
   await scroller.evaluate((el) => { el.scrollTop = el.scrollHeight; });
   const scrolled = await scroller.evaluate((el) => el.scrollTop);
   assert(scrolled > 0, 'the table does not scroll; the scroll check would prove nothing');
-  await page.getByText('Task 38', { exact: true }).click();
+  await openTableRow(page, 'Task 38');
   await panel.waitFor();
   assert.equal(await peekTitle(), 'Task 38', 'the peek shows another page');
   assert.equal(new URL(page.url()).pathname, `/p/${collectionId}`, 'opening a peek navigated away from the view');
@@ -40,7 +40,7 @@ await withFixture(async ({ page, api, base, path }) => {
   assert(await page.getByText('Task 39', { exact: true }).isVisible(), 'the view behind the peek is gone');
 
   // Another row swaps the panel; there is still one.
-  await page.getByText('Task 39', { exact: true }).click();
+  await openTableRow(page, 'Task 39');
   await eventuallyEqual(peekTitle, 'Task 39', 'clicking another row did not swap the peek');
   assert.equal(await panel.count(), 1, 'a second panel opened');
 
@@ -59,14 +59,14 @@ await withFixture(async ({ page, api, base, path }) => {
   assert.equal(await scroller.evaluate((el) => el.scrollTop), scrolled, 'closing the peek moved the view');
 
   // Back closes it too, and stays on the view.
-  await page.getByText('Task 38', { exact: true }).click();
+  await openTableRow(page, 'Task 38');
   await panel.waitFor();
   await page.goBack();
   await panel.waitFor({ state: 'hidden' });
   assert.equal(new URL(page.url()).pathname, `/p/${collectionId}`, 'Back left the view instead of closing the peek');
 
   // A reload keeps the peek.
-  await page.getByText('Task 2', { exact: true }).click();
+  await openTableRow(page, 'Task 2');
   await panel.waitFor();
   await page.reload();
   await panel.waitFor();
@@ -154,7 +154,7 @@ await withFixture(async ({ page, api, base, path }) => {
   // A phone has no room beside the view: a side peek opens centred.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${base}/p/${collectionId}`);
-  await page.getByText('Task 5', { exact: true }).click();
+  await openTableRow(page, 'Task 5');
   await centre.waitFor();
   assert.equal(await panel.count(), 0, 'a side panel opened on a phone');
   await page.setViewportSize({ width: 1200, height: 900 });

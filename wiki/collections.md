@@ -189,8 +189,10 @@ still open the "N more properties" line.
 
 ## How rows open
 
-A click on a row, a card, a list item or a calendar or timeline entry opens
-that row's page. How it opens is a setting of each view, under **Settings** ›
+A click on a card, a list item or a calendar or timeline entry opens that
+row's page; in a table it is the row's **Open** button, since a click on the
+name renames it ([Views](views.md#table)). How it opens is a setting of each
+view, under **Settings** ›
 **Open rows in**:
 
 | Setting | A click on a row |

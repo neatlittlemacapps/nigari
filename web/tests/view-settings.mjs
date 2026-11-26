@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { eventually, withFixture } from './fixture.mjs';
+import { eventually, withFixture, openTableRow } from './fixture.mjs';
 
 // A view's toolbar has one Settings button (spec 012, US4, #270). Before, the
 // same settings were spread over a Properties button, an unlabelled ⋯, a
@@ -176,7 +176,7 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
   const child = await api('POST', '/api/pages', { parentId: collectionId, title: 'Sub-database', type: 'collection' });
   await api('PUT', `/api/collections/${child.id}`, { schema: [{ id: 'note', name: 'Note', type: 'text' }], views: [{ id: 'inner', name: 'Inner', type: 'table' }] });
   await page.goto(`${base}/p/${collectionId}`);
-  await page.locator('.db-title-link', { hasText: 'Sub-database' }).click();
+  await openTableRow(page, 'Sub-database');
   const peek = page.getByRole('complementary', { name: 'Page preview' });
   await peek.waitFor();
   const peekSettings = peek.getByRole('button', { name: 'Settings', exact: true });

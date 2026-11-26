@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { withFixture, eventually } from './fixture.mjs';
+import { withFixture, eventually, openTableRow } from './fixture.mjs';
 
 // Three bugs of the drag and drop epic (#812), each in a document that holds a
 // database:
@@ -43,7 +43,7 @@ await withFixture(async ({ page, api, base, workspace, path }) => {
 
   // ---- #826 ----
   await page.keyboard.press('Escape');
-  await page.getByText('Task 2', { exact: true }).click();
+  await openTableRow(page, 'Task 2');
   const panel = page.getByRole('complementary', { name: 'Page preview' });
   await panel.waitFor();
   const rowId = new URL(page.url()).searchParams.get('peek');

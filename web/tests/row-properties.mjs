@@ -8,7 +8,7 @@
 // values, and every property change meant the Edit properties dialog.
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { eventually, withFixture } from './fixture.mjs';
+import { eventually, withFixture, openTableRow } from './fixture.mjs';
 
 await withFixture(async ({ page, api, base, workspace, path, read }) => {
   page.setDefaultTimeout(15000);
@@ -175,7 +175,7 @@ await withFixture(async ({ page, api, base, workspace, path, read }) => {
   const stored2 = await read();
   await api('PUT', path, { views: stored2.views.map((v) => (v.type === 'table' ? { ...v, openIn: 'side_peek' } : v)) });
   await page.reload();
-  await page.locator('.db-title-link', { hasText: 'First row' }).click();
+  await openTableRow(page, 'First row');
   const peek = page.getByRole('complementary', { name: 'Page preview' });
   await peek.waitFor();
   await peek.locator('.row-props').getByRole('button', { name: 'State', exact: true }).click();
