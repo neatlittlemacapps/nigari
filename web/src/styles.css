@@ -3116,15 +3116,23 @@ body.is-col-resizing {
   text-overflow: ellipsis;
 }
 
-/* The Open button sits on the name's line, as in the approved mockup: a
-   table's text starts at the top of its cell, and the button, centred in a
-   row made taller by a date or a chip, hung 4px below the name. The line is
-   the cell's 7px padding plus half of one line (1lh). On a touch screen the
-   name is centred in the row already (its 36px button). */
-@media (hover: hover) {
-  .db-table td.db-title-col .ui-cell-action {
-    top: calc(7px + 0.5lh); /* token-ok: the table cell's own padding (.db-table td) */
-  }
+/* The name's text starts where the text of a chip, a date or a number does
+   (owner, 2026-11-26: "keep top aligned but ensure top spacing is the same
+   as other cells"). Those controls carry about 4px of padding of their own,
+   so their text began 12.8-14px below the row's top and the name's at 8.9px;
+   on a touch screen the name's 36px button centred it lower, at 18.4px. The
+   field being typed keeps its own spacing (the row keeps its height). */
+.db-table td.db-title-col:not(.is-editing) .db-title-inner {
+  padding-top: var(--space-100);
+  align-items: flex-start;
+}
+
+/* The Open button sits on the name's line, as in the approved mockup: the
+   cell's 7px padding, the name's 4px above, and half of one line (1lh).
+   Centred in a row made taller by a date or a chip, it hung below the
+   name. */
+.db-table td.db-title-col .ui-cell-action {
+  top: calc(7px + var(--space-100) + 0.5lh); /* token-ok: the table cell's own padding (.db-table td) */
 }
 
 /* An editor's click renames, so the cell reads as text: a text cursor and no
@@ -7848,6 +7856,15 @@ body.is-col-resizing {
   .idx-node,
   .idx-node-main,
   .db-title-link {
+    min-height: 36px;
+  }
+  /* In a table the 36px is the name's row, not its button: a button centres
+     its text, and the name's text starts at the top like the other cells'
+     (spec 026). The whole cell is the target anyway. */
+  .db-table td.db-title-col .db-title-link {
+    min-height: 0;
+  }
+  .db-table td.db-title-col:not(.is-editing) .db-title-inner {
     min-height: 36px;
   }
   /* The name typed in place keeps the row's height (spec 026): the field
