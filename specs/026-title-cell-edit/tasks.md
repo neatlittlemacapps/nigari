@@ -65,7 +65,7 @@ plan and code together).
 - [x] T016 [test] Update the specs that open a row by clicking its name to press its Open button instead. Find them by text search for `.db-title-link` clicks and `getByText(<row title>).click()` before a peek or page check (today `row-properties.mjs`, `view-settings.mjs`, and the peek and embed specs). Run `row-handle.mjs`, `table-cells.mjs` and `table-groups.mjs` unchanged
 - [x] T017 [perf] Measure drawing a 5,000-row table on `main` and on this branch, both in the same container. Write the numbers in the pull request (SC-005)
 - [x] T018 [wiki] `wiki/views.md`: the table section says a click on the name renames it and the Open button opens the row, with Close beside a peek (line 147 today). Retake the screenshots `check-wiki` names as stale, and no others
-- [ ] T019 [ui] Look checklist (`.claude/rules/frontend.md`) on screenshots in light and dark at 1280 and 390 px, with left edges measured, and `ux-ui-audit`. Then `/code-review`. The screenshots and findings go into the pull request
+- [x] T019 [ui] Look checklist (`.claude/rules/frontend.md`) on screenshots in light and dark at 1280 and 390 px, with left edges measured, and `ux-ui-audit`. Then `/code-review`. The screenshots and findings go into the pull request
 
 ## Dependencies
 
