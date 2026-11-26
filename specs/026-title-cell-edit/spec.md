@@ -55,6 +55,7 @@ From the code graph (`codegraph explore` on `TableView`, `db-title-link`,
 ### Session 2026-11-26
 
 - Q: On which screens is every row's Open button shown all the time, instead of only on hover? → A: On touch screens that cannot hover (phones and tablets alike); on hover elsewhere, however narrow the window (owner "A").
+- Q: Does the new behaviour apply to tables only, or also to lists, boards and galleries? → A: Tables only; the other views keep opening a row from its title (owner "A").
 
 ## User Scenarios & Testing
 
@@ -265,7 +266,7 @@ Open button is there too.
 | Q2 | A double click equals a single click (owner "Q2a") | A double click opens the row (B) |
 | Q3 | Readers keep click-to-open and also see the button; ⌘/Ctrl and middle click open a new tab for everyone (owner: "Open remains", "Yes") | No button for readers (A); button for readers with a dead click on the name (B) |
 | Always shown | Decided by the kind of pointer (a touch screen that cannot hover, phones and tablets alike), not by width: a narrow window on a computer still hovers (owner "A", 2026-11-26, Claude's recommendation) | By screen width, 720 px or less (B); always, on every screen (C) |
-| Scope | Table views only (Claude's default, from the issue's title) | List, board and gallery titles too |
+| Scope | Table views only (owner "A", 2026-11-26, Claude's recommendation): names sit in cells and get renamed in passing there; cards and list lines are mostly opened | Tables and lists (B); every view with a title (C) |
 
 ## Success Criteria
 
@@ -285,8 +286,9 @@ Open button is there too.
 
 ## Assumptions
 
-- Only table views change. The list, board, gallery, calendar and timeline
-  keep opening a row from its title; a later request can bring them in line.
+- Only table views change (owner, Clarifications). The list, board, gallery,
+  calendar and timeline keep opening a row from its title; a later request can
+  bring them in line.
 - The column's own name (the heading "Name") and its menu are not part of
   this change.
 - How the button looks (text or icon, size, where the mark goes on an open

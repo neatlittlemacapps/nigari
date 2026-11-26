@@ -36,6 +36,5 @@
   The requirements and success criteria themselves stay free of it.
 - The button's exact look is left to the mockup the owner approves before
   building (`.claude/rules/frontend.md`), within FR-004 to FR-008.
-- Two of Claude's defaults are labelled as such under Decisions ("Always
-  shown" by pointer kind, "Scope" tables only); the owner can overturn either
-  at `/speckit-clarify`.
+- The two defaults Claude proposed ("Always shown" by pointer kind, "Scope"
+  tables only) were confirmed by the owner at `/speckit-clarify`, 2026-11-26.
