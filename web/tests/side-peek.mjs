@@ -154,7 +154,8 @@ await withFixture(async ({ page, api, base, path }) => {
   // A phone has no room beside the view: a side peek opens centred.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${base}/p/${collectionId}`);
-  await openTableRow(page, 'Task 5');
+  // The Board view chosen above is still the one shown: a card's title opens.
+  await page.getByText('Task 5', { exact: true }).click();
   await centre.waitFor();
   assert.equal(await panel.count(), 0, 'a side panel opened on a phone');
   await page.setViewportSize({ width: 1200, height: 900 });
