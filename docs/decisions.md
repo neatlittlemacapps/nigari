@@ -7,6 +7,26 @@ entries are not edited away.
 
 ---
 
+## 2026-11-26 — Mockups only where getting it wrong is a real risk
+
+- **Why.** The owner, after approving the spec 026 mockup (#981): "Building
+  the designs beforehand is token intensive. Only do this when the risk of
+  getting it wrong (structural changes or new components) are real."
+- **Decided:** mockups the owner approves come first for a structural change
+  (a new view or panel, a phone form of something, a layout that moves things
+  around) or a new design-system component. A change inside an existing
+  layout built from existing components goes straight to building, and the
+  owner judges it on the pull request's light and dark screenshots at 1280 and
+  390 px (the look checklist still applies to every visible change).
+- **Replaces** the 2026-11-25 rule's "a new layout gets mockups the owner
+  approves" where it was read as every visible change. The look checklist and
+  the review before a merge stay as they were.
+- **Turned down:** mockups for every visible change (the cost the owner named);
+  no mockups at all (the 2026-11-25 grouped-table review showed what a
+  structural change costs when it is first seen built).
+
+---
+
 ## 2026-11-25 — How things look is checked, not only measured: mockups first, a look checklist on screenshots
 
 - **What went wrong.** The owner, on a table on a phone: "Clearly the

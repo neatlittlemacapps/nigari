@@ -58,8 +58,13 @@ paths:
 - **How it looks is checked, not only measured** (owner, 2026-11-25,
   `docs/decisions.md`). The ux-ui-audit measures contrast and tap sizes; it
   never says a screen looks wrong. So:
-  - **A new layout starts with mockups the owner approves**, before it is
-    built (a new view, a new panel, a phone form of something).
+  - **Mockups only where getting it wrong is a real risk** (owner,
+    2026-11-26: building designs beforehand is token intensive). A
+    structural change (a new view, a new panel, a phone form of something,
+    a layout that moves things around) or a new design-system component
+    starts with mockups the owner approves, before it is built. A change
+    inside an existing layout with existing components does not: it is
+    shown on the pull request's screenshots instead.
   - **Every visible change** is looked at on screenshots, light and dark, at
     1280 and 390 px wide, against the checklist below, and the screenshots go
     into the pull request. Measure what can be measured (left edges in the
