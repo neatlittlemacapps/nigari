@@ -148,6 +148,32 @@ await withFixture(async ({ page, api, base, workspace }) => {
   const guide = await page.evaluate(() => getComputedStyle(document.querySelector('.bn-container')).getPropertyValue('--bn-colors-side-menu').trim());
   assert.notEqual(guide, '', 'BlockNote no longer sets its side-menu colour');
   assert(!/var\(--editor-side-menu-icon\)|text-muted/.test(guide), `--bn-colors-side-menu was changed (${guide})`);
+
+  // ---- #984: a quick first move after the press drags the pressed block ----
+  // The browser starts a drag only after a few pixels. A first move of 30px
+  // right and 19px up (the jump measured in #984) left the handle before
+  // that, the hold let go, BlockNote moved the handle to the block above,
+  // and that block was dragged instead.
+  const last = await text('bottom');
+  await page.mouse.move(last.x + 10, last.y + last.height / 2);
+  for (let x = last.x + 8; x >= last.x - 10; x -= 2) await page.mouse.move(x, last.y + 12);
+  await eventually(() => besides('bottom'));
+  await page.mouse.down();
+  await page.mouse.move(last.x + 20, last.y - 7);
+  // Dropped on the lower part of the first line: it lands right after it.
+  const first = await text('top');
+  const dropY = first.y + first.height * 0.8;
+  for (let i = 1; i <= 40; i++) {
+    await page.mouse.move(last.x + 20 + (first.x + 30 - last.x - 20) * i / 40, last.y - 7 + (dropY - last.y + 7) * i / 40);
+  }
+  await page.mouse.move(first.x + 30, dropY);
+  await page.mouse.up();
+  let order = [];
+  await eventually(async () => {
+    order = (await api('GET', `/api/pages/${doc.id}`)).content.map((b) => b.id);
+    return order[1] !== 'cols';
+  }).catch(() => {});
+  assert.equal(order[1], 'bottom', `a quick first move did not drag the pressed block: the page reads ${order.join(', ')}`);
 });
 
 // ---- a second editor on the page keeps its own handle ----

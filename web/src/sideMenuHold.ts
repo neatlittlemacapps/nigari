@@ -14,7 +14,7 @@
 // the handle, the handle does not move. BlockNote has that switch already, the
 // one it throws while the block menu is open: freezeMenu / unfreezeMenu. It is
 // thrown here when the pointer moves onto the side menu and released on the
-// first move off it. A drag from the handle keeps it thrown (no pointer events
+// first move off it, unless a press on the handle is still down (#984). A drag from the handle keeps it thrown (no pointer events
 // fire during a drag), which is right: the handle belongs to the dragged block
 // until the drop, and the next move after the drop releases it.
 //
@@ -51,6 +51,9 @@ export interface HoldInput {
   blockMenuOpen: boolean;
   /** PointerEvent.pointerType. */
   pointerType: string;
+  /** A mouse button went down on this editor's side menu and is still down,
+   *  and no drag has started yet (#984). */
+  pressed?: boolean;
 }
 
 /**
@@ -68,12 +71,19 @@ export interface HoldInput {
  *
  * A finger is left alone: a touch is captured to where it began, so its moves
  * all report the handle, and a lifted finger sends no move to release it.
+ *
+ * #984: a press on the handle keeps the hold until the drag starts or the
+ * button comes up. The browser starts a drag only after the pointer has gone
+ * a few pixels, and a quick first move (about 20px) left the handle before
+ * that: the first move off it released the hold, BlockNote moved the menu to
+ * the block now under the pointer, and the drag that then started took that
+ * block, the one above, instead of the one pressed.
  */
-export function holdDecision({ held, onOwnMenu, blockMenuOpen, pointerType }: HoldInput): 'hold' | 'release' | 'yield' | null {
+export function holdDecision({ held, onOwnMenu, blockMenuOpen, pointerType, pressed = false }: HoldInput): 'hold' | 'release' | 'yield' | null {
   if (pointerType === 'touch') return null;
   if (blockMenuOpen) return held ? 'yield' : null;
   if (onOwnMenu && !held) return 'hold';
-  if (!onOwnMenu && held) return 'release';
+  if (!onOwnMenu && held && !pressed) return 'release';
   return null;
 }
 
@@ -89,15 +99,34 @@ export function holdSideMenuWhileHovered(
 ): () => void {
   if (!menu) return () => {};
   let held = false;
+  // A mouse press that began on this editor's own held handle (#984).
+  let pressed = false;
+  const ownMenu = (e: Event) => {
+    const root = container();
+    const target = e.target instanceof Element ? e.target.closest(SIDE_MENU_SELECTOR) : null;
+    return !!root && target !== null && root.contains(target);
+  };
+  const onDown = (e: PointerEvent) => {
+    pressed = held && e.pointerType !== 'touch' && e.button === 0 && ownMenu(e);
+  };
+  // Once the drag has started the hold stays thrown on its own (no pointer
+  // moves come during a drag) and the first move after the drop releases it,
+  // as before.
+  const onUp = () => {
+    pressed = false;
+  };
   const onMove = (e: PointerEvent) => {
     const root = container();
     if (!root) return;
-    const target = e.target instanceof Element ? e.target.closest(SIDE_MENU_SELECTOR) : null;
+    // A button let go outside the window sends no pointerup here: the
+    // buttons on the move itself say whether it is still down.
+    if (pressed && (e.buttons & 1) === 0) pressed = false;
     const decision = holdDecision({
       held,
-      onOwnMenu: target !== null && root.contains(target),
+      onOwnMenu: ownMenu(e),
       blockMenuOpen: root.querySelector(`${SIDE_MENU_SELECTOR} [aria-expanded="true"]`) !== null,
       pointerType: e.pointerType,
+      pressed,
     });
     if (decision === 'hold') {
       held = true;
@@ -112,5 +141,15 @@ export function holdSideMenuWhileHovered(
   // pointermove comes before the mousemove BlockNote listens to, so the
   // freeze is in place by the time BlockNote looks.
   doc.addEventListener('pointermove', onMove, true);
-  return () => doc.removeEventListener('pointermove', onMove, true);
+  doc.addEventListener('pointerdown', onDown, true);
+  doc.addEventListener('pointerup', onUp, true);
+  doc.addEventListener('pointercancel', onUp, true);
+  doc.addEventListener('dragstart', onUp, true);
+  return () => {
+    doc.removeEventListener('pointermove', onMove, true);
+    doc.removeEventListener('pointerdown', onDown, true);
+    doc.removeEventListener('pointerup', onUp, true);
+    doc.removeEventListener('pointercancel', onUp, true);
+    doc.removeEventListener('dragstart', onUp, true);
+  };
 }
