@@ -181,6 +181,8 @@ No `research.md` (the decisions are D1–D6 above), `data-model.md` (no entity),
 (check list), `web/tests/title-cell.mjs` (new) and the specs that click
 `.db-title-link`, `web/tests/package.json`, `wiki/views.md`, retaken shots.
 
+**Mockup**: approved by the owner on 2026-11-26 ("Yes"), with C1 A, C2 A, C3 A and the cell as the target (spec FR-001, FR-014 to FR-016). It is the private Design canvas "Title cell mockup (#981)", linked from #981's comments.
+
 **Order**: the mockup page for the owner first (no code until it is approved),
 then D1 with its check, D2, the cell, the tests, the wiki.
 
