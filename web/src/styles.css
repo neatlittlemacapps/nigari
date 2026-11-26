@@ -3011,6 +3011,11 @@ body.is-col-resizing {
    wall of text doesn't make every row tall. Clicking still opens the editor. */
 .db-table td .prop-text {
   display: block;
+  /* Its text starts where a chip's, a date's or a number's does, and where
+     the field that replaces it on a click puts it (owner, 2026-11-26: the
+     same space above every cell's text, as the name has; it began 4px
+     higher). The row keeps its height: 4px + 18px fits in 42px. */
+  padding-top: var(--space-100);
   max-width: 420px;
   white-space: nowrap;
   overflow: hidden;
@@ -3100,7 +3105,7 @@ body.is-col-resizing {
 /* A long name is cut off on one line, not wrapped (spec 026, FR-006): the
    Open button lies over its end, and the row keeps the height of its other
    cells. The whole name is in the field while it is typed, and in the row's
-   page. The tags stay under it. */
+   page. The tags follow it on the same line (#1031). */
 .db-table td.db-title-col .db-title-inner {
   display: flex;
   /* No width of its own (width 0), the cell's whole width to fill (min-width
@@ -3114,6 +3119,20 @@ body.is-col-resizing {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+/* The row's tags on the name's line (#1031): one line, cut off at the cell's
+   end. The name keeps its whole width up to the cell's edge (then the
+   ellipsis), and the tags take what is left: shrinking both in proportion
+   cut "Row ta…" beside a whole #design. The tags give way first (a shrink
+   factor far above the name's), and then the name shrinks too: a name that
+   would not shrink at all ran past the cell by the width of a sub-item's
+   toggle and indent (review). */
+.db-table td.db-title-col .db-title-inner .db-row-tags {
+  flex: 0 10000 auto;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 /* The name's text starts where the text of a chip, a date or a number does

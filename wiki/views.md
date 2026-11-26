@@ -71,7 +71,7 @@ opens the row in a new tab. Someone who can only read the database renames
 nothing: a click on the name opens the row, as it always did. Lists, boards,
 galleries, calendars and timelines open a row from its title as before.
 
-Under the title sit the row's tags, and a coloured dot appears beside a row an
+Beside the title sit the row's tags, and a coloured dot appears beside a row an
 agent is working on right now.
 
 When the table has rows, its foot is a calculation row. Under each column it
