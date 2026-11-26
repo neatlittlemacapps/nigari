@@ -50,6 +50,12 @@ From the code graph (`codegraph explore` on `TableView`, `db-title-link`,
   MCP, and opening a row is a matter of the interface. No route or tool
   changes.
 
+## Clarifications
+
+### Session 2026-11-26
+
+- Q: On which screens is every row's Open button shown all the time, instead of only on hover? → A: On touch screens that cannot hover (phones and tablets alike); on hover elsewhere, however narrow the window (owner "A").
+
 ## User Scenarios & Testing
 
 ### User Story 1: Rename a row by clicking its name (P1)
@@ -100,7 +106,7 @@ the view's "Open pages in" setting says.
 1. **Given** a computer and a table, **When** the pointer is over a row or
    its name cell has the focus, **Then** that row's name cell shows an Open
    button at its right edge. Other rows show none.
-2. **Given** a phone (a screen with no pointer that hovers), **Then** every
+2. **Given** a touch screen that cannot hover (a phone or a tablet), **Then** every
    row's name cell shows its Open button all the time.
 3. **Given** a long name in a narrow column, **Then** the Open button sits
    over the end of the name, and the name is cut off under it, not wrapped.
@@ -258,7 +264,7 @@ Open button is there too.
 | Q1 | Enter on a focused name edits; Tab then reaches the button (owner "Q1a") | Enter opens and F2 or typing edits (B) |
 | Q2 | A double click equals a single click (owner "Q2a") | A double click opens the row (B) |
 | Q3 | Readers keep click-to-open and also see the button; ⌘/Ctrl and middle click open a new tab for everyone (owner: "Open remains", "Yes") | No button for readers (A); button for readers with a dead click on the name (B) |
-| Always shown | Decided by the kind of pointer (a screen that cannot hover), not by width (Claude's default): a narrow window on a computer still hovers, and a tablet in landscape cannot | Decided by screen width |
+| Always shown | Decided by the kind of pointer (a touch screen that cannot hover, phones and tablets alike), not by width: a narrow window on a computer still hovers (owner "A", 2026-11-26, Claude's recommendation) | By screen width, 720 px or less (B); always, on every screen (C) |
 | Scope | Table views only (Claude's default, from the issue's title) | List, board and gallery titles too |
 
 ## Success Criteria
