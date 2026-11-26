@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { eventually, withFixture } from './fixture.mjs';
+import { eventually, withFixture, openTableRow } from './fixture.mjs';
 
 // The status property (spec 016, PR 1): a select whose options sit in three
 // groups. In the real UI: a status added in the properties dialog shows its
@@ -140,7 +140,7 @@ await withFixture(async ({ page, api, base, path, open, read }) => {
   config.views[0].openIn = 'side_peek';
   await api('PUT', path, { views: config.views });
   await page.goto(`${base}/p/${collectionId}`);
-  await page.getByText('Alpha', { exact: true }).click();
+  await openTableRow(page, 'Alpha');
   const panel = page.getByRole('complementary', { name: 'Page preview' });
   await panel.waitFor();
   await panel.getByRole('button', { name: 'Doing', exact: true }).click();

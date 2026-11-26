@@ -9,6 +9,7 @@ import { Button } from '../src/ui/Button';
 import { Dialog, DialogClose } from '../src/ui/Dialog';
 import { AlertDialog } from '../src/ui/AlertDialog';
 import { Field, Input } from '../src/ui/Field';
+import { CellAction } from '../src/ui/CellAction';
 import { Checkbox } from '../src/ui/Checkbox';
 import { Select } from '../src/ui/Select';
 import { Switch } from '../src/ui/Switch';
@@ -231,6 +232,12 @@ function Catalog() {
           </Button>
           <Button emphasis="low" pressed icon={<Plus />} label="Add a page" />
         </Row>
+        <Row label="extra small (an action in a cell; 30px on a touch screen)">
+          <Button size="xs">Open</Button>
+          <Button size="xs" emphasis="low">
+            Open
+          </Button>
+        </Row>
         <Row label="icon only, disabled">
           <Button emphasis="low" icon={<Trash2 />} label="Remove (disabled)" disabled onClick={() => setLast('disabled icon')} />
         </Row>
@@ -250,6 +257,67 @@ function Catalog() {
           <Field label="Disabled" disabled>
             <Input defaultValue="Read only" />
           </Field>
+        </Row>
+        <Row label='variant="cell": a value typed in place in a table cell'>
+          <table className="cat-table cat-table--md cat-cells">
+            <tbody>
+              <tr>
+                <td className="cat-cell-edit">
+                  <Input variant="cell" aria-label="Row title" defaultValue="Onboarding checklist v2" />
+                </td>
+                <td>Not started</td>
+              </tr>
+            </tbody>
+          </table>
+        </Row>
+      </Section>
+
+      <Section id="cell-action" title="CellAction">
+        <p className="cat-note">
+          A small button at a cell's end, over its text (spec 026). It shows while its row is hovered or holds the focus, always
+          on a touch screen that cannot hover, always when pinned, and never while the row edits. Point at the first row.
+        </p>
+        <Row label="hover, pinned, a long name, editing">
+          <table className="cat-table cat-table--md cat-cells">
+            <tbody>
+              <tr data-cell-action-host="">
+                <td className="cat-cell-name">
+                  <span className="cat-cell-text">Roadmap review</span>
+                  <CellAction label="Open Roadmap review" onClick={() => setLast('cell action open')}>
+                    Open
+                  </CellAction>
+                </td>
+                <td>In progress</td>
+              </tr>
+              <tr data-cell-action-host="">
+                <td className="cat-cell-name">
+                  <span className="cat-cell-text">Launch notes</span>
+                  <CellAction label="Close Launch notes" pinned onClick={() => setLast('cell action close')}>
+                    Close
+                  </CellAction>
+                </td>
+                <td>Done</td>
+              </tr>
+              <tr data-cell-action-host="">
+                <td className="cat-cell-name">
+                  <span className="cat-cell-text">Customer interview with the housing co-op about the spring plans</span>
+                  <CellAction label="Open Customer interview" pinned onClick={() => {}}>
+                    Open
+                  </CellAction>
+                </td>
+                <td>In progress</td>
+              </tr>
+              <tr data-cell-action-host="" data-editing="">
+                <td className="cat-cell-name cat-cell-edit">
+                  <Input variant="cell" aria-label="Row title" defaultValue="Onboarding checklist v2" />
+                  <CellAction label="Open Onboarding checklist v2" pinned onClick={() => {}}>
+                    Open
+                  </CellAction>
+                </td>
+                <td>Not started</td>
+              </tr>
+            </tbody>
+          </table>
         </Row>
       </Section>
 

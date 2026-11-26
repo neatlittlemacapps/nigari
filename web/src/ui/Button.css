@@ -46,6 +46,21 @@ a.ui-button:not([data-emphasis='link']) {
   font-size: var(--button-font-size-sm);
 }
 
+/* Extra small: an action inside a table cell (ui/CellAction, spec 026). A
+   touch screen that cannot hover makes it a little larger for a thumb. */
+.ui-button[data-size='xs'] {
+  height: var(--button-height-xs);
+  padding: 0 var(--button-padding-x-xs);
+  font-size: var(--button-font-size-xs);
+}
+@media (hover: none) {
+  .ui-button[data-size='xs'] {
+    height: var(--button-height-touch);
+    padding: 0 var(--button-padding-x-touch);
+    font-size: var(--button-font-size-touch);
+  }
+}
+
 /* Labels in the brand typeface, as every button was (styles.css "Labels and
    buttons in mono"). */
 [data-font='brand'] .ui-button {
@@ -72,7 +87,8 @@ a.ui-button:not([data-emphasis='link']) {
   height: var(--button-icon-size-md);
 }
 
-.ui-button[data-size='sm'] .ui-button-icon svg {
+.ui-button[data-size='sm'] .ui-button-icon svg,
+.ui-button[data-size='xs'] .ui-button-icon svg {
   width: var(--button-icon-size-sm);
   height: var(--button-icon-size-sm);
 }
@@ -85,6 +101,15 @@ a.ui-button:not([data-emphasis='link']) {
 
 .ui-button[data-icon-only][data-size='sm'] {
   width: var(--button-height-sm);
+}
+
+.ui-button[data-icon-only][data-size='xs'] {
+  width: var(--button-height-xs);
+}
+@media (hover: none) {
+  .ui-button[data-icon-only][data-size='xs'] {
+    width: var(--button-height-touch);
+  }
 }
 
 .ui-button:focus-visible {

@@ -6,6 +6,12 @@ import { t } from '../i18n';
 import { toastError } from '../toast';
 import { serverMessage } from '../serverErrors';
 import { applySpot, type RowSpot } from '../rowDrag';
+import { announceTitle } from '../pageTitles';
+
+/** A row title being typed, and which drawn copy of the row edits: a
+ *  grouped table draws a row once per group, a tree once per parent. `copy`
+ *  names the group and the parent; absent, the row's first copy edits. */
+export type EditTitle = { id: string; copy?: string };
 
 // What a table row's handle, + and menu do to the database (spec 022), kept
 // out of CollectionView.tsx, which is already too large to grow inline.
@@ -36,8 +42,13 @@ export function useTableRowActions({
 }) {
   const fail = (e: unknown) => toastError(e instanceof ApiError ? serverMessage(e.code, e.message) : t('Change not saved'));
 
-  // The row the + just added, its title being typed (US4).
-  const [editTitleId, setEditTitleId] = useState<string | null>(null);
+  // The row whose title is being typed: the one the + just added (spec 022,
+  // US4), or the one whose name was clicked (spec 026). A grouped table draws
+  // a row once per group it falls in, so a click names its group and only
+  // that copy turns into a field: two autofocused fields would fight (plan
+  // D3). A tree draws a row under each of its parents, so the copy names the
+  // parent too (review). The + names none, and the row's first copy edits.
+  const [editTitle, setEditTitle] = useState<EditTitle | null>(null);
 
   // The + beside a row: the new row goes right below it, or above with Alt or
   // Option, in one request, in the view the person is looking at, as New
@@ -51,18 +62,22 @@ export function useTableRowActions({
       onMade?.(row.id);
       onPagesChanged();
       announceIfHidden(row);
-      setEditTitleId(row.id);
+      setEditTitle({ id: row.id });
     } catch (e) {
       fail(e);
     }
   };
 
+  const startEditTitle = (id: string, copy?: string) => setEditTitle({ id, copy });
+
   const finishTitle = async (id: string, title: string | null) => {
-    setEditTitleId(null);
+    setEditTitle(null);
     if (title === null) return;
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, title } : r)));
     try {
       await api.updatePage(id, { title });
+      // The peek beside the table may show this row (spec 026, review).
+      announceTitle(id, title);
       onPagesChanged();
     } catch (e) {
       fail(e);
@@ -134,5 +149,5 @@ export function useTableRowActions({
     dropSort();
   };
 
-  return { editTitleId, addRowNextTo, finishTitle, placeRow, patchRow, duplicateRow, dropSortForDrag };
+  return { editTitle, startEditTitle, addRowNextTo, finishTitle, placeRow, patchRow, duplicateRow, dropSortForDrag };
 }

@@ -139,6 +139,29 @@ body {
   font-size: var(--font-size-md);
 }
 
+/* CellAction and Input variant="cell": a name column as the app's table
+   draws it, positioned for the button, the name cut off under it. */
+.cat-cells {
+  width: 480px;
+  table-layout: fixed;
+}
+.cat-cells td:first-child {
+  width: 300px;
+}
+.cat-cell-name {
+  position: relative;
+}
+.cat-cell-text {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* The field fills the cell: the cell's own padding goes to the field. */
+.cat-table td.cat-cell-edit {
+  padding: var(--space-50);
+}
+
 /* Colours: a chip of the colour over its name, the name on the page's own
    surface so it is readable whatever the chip. A palette is one tight strip. */
 .cat-swatch {

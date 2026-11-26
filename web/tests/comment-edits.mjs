@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { eventually, withFixture } from './fixture.mjs';
+import { eventually, withFixture, openTableRow } from './fixture.mjs';
 
 // Spec 017: a comment's author edits it by keyboard, "(edited)" opens its
 // earlier versions, another person sees no Edit, and reactions toggle, count
@@ -94,7 +94,7 @@ await withFixture(async ({ page, context, api, base, workspace, path }) => {
   const row = await api('POST', '/api/pages', { parentId: coll, title: 'Row with a comment', props: { status: 'todo' } });
   const rowComment = await api('POST', `/api/pages/${row.id}/comments`, { body: 'On a row' });
   await page.goto(`${base}/p/${coll}`);
-  await page.getByText('Row with a comment', { exact: true }).click();
+  await openTableRow(page, 'Row with a comment');
   const peek = page.getByRole('complementary', { name: 'Page preview' });
   await peek.waitFor();
   // The peek's top bar is narrow; its ⋯ menu always offers the comments.

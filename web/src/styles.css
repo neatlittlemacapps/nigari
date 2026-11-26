@@ -3091,15 +3091,94 @@ body.is-col-resizing {
   text-align: left;
 }
 
-.db-title-link:hover {
+/* The name cell (TitleCell, spec 026). The cell holds the Open button
+   (ui/CellAction), placed at its end. */
+.db-table td.db-title-col {
+  position: relative;
+}
+
+/* A long name is cut off on one line, not wrapped (spec 026, FR-006): the
+   Open button lies over its end, and the row keeps the height of its other
+   cells. The whole name is in the field while it is typed, and in the row's
+   page. The tags stay under it. */
+.db-table td.db-title-col .db-title-inner {
+  display: flex;
+  /* No width of its own (width 0), the cell's whole width to fill (min-width
+     100%): a long name no longer widens the column. One line of it did, to
+     the full name: 656px on a computer, the whole screen on a phone. */
+  width: 0;
+  min-width: 100%;
+}
+.db-table td.db-title-col .db-title-link {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The name's text starts where the text of a chip, a date or a number does
+   (owner, 2026-11-26: "keep top aligned but ensure top spacing is the same
+   as other cells"). Those controls carry about 4px of padding of their own,
+   so their text began 12.8-14px below the row's top and the name's at 8.9px;
+   on a touch screen the name's 36px button centred it lower, at 18.4px. The
+   field being typed keeps its own spacing (the row keeps its height). */
+.db-table td.db-title-col:not(.is-editing) .db-title-inner {
+  padding-top: var(--space-100);
+  align-items: flex-start;
+}
+
+/* The Open button sits on the name's line, as in the approved mockup: the
+   cell's 7px padding, the name's 4px above, and half of one line (1lh).
+   Centred in a row made taller by a date or a chip, it hung below the
+   name. */
+.db-table td.db-title-col .ui-cell-action {
+  top: calc(7px + var(--space-100) + 0.5lh); /* token-ok: the table cell's own padding (.db-table td) */
+}
+
+/* An editor's click renames, so the cell reads as text: a text cursor and no
+   underline, like every text cell (owner, mockup C3 a). A reader's click
+   still opens the row, and keeps the link's underline. */
+.db-table td.db-title-col[data-editable],
+.db-table td.db-title-col[data-editable] .db-title-link {
+  cursor: text;
+}
+.db-table td.db-title-col:not([data-editable]) .db-title-link:hover {
   text-decoration: underline;
 }
 
-/* A new row's title, typed in place after its + (spec 022). */
+/* The focus ring goes round the cell, not the text (owner: "The element
+   you're working with is the cell"). */
+.db-table .db-title-link:focus-visible {
+  outline: none;
+}
+.db-table td.db-title-col:has(> .db-title-inner > .db-title-link:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+/* While the name is typed the field fills the cell, flat (ui/Input
+   variant="cell"): the cell gives up most of its padding to the field's, so
+   the text barely moves and the row keeps its height. */
+.db-table td.db-title-col.is-editing {
+  padding: var(--space-50);
+}
+.db-table td.db-title-col.is-editing .db-title-inner {
+  display: flex;
+}
+
+/* A row's title typed in place: after its + (spec 022) or a click on it
+   (spec 026). */
 .db-title-input {
   flex: 1;
   min-width: 0;
   font-weight: 500;
+}
+
+/* The row open in the peek: a soft tint of the accent over the whole row,
+   beside its Close button (owner, mockup C2 a). Not the gutter, which hangs
+   in the page's margin. */
+.db-table tr.is-peeked > td:not(.db-row-gutter) {
+  background: var(--color-accent-soft);
 }
 
 .db-empty {
@@ -7777,6 +7856,24 @@ body.is-col-resizing {
   .idx-node,
   .idx-node-main,
   .db-title-link {
+    min-height: 36px;
+  }
+  /* In a table the 36px is the name's row, not its button: a button centres
+     its text, and the name's text starts at the top like the other cells'
+     (spec 026). The whole cell is the target anyway. */
+  .db-table td.db-title-col .db-title-link {
+    min-height: 0;
+  }
+  .db-table td.db-title-col:not(.is-editing) .db-title-inner {
+    min-height: 36px;
+  }
+  /* The name typed in place keeps the row's height (spec 026): the field
+     takes the name button's 36px, and the cell keeps its own padding above
+     and below. The row was 6px shorter while it was typed. */
+  .db-table td.db-title-col.is-editing {
+    padding-block: 7px; /* token-ok: the table cell's own padding (.db-table td) */
+  }
+  .db-table td.db-title-col.is-editing .db-title-input {
     min-height: 36px;
   }
   .idx-md {

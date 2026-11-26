@@ -7,6 +7,29 @@ entries are not edited away.
 
 ---
 
+## 2026-11-26 — A table row's Open button stays at the cell's end; the side peek narrows to 38%
+
+- **Why.** Spec 026 (#981) puts a row's Open button, Close for the row in
+  the peek, at the end of its name cell. The Name column takes a table's
+  spare width, and the side peek lies over the right half of the window, so
+  the button sat under the peek. Measured in a three-column table (Name,
+  Status, Labels) with a row in the peek: Close ended at 723, 839 and 917px
+  where the peek began at 600, 720 and 880px (windows of 1200, 1440 and
+  1600px).
+- **Decided (owner):** "Keep open at end of the row", and "Make the sidemenu
+  less wide": the side peek is `min(720px, 38vw)` instead of
+  `min(720px, 50vw)` (Claude's figure; 456, 547 and 608px at those widths, so
+  the measured table's Close clears the peek).
+- **Turned down:** the button right after the name's text (Claude's first
+  recommendation); the Name column no longer taking the spare width (changes
+  every table's look); a click on another name swapping the peek while one is
+  open (two rules for one click).
+- **Still true:** a table with few or narrow columns gives the Name column
+  more room, and its button can still lie under the peek; the row menu
+  (⌘/, right-click) and the peek's own ✕ reach the same actions.
+
+---
+
 ## 2026-11-26 — Mockups only where getting it wrong is a real risk
 
 - **Why.** The owner, after approving the spec 026 mockup (#981): "Building

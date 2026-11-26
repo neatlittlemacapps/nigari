@@ -17,6 +17,18 @@ export async function eventually(check) {
   throw new Error('Expected state did not arrive within 10 seconds');
 }
 
+// Opens a table row as its view says, through its Open button (spec 026): a
+// click on a row's name renames it now. The button shows on hover; the
+// pointer goes to the cell's start, which a side peek never covers. `scope`
+// is the page or a part of it (a peek, an embed).
+export async function openTableRow(scope, title) {
+  const page = typeof scope.page === 'function' ? scope.page() : scope;
+  const exact = new RegExp(`^${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
+  const cell = scope.locator('tr[data-row-id] td.db-title-col', { has: page.locator('.db-title-link', { hasText: exact }) }).first();
+  await cell.hover({ position: { x: 12, y: 10 } });
+  await cell.getByRole('button', { name: `Open ${title}`, exact: true }).click();
+}
+
 // Always build and start our own loopback server with disposable data. There is
 // intentionally no URL or data-directory override pointing at an existing site.
 export async function withFixture(test) {

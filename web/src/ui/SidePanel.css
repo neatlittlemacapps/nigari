@@ -1,12 +1,15 @@
 /* SidePanel: a panel over the right edge that leaves the screen usable
-   (spec 007). Half the window at most, so the view beside it keeps room. */
+   (spec 007). 38% of the window at most (owner, 2026-11-26; half before), so
+   the view beside it keeps room: a table row's Open and Close button sits at
+   the end of its name cell (spec 026), and at half the window the peek lay
+   over it in a three-column table at 1200, 1440 and 1600px. */
 
 .ui-side-panel {
   position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(var(--side-panel-width), 50vw);
+  width: min(var(--side-panel-width), 38vw);
   display: flex;
   flex-direction: column;
   min-width: 0;

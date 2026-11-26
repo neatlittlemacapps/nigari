@@ -1,0 +1,55 @@
+/* ui/CellAction (spec 026): a small button at a cell's end. Every value is a
+   token. */
+
+.ui-cell-action {
+  position: absolute;
+  top: 50%;
+  right: var(--cell-action-inset);
+  transform: translateY(-50%);
+  display: flex;
+  /* The raised surface behind the button covers the end of a long name,
+     which is cut off under it (FR-006); a medium button is transparent. On
+     the wrapper, so the button keeps Button's own look. */
+  border-radius: var(--button-radius);
+  background: var(--color-surface-raised);
+  /* Hidden, not removed: it stays in the tab order, so Tab from the name
+     reaches it, and :focus-within on the host then shows it (FR-009). */
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* For the touch tap area below. */
+.ui-cell-action > .ui-button {
+  position: relative;
+}
+
+[data-cell-action-host]:hover .ui-cell-action,
+[data-cell-action-host]:focus-within .ui-cell-action,
+.ui-cell-action[data-pinned] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* A touch screen has no hover to reveal it: always shown, with a tap area
+   round the button that a thumb finds (WCAG 2.5.5), wider than the button. */
+@media (hover: none) {
+  .ui-cell-action {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .ui-cell-action > .ui-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, var(--cell-action-tap));
+    height: var(--cell-action-tap);
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* While its host edits, the field has the whole cell. Last, so it wins over
+   pinned and touch. */
+[data-cell-action-host][data-editing] .ui-cell-action {
+  display: none;
+}

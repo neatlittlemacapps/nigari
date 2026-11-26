@@ -223,6 +223,9 @@ await withFixture(async ({ page, context, api, base, workspace, path, read }) =>
     block('mine'),
     { id: 'theirs', type: 'database', props: { collectionId: secondDb.id, local: '' }, content: [], children: [] },
   ]);
+  // A row of the database Dee only reads: its name opens it, renames nothing
+  // (spec 026, US5; review: the embed's gate had no test).
+  const theirRow = await api('POST', '/api/pages', { parentId: secondDb.id, title: 'Their row' });
   const password = randomUUID();
   await api('POST', '/api/users', { name: 'Dee Editor', email: 'dee@example.test', password, workspaces: [
     { id: workspace.id, role: 'member' }, { id: secondWs.id, role: 'viewer' },
@@ -254,6 +257,9 @@ await withFixture(async ({ page, context, api, base, workspace, path, read }) =>
   const theirs = await settingsItems(dee.p, deeTheirs);
   assert(theirs.includes('Rename view'), 'an editor of the document cannot change the embed of a database they only read');
   assert(!theirs.includes('Edit properties'), `a viewer of the database was offered Edit properties: ${theirs}`);
+  await deeTheirs.locator('.db-title-link', { hasText: 'Their row' }).click();
+  await dee.p.waitForURL((u) => u.pathname === `/p/${theirRow.id}`);
+  assert.equal(await dee.p.locator('.db-title-input').count(), 0, 'a reader of the database could rename its row from an embed');
   await dee.c.close();
 
   const vera = await asUser('vera@example.test');

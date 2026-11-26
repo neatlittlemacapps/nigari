@@ -45,8 +45,7 @@ property with the **Group** button, or with `set_view` and `group_by`.
 ### `table`
 
 The plainest view, and the only one that shows every visible property including
-the ones that are empty. The first column is **Name** and links to the
-row; after it comes one column per visible property, in this view's order
+the ones that are empty. The first column is **Name**; after it comes one column per visible property, in this view's order
 (the schema's order until you move one, see below). The one exception is a
 checkbox: the first checkbox the view shows comes before **Name**, in a column
 only as wide as its box, so you can tick rows off down the side of the table
@@ -57,6 +56,20 @@ option. Editing a select option's name or colour from a cell changes the schema,
 so it changes that option in every view and on every row.
 
 ![A table view. Every row is a page in its own right.](img/collection-table.png)
+
+**The name is a cell too.** A click on a row's name, anywhere in its cell,
+turns it into a field holding the name: type, then Enter or click away to keep
+it, Escape to leave the old name. A double click does the same. With the
+keyboard, Enter on the name edits it. The row opens from its **Open** button
+at the end of the name cell, which shows while the pointer is over the row or
+the cell has the focus (Tab from the name reaches it), and on a touch screen
+always. It opens the row the way the view's **Open rows in** says
+([How rows open](collections.md#how-rows-open)). While a row is open in a peek
+its button reads **Close**, stays shown, and the row is tinted; it closes the
+peek. ⌘-click (Ctrl-click) or the middle button on the name or on **Open**
+opens the row in a new tab. Someone who can only read the database renames
+nothing: a click on the name opens the row, as it always did. Lists, boards,
+galleries, calendars and timelines open a row from its title as before.
 
 Under the title sit the row's tags, and a coloured dot appears beside a row an
 agent is working on right now.
@@ -144,8 +157,8 @@ same list, with **Move to** a column instead of **Add row below** and without
 **Edit property** (a card edits nothing in place).
 
 **On a phone** nothing hovers, so the margin's buttons show on the row you
-tapped last. The tap still does what it did (the name opens the row, a cell
-edits), and the tap that shows the buttons never also presses one. Hold the
+tapped last. The tap still does what it did (the name or a cell edits, **Open**
+opens the row), and the tap that shows the buttons never also presses one. Hold the
 grip for about a third of a second to drag.
 
 **Not built yet:** a view of its own order (every unsorted view shares the

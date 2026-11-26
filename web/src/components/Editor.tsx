@@ -54,6 +54,8 @@ import { CHART_SLASH_KINDS } from '../chartInsert';
 import type { ChartKind } from '../chartLayout';
 import { blockTypeFor, carriesExternalFiles } from '../dropFiles';
 import Portal from './Portal';
+import { followTitle } from '../titleCell';
+import { announceTitle, useAnnouncedTitle } from '../pageTitles';
 
 export interface EditorProps {
   pageId: string;
@@ -646,6 +648,30 @@ function PageHeader({
     setCover(page.cover);
     setVisibility(page.visibility);
   }, [page.title, page.icon, page.cover, page.visibility]);
+
+  // A title changed elsewhere reaches the header too: the page fetched on
+  // opening is not live. A row renamed in its table cell beside the peek kept
+  // its old title here, which the next keystroke saved back (spec 026,
+  // review). The list of pages has no database rows, so the table announces
+  // a rename (pageTitles.ts); titleCell.ts decides when to follow.
+  const announced = useAnnouncedTitle(pageId);
+  const liveTitle = announced ?? pagesById.get(pageId)?.title;
+  // Only a change seen while the header is open: the page it opened with is
+  // newer than a title announced before it opened.
+  const seenTitle = useRef(liveTitle);
+  useEffect(() => {
+    if (seenTitle.current === liveTitle) return;
+    seenTitle.current = liveTitle;
+    const next = followTitle({
+      shown: title,
+      live: liveTitle,
+      typing: document.activeElement === titleRef.current,
+      pending: pendingMeta.current.title !== undefined,
+    });
+    if (next !== null) setTitle(next);
+    // Only a change of the live title is a reason to look.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveTitle]);
 
   // Toggle a `scrolled` class on the page body (with hysteresis so it never
   // flaps) — CSS uses it to shrink the docked page icon once the collapsed
@@ -1310,6 +1336,8 @@ function PageHeader({
           onChange={(e) => {
             setTitle(e.target.value);
             saveMeta({ title: e.target.value });
+            // Keeps what other headers were told current (pageTitles.ts).
+            announceTitle(pageId, e.target.value);
           }}
           onKeyDown={(e) => {
             // A title is a single line of text: Enter never inserts a newline

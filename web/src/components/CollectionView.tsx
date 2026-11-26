@@ -18,7 +18,9 @@ import { orderedColumns, storedOrder, moveColumn, moveToGap, useColumnDrag } fro
 import { rowStep, useRowDrag, type DrawnGroup, type DrawnRow, type RowSpot } from '../rowDrag';
 import { RowGutter, RowGutterHead } from './RowHandle';
 import { RowMenu } from './RowMenu';
-import { RowTitleInput } from './RowTitleInput';
+import { TitleCell } from './TitleCell';
+import { usePeekedRow } from '../peekedRow';
+import type { EditTitle } from './useTableRowActions';
 import { useRowKeys } from './useRowKeys';
 import { useTableRowActions } from './useTableRowActions';
 import { ColHead, type PropertyChanges } from './TableColumnHead';
@@ -694,7 +696,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
     });
   };
 
-  const { editTitleId, addRowNextTo, finishTitle, placeRow, patchRow, duplicateRow, dropSortForDrag } = useTableRowActions({
+  const { editTitle, startEditTitle, addRowNextTo, finishTitle, placeRow, patchRow, duplicateRow, dropSortForDrag } = useTableRowActions({
     collectionId,
     setRows,
     loadRows,
@@ -1452,7 +1454,11 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           onAddRowBelow={canEdit ? (id, above) => void addRowNextTo(id, above) : undefined}
           onDuplicateRow={canEdit ? (id) => void duplicateRow(id) : undefined}
           onTrashRow={canEdit ? (id, title) => void trashRow(id, title) : undefined}
-          editTitleId={editTitleId}
+          editTitle={editTitle}
+          // Renaming in place is writing the database: an embed's reader of
+          // the database renames nothing, as its cells edit nothing (spec 026,
+          // US5).
+          onEditTitle={canEdit && embed?.canEditDatabase !== false ? startEditTitle : undefined}
           onTitleDone={(id, title) => void finishTitle(id, title)}
           rowLimit={embedLimit}
           revealed={revealed}
@@ -2317,7 +2323,8 @@ function TableView({
   onAddRowBelow,
   onDuplicateRow,
   onTrashRow,
-  editTitleId,
+  editTitle,
+  onEditTitle,
   onTitleDone,
   rowLimit,
   revealed,
@@ -2357,8 +2364,13 @@ function TableView({
   /** The row menu's Duplicate and Move to trash. Absent for a reader. */
   onDuplicateRow?: (id: string) => void;
   onTrashRow?: (id: string, title: string) => void;
-  /** A row whose title is being typed, just added by its +. */
-  editTitleId?: string | null;
+  /** A row whose title is being typed: just added by its +, or its name
+   *  clicked; in a grouped table, which copy (spec 026, D3). */
+  editTitle?: EditTitle | null;
+  /** A click on a row's name renames it, in the copy clicked (`copy`: its
+   *  group and parent). Absent for a reader: the click opens the row (spec
+   *  026, US5). */
+  onEditTitle?: (id: string, copy?: string) => void;
   onTitleDone?: (id: string, title: string | null) => void;
   /** In a document: how many rows to draw before Show more (spec 023).
    *  Absent on a database page, which draws every row. */
@@ -2519,7 +2531,7 @@ function TableView({
   const shown = limitRows(
     ordered,
     rowLimit,
-    (o) => o.row.id === editTitleId || !!revealed?.has(o.row.id),
+    (o) => o.row.id === editTitle?.id || !!revealed?.has(o.row.id),
     (o) => o.depth === 0,
   );
   // The unbroken run of rows at the top, before any drawn only because it
@@ -2642,10 +2654,13 @@ function TableView({
     freshTap.current = null;
     return !fresh;
   };
+  // The row open in the peek is tinted, every copy of it (spec 026, US3).
+  const peekedId = usePeekedRow().id;
   const rowClass = (i: number, id: string) =>
     [
       rowDrag?.id === id ? 'is-row-dragged' : '',
       tappedRow === id ? 'is-row-tapped' : '',
+      peekedId === id ? 'is-peeked' : '',
     ]
       .filter(Boolean)
       .join(' ') || undefined;
@@ -2676,13 +2691,32 @@ function TableView({
     return filled ? t('{n} filled', { n: filled }) : '';
   };
 
+  // Which copy of a row edits its name: the copy clicked (its group and its
+  // parent in a tree), or for the +'s new row (no copy named) the first copy
+  // drawn (spec 026, D3). Reset on every render, which draws the copies in
+  // order.
+  let firstCopyEditing = false;
+  const copyOf = (group: string | undefined, parent: string | null) => `${group ?? ''}\u0000${parent ?? ''}`;
+  const editsHere = (id: string, copy: string) => {
+    if (!editTitle || editTitle.id !== id || !onTitleDone) return false;
+    if (editTitle.copy !== undefined) return editTitle.copy === copy;
+    if (firstCopyEditing) return false;
+    firstCopyEditing = true;
+    return true;
+  };
+
   // One row of the table, wherever it is drawn: in the one body, or under
-  // its group's header.
-  const renderRow = ({ row: r, depth, hasKids }: (typeof ordered)[number], i: number) => (
+  // its group's header (`group`, its key).
+  const renderRow = ({ row: r, depth, hasKids, parent }: (typeof ordered)[number], i: number, group?: string) => {
+    const copy = copyOf(group, parent);
+    const editing = editsHere(r.id, copy);
+    return (
       <tr
         key={r.id}
         data-row-id={r.id}
         className={rowClass(i, r.id)}
+        data-cell-action-host=""
+        data-editing={editing ? '' : undefined}
         onPointerDown={(e) => {
           if (e.pointerType !== 'touch') return;
           freshTap.current = tappedRow === r.id ? null : r.id;
@@ -2714,9 +2748,12 @@ function TableView({
             <LeadCheckBox prop={lead} title={r.title} value={r.props[lead.id]} onChange={(v) => onSetProp(r.id, lead.id, v)} />
           </td>
         )}
-        <td className="db-title-col" style={colStyle(TITLE_COL)}>
-          <span className="db-title-inner" style={depth ? { paddingLeft: depth * 20 } : undefined}>
-            {subItemProp ? (
+        <TitleCell
+          row={r}
+          style={colStyle(TITLE_COL)}
+          depth={depth}
+          before={
+            subItemProp ? (
               hasKids ? (
                 <button
                   className="db-tree-toggle"
@@ -2728,33 +2765,15 @@ function TableView({
               ) : (
                 <span className="db-tree-spacer" />
               )
-            ) : null}
-            {editTitleId === r.id && onTitleDone ? (
-              <RowTitleInput initial={r.title} onDone={(title) => onTitleDone(r.id, title)} />
-            ) : (
-              <button
-                className="db-title-link"
-                onClick={(e) => openRow(e, r.id)}
-                onAuxClick={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
-              >
-                {r.icon && <span className="inline-icon"><PageIcon icon={r.icon} size={14} /> </span>}
-                {r.title || t('Untitled')}
-              </button>
-            )}
-            {/* Presence was drawn on the board card and nowhere else, so
-                anybody working in the table saw nothing at all — which is
-                most of the time. The mark belongs wherever a row is
-                listed, not only where it happens to be a card. */}
-            <AgentDot pageId={r.id} />
-          </span>
-          {!!r.tags?.length && (
-            <span className="db-row-tags">
-              {r.tags.map((t) => (
-                <span key={t} className={'row-tag ' + tagColorClass(t, tagColors)}>#{t}</span>
-              ))}
-            </span>
-          )}
-        </td>
+            ) : null
+          }
+          tagColors={tagColors}
+          editing={editing}
+          onEdit={onEditTitle && onTitleDone ? () => onEditTitle(r.id, copy) : undefined}
+          onDone={(title) => onTitleDone?.(r.id, title)}
+          onOpen={(e) => openRow(e, r.id)}
+          onOpenAux={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
+        />
         {cols.map((p) => (
           <td key={p.id} data-prop-id={p.id} style={colStyle(p.id)}>
             <PropertyValue
@@ -2767,7 +2786,8 @@ function TableView({
           </td>
         ))}
       </tr>
-  );
+    );
+  };
 
   // The column headings. A flat table draws them once in its <thead>; a
   // grouped one under each open group's header instead (owner's choice D1,
@@ -2843,7 +2863,7 @@ function TableView({
                 }}
               />
               {!folded && headRow('db-group-cols')}
-              {!folded && groupRowsDrawn.map(renderRow)}
+              {!folded && groupRowsDrawn.map((o, i) => renderRow(o, i, g.key))}
               {/* The group's own totals, from the same sums as the table's
                   foot (Frank's choice 2: header value and count, totals per
                   group). */}
@@ -2869,7 +2889,7 @@ function TableView({
           );
         })}
         <tbody>
-          {!grouping && ordered.map(renderRow)}
+          {!grouping && ordered.map((o, i) => renderRow(o, i))}
           {/* Rows, but every group they fall in is hidden: say so, rather
               than draw an empty table (code review). */}
           {rows.length > 0 && grouping && groups.length === 0 && (

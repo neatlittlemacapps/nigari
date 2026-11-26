@@ -24,7 +24,9 @@ export type ButtonTone = 'neutral' | 'primary' | 'destructive';
 type Common = Omit<ComponentPropsWithoutRef<typeof BaseButton>, 'className' | 'children'> & {
   emphasis?: ButtonEmphasis;
   tone?: ButtonTone;
-  size?: 'sm' | 'md';
+  /** md: lines up with inputs. sm: toolbars, dense rows. xs: an action
+   *  inside a table cell (ui/CellAction), 30px on a touch screen. */
+  size?: 'xs' | 'sm' | 'md';
   /** A toggle that stays on (aria-pressed): the faint primary tint, whatever
    *  the tone (owner, spec 020 Q2). Leave it undefined for a plain button. */
   pressed?: boolean;
