@@ -3116,6 +3116,17 @@ body.is-col-resizing {
   text-overflow: ellipsis;
 }
 
+/* The Open button sits on the name's line, as in the approved mockup: a
+   table's text starts at the top of its cell, and the button, centred in a
+   row made taller by a date or a chip, hung 4px below the name. The line is
+   the cell's 7px padding plus half of one line (1lh). On a touch screen the
+   name is centred in the row already (its 36px button). */
+@media (hover: hover) {
+  .db-table td.db-title-col .ui-cell-action {
+    top: calc(7px + 0.5lh); /* token-ok: the table cell's own padding (.db-table td) */
+  }
+}
+
 /* An editor's click renames, so the cell reads as text: a text cursor and no
    underline, like every text cell (owner, mockup C3 a). A reader's click
    still opens the row, and keeps the link's underline. */
