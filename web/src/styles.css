@@ -3097,6 +3097,25 @@ body.is-col-resizing {
   position: relative;
 }
 
+/* A long name is cut off on one line, not wrapped (spec 026, FR-006): the
+   Open button lies over its end, and the row keeps the height of its other
+   cells. The whole name is in the field while it is typed, and in the row's
+   page. The tags stay under it. */
+.db-table td.db-title-col .db-title-inner {
+  display: flex;
+  /* No width of its own (width 0), the cell's whole width to fill (min-width
+     100%): a long name no longer widens the column. One line of it did, to
+     the full name: 656px on a computer, the whole screen on a phone. */
+  width: 0;
+  min-width: 100%;
+}
+.db-table td.db-title-col .db-title-link {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 /* An editor's click renames, so the cell reads as text: a text cursor and no
    underline, like every text cell (owner, mockup C3 a). A reader's click
    still opens the row, and keeps the link's underline. */
@@ -7818,6 +7837,15 @@ body.is-col-resizing {
   .idx-node,
   .idx-node-main,
   .db-title-link {
+    min-height: 36px;
+  }
+  /* The name typed in place keeps the row's height (spec 026): the field
+     takes the name button's 36px, and the cell keeps its own padding above
+     and below. The row was 6px shorter while it was typed. */
+  .db-table td.db-title-col.is-editing {
+    padding-block: 7px; /* token-ok: the table cell's own padding (.db-table td) */
+  }
+  .db-table td.db-title-col.is-editing .db-title-input {
     min-height: 36px;
   }
   .idx-md {

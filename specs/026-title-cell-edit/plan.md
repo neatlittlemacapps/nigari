@@ -125,6 +125,17 @@ a document.
 - **D6. The cell's long-name cut-off stays as today's** (ellipsis). The
   button sits on top at the right edge with the cell's background behind it,
   so the row height never changes (FR-006).
+  *Corrected while building (2026-11-26):* the premise was wrong. A long name
+  wrapped onto two or three lines; nothing cut it off. The name is now one
+  line with an ellipsis, and it no longer widens its column (its box has no
+  width of its own and fills the cell). One line alone made the column as
+  wide as the longest name: 656px on a computer, the whole screen on a
+  phone. While a name is typed on a touch screen, the field keeps the name
+  button's 36px, so the row keeps its 51px.
+- **D7. The side peek is 38% of the window at most, not half** (owner,
+  2026-11-26, `docs/decisions.md`). The Open/Close button stays at the cell's
+  end ("Keep open at end of the row"). At half the window, the peek lay over
+  the open row's Close in a three-column table at 1200, 1440 and 1600px.
 
 ## Constitution Check
 
