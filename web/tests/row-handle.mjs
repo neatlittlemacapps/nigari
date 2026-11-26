@@ -177,6 +177,20 @@ await withFixture(async ({ page, api, base, path }) => {
   assert.equal(await row('D').locator('.db-row-handle:not(.is-menu-only)').count(), 0, 'a sub-item has no drag handle: its place is its relation\'s order');
   assert.equal(await row('D').locator('.db-row-handle.is-menu-only').count(), 1, 'a sub-item\'s handle still opens its menu');
   assert.equal(await row('E').locator('.db-row-handle:not(.is-menu-only)').count(), 1, 'a top-level row keeps its handle');
+  // A long sub-item name is cut off inside its cell (#1031 review): a name
+  // that would not shrink ran past the cell by its toggle's and indent's width.
+  await api('PATCH', `/api/pages/${ids.D}`, { title: 'D with a name far too long for the name column to hold on one line', tags: ['design'] });
+  await page.reload();
+  const longCell = page.locator(`.db-table tr[data-row-id="${ids.D}"] td.db-title-col`);
+  await longCell.locator('.db-title-link', { hasText: /^D with/ }).waitFor();
+  const [cellRight, nameRight] = await longCell.evaluate((td) => [
+    td.getBoundingClientRect().right,
+    td.querySelector('.db-title-link').getBoundingClientRect().right,
+  ]);
+  assert(nameRight <= cellRight, `a long sub-item name runs past its cell (${nameRight} > ${cellRight})`);
+  await api('PATCH', `/api/pages/${ids.D}`, { title: 'D', tags: [] });
+  await page.reload();
+  await row('D').waitFor();
 
   // ---- A sorted view: the drag takes the sort away, for this person only ----
   // (owner, 2026-11-23). The rows are drawn in their own order as the drag

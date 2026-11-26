@@ -3105,7 +3105,7 @@ body.is-col-resizing {
 /* A long name is cut off on one line, not wrapped (spec 026, FR-006): the
    Open button lies over its end, and the row keeps the height of its other
    cells. The whole name is in the field while it is typed, and in the row's
-   page. The tags stay under it. */
+   page. The tags follow it on the same line (#1031). */
 .db-table td.db-title-col .db-title-inner {
   display: flex;
   /* No width of its own (width 0), the cell's whole width to fill (min-width
@@ -3124,13 +3124,12 @@ body.is-col-resizing {
 /* The row's tags on the name's line (#1031): one line, cut off at the cell's
    end. The name keeps its whole width up to the cell's edge (then the
    ellipsis), and the tags take what is left: shrinking both in proportion
-   cut "Row tags" to "Row ta…" beside a whole #design. */
-.db-table td.db-title-col .db-title-inner .db-title-link {
-  flex: 0 0 auto;
-  max-width: 100%;
-}
+   cut "Row ta…" beside a whole #design. The tags give way first (a shrink
+   factor far above the name's), and then the name shrinks too: a name that
+   would not shrink at all ran past the cell by the width of a sub-item's
+   toggle and indent (review). */
 .db-table td.db-title-col .db-title-inner .db-row-tags {
-  flex: 0 1 auto;
+  flex: 0 10000 auto;
   min-width: 0;
   flex-wrap: nowrap;
   overflow: hidden;
