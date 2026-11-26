@@ -58,6 +58,7 @@ From the code graph (`codegraph explore` on `TableView`, `db-title-link`,
 - Q: Does the new behaviour apply to tables only, or also to lists, boards and galleries? → A: Tables only; the other views keep opening a row from its title (owner "A").
 - Q: What is clicked to edit, the name's text or the cell? → A: The cell (owner, 2026-11-26: "The element you're working with is the cell, not the text in the cell"). A click anywhere in the name cell edits, including the empty space beside a short name; the keyboard focus ring goes round the cell.
 - Q (mockup C1): What does the button look like? → A: The word "Open" (and "Close"), outlined, sentence case (owner "C1 a"). Turned down: icon only (B), capitals as in the reference app (C).
+- Q (mockup C2): How is the row open in the peek marked? → A: A soft tint (the soft accent colour) on the whole row, with its Close button (owner "C2a"). Turned down: the Close button alone (B), a tint on the name cell only (C).
 
 ## User Scenarios & Testing
 
@@ -261,6 +262,9 @@ Open button is there too.
   (`web/src/ui/`, its tokens), in light and dark.
 - **FR-014**: The button MUST read "Open" (and "Close" for the row in the
   peek) as a word, outlined, in sentence case (mockup C1 A).
+- **FR-015**: The row open in the peek MUST be marked by a soft tint of the
+  accent colour over the whole row (every copy of it), beside its Close
+  button (mockup C2 A).
 
 ## Decisions
 
