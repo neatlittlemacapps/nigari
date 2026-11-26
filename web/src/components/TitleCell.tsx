@@ -117,16 +117,20 @@ export function TitleCell({
             most of the time. The mark belongs wherever a row is
             listed, not only where it happens to be a card. */}
         <AgentDot pageId={row.id} />
+        {/* The row's tags follow the name on its line, as they always did
+            (#1031: #1030 moved them under it, and the row grew 12px). They
+            give way before the name does; the field being typed has the
+            whole line. */}
+        {!editing && !!row.tags?.length && (
+          <span className="db-row-tags">
+            {row.tags.map((tag) => (
+              <span key={tag} className={'row-tag ' + tagColorClass(tag, tagColors)}>
+                #{tag}
+              </span>
+            ))}
+          </span>
+        )}
       </span>
-      {!!row.tags?.length && (
-        <span className="db-row-tags">
-          {row.tags.map((tag) => (
-            <span key={tag} className={'row-tag ' + tagColorClass(tag, tagColors)}>
-              #{tag}
-            </span>
-          ))}
-        </span>
-      )}
       {inPeek ? (
         <CellAction label={t('Close {name}', { name })} pinned onClick={peeked.close}>
           {t('Close')}

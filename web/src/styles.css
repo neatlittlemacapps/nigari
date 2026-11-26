@@ -3011,6 +3011,11 @@ body.is-col-resizing {
    wall of text doesn't make every row tall. Clicking still opens the editor. */
 .db-table td .prop-text {
   display: block;
+  /* Its text starts where a chip's, a date's or a number's does, and where
+     the field that replaces it on a click puts it (owner, 2026-11-26: the
+     same space above every cell's text, as the name has; it began 4px
+     higher). The row keeps its height: 4px + 18px fits in 42px. */
+  padding-top: var(--space-100);
   max-width: 420px;
   white-space: nowrap;
   overflow: hidden;
@@ -3114,6 +3119,21 @@ body.is-col-resizing {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+/* The row's tags on the name's line (#1031): one line, cut off at the cell's
+   end. The name keeps its whole width up to the cell's edge (then the
+   ellipsis), and the tags take what is left: shrinking both in proportion
+   cut "Row tags" to "Row ta…" beside a whole #design. */
+.db-table td.db-title-col .db-title-inner .db-title-link {
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+.db-table td.db-title-col .db-title-inner .db-row-tags {
+  flex: 0 1 auto;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 /* The name's text starts where the text of a chip, a date or a number does
