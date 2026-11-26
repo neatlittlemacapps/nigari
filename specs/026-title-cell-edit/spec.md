@@ -56,6 +56,8 @@ From the code graph (`codegraph explore` on `TableView`, `db-title-link`,
 
 - Q: On which screens is every row's Open button shown all the time, instead of only on hover? → A: On touch screens that cannot hover (phones and tablets alike); on hover elsewhere, however narrow the window (owner "A").
 - Q: Does the new behaviour apply to tables only, or also to lists, boards and galleries? → A: Tables only; the other views keep opening a row from its title (owner "A").
+- Q: What is clicked to edit, the name's text or the cell? → A: The cell (owner, 2026-11-26: "The element you're working with is the cell, not the text in the cell"). A click anywhere in the name cell edits, including the empty space beside a short name; the keyboard focus ring goes round the cell.
+- Q (mockup C1): What does the button look like? → A: The word "Open" (and "Close"), outlined, sentence case (owner "C1 a"). Turned down: icon only (B), capitals as in the reference app (C).
 
 ## User Scenarios & Testing
 
@@ -220,8 +222,10 @@ Open button is there too.
 ### Functional Requirements
 
 - **FR-001**: For someone who may edit the database, a click, a tap or Enter
-  on a row's name in a table MUST edit the name in place; it MUST NOT open the
-  row.
+  on a row's name cell in a table MUST edit the name in place; it MUST NOT open
+  the row. The target is the whole cell, not only the text: the empty space
+  beside a short name edits too, and the keyboard focus ring goes round the
+  cell (owner, Clarifications).
 - **FR-002**: The field MUST save on Enter and on leaving it, MUST cancel on
   Escape, and MUST save an empty name as an unnamed row ("Untitled"). It MUST
   behave the same as the field a row added with + gets today.
@@ -255,6 +259,8 @@ Open button is there too.
   says which row it opens or closes.
 - **FR-013**: The button and the field MUST be built from the design system
   (`web/src/ui/`, its tokens), in light and dark.
+- **FR-014**: The button MUST read "Open" (and "Close" for the row in the
+  peek) as a word, outlined, in sentence case (mockup C1 A).
 
 ## Decisions
 
