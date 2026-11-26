@@ -213,8 +213,9 @@ States: `data-pressed`, `data-disabled`.
 - `children`: the panel draws no bar or close button of its own; the content brings them.
 
 **Behaviour**
-- Mounted means open. Fixed to the right edge, `min(--side-panel-width, 50vw)` wide, full
-  width below 901px. Layer `--side-panel-layer`: over the page's sticky headers, under
+- Mounted means open. Fixed to the right edge, `min(--side-panel-width, 38vw)` wide, full
+  width below 901px. 38% so a table's Open and Close button stays beside it (owner,
+  2026-11-26, `docs/decisions.md`; half the window before). Layer `--side-panel-layer`: over the page's sticky headers, under
   dialogs and menus, which open from inside it.
 - Not modal: no backdrop, no focus trap, and the page beside it stays usable. It
   overlays rather than squeezes, so the page's layout and scroll position do not move.

@@ -30,7 +30,7 @@ try {
     console.error(String(e.stderr ?? e));
     process.exit(1);
   }
-  const { titleClick } = await import(bundle);
+  const { titleClick, followTitle } = await import(bundle);
 
   let failed = 0;
   let passed = 0;
@@ -58,6 +58,15 @@ try {
   // Enter on the focused name is a click with no button and no modifier.
   check('Enter for an editor edits', titleClick({ canEdit: true }), 'edit');
   check('Enter for a reader opens', titleClick({ canEdit: false }), 'open');
+
+  // A page header follows its title changed elsewhere (a rename in the table
+  // beside the peek), unless the person is typing it or a save is waiting.
+  const follow = (o) => followTitle({ shown: 'Alpha', live: 'Beta', typing: false, pending: false, ...o });
+  check('a title renamed elsewhere is followed', follow({}), 'Beta');
+  check('not while the title is being typed', follow({ typing: true }), null);
+  check('not while a typed title waits to be saved', follow({ pending: true }), null);
+  check('nothing to do when they agree', follow({ live: 'Alpha' }), null);
+  check('a page not in the list keeps its title', follow({ live: undefined }), null);
 
   console.log(`  title cell: ${passed} passed, ${failed} failed`);
   if (failed) process.exit(1);

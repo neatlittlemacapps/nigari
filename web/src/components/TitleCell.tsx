@@ -1,4 +1,4 @@
-import type { CSSProperties, MouseEvent, ReactNode } from 'react';
+import { useLayoutEffect, useRef, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import type { Row } from '../collectionRow';
 import { t } from '../i18n';
 import { PageIcon } from '../pageIcon';
@@ -55,6 +55,16 @@ export function TitleCell({
   onOpenAux: (e: MouseEvent) => void;
 }) {
   const peeked = usePeekedRow();
+  // After Enter or Escape in the field, the focus goes back to the name, so
+  // Tab reaches Open and the row's shortcuts keep working (US4). It fell to
+  // the page before (review). A blur took it elsewhere already: left alone.
+  const link = useRef<HTMLButtonElement>(null);
+  const refocus = useRef(false);
+  useLayoutEffect(() => {
+    if (editing || !refocus.current) return;
+    refocus.current = false;
+    link.current?.focus();
+  }, [editing]);
   const inPeek = peeked.id === row.id;
   const name = row.title || t('Untitled');
 
@@ -83,11 +93,17 @@ export function TitleCell({
       <span className="db-title-inner" style={depth ? { paddingLeft: depth * 20 } : undefined}>
         {before}
         {editing ? (
-          <RowTitleInput initial={row.title} onDone={onDone} />
+          <RowTitleInput
+            initial={row.title}
+            onDone={(title, byKey) => {
+              refocus.current = byKey;
+              onDone(title);
+            }}
+          />
         ) : (
           // The raw button TableView drew before, moved here: the count in
           // check-tokens.mjs stays as it was (plan, design system row).
-          <button className="db-title-link" onClick={act} onAuxClick={(e) => e.button === 1 && act(e)}>
+          <button ref={link} className="db-title-link" onClick={act} onAuxClick={(e) => e.button === 1 && act(e)}>
             {row.icon && (
               <span className="inline-icon">
                 <PageIcon icon={row.icon} size={14} />{' '}

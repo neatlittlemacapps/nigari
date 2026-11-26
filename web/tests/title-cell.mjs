@@ -124,6 +124,19 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
   const tint = await row(page, 'Launch notes').locator('td.db-title-col').evaluate((el) => getComputedStyle(el).backgroundColor);
   const plain = await row(page, 'Roadmap review Q1').locator('td.db-title-col').evaluate((el) => getComputedStyle(el).backgroundColor);
   assert.notEqual(tint, plain, 'the open row is not tinted');
+  // Renamed in the table, the row's title follows in the peek beside it, and
+  // the name keeps the focus after Enter (review: the peek kept the old title
+  // and saved it back on the next keystroke; the focus fell to the page).
+  const peekTitle = () => panel.locator('textarea.page-title').inputValue();
+  const linkFocused = (title) => page.evaluate((t) => document.activeElement?.classList.contains('db-title-link') && document.activeElement.textContent === t, title);
+  for (const name of ['Launch notes v2', 'Launch notes']) {
+    await row(page, name === 'Launch notes' ? 'Launch notes v2' : 'Launch notes').locator('.db-title-link').click();
+    await field(page).fill(name);
+    await page.keyboard.press('Enter');
+    await row(page, name).waitFor();
+    await eventually(async () => (await peekTitle()) === name);
+    assert.equal(await linkFocused(name), true, 'the focus left the name after Enter');
+  }
   // Another row's Open swaps the peek; Close and the mark move with it.
   await hover(page, 'Roadmap review Q1');
   await row(page, 'Roadmap review Q1').getByRole('button', { name: 'Open Roadmap review Q1' }).click();
@@ -138,7 +151,8 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
   await page.keyboard.press('Enter');
   await field(page).waitFor();
   await page.keyboard.press('Escape');
-  await row(page, 'Launch notes').locator('.db-title-link').focus();
+  await row(page, 'Launch notes').waitFor();
+  assert.equal(await linkFocused('Launch notes'), true, 'the focus left the name after Escape');
   await page.keyboard.press('Tab');
   const focused = await page.evaluate(() => document.activeElement?.getAttribute('aria-label'));
   assert.equal(focused, 'Open Launch notes', `Tab from the name went to ${focused}`);

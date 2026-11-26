@@ -11,6 +11,17 @@
 
 export type TitleClick = 'edit' | 'open' | 'new_tab';
 
+/** What a page's header shows when the page's title changed elsewhere: the
+ *  live title, unless the person is typing in the title field or a typed
+ *  title is still waiting to be saved (their words win, as with other
+ *  fields). Null: keep what is shown. Spec 026 made this common: a row
+ *  renamed in its table cell while it is open in the peek beside it left the
+ *  peek's old title, which the next keystroke there saved back (review). */
+export function followTitle(o: { shown: string; live: string | undefined; typing: boolean; pending: boolean }): string | null {
+  if (o.live === undefined || o.typing || o.pending || o.live === o.shown) return null;
+  return o.live;
+}
+
 export function titleClick(e: { canEdit: boolean; metaKey?: boolean; ctrlKey?: boolean; button?: number }): TitleClick {
   if (e.metaKey || e.ctrlKey || e.button === 1) return 'new_tab';
   return e.canEdit ? 'edit' : 'open';

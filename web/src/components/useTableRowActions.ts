@@ -6,10 +6,12 @@ import { t } from '../i18n';
 import { toastError } from '../toast';
 import { serverMessage } from '../serverErrors';
 import { applySpot, type RowSpot } from '../rowDrag';
+import { announceTitle } from '../pageTitles';
 
-/** A row title being typed, and in a grouped table the group of the copy
- *  that edits (absent: the row's first copy). */
-export type EditTitle = { id: string; group?: string };
+/** A row title being typed, and which drawn copy of the row edits: a
+ *  grouped table draws a row once per group, a tree once per parent. `copy`
+ *  names the group and the parent; absent, the row's first copy edits. */
+export type EditTitle = { id: string; copy?: string };
 
 // What a table row's handle, + and menu do to the database (spec 022), kept
 // out of CollectionView.tsx, which is already too large to grow inline.
@@ -44,7 +46,8 @@ export function useTableRowActions({
   // US4), or the one whose name was clicked (spec 026). A grouped table draws
   // a row once per group it falls in, so a click names its group and only
   // that copy turns into a field: two autofocused fields would fight (plan
-  // D3). The + names none, and the row's first copy edits.
+  // D3). A tree draws a row under each of its parents, so the copy names the
+  // parent too (review). The + names none, and the row's first copy edits.
   const [editTitle, setEditTitle] = useState<EditTitle | null>(null);
 
   // The + beside a row: the new row goes right below it, or above with Alt or
@@ -65,7 +68,7 @@ export function useTableRowActions({
     }
   };
 
-  const startEditTitle = (id: string, group?: string) => setEditTitle({ id, group });
+  const startEditTitle = (id: string, copy?: string) => setEditTitle({ id, copy });
 
   const finishTitle = async (id: string, title: string | null) => {
     setEditTitle(null);
@@ -73,6 +76,8 @@ export function useTableRowActions({
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, title } : r)));
     try {
       await api.updatePage(id, { title });
+      // The peek beside the table may show this row (spec 026, review).
+      announceTitle(id, title);
       onPagesChanged();
     } catch (e) {
       fail(e);

@@ -103,6 +103,15 @@ a.ui-button:not([data-emphasis='link']) {
   width: var(--button-height-sm);
 }
 
+.ui-button[data-icon-only][data-size='xs'] {
+  width: var(--button-height-xs);
+}
+@media (hover: none) {
+  .ui-button[data-icon-only][data-size='xs'] {
+    width: var(--button-height-touch);
+  }
+}
+
 .ui-button:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;

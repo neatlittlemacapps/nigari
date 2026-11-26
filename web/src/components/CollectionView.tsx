@@ -2367,9 +2367,10 @@ function TableView({
   /** A row whose title is being typed: just added by its +, or its name
    *  clicked; in a grouped table, which copy (spec 026, D3). */
   editTitle?: EditTitle | null;
-  /** A click on a row's name renames it. Absent for a reader: the click
-   *  opens the row (spec 026, US5). */
-  onEditTitle?: (id: string, group?: string) => void;
+  /** A click on a row's name renames it, in the copy clicked (`copy`: its
+   *  group and parent). Absent for a reader: the click opens the row (spec
+   *  026, US5). */
+  onEditTitle?: (id: string, copy?: string) => void;
   onTitleDone?: (id: string, title: string | null) => void;
   /** In a document: how many rows to draw before Show more (spec 023).
    *  Absent on a database page, which draws every row. */
@@ -2690,13 +2691,15 @@ function TableView({
     return filled ? t('{n} filled', { n: filled }) : '';
   };
 
-  // Which copy of a row edits its name: the group clicked, or for the +'s
-  // new row (no group named) the first copy drawn (spec 026, D3). Reset on
-  // every render, which draws the copies in order.
+  // Which copy of a row edits its name: the copy clicked (its group and its
+  // parent in a tree), or for the +'s new row (no copy named) the first copy
+  // drawn (spec 026, D3). Reset on every render, which draws the copies in
+  // order.
   let firstCopyEditing = false;
-  const editsHere = (id: string, group?: string) => {
+  const copyOf = (group: string | undefined, parent: string | null) => `${group ?? ''}\u0000${parent ?? ''}`;
+  const editsHere = (id: string, copy: string) => {
     if (!editTitle || editTitle.id !== id || !onTitleDone) return false;
-    if (editTitle.group !== undefined) return editTitle.group === group;
+    if (editTitle.copy !== undefined) return editTitle.copy === copy;
     if (firstCopyEditing) return false;
     firstCopyEditing = true;
     return true;
@@ -2704,8 +2707,9 @@ function TableView({
 
   // One row of the table, wherever it is drawn: in the one body, or under
   // its group's header (`group`, its key).
-  const renderRow = ({ row: r, depth, hasKids }: (typeof ordered)[number], i: number, group?: string) => {
-    const editing = editsHere(r.id, group);
+  const renderRow = ({ row: r, depth, hasKids, parent }: (typeof ordered)[number], i: number, group?: string) => {
+    const copy = copyOf(group, parent);
+    const editing = editsHere(r.id, copy);
     return (
       <tr
         key={r.id}
@@ -2765,7 +2769,7 @@ function TableView({
           }
           tagColors={tagColors}
           editing={editing}
-          onEdit={onEditTitle && onTitleDone ? () => onEditTitle(r.id, group) : undefined}
+          onEdit={onEditTitle && onTitleDone ? () => onEditTitle(r.id, copy) : undefined}
           onDone={(title) => onTitleDone?.(r.id, title)}
           onOpen={(e) => openRow(e, r.id)}
           onOpenAux={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
