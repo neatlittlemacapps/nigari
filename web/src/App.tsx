@@ -43,6 +43,7 @@ const PeekPanel = lazy(() => import('./components/PeekPanel'));
 import { dropPeek, peekFromLocation, peekOfEntry, pushPeek, type Peek } from './peekHistory';
 import type { PeekMode } from './peek';
 import { guardDrops } from './dropFiles';
+import { PeekedRowContext } from './peekedRow';
 import { fallbackPage } from './pageFallback';
 import { Button } from './ui/Button';
 
@@ -840,6 +841,9 @@ export default function App() {
     if (!dropPeek(activeRef.current)) setPeek(null);
   }, []);
 
+  // The row open in the peek, for the table that shows it (spec 026, D2).
+  const peekedRow = useMemo(() => ({ id: peekId, close: closePeek }), [peekId, closePeek]);
+
   // closeTab removes a tab; if it was active, the neighbour that slides into its
   // slot (else the previous one, else nothing) becomes active.
   const closeTab = useCallback((id: string) => {
@@ -1388,7 +1392,7 @@ export default function App() {
             />
           </Suspense>
         ) : currentId ? (
-          <>
+          <PeekedRowContext.Provider value={peekedRow}>
             <TabBar
               tabs={openTabs}
               activeId={currentId}
@@ -1444,7 +1448,7 @@ export default function App() {
               />
               </Suspense>
             )}
-          </>
+          </PeekedRowContext.Provider>
         ) : workspaces.length === 0 ? (
           // With no workspace at all this used to be a blank area: the app said
           // "no pages" and every button led nowhere, because pages need a

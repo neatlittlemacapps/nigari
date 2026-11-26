@@ -112,6 +112,20 @@
       "md": {
         "$value": "{control.height}",
         "$description": "Medium lines up with inputs and selects (control.height); today's .btn was 34px."
+      },
+      "xs": {
+        "$value": {
+          "value": 24,
+          "unit": "px"
+        },
+        "$description": "Extra small: an action drawn inside a table cell (ui/CellAction, spec 026). The approved mockup's 24px fits a 34px row without growing it."
+      },
+      "touch": {
+        "$value": {
+          "value": 30,
+          "unit": "px"
+        },
+        "$description": "xs on a touch screen that cannot hover (spec 026): big enough for a thumb inside a phone's row; CellAction adds the 44px tap area around it."
       }
     },
     "padding": {
@@ -122,6 +136,12 @@
         },
         "md": {
           "$value": "{space.300}"
+        },
+        "xs": {
+          "$value": "{space.200}"
+        },
+        "touch": {
+          "$value": "{space.250}"
         }
       }
     },
@@ -164,6 +184,12 @@
           "$value": "{font.size.xs}"
         },
         "md": {
+          "$value": "{font.size.sm}"
+        },
+        "xs": {
+          "$value": "{font.size.xs}"
+        },
+        "touch": {
           "$value": "{font.size.sm}"
         }
       }
@@ -221,6 +247,19 @@
         "$value": {
           "value": 10,
           "unit": "px"
+        }
+      }
+    },
+    "cell": {
+      "radius": {
+        "$type": "dimension",
+        "$value": "{radius.scale.md}",
+        "$description": "Input variant=\"cell\" (spec 026): the button's 6px corners, as in the approved mockup."
+      },
+      "padding": {
+        "x": {
+          "$type": "dimension",
+          "$value": "{space.200}"
         }
       }
     }
@@ -412,6 +451,22 @@
         "unit": "px"
       },
       "$description": "The one size of every menu icon (spec 010, research R7). Menus used to mix 15 and 16 px; ui/Menu draws every item's icon at this size so a function's icon looks the same in every menu."
+    }
+  },
+  "cell-action": {
+    "$description": "ui/CellAction (spec 026): a small button at a table cell's end, over the cell's text.",
+    "inset": {
+      "$type": "dimension",
+      "$value": "{space.150}",
+      "$description": "Between the button and the cell's right edge."
+    },
+    "tap": {
+      "$type": "dimension",
+      "$value": {
+        "value": 44,
+        "unit": "px"
+      },
+      "$description": "The tap area round the button on a touch screen (WCAG 2.5.5)."
     }
   }
 }

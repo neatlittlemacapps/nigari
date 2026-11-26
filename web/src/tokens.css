@@ -570,8 +570,12 @@
   --center-panel-layer: 90;
   --button-height-sm: 28px;
   --button-height-md: 32px;
+  --button-height-xs: 24px;
+  --button-height-touch: 30px;
   --button-padding-x-sm: 8px;
   --button-padding-x-md: 12px;
+  --button-padding-x-xs: 8px;
+  --button-padding-x-touch: 10px;
   --button-gap: 6px;
   --button-group-inset: 2px;
   --button-radius: 6px;
@@ -579,6 +583,8 @@
   --button-font-weight: 500;
   --button-font-size-sm: 12px;
   --button-font-size-md: 13px;
+  --button-font-size-xs: 12px;
+  --button-font-size-touch: 13px;
   --button-icon-size-sm: 14px;
   --button-icon-size-md: 16px;
   --button-disabled-opacity: 0.5;
@@ -586,6 +592,8 @@
   --input-radius: 8px;
   --input-padding-y: 8px;
   --input-padding-x: 10px;
+  --input-cell-radius: 6px;
+  --input-cell-padding-x: 8px;
   --editor-menu-background: var(--color-surface-glass);
   --editor-menu-text: var(--color-text-default);
   --editor-tooltip-background: var(--color-surface-raised);
@@ -608,6 +616,8 @@
   --popover-width: 320px;
   --popover-layer: 150;
   --menu-icon-size: 16px;
+  --cell-action-inset: 6px;
+  --cell-action-tap: 44px;
 }
 
 [data-theme='dark'] {

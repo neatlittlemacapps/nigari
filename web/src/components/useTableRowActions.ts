@@ -7,6 +7,10 @@ import { toastError } from '../toast';
 import { serverMessage } from '../serverErrors';
 import { applySpot, type RowSpot } from '../rowDrag';
 
+/** A row title being typed, and in a grouped table the group of the copy
+ *  that edits (absent: the row's first copy). */
+export type EditTitle = { id: string; group?: string };
+
 // What a table row's handle, + and menu do to the database (spec 022), kept
 // out of CollectionView.tsx, which is already too large to grow inline.
 
@@ -36,8 +40,12 @@ export function useTableRowActions({
 }) {
   const fail = (e: unknown) => toastError(e instanceof ApiError ? serverMessage(e.code, e.message) : t('Change not saved'));
 
-  // The row the + just added, its title being typed (US4).
-  const [editTitleId, setEditTitleId] = useState<string | null>(null);
+  // The row whose title is being typed: the one the + just added (spec 022,
+  // US4), or the one whose name was clicked (spec 026). A grouped table draws
+  // a row once per group it falls in, so a click names its group and only
+  // that copy turns into a field: two autofocused fields would fight (plan
+  // D3). The + names none, and the row's first copy edits.
+  const [editTitle, setEditTitle] = useState<EditTitle | null>(null);
 
   // The + beside a row: the new row goes right below it, or above with Alt or
   // Option, in one request, in the view the person is looking at, as New
@@ -51,14 +59,16 @@ export function useTableRowActions({
       onMade?.(row.id);
       onPagesChanged();
       announceIfHidden(row);
-      setEditTitleId(row.id);
+      setEditTitle({ id: row.id });
     } catch (e) {
       fail(e);
     }
   };
 
+  const startEditTitle = (id: string, group?: string) => setEditTitle({ id, group });
+
   const finishTitle = async (id: string, title: string | null) => {
-    setEditTitleId(null);
+    setEditTitle(null);
     if (title === null) return;
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, title } : r)));
     try {
@@ -134,5 +144,5 @@ export function useTableRowActions({
     dropSort();
   };
 
-  return { editTitleId, addRowNextTo, finishTitle, placeRow, patchRow, duplicateRow, dropSortForDrag };
+  return { editTitle, startEditTitle, addRowNextTo, finishTitle, placeRow, patchRow, duplicateRow, dropSortForDrag };
 }

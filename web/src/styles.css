@@ -3091,15 +3091,56 @@ body.is-col-resizing {
   text-align: left;
 }
 
-.db-title-link:hover {
+/* The name cell (TitleCell, spec 026). The cell holds the Open button
+   (ui/CellAction), placed at its end. */
+.db-table td.db-title-col {
+  position: relative;
+}
+
+/* An editor's click renames, so the cell reads as text: a text cursor and no
+   underline, like every text cell (owner, mockup C3 a). A reader's click
+   still opens the row, and keeps the link's underline. */
+.db-table td.db-title-col[data-editable],
+.db-table td.db-title-col[data-editable] .db-title-link {
+  cursor: text;
+}
+.db-table td.db-title-col:not([data-editable]) .db-title-link:hover {
   text-decoration: underline;
 }
 
-/* A new row's title, typed in place after its + (spec 022). */
+/* The focus ring goes round the cell, not the text (owner: "The element
+   you're working with is the cell"). */
+.db-table .db-title-link:focus-visible {
+  outline: none;
+}
+.db-table td.db-title-col:has(> .db-title-inner > .db-title-link:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+/* While the name is typed the field fills the cell, flat (ui/Input
+   variant="cell"): the cell gives up most of its padding to the field's, so
+   the text barely moves and the row keeps its height. */
+.db-table td.db-title-col.is-editing {
+  padding: var(--space-50);
+}
+.db-table td.db-title-col.is-editing .db-title-inner {
+  display: flex;
+}
+
+/* A row's title typed in place: after its + (spec 022) or a click on it
+   (spec 026). */
 .db-title-input {
   flex: 1;
   min-width: 0;
   font-weight: 500;
+}
+
+/* The row open in the peek: a soft tint of the accent over the whole row,
+   beside its Close button (owner, mockup C2 a). Not the gutter, which hangs
+   in the page's margin. */
+.db-table tr.is-peeked > td:not(.db-row-gutter) {
+  background: var(--color-accent-soft);
 }
 
 .db-empty {

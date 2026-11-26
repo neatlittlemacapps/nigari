@@ -55,3 +55,20 @@
 .ui-input[data-disabled] {
   opacity: 0.6;
 }
+
+/* variant="cell" (spec 026): a value typed in place in a table cell. Flat (owner,
+   2026-11-26: "Not raised"): the raised surface is a shade lighter than the
+   page in light and dark, the strong hairline outlines it, and nothing lifts
+   it. Its text keeps the cell's size and weight, so the name does not jump
+   when it turns into a field. The cell gives up its own padding to it (a
+   table's cell keeps var(--space-50)), so the text stays where it was. */
+.ui-input[data-variant='cell'] {
+  padding: var(--space-100) var(--input-cell-padding-x);
+  line-height: inherit;
+  border-color: var(--color-border-strong);
+  border-radius: var(--input-cell-radius);
+  background: var(--color-surface-raised);
+  box-shadow: none;
+  font-size: inherit;
+  font-weight: inherit;
+}

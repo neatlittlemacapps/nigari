@@ -34,8 +34,20 @@ export function Field({ label, hint, error, disabled, className, children }: Fie
   );
 }
 
-export type InputProps = Omit<ComponentPropsWithoutRef<typeof BaseInput>, 'className'> & { className?: string };
+export type InputProps = Omit<ComponentPropsWithoutRef<typeof BaseInput>, 'className'> & {
+  className?: string;
+  /** default: a form's field. cell: a field that fills a table cell while its
+   *  value is typed in place (spec 026): flat, a lighter fill and a thin
+   *  rounded outline, no lift or shadow, so the row keeps its height. */
+  variant?: 'default' | 'cell';
+};
 
-export function Input({ className, ...rest }: InputProps) {
-  return <BaseInput className={'ui-input' + (className ? ' ' + className : '')} {...rest} />;
+export function Input({ className, variant = 'default', ...rest }: InputProps) {
+  return (
+    <BaseInput
+      className={'ui-input' + (className ? ' ' + className : '')}
+      data-variant={variant === 'default' ? undefined : variant}
+      {...rest}
+    />
+  );
 }

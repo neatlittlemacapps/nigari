@@ -43,6 +43,7 @@ positioning. The look comes only from the design tokens (`web/tokens/` →
 | `CenterPanel` | content over a dimmed screen that may open dialogs of its own (a row's centre peek) | a task with a footer of actions (`Dialog`) | `center-panel` |
 | `Popover` | settings that apply at once, anchored to the button that opened them, with the screen still in view (a chart's settings) | a task that takes over the screen (`Dialog`); a list of commands (`Menu`) | `popover` |
 | `Menu` and its parts | every list of actions, opened from a button or a right-click | settings that apply at once (`Popover`); one value from a fixed list in a form (`Select`) | `menu` |
+| `CellAction` | a small action at a table cell's end, over its text, shown on hover or focus (a row's Open) | an action that is always the main one on a screen (`Button`); a list of actions (`Menu`) | `cell-action` |
 
 ## Button
 
@@ -59,8 +60,9 @@ a look that is missing is a new property value with its tokens.
   - `neutral` (default).
   - `primary`: the accent.
   - `destructive`: deletes or removes something; a red outline at medium (owner, Q1).
-- `size`: `md` (default, `--button-height-md`, lines up with inputs) or `sm` (toolbars,
-  dense rows).
+- `size`: `md` (default, `--button-height-md`, lines up with inputs), `sm` (toolbars,
+  dense rows) or `xs` (24px, an action inside a table cell, through `CellAction`; 30px on a
+  touch screen that cannot hover).
 - `icon?`: shown before the label. Without children the button is a square holding only
   the icon, and `label` (translated) is required: its accessible name and its tooltip.
 - `pressed?`: a toggle that stays on. It sets `aria-pressed` and shows the faint primary
@@ -135,6 +137,33 @@ a look that is missing is a new property value with its tokens.
 linked to the control; hint and error are announced through `aria-describedby`.
 `Input`: Base UI's input (`value` + `onValueChange`, or `defaultValue`).
 States: `data-invalid`, `data-disabled`, `data-focused`, `data-filled`.
+`variant`: `default`, or `cell` for a value typed in place in a table cell (spec 026): it
+fills the cell flat, a lighter fill (`--color-surface-raised`) and a thin rounded outline,
+no lift or shadow, in the cell's own text size, so the row keeps its height. The cell gives
+up its padding to it. The table's row name uses it.
+
+## CellAction
+
+A small button at the end of a table cell, over the cell's text (spec 026): the table's
+Open, and Close for the row open in the peek.
+
+**Props**
+- `children`: the word, translated ("Open").
+- `label`: the accessible name, translated, naming the item ("Open Roadmap review").
+- `pinned?`: always shown.
+- `onClick`, `onAuxClick?` (the middle button).
+
+**Behaviour**
+- Its host is the nearest ancestor with `data-cell-action-host` (a table row). It shows while
+  the host is hovered or holds the focus, always on a touch screen that cannot hover
+  (`(hover: none)`, with a 44px tap area), and always when `pinned`. `data-editing` on the
+  host hides it.
+- Hidden is `opacity: 0`, not removed: it stays in the tab order, so Tab from the cell
+  reaches it and the focus then shows it.
+- Shown or hidden is CSS, never state: a table of thousands of rows adds no listener per row.
+- It is placed in the nearest positioned ancestor (the cell, `position: relative`), on the
+  raised surface, so a long text is cut off under it and the row's height does not change.
+- It is a `Button` of `size="xs"`, medium emphasis.
 
 ## Checkbox
 

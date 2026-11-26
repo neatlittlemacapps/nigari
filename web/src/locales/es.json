@@ -1432,5 +1432,7 @@
   "Show": "Mostrar",
   "Show empty groups": "Mostrar grupos vacíos",
   "Week of {day}": "Semana del {day}",
-  "Every group is hidden. Show one from the Group menu.": "Todos los grupos están ocultos. Muestra uno desde el menú Agrupar."
+  "Every group is hidden. Show one from the Group menu.": "Todos los grupos están ocultos. Muestra uno desde el menú Agrupar.",
+  "Open {name}": "Abrir {name}",
+  "Close {name}": "Cerrar {name}"
 }
