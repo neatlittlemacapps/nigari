@@ -99,10 +99,29 @@ a document.
   DOM. Under `(hover: hover)` it is hidden until the row is hovered or the cell
   holds the focus (`:focus-within`), and on `.is-peeked` it shows. Under
   `(hover: none)` it always shows. No pointer listeners per row are added (SC-005).
-- **D5. Built from `ui/Button`** (`size="sm"`, `emphasis="low"`), with an
-  accessible name "Open {name}" / "Close {name}". The text, the icon (if any)
-  and the mark on the open row are what the mockup settles. Building waits
-  for the owner's approval of it (`.claude/rules/frontend.md`, new layout).
+- **D5. Two new design-system pieces, built in `web/src/ui/` first** (owner,
+  2026-11-26: "when relevant build out the component in the DS and implement
+  that"). Each gets an entry in `web/src/ui/README.md` and a section in the
+  catalogue (`web/tests/catalog.mjs` checks both), light and dark, and is only
+  then used by the title cell:
+  - **`Input` `variant="cell"`** (`ui/Field.tsx`, `Field.css`): the flat field
+    that fills a table cell. Lighter fill, thin rounded outline, no lift or
+    shadow, tokens only (FR-007). `RowTitleInput` uses it, so the + path and the
+    click path look the same. The column heading's rename (`th-rename`) can
+    move onto it later; that is not part of this spec.
+  - **`CellAction`** (`ui/CellAction.tsx`, `CellAction.css`): a small outlined
+    `Button` placed at a cell's end, over the cell's text. It shows on hover or
+    focus inside its host (the row), always under `(hover: none)` with a 44 px
+    tap area, and always when `pinned`. It hides while the host is editing.
+    The Open/Close button is a `CellAction` reading "Open" or, `pinned`,
+    "Close" (FR-004 to FR-006, FR-008, FR-014). Why a component and not CSS in
+    the table: the reveal, the touch rule and the tap area are a pattern that
+    every "act on this item" button in a cell or card will need. The list and
+    the board already showed the request may come for them.
+  - *Turned down*: plain `ui/Button` with table-only CSS (the reveal and touch
+    rules would live in `styles.css`, out of the catalogue's sight, and be
+    copied by the next view); a single `TitleCell` primitive in `ui/` (it
+    knows about rows, peeks and permissions, which `ui/` components do not).
 - **D6. The cell's long-name cut-off stays as today's** (ellipsis). The
   button sits on top at the right edge with the cell's background behind it,
   so the row height never changes (FR-006).
@@ -138,7 +157,7 @@ a document.
 | Tests (Go incl. refusal paths, Playwright spec, check scripts) | `check-titlecell.mjs` for D1. New Playwright `web/tests/title-cell.mjs`: click edits and saves, Escape cancels, double click, the Open button per view setting, ⌘-click new tab, a reader's click opens, Close in a side peek, a grouped copy, a phone viewport with the button always shown. Existing specs whose selectors click `.db-title-link` to open a row are updated. Go: no change. | test |
 | Performance (query plans, payload size, per-request work) | No query. Per row: one more button and no listeners beyond its click. 5,000-row draw measured before and after (SC-005). | perf |
 | Manifest (`capabilities.json`, `gapBudget`, parity acts) | No change: no route or tool. | mcp |
-| Design system (`web/src/ui/`, tokens, `check-tokens.mjs` budgets, catalogue) | `ui/Button` for Open/Close. The field is `ui/Field` `Input` (as today). The fill and outline use tokens (`--color-surface-*`, `--radius-scale-*`). No new literal, and the raw-button count in `check-tokens.mjs` does not go up: the Open/Close button is `ui/Button`, and the name's own button moves into `TitleCell.tsx` as the one already counted, or becomes `ui/Button` if the mockup allows. | ui |
+| Design system (`web/src/ui/`, tokens, `check-tokens.mjs` budgets, catalogue) | New `ui/CellAction` and `Input` `variant="cell"` (D5), each with a `web/src/ui/README.md` entry and a catalogue section, light and dark, tokens only. The title cell is built from them and from `ui/Button` (inside `CellAction`). The raw-button count in `check-tokens.mjs` does not go up: the name's own button moves into `TitleCell.tsx` as the one already counted. |
 | Storage budgets (benchmarks on the seeded workspace, p95 budgets, read time limit) | No change: no query. | perf |
 | Page containers | The table in a full page and in a peek (a database inside a peeked row) draws the same cell. Close shows only for the row in the one peek (D2). | ui |
 | Aggregation | No change: no property type. | backend |
@@ -173,7 +192,7 @@ No `research.md` (the decisions are D1–D6 above), `data-model.md` (no entity),
 
 ### Source Code
 
-**Files touched**: `web/src/titleCell.ts` (new), `web/scripts/check-titlecell.mjs`
+**Files touched**: `web/src/ui/CellAction.tsx` and `.css` (new), `web/src/ui/Field.tsx` and `Field.css` (`variant="cell"`), `web/src/ui/README.md`, the catalogue (`web/catalog/`), `web/src/titleCell.ts` (new), `web/scripts/check-titlecell.mjs`
 (new), `web/src/components/TitleCell.tsx` (new), `web/src/components/CollectionView.tsx`
 (`TableView` draws `TitleCell`), `web/src/components/useTableRowActions.ts` (D3),
 `web/src/App.tsx` and a small `web/src/peekedRow.ts` for the context (D2),
