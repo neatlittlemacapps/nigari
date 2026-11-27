@@ -2,7 +2,7 @@
 
 **Branch**: `claude/spec-027-card-image` | **Date**: 2026-11-27 | **Spec**: [spec.md](spec.md) | **Issue**: #980
 
-**Input**: Feature specification from `/specs/027-gallery-card-image/spec.md`
+**Input**: Feature specification from `/specs/028-gallery-card-image/spec.md`
 
 ## Summary
 
@@ -260,7 +260,7 @@ action with no signed-in counterpart.
 ### Documentation (this feature)
 
 ```text
-specs/027-gallery-card-image/
+specs/028-gallery-card-image/
 ├── spec.md
 ├── plan.md        # this file
 ├── checklists/requirements.md

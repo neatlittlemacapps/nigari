@@ -4,7 +4,7 @@ description: "Tasks for the Files & media property, its forms and shared pages, 
 
 # Tasks: A gallery chooses where its card images come from
 
-**Input**: `specs/027-gallery-card-image/` (spec.md, plan.md). No mockup: the
+**Input**: `specs/028-gallery-card-image/` (spec.md, plan.md). No mockup: the
 owner waived it (2026-11-27); the look is judged on PR 1's screenshots.
 
 **Tests**: required. Go tests cover every gate's refusal path (REST and MCP
