@@ -1,0 +1,120 @@
+/* ui/FileList (spec 028): the files of one Files & media value. Every value is
+   a token. */
+
+.ui-file-list {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+.ui-file-item {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.ui-file-thumb {
+  flex: none;
+  object-fit: cover;
+  border-radius: var(--radius-scale-sm);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-hover);
+  color: var(--color-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ui-file-thumb > svg {
+  width: 60%;
+  height: 60%;
+}
+
+.ui-file-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-default);
+}
+
+/* Read by a screen reader only: an image in the compact list. */
+.ui-file-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── compact: one line, then +N ── */
+.ui-file-list[data-variant='compact'] {
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--file-list-gap);
+  overflow: hidden;
+}
+.ui-file-list[data-variant='compact'] .ui-file-thumb {
+  width: var(--file-list-thumb-compact);
+  height: var(--file-list-thumb-compact);
+}
+.ui-file-list[data-variant='compact'] .ui-file-item[data-kind='file'] {
+  gap: var(--space-100);
+  max-width: var(--file-list-chip-max);
+  padding-inline-end: var(--space-150);
+  border-radius: var(--radius-scale-sm);
+  background: var(--color-pill-default);
+  font-size: var(--font-size-xs);
+}
+.ui-file-list[data-variant='compact'] .ui-file-item[data-kind='file'] .ui-file-thumb {
+  border: 0;
+  background: transparent;
+}
+.ui-file-more {
+  flex: none;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* ── full: one row per file ── */
+.ui-file-list[data-variant='full'] {
+  flex-direction: column;
+  gap: var(--space-100);
+}
+.ui-file-list[data-variant='full'] .ui-file-item {
+  gap: var(--space-200);
+  padding: var(--space-100);
+  border-radius: var(--radius-scale-md);
+  border: 1px solid transparent;
+}
+.ui-file-list[data-variant='full'] .ui-file-item:hover {
+  background: var(--color-hover);
+}
+.ui-file-list[data-variant='full'] .ui-file-thumb {
+  width: var(--file-list-thumb-full);
+  height: var(--file-list-thumb-full);
+}
+.ui-file-list[data-variant='full'] .ui-file-name {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+}
+.ui-file-list[data-variant='full'] .ui-file-name:hover {
+  text-decoration: underline;
+}
+.ui-file-list[data-variant='full'] .ui-file-name:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-scale-xs);
+}
+.ui-file-item[draggable='true'] {
+  cursor: grab;
+}
+.ui-file-item[data-dragging] {
+  opacity: 0.5;
+}
+.ui-file-item[data-drop-target] {
+  border-color: var(--color-accent-default);
+}

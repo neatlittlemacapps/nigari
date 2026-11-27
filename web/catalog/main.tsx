@@ -10,6 +10,8 @@ import { Dialog, DialogClose } from '../src/ui/Dialog';
 import { AlertDialog } from '../src/ui/AlertDialog';
 import { Field, Input } from '../src/ui/Field';
 import { CellAction } from '../src/ui/CellAction';
+import { FileList, type FileListItem } from '../src/ui/FileList';
+import { FileDrop, type FileDropUpload } from '../src/ui/FileDrop';
 import { Checkbox } from '../src/ui/Checkbox';
 import { Select } from '../src/ui/Select';
 import { Switch } from '../src/ui/Switch';
@@ -35,6 +37,21 @@ import primitives from '../tokens/primitives.tokens.json';
 const params = new URLSearchParams(location.search);
 document.documentElement.dataset.theme = params.get('theme') === 'dark' ? 'dark' : 'light';
 document.documentElement.dataset.font = 'brand';
+
+// Two drawn images for the file sections: data addresses, so the catalogue
+// needs no server and its reference shots do not depend on a download.
+const swatch = (a: string, b: string) => // token-ok: sample image content, not a look
+  'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="80" height="80" fill="url(#g)"/></svg>`);
+const sampleFiles: FileListItem[] = [
+  { url: swatch('#f4a261', '#e76f51'), name: 'site-visit.jpg', image: true }, // token-ok: sample image
+  { url: swatch('#2a9d8f', '#264653'), name: 'facade-north.png', image: true }, // token-ok: sample image
+  { url: '#quote', name: 'Quote for the roof repairs, spring 2027.pdf', image: false },
+  { url: '#plan', name: 'floor-plan.dwg', image: false },
+];
+const sampleUploads: FileDropUpload[] = [
+  { key: 'a', name: 'survey-photos.zip', progress: 0.4 },
+  { key: 'b', name: 'drone-video.mov', error: 'The file is larger than 50 MB' },
+];
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
@@ -147,6 +164,7 @@ function Catalog() {
   const [fruitValue, setFruitValue] = useState('banana');
   const [text, setText] = useState('Filled in');
   const [last, setLast] = useState('');
+  const [files, setFiles] = useState<FileListItem[]>(sampleFiles);
 
   const switchTheme = (next: string) => {
     document.documentElement.dataset.theme = next;
@@ -318,6 +336,60 @@ function Catalog() {
               </tr>
             </tbody>
           </table>
+        </Row>
+      </Section>
+
+      <Section id="file-list" title="FileList">
+        <p className="cat-note">
+          The files of one value (spec 028). Compact in a cell or a card, one line then +N; full on a row's page, the name
+          opening the file, with Remove and reorder (drag, or ⌘/Ctrl+↑/↓ on a name).
+        </p>
+        <Row label="compact: images and files, +N, one file">
+          <div className="cat-stack">
+            <FileList variant="compact" label="Photos" items={sampleFiles} moreLabel={(n) => `+${n}`} />
+            <FileList variant="compact" label="Plans" items={sampleFiles.slice(2)} moreLabel={(n) => `+${n}`} />
+            <FileList variant="compact" label="Quote" items={sampleFiles.slice(2, 3)} moreLabel={(n) => `+${n}`} />
+          </div>
+        </Row>
+        <Row label="full, editable">
+          <div className="cat-stack cat-files">
+            <FileList
+              variant="full"
+              label="Media"
+              items={files}
+              openLabel={(name) => `Open ${name}`}
+              removeLabel={(name) => `Remove ${name}`}
+              onRemove={(i) => {
+                setFiles(files.filter((_, j) => j !== i));
+                setLast('file removed');
+              }}
+              onMove={(from, to) => {
+                const next = [...files];
+                next.splice(to, 0, ...next.splice(from, 1));
+                setFiles(next);
+                setLast(`file moved ${from} to ${to}`);
+              }}
+            />
+          </div>
+        </Row>
+        <Row label="full, read only">
+          <div className="cat-stack cat-files">
+            <FileList variant="full" label="Media" items={sampleFiles.slice(0, 2)} openLabel={(name) => `Open ${name}`} />
+          </div>
+        </Row>
+      </Section>
+
+      <Section id="file-drop" title="FileDrop">
+        <p className="cat-note">
+          Add files (spec 028): the button opens the picker, files dropped on the control land too, and each upload shows its
+          progress or the server's refusal.
+        </p>
+        <Row label="rest, uploading and refused, disabled">
+          <div className="cat-stack cat-files">
+            <FileDrop label="Add files" dropLabel="Drop files here" progressLabel={(n) => `Uploading ${n}`} onFiles={(f) => setLast(`files ${f.length}`)} />
+            <FileDrop label="Add files" dropLabel="Drop files here" progressLabel={(n) => `Uploading ${n}`} uploads={sampleUploads} onFiles={() => {}} />
+            <FileDrop label="Add files" dropLabel="Drop files here" progressLabel={(n) => `Uploading ${n}`} disabled onFiles={() => {}} />
+          </div>
         </Row>
       </Section>
 

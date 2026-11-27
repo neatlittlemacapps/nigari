@@ -44,6 +44,8 @@ positioning. The look comes only from the design tokens (`web/tokens/` →
 | `Popover` | settings that apply at once, anchored to the button that opened them, with the screen still in view (a chart's settings) | a task that takes over the screen (`Dialog`); a list of commands (`Menu`) | `popover` |
 | `Menu` and its parts | every list of actions, opened from a button or a right-click | settings that apply at once (`Popover`); one value from a fixed list in a form (`Select`) | `menu` |
 | `CellAction` | a small action at a table cell's end, over its text, shown on hover or focus (a row's Open) | an action that is always the main one on a screen (`Button`); a list of actions (`Menu`) | `cell-action` |
+| `FileList` | the files of one value: `compact` in a cell or a card, `full` on a row's page or in an editor, with open, remove and reorder | files in a document (the editor's file blocks); a list of actions (`Menu`) | `file-list` |
+| `FileDrop` | adding files: a button that opens the picker, a drop target, each upload's progress or refusal | one file as a page (Import); an image for an icon or a cover (their own pickers) | `file-drop` |
 
 ## Button
 
@@ -164,6 +166,46 @@ Open, and Close for the row open in the peek.
 - It is placed in the nearest positioned ancestor (the cell, `position: relative`), on the
   raised surface, so a long text is cut off under it and the row's height does not change.
 - It is a `Button` of `size="xs"`, medium emphasis.
+
+## FileList
+
+The files of one Files & media value (spec 028).
+
+**Props**
+- `label`: the list's accessible name, translated (the property's name).
+- `items: { url, name, image }[]`: `image` draws the file as its own thumbnail; the caller
+  decides it (`filesValue.ts`), so the component reads no stored value.
+- `variant="compact"`: `max?` (3), `moreLabel(count)` ("+2", translated).
+- `variant="full"`: `openLabel(name)`, `removeLabel?(name)` with `onRemove?(index)`,
+  `onMove?(from, to)`.
+
+**Behaviour**
+- Compact is one line: thumbnails, file chips cut off at `--file-list-chip-max`, then "+N".
+  It is not a control itself; the cell or card around it is.
+- Full is one row per file. The name is a link that opens the file in a new tab. With
+  `onRemove`, a Remove button (`delete` icon, gone from the value, not into the trash). With
+  `onMove`, rows are dragged into place, or moved with ⌘/Ctrl+↑/↓ on the name, which keeps
+  the focus.
+- An image in the compact list has no visible name; a screen reader reads it, and the title
+  shows it on hover.
+
+## FileDrop
+
+Adding files (spec 028).
+
+**Props**
+- `label` ("Add files"), `dropLabel` ("Drop files here"), `progressLabel(name)` ("Uploading
+  {name}"), all translated.
+- `onFiles(files)`: the files chosen or dropped. Uploading them is the caller's.
+- `uploads?: { key, name, progress?, error? }[]`: a bar while `progress` runs (0–1), the
+  translated refusal in its place once `error` is set (`role="alert"`).
+- `multiple?` (true), `accept?`, `disabled?`.
+
+**Behaviour**
+- The button opens the file picker (the `addFiles` icon); the input itself is hidden and out
+  of the tab order. Choosing the same file twice in a row still arrives.
+- The whole control is a drop target: files dragged over it light it (`data-over`) and show
+  `dropLabel`. A drop does not reach the cell, card or editor under it.
 
 ## Checkbox
 
