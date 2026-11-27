@@ -61,6 +61,7 @@ From the code graph (`codegraph explore` on `GalleryView`, `coverStyle`,
 
 - Q1: Where do card images from a property come from, given that no property type holds a file today? → A: Build a "Files & media" property type in this feature (owner "B"). Turned down: A, URL properties only now with the new type in its own spec later (Claude's recommendation); C, no property choice at all.
 - Q2: Does the card image setting apply to gallery cards only, or to board cards too? → A: Gallery only (owner "A"). Turned down: B, gallery and board with board cards defaulting to None; it can be added later without redoing this.
+- Q3: Are image fit and card size part of this feature? → A: Neither; images fill the image area, cropped, and cards keep their size (owner "A"). Turned down: B, a Fit image switch (Claude's recommendation); C, Fit image plus Card size.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -274,8 +275,9 @@ refusal that says why.
 - **FR-011**: An embed's views MUST keep their own card image choice (spec 014).
 - **FR-012**: The card image setting MUST apply to gallery cards only; board
   cards stay without an image (owner, Q2 "A").
-- **FR-013**: [NEEDS CLARIFICATION: are image fit (fill vs. whole image) and
-  card size part of this feature, or later?]
+- **FR-013**: Images MUST fill the card's image area, cropped, as covers do
+  today; cards keep their size. Image fit and card size are not part of this
+  feature (owner, Q3 "A").
 - **FR-014**: Every new string MUST be translated into German, Spanish and
   Dutch, and the wiki's gallery section MUST say where card images come from.
 

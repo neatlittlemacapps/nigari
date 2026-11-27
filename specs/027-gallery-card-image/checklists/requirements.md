@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,8 +31,8 @@
 
 ## Notes
 
-- One marker waits for the owner: FR-013 (image fit and card size). FR-012
-  was answered: Q2 "A", gallery only. FR-006: Q1 "B", Files & media built here.
+- All three questions answered by the owner on 2026-11-26: Q1 "B" (Files &
+  media built here), Q2 "A" (gallery only), Q3 "A" (no fit or size setting).
 - The Context section names code (`GalleryView`, `normalizeViews`, the
   `content` column) as this project's specs do: it records what the code graph
   showed, not how to build the feature. The requirements themselves stay free
