@@ -66,6 +66,7 @@ From the code graph (`codegraph explore` on `GalleryView`, `coverStyle`,
 ### Session 2026-11-27
 
 - Q: Should a form view, public forms included, let people upload files into a Files & media field? → A: Yes, every form, with the same size limit as document uploads (owner "C"). Turned down: A, forms leave the field out (Claude's recommendation: anonymous uploads need limits of their own); B, only forms filled in by signed-in members.
+- Q: When a database page is shared publicly by link, may link visitors see and open the files in a Files & media column? → A: Yes: images as thumbnails, other files as links, openable, as in a shared document (owner "A"). Turned down: B, names only; C, the column left out of shared pages.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -225,6 +226,8 @@ refusal that says why.
   other conversions.
 - An upload too large or of a type the server refuses: the cell says why and
   keeps what it had.
+- A shared database page: link visitors open its rows' files, and no file of
+  a row in a database that is not shared (FR-006i).
 - Someone fills in a public form, uploads a file and leaves without
   submitting: the file is never part of a row, nobody else can reach it, and
   it is removed later (FR-006h).
@@ -273,6 +276,11 @@ refusal that says why.
   the credential may reach, in the row's workspace.
 - **FR-006g**: Markdown and HTML export MUST include the property's files as
   links, as they do for a document's file blocks.
+- **FR-006i**: A database page shared publicly by link MUST show a Files &
+  media column's images as thumbnails and other files as links that link
+  visitors can open, as a shared document's files are (owner, clarify
+  2026-11-27). Only files in that shared database's own rows are reachable
+  this way.
 - **FR-006h**: A form view, public forms included, MUST offer a Files & media
   field, with the same size limit as document uploads (owner, clarify
   2026-11-27). An upload from a public form MUST: be counted against the
