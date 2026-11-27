@@ -8,8 +8,8 @@ import { eventually, openTableRow, withFixture } from './fixture.mjs';
 // - the cell shows them compact, thumbnails and chips, then "+N";
 // - ⌘/Ctrl+↓ on a name moves the file, Remove takes it out of the value;
 // - a reload keeps it all;
-// - a reader sees and opens the files, and on the row's page has nothing to
-//   change them with (a table cell is #1118);
+// - a reader sees and opens the files, and has nothing to change them with,
+//   in the table or on the row's page (#1118);
 // - the row's page in a side peek shows the full list and Add files;
 // - on a phone a tap on the cell opens the panel.
 
@@ -128,9 +128,8 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
   const reader = await readerCtx.newPage();
   await reader.goto(`${base}/p/${db.id}`);
   await reader.locator('.db-table').waitFor();
-  // The table's cells still offer a reader their editor, for every type
-  // (#1118): the row's page is where a reader is held to reading today.
   await row(reader).locator('.ui-file-list[data-variant=compact] [role=listitem].ui-file-item').first().waitFor();
+  assert.equal(await cell(reader).count(), 0, 'a reader can open the files panel in the table (#1118)');
   assert.equal(await row(reader).locator('.ui-file-list[data-variant=compact] [role=listitem].ui-file-item').count(), 3, 'a reader does not see the files');
   await reader.goto(`${base}/p/${visit.id}`);
   const list = reader.locator('.ui-file-list[data-variant=full]');

@@ -394,10 +394,8 @@ order is the order you put them in.
 - A file's name opens it in a new tab.
 
 **Who may do what.** Anyone who may edit the row adds, removes and reorders its
-files; a reader sees and opens them. Today a table cell still opens the panel
-for a reader too, and their change is refused when it is saved
-([#1118](https://github.com/neatlittlemacapps/nigari/issues/1118)); the row's
-page holds a reader to reading.
+files; a reader sees and opens them, in a cell and on the row's page, and
+has nothing to change them with.
 
 **What it will not hold.** Only uploads of this nigari, in the row's own
 workspace. An outside link belongs in a [URL](#url) property. A file from

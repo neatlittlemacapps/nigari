@@ -40,7 +40,9 @@ function BoardCardProps({
   groupBy: string;
   expanded: boolean;
   onToggleExpand: () => void;
-  onSetProp: (rowId: string, propId: string, value: unknown) => void;
+  /** Absent for someone who may only read the rows: every cell then draws
+   *  its read-only face (#1118). */
+  onSetProp?: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
 }) {
   const defs = schema.filter((p) => p.id !== groupBy);
@@ -74,7 +76,7 @@ function BoardCardProps({
           value={row.props[p.id]}
           readOnly={!tickable}
           compact
-          onChange={(nv) => onSetProp(row.id, p.id, nv)}
+          onChange={onSetProp ? (nv) => onSetProp(row.id, p.id, nv) : undefined}
         />
       </span>
     );
@@ -104,7 +106,7 @@ function BoardCardProps({
               <PropertyValue
                 def={p}
                 value={row.props[p.id]}
-                onChange={(nv) => onSetProp(row.id, p.id, nv)}
+                onChange={onSetProp ? (nv) => onSetProp(row.id, p.id, nv) : undefined}
                 onOptionsChange={(opts) => onSetOptions(p.id, opts)}
               />
             </div>
@@ -179,7 +181,9 @@ export default function BoardView({
   commentCounts: Record<string, number>;
   onNavigate: (id: string) => void;
   onOpenInNewTab?: (id: string) => void;
-  onSetProp: (rowId: string, propId: string, value: unknown) => void;
+  /** Absent for someone who may only read the rows: every cell then draws
+   *  its read-only face (#1118). */
+  onSetProp?: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
   onDrop: (rowId: string, groupBy: string, optId: string) => void;
   onTrashRow: (id: string, title: string) => Promise<void>;

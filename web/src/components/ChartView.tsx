@@ -47,7 +47,9 @@ export interface ChartViewProps {
   /** For "Save chart as": filled by the figure. */
   pictureRef?: ChartFigureProps['pictureRef'];
   onOpenInNewTab?: (id: string) => void;
-  onSetProp: (rowId: string, propId: string, value: unknown) => void;
+  /** Absent for someone who may only read the rows: every cell then draws
+   *  its read-only face (#1118). */
+  onSetProp?: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
 }
 

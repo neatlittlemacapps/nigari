@@ -742,6 +742,12 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
       toastError(t('Change not saved'));
     }
   };
+  // Who may change a row's values in the cells: the same rule as renaming in
+  // place (spec 026, US5). A reader's cells used to offer their editors, and
+  // the change failed on saving with "Change not saved" (#1118); a Files &
+  // media cell even uploaded the file first. Without it, every cell draws its
+  // read-only face. The server still decides.
+  const rowEdit = canEdit && embed?.canEditDatabase !== false ? setRowProp : undefined;
 
   // Setting the group property from a drag/preset respects the property type:
   // a multi-select stores an array, a select stores a scalar.
@@ -1318,7 +1324,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           commentCounts={commentCounts}
           onNavigate={onNavigate}
           onOpenInNewTab={onOpenInNewTab}
-          onSetProp={setRowProp}
+          onSetProp={rowEdit}
           onSetOptions={setPropOptions}
           onDrop={(rowId, groupBy, optId) => {
             void setGroupValue(rowId, groupBy, optId);
@@ -1339,7 +1345,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           tagColors={tagColors}
           onNavigate={onNavigate}
           onOpenInNewTab={onOpenInNewTab}
-          onSetProp={setRowProp}
+          onSetProp={rowEdit}
           onSetOptions={setPropOptions}
         />
         {moreRows}
@@ -1372,7 +1378,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
             tagColors={tagColors}
             onNavigate={onNavigate}
             onOpenInNewTab={onOpenInNewTab}
-            onSetProp={setRowProp}
+            onSetProp={rowEdit}
             onSetOptions={setPropOptions}
           />
         </Suspense>
@@ -1385,7 +1391,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           tagColors={tagColors}
           onNavigate={onNavigate}
           onOpenInNewTab={onOpenInNewTab}
-          onSetProp={setRowProp}
+          onSetProp={rowEdit}
           onSetOptions={setPropOptions}
           grouping={rowGrouping}
         />
@@ -1429,7 +1435,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
           propertyChanges={(embed ? !!embed.canSave && embed.canEditDatabase !== false : canEdit) ? columnChanges.changesFor : undefined}
           onNavigate={onNavigate}
           onOpenInNewTab={onOpenInNewTab}
-          onSetProp={setRowProp}
+          onSetProp={rowEdit}
           onSetOptions={setPropOptions}
           // Rows move in the database's own order, which a sorted view does
           // not show. A drag there takes the sort away as the person's own
@@ -2356,7 +2362,9 @@ function TableView({
   propertyChanges?: (p: PropDef) => PropertyChanges;
   onNavigate: (id: string) => void;
   onOpenInNewTab?: (id: string) => void;
-  onSetProp: (rowId: string, propId: string, value: unknown) => void;
+  /** Absent for someone who may only read the rows: every cell then draws
+   *  its read-only face (#1118). */
+  onSetProp?: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
   /** Move a row next to another (spec 022). Absent: rows do not move here (a
    *  reader, or a view whose order is not the database's own). In a grouped
@@ -2753,7 +2761,7 @@ function TableView({
         />
         {lead && (
           <td className="db-check-col" data-prop-id={lead.id}>
-            <LeadCheckBox prop={lead} title={r.title} value={r.props[lead.id]} onChange={(v) => onSetProp(r.id, lead.id, v)} />
+            <LeadCheckBox prop={lead} title={r.title} value={r.props[lead.id]} onChange={onSetProp ? (v) => onSetProp(r.id, lead.id, v) : undefined} />
           </td>
         )}
         <TitleCell
@@ -2787,7 +2795,7 @@ function TableView({
             <PropertyValue
               def={p}
               value={r.props[p.id]}
-              onChange={(v) => onSetProp(r.id, p.id, v)}
+              onChange={onSetProp ? (v) => onSetProp(r.id, p.id, v) : undefined}
               onOptionsChange={(opts) => onSetOptions(p.id, opts)}
               maxChips={2}
             />
