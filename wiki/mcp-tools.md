@@ -980,8 +980,9 @@ the rows' own order. If a result looks unfiltered or unsorted, suspect the
 spelling before the data, and check the ids with `get_collection`.
 
 Returns `{rows, total, offset, limit}`. Each row carries `id`, `title`, `icon`,
-`cover`, `position`, `props` and `tags`, with rollups, formulas and
-backrelations already computed. `total` is the count **after** filtering, so
+`cover`, `position`, `props`, `tags` and `firstImage` (the first image in the
+row's page, in reading order, `""` if it has none: what a gallery card shows
+from the content), with rollups, formulas and backrelations already computed. `total` is the count **after** filtering, so
 paging is honest. Other people's private rows are excluded from both the rows
 and the total, unless you are an **admin of the workspace**, who sees them all,
 the same rule the rest of the product applies.
@@ -1152,6 +1153,7 @@ Create a view, or change one.
 | `status_groups` | boolean | chart or grouped table/list, by a status |
 | `group_reverse` | boolean | grouped table/list |
 | `show_empty_groups` | boolean | grouped table/list |
+| `card_image` | string | gallery |
 | `embed_id` | string | no: the views of an embedded database |
 | `copy_of` | string | creating, with `embed_id` |
 
@@ -1242,6 +1244,17 @@ person, formula or rollup property that is not the board's `group_by`. `""`
 removes the lanes. Only a board has one. `get_collection` returns it as
 `subGroupBy`; the interface's own save checks the same rule, with the code
 `invalid_view_sub_group`.
+
+`card_image` says where a gallery's cards take their picture from: `cover`
+(the row's cover only), `content` (the first image in the row's page only),
+`none` (no image area, text-only cards), or the id of a Files & media or URL
+property. `""` goes back to automatic: the first image in a Files & media
+property, then the cover, the icon, the first image in the content. Any other
+property, or a card image on a view that is not a gallery, is refused.
+`get_collection` returns it as `cardImage`; the interface's own save checks the
+same rule, with the code `invalid_view_card_image`. A property chosen earlier
+that has since been deleted or changed type stays stored and is drawn as
+automatic.
 
 **A table or a list groups its rows** under a header per value when you pass
 `group_by`: a select, multi-select, status, relation, person, checkbox, date,
