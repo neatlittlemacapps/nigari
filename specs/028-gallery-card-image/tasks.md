@@ -61,7 +61,7 @@ mutation-checked: each fails with its fix taken out.
 - [x] T027 [P] [i18n] locales: any new form strings; `web/src/serverErrors.ts`: `form_upload_limit`
 - [x] T028 [test] Go: an upload past the per-address limit refused; over size refused; a claim from another form refused on submit; an unclaimed upload deleted by the cleanup after 24 hours (clock injected); a pending upload not served by `/public/…/files/`; a shared database serves a shared row's file and refuses a private row's, a trashed row's and an unshared database's; `crossorigin_test.go` case for the new POST with `Sec-Fetch-Site: same-site`; the upgrade fixture for step 4. Playwright: `web/tests/files-property.mjs` adds a public form upload and a shared page's thumbnail
 - [x] T029 [wiki] the forms page: uploads, the limit, the 24-hour cleanup; `wiki/sharing.md`: a shared database shows its files; `capabilities.json`: the public route listed as public
-- [ ] T030 [test] Reviews before PR 2 is offered: `/code-review`, `/security-review` (anonymous uploads, a new public file rule), `ux-ui-audit` on the form
+- [x] T030 [test] Reviews before PR 2 is offered: `/code-review`, `/security-review` (anonymous uploads, a new public file rule), `ux-ui-audit` on the form
 
 ## Phase 5: The first content image (PR 3, US1, P1)
 

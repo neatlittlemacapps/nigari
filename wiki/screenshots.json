@@ -324,7 +324,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "116a2e0a43de",
+        "web/src/components/CollectionView.tsx": "3a734af28dbf",
         "web/src/tokens.css": "8d21b71b2e0e",
         "web/src/theme.css": "3feaedbcede5"
       }
@@ -363,7 +363,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "116a2e0a43de",
+        "web/src/components/CollectionView.tsx": "3a734af28dbf",
         "web/src/components/RowGroupHeader.tsx": "80ec4bcf5861",
         "web/src/tokens.css": "8d21b71b2e0e",
         "web/src/theme.css": "3feaedbcede5"
@@ -448,7 +448,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "116a2e0a43de",
+        "web/src/components/CollectionView.tsx": "3a734af28dbf",
         "web/src/components/BoardView.tsx": "1d39c8a7d9e6",
         "web/src/cardLayout.ts": "8e2629a90896",
         "web/src/tokens.css": "8d21b71b2e0e",
@@ -485,7 +485,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "116a2e0a43de",
+        "web/src/components/CollectionView.tsx": "3a734af28dbf",
         "web/src/tokens.css": "8d21b71b2e0e",
         "web/src/theme.css": "3feaedbcede5"
       }
@@ -529,7 +529,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "116a2e0a43de",
+        "web/src/components/CollectionView.tsx": "3a734af28dbf",
         "web/src/components/ChartFigure.tsx": "d8d497a63489",
         "web/src/components/ChartView.css": "ad6a7c9c7acf",
         "web/src/components/ChartSettings.tsx": "845dc5779885",
@@ -592,7 +592,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/CollectionView.tsx": "116a2e0a43de",
+        "web/src/components/CollectionView.tsx": "3a734af28dbf",
         "web/src/components/ChartSettings.tsx": "845dc5779885",
         "web/src/components/ChartSettings.css": "16a9584f65dc",
         "web/src/components/ChartPane.tsx": "1fbe458f0d0b",
