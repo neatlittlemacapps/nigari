@@ -367,6 +367,11 @@ export interface ViewDef {
   quickFilters?: string[];
   // board view: a second grouping drawn as lanes across the columns (spec 013).
   subGroupBy?: string;
+  // gallery view: where each card's picture comes from (spec 028, D5):
+  // "cover", "content", "none" or a Files & media or URL property id; absent
+  // is Automatic. Read through cardImage.ts, which treats a stale id as
+  // Automatic.
+  cardImage?: string;
   // table and list views (spec 024, research R1): draw groupBy as folding
   // groups. Without it a table or list is flat, whatever groupBy holds (a
   // board changed into a table keeps its groupBy, spec 018).

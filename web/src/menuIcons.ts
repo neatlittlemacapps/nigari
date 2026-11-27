@@ -67,6 +67,7 @@ import {
   Heading6,
   History,
   Image,
+  Images,
   Key,
   Keyboard,
   Languages,
@@ -212,6 +213,9 @@ export const MENU_ICONS = {
   // A view's quick filters and a board's lanes (spec 013, PR 3).
   quickFilters: Zap,
   subGroup: Rows2,
+  // A gallery's card image (spec 028): where its cards' pictures come from.
+  // Not Image, which is the editor's image block.
+  cardImage: Images,
   // Property visibility's two bulk actions, carried over from the Columns
   // popover the Settings menu replaces.
   showAllProperties: ScanEye,

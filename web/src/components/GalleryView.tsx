@@ -4,6 +4,8 @@ import { tagColorClass } from '../tags';
 import { PageIcon } from '../pageIcon';
 import { openPageAux, useOpenRow } from '../pageOpen';
 import { t } from '../i18n';
+import { useState } from 'react';
+import { cardImageFor, type CardImage } from '../cardImage';
 
 interface Row {
   id: string;
@@ -12,14 +14,18 @@ interface Row {
   cover: string;
   props: Record<string, unknown>;
   tags?: string[];
+  firstImage?: string;
 }
 
-// A Gallery view renders rows as a responsive grid of cards, each showing the
-// row's cover (image or gradient), its tags, plus its properties. Select /
-// multi-select properties are editable inline (Notion-style colour popover).
+// A Gallery view renders rows as a responsive grid of cards, each showing a
+// picture, its tags, plus its properties. Select / multi-select properties are
+// editable inline (Notion-style colour popover). Where the picture comes from
+// is the view's cardImage, decided by cardImageFor (cardImage.ts, spec 028).
 export default function GalleryView({
   rows,
   schema,
+  imageSchema,
+  cardImage,
   emptyLabel,
   tagColors,
   onNavigate,
@@ -29,6 +35,11 @@ export default function GalleryView({
 }: {
   rows: Row[];
   schema: PropDef[];
+  /** Every property, hidden ones too: a card may take its picture from a
+   *  property it does not list. Defaults to schema. */
+  imageSchema?: PropDef[];
+  /** The view's stored card image choice. */
+  cardImage?: string;
   emptyLabel: string;
   tagColors: Record<string, string>;
   onNavigate: (id: string) => void;
@@ -45,19 +56,19 @@ export default function GalleryView({
   }
   return (
     <div className="gallery">
-      {rows.map((r) => (
+      {rows.map((r) => {
+        const image = cardImageFor(r, cardImage, imageSchema ?? schema);
+        return (
         <div
           key={r.id}
           className="gallery-card"
           onClick={(e) => openRow(e, r.id)}
           onAuxClick={(e) => openPageAux(e, r.id, { onNavigate, onOpenInNewTab })}
         >
-          <div className="gallery-cover" style={coverStyle(r.cover)}>
-            {!r.cover && <span className="gallery-cover-icon"><PageIcon icon={r.icon} size={40} fallback="📄" /></span>}
-          </div>
+          {image.kind !== 'none' && <CardPicture key={image.kind === 'image' ? image.url : image.kind} image={image} />}
           <div className="gallery-body">
             <div className="gallery-title">
-              {r.icon && r.cover ? <span className="inline-icon"><PageIcon icon={r.icon} size={14} /> </span> : null}
+              {r.icon && image.kind !== 'icon' ? <span className="inline-icon"><PageIcon icon={r.icon} size={14} /> </span> : null}
               {r.title || t('Untitled')}
             </div>
             {!!r.tags?.length && (
@@ -92,16 +103,33 @@ export default function GalleryView({
             </div>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
-// A cover is either an uploaded image URL (/files/...) or a "gradient:<css>".
-function coverStyle(cover: string): React.CSSProperties {
-  if (!cover) return {};
-  if (cover.startsWith('gradient:')) return { background: cover.slice('gradient:'.length) };
-  return { backgroundImage: `url(${cover})`, backgroundSize: 'cover', backgroundPosition: 'center' };
+// The card's image area. An image fills it, cropped (FR-008), and loads only
+// when it scrolls near (a gallery of 5,000 rows). One that fails to load, a
+// file since removed or an address that answers nothing, shows the
+// placeholder instead of a broken-image mark (spec 028, edge case).
+function CardPicture({ image }: { image: Exclude<CardImage, { kind: 'none' }> }) {
+  const [broken, setBroken] = useState(false);
+  if (image.kind === 'image' && !broken) {
+    return (
+      <div className="gallery-cover">
+        <img className="gallery-cover-img" src={image.url} alt="" loading="lazy" draggable={false} onError={() => setBroken(true)} />
+      </div>
+    );
+  }
+  if (image.kind === 'gradient') return <div className="gallery-cover" style={{ background: image.css }} />;
+  return (
+    <div className="gallery-cover">
+      <span className="gallery-cover-icon">
+        <PageIcon icon={image.kind === 'icon' ? image.icon : ''} size={40} fallback="📄" />
+      </span>
+    </div>
+  );
 }
 
 export type { Row as GalleryRow };

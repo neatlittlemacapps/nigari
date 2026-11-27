@@ -12,6 +12,9 @@ export interface Row {
   props: Record<string, unknown>;
   position: number;
   tags?: string[];
+  /** The first image in the row's content (pages.thumb), for a gallery card
+   *  (spec 028). */
+  firstImage?: string;
 }
 
 export const UNSET = '__unset__';

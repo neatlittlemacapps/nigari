@@ -5095,6 +5095,17 @@ body.is-col-resizing {
   justify-content: center;
 }
 
+/* A card's picture fills its area, cropped as a cover was (spec 028). */
+.gallery-cover {
+  overflow: hidden;
+}
+.gallery-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .gallery-cover-icon {
   font-size: 40px;
   opacity: 0.6;

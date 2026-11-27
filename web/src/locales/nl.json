@@ -1455,5 +1455,10 @@
   "Last activity": "Laatste activiteit",
   "Formula": "Formule",
   "Too many files were sent from here. Wait a minute, then try again.": "Er zijn van hier te veel bestanden verstuurd. Wacht een minuut en probeer het dan opnieuw.",
-  "A file of this form is no longer waiting to be sent. Remove it, add it again, then send the form.": "Een bestand van dit formulier wacht niet meer op versturen. Verwijder het, voeg het opnieuw toe en verstuur dan het formulier."
+  "A file of this form is no longer waiting to be sent. Remove it, add it again, then send the form.": "Een bestand van dit formulier wacht niet meer op versturen. Verwijder het, voeg het opnieuw toe en verstuur dan het formulier.",
+  "Card image": "Kaartafbeelding",
+  "Page cover": "Pagina-omslag",
+  "Page content": "Pagina-inhoud",
+  "No image": "Geen afbeelding",
+  "This card image cannot be used: a gallery takes its card images from the page cover, the page content, or a Files & media or URL property, so the view was not saved.": "Deze kaartafbeelding kan niet worden gebruikt: een galerij haalt de afbeeldingen van haar kaarten uit de pagina-omslag, de pagina-inhoud of een eigenschap van het type Bestanden en media of URL, dus de weergave is niet opgeslagen."
 }
