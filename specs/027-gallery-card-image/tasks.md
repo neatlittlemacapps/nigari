@@ -11,7 +11,7 @@ owner waived it (2026-11-27); the look is judged on PR 1's screenshots.
 through `callTool`). The two new checks and the two Playwright specs are
 mutation-checked: each fails with its fix taken out.
 
-**Issues**: none yet
+**Issues**: parent #980; tasks T001–T044 are #1073–#1116
 
 **Delivery**: three pull requests, each from its own branch off the newest
 `main`, merged before the next starts (plan, "Order"):
