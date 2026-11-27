@@ -155,15 +155,45 @@ func (s *Server) checkFilesProps(collectionID, workspaceID string, props map[str
 
 // checkRowFiles is checkFilesProps for an existing row: it finds the row's
 // database and workspace itself.
+//
+// Every property write of every row comes through here, so it costs one
+// short lookup: the row's workspace, and its database's schema only when the
+// schema mentions the files type at all. A database without a Files & media
+// property, which is nearly every one, stops there.
+//
+// On the read pool, against the rule for short lookups: this one runs before
+// every row write, and on the one writer connection it took a turn in the
+// queue each time. Five agents writing at once measured +32% at p95
+// (BenchmarkStoragePropertyWriteBurst, p=0.004, 6 runs); with the check off
+// the difference was gone. A committed schema read a moment early is all it
+// needs: a type change racing the write is not a gate the check can be.
 func (s *Server) checkRowFiles(rowID string, props map[string]json.RawMessage) error {
 	if len(props) == 0 {
 		return nil
 	}
-	var parent, ws string
-	if err := s.db.QueryRow(`SELECT COALESCE(parent_id, ''), workspace_id FROM pages WHERE id = ?`, rowID).Scan(&parent, &ws); err != nil {
-		return nil // the caller reports the missing page
+	var ws, schemaJSON string
+	if err := s.rdb.QueryRow(`SELECT p.workspace_id,
+			CASE WHEN c.schema LIKE '%"files"%' THEN c.schema ELSE '' END
+		FROM pages p LEFT JOIN collections c ON c.page_id = p.parent_id
+		WHERE p.id = ?`, rowID).Scan(&ws, &schemaJSON); err != nil || schemaJSON == "" {
+		return nil // no files property, or the caller reports the missing page
 	}
-	return s.checkFilesProps(parent, ws, props)
+	var schema []map[string]any
+	if json.Unmarshal([]byte(schemaJSON), &schema) != nil {
+		return nil
+	}
+	for _, p := range schema {
+		if t, _ := p["type"].(string); t != "files" {
+			continue
+		}
+		id, _ := p["id"].(string)
+		if v, ok := props[id]; ok && id != "" {
+			if err := s.checkFilesValue(ws, v); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // checkRowFilesJSON is checkRowFiles for props sent as raw JSON. Anything

@@ -53,8 +53,8 @@ it comes back — no "someone else is editing this" dialogs, no lost paragraph.
 Turn any page into a database. Each row is itself a page, so a row can hold a
 whole document rather than a cell of text.
 
-**Twelve kinds of column:** text, number, select, status (options sorted into To-do, In progress and Complete, so a board shows one column per option in that order, and filters, rollups, quick filters and charts can work by group), multi-select, date, checkbox,
-URL, person, relation to another database, rollup across a relation, and
+**Thirteen kinds of column:** text, number, select, status (options sorted into To-do, In progress and Complete, so a board shows one column per option in that order, and filters, rollups, quick filters and charts can work by group), multi-select, date, checkbox,
+URL, files & media (photos and documents uploaded to the row, shown as thumbnails), person, relation to another database, rollup across a relation, and
 formula.
 
 **Seven ways to look at the same data:** table, board, gallery, calendar,

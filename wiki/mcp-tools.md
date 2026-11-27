@@ -735,6 +735,10 @@ the file belongs to no page and therefore to no workspace: nothing links to it,
 `list` with kind=`files` will never show it, and a PDF's text is not extracted,
 so `search` cannot find it either. It is reachable only by the address in the
 answer. Pass the page you mean it to live on unless you have a reason not to.
+The one reason is a row's **Files & media** property: upload without
+`page_id` (a `page_id` would also add a block to the row's page), then put the
+address into the property with [set_properties](#set_properties). The row then
+carries the file, and `list` shows it there.
 
 The size is judged from the encoded length before anything is decoded, so an
 oversized upload is refused without a second copy being made of it. Returns
@@ -1091,6 +1095,17 @@ JSON that then went quiet:
   like that: the row still grouped and still filtered, because both compare
   loosely, while every rollup and backrelation passed straight over it and the
   chip stayed blank on the card.
+
+A **Files & media** property (`files`) holds a list of uploads to this nigari,
+in the order shown: `[{"url": "/files/<name>", "name": "plan.pdf"}]`. To attach
+a file, upload it with [upload_file](#upload_file) **without** `page_id`, then
+send the list here with the address it returned; to add one to files already
+there, send the whole list. Refused with `"code": "invalid_files_value"` over
+REST, and nothing is changed: a value that is not such a list, an address
+outside `/files/`, a file that does not exist, a file of another workspace, a
+key other than `url` and `name`, more than 100 files. Once stored, the row is
+the file's carrier: `list` with kind=`files` shows it under the row.
+`create_rows` checks every row's files before it makes the first row.
 
 An open board updates live, so a person watching sees the row move.
 

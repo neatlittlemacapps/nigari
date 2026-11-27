@@ -7,6 +7,29 @@ entries are not edited away.
 
 ---
 
+## 2026-11-27 — The files check before every row write reads from the read pool
+
+- **Why.** Spec 028's Files & media value is checked on every door that
+  writes a row's properties (`checkRowFiles`, `server/filesprop.go`). Done on
+  the writer connection, as `.claude/rules/go-server.md` asks of short
+  lookups, five agents writing at once slowed down: the property-write burst
+  (`BenchmarkStoragePropertyWriteBurst`, 6 runs each, this container) went
+  from p95 4.500 ms to 5.944 ms (+32%, p=0.004). With the check switched off
+  the difference was gone (4.675 ms, p=0.699), so it was the lookup itself:
+  it took a turn on the one writer connection every write queues for. Two
+  lookups made into one did not change that.
+- **Decided (Claude's call, in PR 1 of spec 028):** that one lookup runs on
+  the read pool (`s.rdb`): 4.739 ms, p=0.310 against `main`. It reads the row's
+  workspace and, only when the schema mentions the files type, the schema. A
+  committed schema read a moment before the write is all the check needs.
+  The rule for short lookups stays as it is everywhere else.
+- **Turned down:** caching which databases have a Files & media property
+  (one more thing to invalidate on every schema change, for a lookup the
+  pool already makes cheap); checking only values that look like lists (a
+  string written to a files property would then be stored and never shown).
+
+---
+
 ## 2026-11-26 — One bug closed for each feature
 
 - **Why.** The owner: "I do see we create more tickets then we solve".
