@@ -687,6 +687,19 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	modern, refusal := mcpEra(r, req)
+	if refusal != nil {
+		refusal.write(w, req.ID)
+		return
+	}
+	if modern != nil {
+		s.serveModernMCP(w, r, u, req, modern)
+		return
+	}
+
+	// The legacy era (initialize, or a request without per-request _meta):
+	// answered exactly as before spec 027, which TestLegacyMCPAnswersAreUnchanged
+	// pins byte for byte.
 	switch req.Method {
 	case "initialize":
 		var params struct {
@@ -695,64 +708,25 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 		json.Unmarshal(req.Params, &params)
 		version := params.ProtocolVersion
 		if version == "" {
-			version = "2025-06-18"
-		}
-		// icons has been part of serverInfo since spec revision 2025-11-25 (SEP-973)
-		// and lets a client show the logo instead of a placeholder. Claude.ai does NOT
-		// read it as of today (anthropics/claude-ai-mcp#152, open) — other clients do,
-		// and the moment Claude follows it will be there with nothing further to do.
-		// Two entries, because both routes occur: the embedded SVG (always present,
-		// even under a strict CSP) and an absolute link to the PNG for clients that
-		// dislike SVG.
-		info := map[string]any{"name": mcpServerName, "version": Version}
-		icons := []map[string]any{}
-		if s.mcpIcon != "" {
-			icons = append(icons, map[string]any{
-				"src": s.mcpIcon, "mimeType": "image/svg+xml", "sizes": []string{"any"},
-			})
-		}
-		if base := s.publicShareBase(r); base != "" {
-			icons = append(icons, map[string]any{
-				"src": base + "/icon-192.png", "mimeType": "image/png", "sizes": []string{"192x192"},
-			})
-		}
-		if len(icons) > 0 {
-			info["icons"] = icons
+			version = mcpLegacyDefaultVersion
 		}
 		rpcResult(w, req.ID, map[string]any{
 			"protocolVersion": version,
 			"capabilities":    map[string]any{"tools": map[string]any{}},
-			"serverInfo":      info,
-			// The one convention worth knowing before the first tool call:
-			// workspaces can carry rules their admin wrote for agents.
-			"instructions": "Workspaces can carry rules — working conventions their admin wrote for agents. " +
-				"list with kind=\"workspaces\" marks them (has_rules); read them via get_workspace before writing into a workspace, and follow them. " +
-				"Rules are managed by workspace admins alone: if your user is one, propose_workspace_rules submits a draft (with their agreement) that activates only when an admin applies it in the browser; if not, follow the rules and leave them be.",
+			"serverInfo":      s.mcpServerInfo(r, true),
+			"instructions":    mcpInstructions,
 		})
 	case "ping":
 		rpcResult(w, req.ID, map[string]any{})
 	case "tools/list":
 		rpcResult(w, req.ID, map[string]any{"tools": mcpTools})
 	case "tools/call":
-		var params struct {
-			Name      string          `json:"name"`
-			Arguments json.RawMessage `json:"arguments"`
-		}
-		if err := json.Unmarshal(req.Params, &params); err != nil {
-			rpcError(w, req.ID, -32602, "invalid params")
+		result, bad := s.mcpToolsCall(r, u, req.Params)
+		if bad != "" {
+			rpcError(w, req.ID, rpcInvalidParams, bad)
 			return
 		}
-		// Stop a runaway agent from hammering the sync layer.
-		if !s.mcpRate.allow(u.ID) {
-			rpcResult(w, req.ID, textResult("rate limit exceeded: too many requests, slow down", true))
-			return
-		}
-		result, err := s.mcpCall(u, params.Name, params.Arguments, s.publicShareBase(r))
-		if err != nil {
-			rpcResult(w, req.ID, textResult(err.Error(), true))
-			return
-		}
-		rpcResult(w, req.ID, textResult(result, false))
+		rpcResult(w, req.ID, result)
 	default:
 		if strings.HasPrefix(req.Method, "notifications/") {
 			w.WriteHeader(http.StatusAccepted)
