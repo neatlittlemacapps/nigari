@@ -11,8 +11,8 @@ import { addFiles, fileListItems, moveFile, readFiles, removeFile, type FileItem
 
 // A Files & media value (spec 028, FR-006b/c), in the three places a value is
 // drawn:
-// - a table cell: the files compact, on one line; a click or Enter opens a
-//   panel with the full list and Add files;
+// - a table, list or card cell: the files compact, on one line; a click or
+//   Enter opens a panel with the full list and Add files;
 // - the row's page: the full list and Add files in place;
 // - a card, or anyone who may only read: the files, opened but not changed.
 //
@@ -101,14 +101,16 @@ export default function FilesValue({ def, value, onChange, readOnly, compact, sh
 
   if (ro) {
     if (items.length === 0) return <span className="prop-empty">{showEmpty ? t('Empty') : null}</span>;
-    if (compact) return <FileList variant="compact" label={def.name} items={items} moreLabel={more} />;
-    return <FileList variant="full" label={def.name} items={items} openLabel={openName} />;
+    if (showEmpty && !compact) return <FileList variant="full" label={def.name} items={items} openLabel={openName} />;
+    return <FileList variant="compact" label={def.name} items={items} moreLabel={more} />;
   }
 
-  // The row's page: everything in place.
-  if (!compact) return <Editor def={def} files={files} onChange={onChange} />;
+  // The row's page (the one caller that passes showEmpty): everything in
+  // place.
+  if (showEmpty && !compact) return <Editor def={def} files={files} onChange={onChange} />;
 
-  // A table cell: the compact list is the trigger of the panel that edits it.
+  // A table, list or card cell: the compact list is the trigger of the panel
+  // that edits it, so the row keeps its height.
   return (
     <Popover
       label={def.name}
