@@ -164,6 +164,8 @@ func (s *Server) runCleanup() {
 	// auditRetentionDays) and wrong for an instance that has to promise its
 	// people a limit. Off unless an admin sets a period.
 	s.pruneAuditLog()
+	// Files sent with a public form that no submission claimed (spec 028).
+	s.cleanupFormUploads(time.Now())
 }
 
 // handleHealth is a readiness probe: it pings the DB so orchestration can tell a

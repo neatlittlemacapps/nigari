@@ -340,7 +340,7 @@
     "infrastructure.public": {
       "summary": "What outsiders see: shared pages, their files, public forms",
       "agent": "infrastructure",
-      "rest": ["GET /api/public/{token}", "GET /public/{token}/files/{name}", "GET /public/{token}", "POST /public/{token}", "GET /api/public/form/{token}", "POST /api/public/form/{token}/submit"],
+      "rest": ["GET /api/public/{token}", "GET /public/{token}/files/{name}", "GET /public/{token}", "POST /public/{token}", "GET /api/public/form/{token}", "POST /api/public/form/{token}/submit", "POST /api/public/form/{token}/upload"],
       "wiki": "wiki/sharing.md"
     }
   }

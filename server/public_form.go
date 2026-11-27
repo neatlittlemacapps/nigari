@@ -39,7 +39,9 @@ func (p formSchemaProp) hasOption(id string) bool {
 // Computed/linked types (relation/rollup/formula) are never accepted.
 func formFillable(t string) bool {
 	switch t {
-	case "text", "number", "select", "status", "multiselect", "date", "checkbox", "person":
+	// files: only uploads made through this same form, claimed on submit
+	// (form_uploads.go).
+	case "text", "number", "select", "status", "multiselect", "date", "checkbox", "person", "files":
 		return true
 	}
 	return false
@@ -213,9 +215,24 @@ func (s *Server) handlePublicFormSubmit(w http.ResponseWriter, r *http.Request) 
 		byID[p.ID] = p
 	}
 	clean := map[string]any{}
+	var claimed []string
 	for id, v := range body.Props {
 		p, ok := byID[id]
 		if !ok || !formFillable(p.Type) {
+			continue
+		}
+		// Files are not dropped quietly like a bad option: a file the visitor
+		// added and the row does not get is a loss they would not notice.
+		if p.Type == "files" {
+			items, names, err := s.claimFormFiles(colID, v)
+			if err != nil {
+				httpErrorCode(w, 400, "form_upload_unclaimed", "A file of this form is no longer waiting to be sent. Add it again, then send the form.")
+				return
+			}
+			if len(items) > 0 {
+				clean[id] = items
+				claimed = append(claimed, names...)
+			}
 			continue
 		}
 		if cv, ok := coerceFormValue(p, v); ok {
@@ -243,6 +260,11 @@ func (s *Server) handlePublicFormSubmit(w http.ResponseWriter, r *http.Request) 
 	if err := s.fillStatusDefaults(colID, id); err != nil {
 		httpError(w, 500, err.Error())
 		return
+	}
+	// The uploads are the row's now: no longer waiting, never swept.
+	// reindexPage below records the row as their carrier.
+	for _, name := range claimed {
+		s.db.Exec(`DELETE FROM form_uploads WHERE file_name = ?`, name)
 	}
 	if err := s.reindexPage(id); err != nil {
 		httpError(w, 500, err.Error())
