@@ -38,6 +38,9 @@ var validPropTypes = map[string]bool{
 	// build the column and an agent could not, so the one database this feature
 	// was written for never got it, while the task saying so read "done".
 	"backrelation": true,
+	// files — Files & media (spec 028): [{"url": "/files/<name>", "name"}],
+	// uploads to this instance only; checkFilesValue guards every write.
+	"files": true,
 	// status — a select whose options each sit in one of three fixed groups
 	// (spec 016, status.go).
 	"status": true,
@@ -47,7 +50,7 @@ var validPropTypes = map[string]bool{
 // and for the tool descriptions. It was spelled out by hand in four places, and
 // "backrelation" reached none of them — a test keeps it level with the map now.
 var propTypeNames = []string{"text", "number", "select", "multiselect", "status", "date",
-	"checkbox", "checklist", "url", "person", "relation", "backrelation",
+	"checkbox", "checklist", "url", "files", "person", "relation", "backrelation",
 	"rollup", "formula"}
 
 func propTypeList() string { return strings.Join(propTypeNames, ", ") }
@@ -969,6 +972,18 @@ func (s *Server) mcpCreateRows(u *user, pageID string, rows json.RawMessage, vie
 	}
 	var pos float64
 	s.db.QueryRow(`SELECT COALESCE(MAX(position), 0) + 1 FROM pages WHERE parent_id = ?`, pageID).Scan(&pos)
+
+	// Every row's Files & media values are checked before the first row is
+	// made, so a refused file leaves no half-created rows behind (spec 028, D2).
+	// set_properties checks them again per row; this pass is about the order.
+	for i, r := range list {
+		var props map[string]json.RawMessage
+		if len(r.Properties) > 0 && json.Unmarshal(r.Properties, &props) == nil {
+			if err := s.checkFilesProps(pageID, ws, props); err != nil {
+				return "", fmt.Errorf("row %d: %w — nothing was created", i+1, err)
+			}
+		}
+	}
 
 	ids := []string{}
 	notMatching := []string{}

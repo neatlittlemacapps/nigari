@@ -395,6 +395,17 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// A new row's Files & media values (the signed-in form among them) hold
+	// this workspace's uploads only (spec 028, D2).
+	if body.ParentID != nil {
+		var initial map[string]json.RawMessage
+		if json.Unmarshal([]byte(props), &initial) == nil {
+			if err := s.checkFilesProps(*body.ParentID, workspaceID, initial); err != nil {
+				httpErrorFrom(w, 400, err)
+				return
+			}
+		}
+	}
 	id := newID()
 	ts := now()
 	var pos float64
@@ -701,6 +712,22 @@ func (s *Server) handleUpdatePage(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			}
+		}
+	}
+
+	// A Files & media value holds this workspace's uploads only (spec 028, D2),
+	// whether it comes as the whole props or as a patch. Before tx.Begin(), as
+	// the parent check above.
+	if len(body.Props) > 0 {
+		if err := s.checkRowFilesJSON(id, body.Props); err != nil {
+			httpErrorFrom(w, 400, err)
+			return
+		}
+	}
+	if len(body.PropsPatch) > 0 {
+		if err := s.checkRowFilesJSON(id, body.PropsPatch); err != nil {
+			httpErrorFrom(w, 400, err)
+			return
 		}
 	}
 
