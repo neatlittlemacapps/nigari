@@ -1,0 +1,21 @@
+{
+  "databaseViews": [
+    {
+      "id": "cards",
+      "name": "Cards",
+      "type": "gallery"
+    }
+  ],
+  "local": "{\"v\": 2, \"viewId\": \"mine\", \"views\": [{\"id\": \"mine\", \"name\": \"Photos\", \"type\": \"gallery\", \"cardImage\": \"content\"}]}",
+  "expect": {
+    "viewId": "mine",
+    "views": [
+      {
+        "id": "mine",
+        "name": "Photos",
+        "type": "gallery",
+        "cardImage": "content"
+      }
+    ]
+  }
+}
