@@ -177,7 +177,8 @@ The files of one Files & media value (spec 028).
   decides it (`filesValue.ts`), so the component reads no stored value.
 - `variant="compact"`: `max?` (3), `moreLabel(count)` ("+2", translated).
 - `variant="full"`: `openLabel(name)`, `removeLabel?(name)` with `onRemove?(index)`,
-  `onMove?(from, to)`.
+  `onMove?(from, to)`, `openable?` (default true; false draws names only, no link and no
+  thumbnail, for a public form's uploads that its visitor cannot open).
 
 **Behaviour**
 - Compact is one line: thumbnails, file chips cut off at `--file-list-chip-max`, then "+N".

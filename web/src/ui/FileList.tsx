@@ -52,6 +52,10 @@ export type FileListProps = Common &
         onRemove?: (index: number) => void;
         /** Move the file at `from` to `to`. Without it the rows stay put. */
         onMove?: (from: number, to: number) => void;
+        /** false: names only, no link and no thumbnail of the file itself.
+         *  A public form's visitor cannot open an upload that is not sent
+         *  yet (spec 028), so a link would lead to a refusal. */
+        openable?: boolean;
       }
   );
 
@@ -94,7 +98,7 @@ function CompactList({ label, items, max = 3, moreLabel }: Extract<FileListProps
   );
 }
 
-function FullList({ label, items, openLabel, removeLabel, onRemove, onMove }: Extract<FileListProps, { variant: 'full' }>) {
+function FullList({ label, items, openLabel, removeLabel, onRemove, onMove, openable = true }: Extract<FileListProps, { variant: 'full' }>) {
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const [dropAt, setDropAt] = useState<number | null>(null);
   // After a keyboard move the moved file's name keeps the focus, at its new
@@ -151,7 +155,12 @@ function FullList({ label, items, openLabel, removeLabel, onRemove, onMove }: Ex
           }}
           onDrop={drop(i)}
         >
-          <Thumb item={it} />
+          <Thumb item={openable ? it : { ...it, image: false }} />
+          {!openable ? (
+            <span className="ui-file-name" title={it.name}>
+              {it.name}
+            </span>
+          ) : (
           <a
             ref={(el) => {
               links.current[i] = el;
@@ -168,6 +177,7 @@ function FullList({ label, items, openLabel, removeLabel, onRemove, onMove }: Ex
           >
             {it.name}
           </a>
+          )}
           {onRemove && removeLabel && (
             <Button emphasis="low" size="sm" icon={<MenuIcon fn="delete" />} label={removeLabel(it.name)} onClick={() => onRemove(i)} />
           )}

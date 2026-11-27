@@ -2,6 +2,8 @@ import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import type { PeekMode } from '../peek';
 import { api, ApiError } from '../api';
 import { serverMessage } from '../serverErrors';
+import { FilesEditor, type UploadFile } from './FilesValue';
+import { readFiles } from '../filesValue';
 import { usePersonalViews } from '../usePersonalViews';
 import { hasPersonalChange, mergeViewState, viewScope, withFoldedGroups, withFoldedLane, withPersonalEdit, withQuickPick, withoutViewChanges } from '../viewState';
 import { groupAcceptsDrops, groupDropPatch, groupRows, type GroupProp, type GroupSettings } from '../rowGroups';
@@ -1499,7 +1501,9 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
 // A Notion-style form: renders the collection's editable properties as fields;
 // submitting creates a new row with the entered values. Computed types
 // (relation/rollup/formula) can't be filled in and are skipped.
-const FORM_TYPES: PropType[] = ['text', 'number', 'select', 'multiselect', 'status', 'date', 'checkbox', 'person'];
+// files: uploads, signed in through /api/upload, or on a public form through
+// its own route and a claim (spec 028, form_uploads.go).
+const FORM_TYPES: PropType[] = ['text', 'number', 'select', 'multiselect', 'status', 'date', 'checkbox', 'person', 'files'];
 
 function FormView({
   collectionId,
@@ -1687,8 +1691,13 @@ function FormView({
   );
 }
 
-export function formField(def: PropDef, value: unknown, onChange: (v: unknown) => void) {
+/** A form's field for one property. `files` is how a Files & media field
+ *  uploads: the signed-in form leaves it out; a public form passes its own
+ *  route, and its visitor sees names only (openable false). */
+export function formField(def: PropDef, value: unknown, onChange: (v: unknown) => void, files?: { uploadFile: UploadFile; openable: boolean }) {
   switch (def.type) {
+    case 'files':
+      return <FilesEditor label={def.name} files={readFiles(value)} onChange={onChange} uploadFile={files?.uploadFile} openable={files?.openable} />;
     case 'number':
       return (
         <input

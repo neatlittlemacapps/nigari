@@ -42,9 +42,15 @@ function uploadError(e: unknown): string {
   return t('Upload failed');
 }
 
+/** Uploads one file and answers the item to store. */
+export type UploadFile = (file: File, onProgress: (p: number) => void) => Promise<FileItem>;
+
+// A signed-in upload: to /api/upload, without a page (see the top).
+const uploadSignedIn: UploadFile = (file, onProgress) => api.upload(file, undefined, onProgress).then((url) => ({ url, name: file.name }));
+
 /** The uploads of one value, and the edits that keep the value current while
  *  several files finish at different times. */
-function useFileEdits(files: FileItem[], onChange?: (v: unknown) => void) {
+function useFileEdits(files: FileItem[], onChange: ((v: unknown) => void) | undefined, uploadFile: UploadFile) {
   const [uploads, setUploads] = useState<FileDropUpload[]>([]);
   // The value as this component last wrote it: two uploads finishing after
   // each other must both land, though the second one's render may not yet
@@ -63,11 +69,10 @@ function useFileEdits(files: FileItem[], onChange?: (v: unknown) => void) {
     const batch = chosen.map((file) => {
       const key = Math.random().toString(36).slice(2) + file.name;
       setUploads((u) => [...u, { key, name: file.name, progress: 0 }]);
-      return api
-        .upload(file, undefined, (p) => setUploads((u) => u.map((x) => (x.key === key ? { ...x, progress: p } : x))))
-        .then((url) => {
+      return uploadFile(file, (p) => setUploads((u) => u.map((x) => (x.key === key ? { ...x, progress: p } : x))))
+        .then((item) => {
           setUploads((u) => u.filter((x) => x.key !== key));
-          return { url, name: file.name } as FileItem;
+          return item;
         })
         .catch((e) => {
           setUploads((u) => u.map((x) => (x.key === key ? { ...x, progress: undefined, error: uploadError(e) } : x)));
@@ -88,18 +93,23 @@ function useFileEdits(files: FileItem[], onChange?: (v: unknown) => void) {
   };
 }
 
-function Editor({ def, files, onChange }: { def: PropDef; files: FileItem[]; onChange?: (v: unknown) => void }) {
-  const edit = useFileEdits(files, onChange);
+/** The full list and Add files: the row's page, the cell's panel, and a
+ *  form's field. A form passes its own upload (a public form's goes through
+ *  its own route and comes back with a claim) and, for a public form,
+ *  openable false. */
+export function FilesEditor({ label, files, onChange, uploadFile = uploadSignedIn, openable }: { label: string; files: FileItem[]; onChange?: (v: unknown) => void; uploadFile?: UploadFile; openable?: boolean }) {
+  const edit = useFileEdits(files, onChange, uploadFile);
   return (
     <div className="prop-files-editor">
       <FileList
         variant="full"
-        label={def.name}
+        label={label}
         items={fileListItems(files)}
         openLabel={openName}
         removeLabel={removeName}
         onRemove={edit.remove}
         onMove={edit.move}
+        openable={openable}
       />
       <FileDrop label={t('Add files')} dropLabel={t('Drop files here')} progressLabel={uploading} uploads={edit.uploads} onFiles={edit.upload} onDismiss={edit.dismiss} dismissLabel={(name) => t('Dismiss') + ': ' + name} />
     </div>
@@ -119,7 +129,7 @@ export default function FilesValue({ def, value, onChange, readOnly, compact, sh
 
   // The row's page (the one caller that passes showEmpty): everything in
   // place.
-  if (showEmpty && !compact) return <Editor def={def} files={files} onChange={onChange} />;
+  if (showEmpty && !compact) return <FilesEditor label={def.name} files={files} onChange={onChange} />;
 
   // A table, list or card cell: the compact list is the trigger of the panel
   // that edits it, so the row keeps its height. Its name says how many files
@@ -138,7 +148,7 @@ export default function FilesValue({ def, value, onChange, readOnly, compact, sh
         </Button>
       }
     >
-      <Editor def={def} files={files} onChange={onChange} />
+      <FilesEditor label={def.name} files={files} onChange={onChange} />
     </Popover>
   );
 }
