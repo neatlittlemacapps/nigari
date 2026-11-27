@@ -60,6 +60,7 @@ From the code graph (`codegraph explore` on `GalleryView`, `coverStyle`,
 ### Session 2026-11-26
 
 - Q1: Where do card images from a property come from, given that no property type holds a file today? → A: Build a "Files & media" property type in this feature (owner "B"). Turned down: A, URL properties only now with the new type in its own spec later (Claude's recommendation); C, no property choice at all.
+- Q2: Does the card image setting apply to gallery cards only, or to board cards too? → A: Gallery only (owner "A"). Turned down: B, gallery and board with board cards defaulting to None; it can be added later without redoing this.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -271,8 +272,8 @@ refusal that says why.
   that cannot hold an image, with an English message and a code the interface
   translates, through every door that stores a view (REST and MCP `set_view`).
 - **FR-011**: An embed's views MUST keep their own card image choice (spec 014).
-- **FR-012**: The setting MUST apply to [NEEDS CLARIFICATION: gallery cards
-  only, or board cards as well?].
+- **FR-012**: The card image setting MUST apply to gallery cards only; board
+  cards stay without an image (owner, Q2 "A").
 - **FR-013**: [NEEDS CLARIFICATION: are image fit (fill vs. whole image) and
   card size part of this feature, or later?]
 - **FR-014**: Every new string MUST be translated into German, Spanish and
