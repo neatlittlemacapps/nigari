@@ -63,6 +63,10 @@ From the code graph (`codegraph explore` on `GalleryView`, `coverStyle`,
 - Q2: Does the card image setting apply to gallery cards only, or to board cards too? → A: Gallery only (owner "A"). Turned down: B, gallery and board with board cards defaulting to None; it can be added later without redoing this.
 - Q3: Are image fit and card size part of this feature? → A: Neither; images fill the image area, cropped, and cards keep their size (owner "A"). Turned down: B, a Fit image switch (Claude's recommendation); C, Fit image plus Card size.
 
+### Session 2026-11-27
+
+- Q: Should a form view, public forms included, let people upload files into a Files & media field? → A: Yes, every form, with the same size limit as document uploads (owner "C"). Turned down: A, forms leave the field out (Claude's recommendation: anonymous uploads need limits of their own); B, only forms filled in by signed-in members.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Cards fill themselves from what the rows already have (Priority: P1)
@@ -221,6 +225,12 @@ refusal that says why.
   other conversions.
 - An upload too large or of a type the server refuses: the cell says why and
   keeps what it had.
+- Someone fills in a public form, uploads a file and leaves without
+  submitting: the file is never part of a row, nobody else can reach it, and
+  it is removed later (FR-006h).
+- A public form is sent many uploads from one address: the form's existing
+  limit per address refuses them past that limit, and the form says to try
+  again later.
 - A Files & media property in a filter: "is empty" and "is not empty" only;
   it cannot be sorted or grouped by, or charted.
 
@@ -263,6 +273,14 @@ refusal that says why.
   the credential may reach, in the row's workspace.
 - **FR-006g**: Markdown and HTML export MUST include the property's files as
   links, as they do for a document's file blocks.
+- **FR-006h**: A form view, public forms included, MUST offer a Files & media
+  field, with the same size limit as document uploads (owner, clarify
+  2026-11-27). An upload from a public form MUST: be counted against the
+  form's existing per-address submission limit; be tied to the row that
+  form's submission creates and to no other page; and stay unreachable by
+  its address, to anyone outside the database's readers, if the submission
+  never completes. Files of a submission that never completes MUST be
+  removed after a set time.
 - **FR-007**: The first image in a page's content MUST be known for every row
   without reading each row's whole content when the gallery loads.
 - **FR-008**: A content or property image MUST fill the card's image area,
@@ -307,6 +325,10 @@ refusal that says why.
 - **SC-005**: A person can add a Files & media property and upload an image
   to a row in under a minute, and the gallery card shows it without a setting
   changed.
+- **SC-007**: An anonymous form submission with a file creates the row with
+  the file in it; a file uploaded through a form without a submission cannot
+  be fetched by anyone who may not read the database (a test of the
+  refusal).
 - **SC-006**: A file in a property value of a page someone may not read is
   never listed or served to them (a test of the refusal, REST and MCP).
 
@@ -326,9 +348,6 @@ refusal that says why.
   property's value like any other property (FR-006c).
 - Upload limits (size, allowed types) are the ones document uploads already
   have.
-- A form view may offer a Files & media field only if its upload can be
-  limited to the form's own row. Otherwise the field is left out of forms in
-  this feature and the plan says why.
 - The new property type is a new concept for the registry
   (`.specify/memory/surfaces.md`): later features that touch property types,
   exports or the file index must account for it.
