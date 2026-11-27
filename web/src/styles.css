@@ -11251,3 +11251,11 @@ body:has(.live-down) .update-banner {
   font-family: var(--font-family-sans);
   letter-spacing: normal;
 }
+
+/* On a form, the files and Add files start on the field's left edge, under
+   its name and in line with the text boxes (the look checklist: one left
+   edge). Each row and the drop target are inset by their padding and a
+   hairline, there for the hover fill and the drop highlight. */
+.form-field > .prop-files-editor {
+  margin-inline-start: calc(-1 * var(--space-100) - 1px);
+}

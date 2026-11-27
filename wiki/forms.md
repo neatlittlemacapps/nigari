@@ -291,9 +291,12 @@ On top of that, submissions are rate-limited to **20 per minute per IP address**
 with a burst of 8: eight in quick succession, then one every three seconds. Over
 the limit, the visitor gets *Sending failed*. Files added to a form are counted
 separately, with the same limit per address, so a form with several files is
-not refused its submission; over it, the visitor reads that too many files were
-sent and to wait a minute. A form whose database shows no `files` field takes no
-files at all.
+not refused its submission: eight files in quick succession, then one every
+three seconds. Over it, the visitor reads that too many files were sent and to
+wait a minute. What may wait to be sent is capped too: 100 files and 1 GiB per
+database, 4 GiB for the whole instance; past that, the form takes no more files
+for now. A form whose database shows no `files` field takes no files at all, and
+a `files` field the form hides takes none either.
 
 That address is the visitor's only when the instance is told to trust its proxy's
 headers. Without that, everybody arriving through the same reverse proxy or
