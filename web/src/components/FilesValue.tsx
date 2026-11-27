@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import type { PropDef } from '../types';
 import { api, ApiError } from '../api';
 import { serverMessage } from '../serverErrors';
-import { t } from '../i18n';
+import { plural, t } from '../i18n';
 import { Popover } from '../ui/Popover';
 import { Button } from '../ui/Button';
 import { FileList } from '../ui/FileList';
@@ -71,6 +71,7 @@ function useFileEdits(files: FileItem[], onChange?: (v: unknown) => void) {
   return {
     uploads,
     upload,
+    dismiss: (key: string) => setUploads((u) => u.filter((x) => x.key !== key)),
     remove: (i: number) => write(removeFile(latest.current, i)),
     move: (from: number, to: number) => write(moveFile(latest.current, from, to)),
   };
@@ -89,7 +90,7 @@ function Editor({ def, files, onChange }: { def: PropDef; files: FileItem[]; onC
         onRemove={edit.remove}
         onMove={edit.move}
       />
-      <FileDrop label={t('Add files')} dropLabel={t('Drop files here')} progressLabel={uploading} uploads={edit.uploads} onFiles={edit.upload} />
+      <FileDrop label={t('Add files')} dropLabel={t('Drop files here')} progressLabel={uploading} uploads={edit.uploads} onFiles={edit.upload} onDismiss={edit.dismiss} dismissLabel={(name) => t('Dismiss') + ': ' + name} />
     </div>
   );
 }
@@ -110,7 +111,10 @@ export default function FilesValue({ def, value, onChange, readOnly, compact, sh
   if (showEmpty && !compact) return <Editor def={def} files={files} onChange={onChange} />;
 
   // A table, list or card cell: the compact list is the trigger of the panel
-  // that edits it, so the row keeps its height.
+  // that edits it, so the row keeps its height. Its name says how many files
+  // it holds: a button's name replaces what is inside it, so the list itself
+  // is not read (code review).
+  const cellLabel = t('Edit') + ': ' + def.name + (items.length ? ', ' + plural(items.length, '{n} file', '{n} files') : '');
   return (
     <Popover
       label={def.name}
@@ -118,7 +122,7 @@ export default function FilesValue({ def, value, onChange, readOnly, compact, sh
       align="start"
       className="prop-files-popover"
       trigger={
-        <Button emphasis="low" size="sm" aria-label={t('Edit') + ': ' + def.name}>
+        <Button emphasis="low" size="sm" aria-label={cellLabel}>
           {items.length ? <FileList variant="compact" label={def.name} items={items} moreLabel={more} /> : <span className="prop-empty" />}
         </Button>
       }

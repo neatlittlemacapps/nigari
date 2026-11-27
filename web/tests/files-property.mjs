@@ -75,6 +75,9 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
   // ---- the cell: compact, three then +1 ----
   await page.keyboard.press('Escape');
   await panel(page).waitFor({ state: 'hidden' });
+  // The button's name says how many files there are: it replaces what is
+  // inside it for a screen reader.
+  assert.equal(await cell(page).getAttribute('aria-label'), 'Edit: Media, 4 files', "the cell's name does not count its files");
   const compact = cell(page).locator('.ui-file-list[data-variant=compact]');
   assert.equal(await compact.locator('[role=listitem].ui-file-item').count(), 3, 'the cell does not show three files');
   assert.equal(await compact.locator('.ui-file-more').innerText(), '+1', 'the cell does not say +1');
@@ -98,6 +101,24 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
   await peek.locator('.ui-file-list[data-variant=full]').waitFor();
   assert.equal(await peek.locator('.ui-file-list[data-variant=full] .ui-file-item').count(), 4, 'the peek does not list every file');
   assert.equal(await peek.getByRole('button', { name: 'Add files' }).count(), 1, 'the peek has no Add files');
+  // A drop on Add files in the row's page lands once, in the value, and not
+  // as a block of the row's document too (code review: the editor listens on
+  // the page's whole body).
+  const contentBefore = JSON.stringify((await api('GET', `/api/pages/${visit.id}`)).content ?? []);
+  const peekDrop = await page.evaluateHandle(() => {
+    const dt = new DataTransfer();
+    dt.items.add(new File(['peek'], 'peek-notes.txt', { type: 'text/plain' }));
+    return dt;
+  });
+  const peekTarget = peek.locator('.ui-file-drop');
+  await peekTarget.dispatchEvent('dragenter', { dataTransfer: peekDrop });
+  await peekTarget.dispatchEvent('drop', { dataTransfer: peekDrop });
+  await eventually(async () => (await names()).includes('peek-notes.txt'));
+  await page.waitForTimeout(1500);
+  assert.equal((await names()).filter((n) => n === 'peek-notes.txt').length, 1, 'a drop on the row page landed twice in the value');
+  assert.equal(JSON.stringify((await api('GET', `/api/pages/${visit.id}`)).content ?? []), contentBefore, "a drop on Add files also added a block to the row's document");
+  await peek.getByRole('button', { name: 'Remove peek-notes.txt' }).click();
+  await eventually(async () => !(await names()).includes('peek-notes.txt'));
 
   // ---- a reader opens files and changes nothing ----
   const readerPw = randomUUID();

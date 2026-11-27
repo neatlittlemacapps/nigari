@@ -1,5 +1,6 @@
-import { useRef, useState, type DragEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from './Button';
+import { X } from 'lucide-react';
 import { MenuIcon } from '../menuIcons';
 import './FileDrop.css';
 
@@ -32,56 +33,85 @@ export type FileDropProps = {
   progressLabel: (name: string) => string;
   onFiles: (files: File[]) => void;
   uploads?: FileDropUpload[];
+  /** Takes a refused upload off the list (code review: it stayed until the
+   *  control was closed). Given with dismissLabel. */
+  onDismiss?: (key: string) => void;
+  /** "Dismiss: {name}", translated. */
+  dismissLabel?: (name: string) => string;
   multiple?: boolean;
   /** The picker's filter, e.g. "image/*". All files when left out. */
   accept?: string;
   disabled?: boolean;
 };
 
-export function FileDrop({ label, dropLabel, progressLabel, onFiles, uploads = [], multiple = true, accept, disabled }: FileDropProps) {
+export function FileDrop({ label, dropLabel, progressLabel, onFiles, uploads = [], onDismiss, dismissLabel, multiple = true, accept, disabled }: FileDropProps) {
   const input = useRef<HTMLInputElement>(null);
+  const zone = useRef<HTMLDivElement>(null);
   const [over, setOver] = useState(false);
   // dragenter and dragleave fire for every child the pointer crosses: a count
   // keeps the target lit until the pointer really leaves it.
   const depth = useRef(0);
-  const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer.types).includes('Files');
+  const latest = useRef({ onFiles, multiple, disabled });
+  latest.current = { onFiles, multiple, disabled };
 
   const take = (list: FileList | null) => {
     const files = Array.from(list ?? []);
-    if (files.length) onFiles(multiple ? files : files.slice(0, 1));
+    const { onFiles: hand, multiple: many } = latest.current;
+    if (files.length) hand(many ? files : files.slice(0, 1));
   };
 
+  // Native listeners on the control itself, not React's: React handles a drag
+  // event only once it reaches the root, and a host on the way may listen
+  // natively. The editor does, on the row page's whole body (Editor.tsx), and
+  // added every file dropped here a second time as a block (code review).
+  // Stopped here, the drop belongs to this control alone.
+  useEffect(() => {
+    const el = zone.current;
+    if (!el) return;
+    const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes('Files');
+    const enter = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.stopPropagation();
+      if (latest.current.disabled) return;
+      e.preventDefault();
+      depth.current += 1;
+      setOver(true);
+    };
+    const overZone = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.stopPropagation();
+      if (latest.current.disabled) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    };
+    const leave = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.stopPropagation();
+      depth.current = Math.max(0, depth.current - 1);
+      if (depth.current === 0) setOver(false);
+    };
+    const drop = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.stopPropagation();
+      e.preventDefault();
+      depth.current = 0;
+      setOver(false);
+      if (!latest.current.disabled) take(e.dataTransfer?.files ?? null);
+    };
+    el.addEventListener('dragenter', enter);
+    el.addEventListener('dragover', overZone);
+    el.addEventListener('dragleave', leave);
+    el.addEventListener('drop', drop);
+    return () => {
+      el.removeEventListener('dragenter', enter);
+      el.removeEventListener('dragover', overZone);
+      el.removeEventListener('dragleave', leave);
+      el.removeEventListener('drop', drop);
+    };
+  }, []);
+
   return (
-    <div
-      className="ui-file-drop"
-      data-over={over ? '' : undefined}
-      data-disabled={disabled ? '' : undefined}
-      onDragEnter={(e) => {
-        if (disabled || !hasFiles(e)) return;
-        e.preventDefault();
-        depth.current += 1;
-        setOver(true);
-      }}
-      onDragOver={(e) => {
-        if (disabled || !hasFiles(e)) return;
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
-      }}
-      onDragLeave={() => {
-        depth.current = Math.max(0, depth.current - 1);
-        if (depth.current === 0) setOver(false);
-      }}
-      onDrop={(e) => {
-        if (disabled || !hasFiles(e)) return;
-        e.preventDefault();
-        // A drop on a cell or a card would otherwise also reach the editor or
-        // the row under it.
-        e.stopPropagation();
-        depth.current = 0;
-        setOver(false);
-        take(e.dataTransfer.files);
-      }}
-    >
+    <div ref={zone} className="ui-file-drop" data-over={over ? '' : undefined} data-disabled={disabled ? '' : undefined}>
       <input
         ref={input}
         className="ui-file-drop-input"
@@ -113,9 +143,14 @@ export function FileDrop({ label, dropLabel, progressLabel, onFiles, uploads = [
                 {u.name}
               </span>
               {u.error ? (
-                <span className="ui-file-drop-error" role="alert">
-                  {u.error}
-                </span>
+                <>
+                  <span className="ui-file-drop-error" role="alert">
+                    {u.error}
+                  </span>
+                  {onDismiss && dismissLabel && (
+                    <Button emphasis="low" size="xs" icon={<X />} label={dismissLabel(u.name)} onClick={() => onDismiss(u.key)} />
+                  )}
+                </>
               ) : (
                 <progress className="ui-file-drop-progress" max={1} value={u.progress ?? 0} aria-label={progressLabel(u.name)} />
               )}

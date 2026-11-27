@@ -387,7 +387,7 @@ function Catalog() {
         <Row label="rest, uploading and refused, disabled">
           <div className="cat-stack cat-files">
             <FileDrop label="Add files" dropLabel="Drop files here" progressLabel={(n) => `Uploading ${n}`} onFiles={(f) => setLast(`files ${f.length}`)} />
-            <FileDrop label="Add files" dropLabel="Drop files here" progressLabel={(n) => `Uploading ${n}`} uploads={sampleUploads} onFiles={() => {}} />
+            <FileDrop label="Add files" dropLabel="Drop files here" progressLabel={(n) => `Uploading ${n}`} uploads={sampleUploads} onDismiss={(k) => setLast(`upload dismissed ${k}`)} dismissLabel={(n) => `Dismiss: ${n}`} onFiles={() => {}} />
             <FileDrop label="Add files" dropLabel="Drop files here" progressLabel={(n) => `Uploading ${n}`} disabled onFiles={() => {}} />
           </div>
         </Row>

@@ -199,13 +199,17 @@ Adding files (spec 028).
 - `onFiles(files)`: the files chosen or dropped. Uploading them is the caller's.
 - `uploads?: { key, name, progress?, error? }[]`: a bar while `progress` runs (0–1), the
   translated refusal in its place once `error` is set (`role="alert"`).
+- `onDismiss?(key)` with `dismissLabel?(name)`: a refused upload gets a button that takes it
+  off the list.
 - `multiple?` (true), `accept?`, `disabled?`.
 
 **Behaviour**
 - The button opens the file picker (the `addFiles` icon); the input itself is hidden and out
   of the tab order. Choosing the same file twice in a row still arrives.
 - The whole control is a drop target: files dragged over it light it (`data-over`) and show
-  `dropLabel`. A drop does not reach the cell, card or editor under it.
+  `dropLabel`. A drop does not reach the cell, card or editor under it: the control listens
+  natively and stops the event, because a host listening natively (the editor, on a row's
+  page) would otherwise see it before React does.
 
 ## Checkbox
 
