@@ -30,12 +30,15 @@ func galleryWith(cardImage string) string {
 // code, and automatic ("" or null) leaves the key out.
 func TestCardImageOverREST(t *testing.T) {
 	f := cardImageFixture(t)
-	for _, v := range []string{"cover", "content", "none", "media", "link"} {
+	// A property is stored with its prefix; a bare id that is no keyword is
+	// taken and given it.
+	for v, want := range map[string]string{"cover": "cover", "content": "content", "none": "none",
+		"prop:media": "prop:media", "prop:link": "prop:link", "media": "prop:media"} {
 		if code, body := f.putViews(t, galleryWith(`"`+v+`"`)); code != 200 {
 			t.Fatalf("%s: %d %s", v, code, body)
 		}
-		if got := f.viewByID(t, "g")["cardImage"]; got != v {
-			t.Errorf("%s: stored %v", v, got)
+		if got := f.viewByID(t, "g")["cardImage"]; got != want {
+			t.Errorf("%s: stored %v, want %s", v, got, want)
 		}
 	}
 	for _, auto := range []string{`""`, `null`, `"auto"`} {
@@ -47,11 +50,13 @@ func TestCardImageOverREST(t *testing.T) {
 		}
 	}
 	for name, views := range map[string]string{
-		"a text property": galleryWith(`"system"`),
-		"a select":        galleryWith(`"status"`),
-		"an unknown id":   galleryWith(`"gone"`),
-		"not a string":    galleryWith(`3`),
-		"on a table":      `[{"id":"t","name":"Table","type":"table","cardImage":"cover"}]`,
+		"a text property":    galleryWith(`"system"`),
+		"a select":           galleryWith(`"status"`),
+		"a prefixed select":  galleryWith(`"prop:status"`),
+		"a prefixed unknown": galleryWith(`"prop:gone"`),
+		"an unknown id":      galleryWith(`"gone"`),
+		"not a string":       galleryWith(`3`),
+		"on a table":         `[{"id":"t","name":"Table","type":"table","cardImage":"cover"}]`,
 	} {
 		code, body := f.putViews(t, views)
 		if code != 400 || !strings.Contains(body, "invalid_view_card_image") {
@@ -74,15 +79,15 @@ func TestAStaleCardImageDoesNotBlockSaves(t *testing.T) {
 	schema = strings.Replace(schema, `"type":"files"`, `"type":"text"`, 1)
 	f.s.db.Exec(`UPDATE collections SET schema = ? WHERE page_id = ?`, schema, f.col)
 
-	code, body := f.putViews(t, `[{"id":"t","name":"Table","type":"table","colWidths":{"__title":300}},{"id":"g","name":"Gallery","type":"gallery","cardImage":"media"}]`)
+	code, body := f.putViews(t, `[{"id":"t","name":"Table","type":"table","colWidths":{"__title":300}},{"id":"g","name":"Gallery","type":"gallery","cardImage":"prop:media"}]`)
 	if code != 200 {
 		t.Fatalf("an unrelated save was refused: %d %s", code, body)
 	}
-	if f.viewByID(t, "g")["cardImage"] != "media" {
+	if f.viewByID(t, "g")["cardImage"] != "prop:media" {
 		t.Error("the stale card image was not kept")
 	}
 	// Choosing it on another gallery now is refused.
-	if code, body := f.putViews(t, `[{"id":"t","name":"Table","type":"table"},{"id":"g","name":"Gallery","type":"gallery","cardImage":"media"},{"id":"g2","name":"Second","type":"gallery","cardImage":"media"}]`); code != 400 || !strings.Contains(body, "invalid_view_card_image") {
+	if code, body := f.putViews(t, `[{"id":"t","name":"Table","type":"table"},{"id":"g","name":"Gallery","type":"gallery","cardImage":"prop:media"},{"id":"g2","name":"Second","type":"gallery","cardImage":"prop:media"}]`); code != 400 || !strings.Contains(body, "invalid_view_card_image") {
 		t.Errorf("a text property chosen now: %d %s, want 400", code, body)
 	}
 }
@@ -100,7 +105,7 @@ func TestCardImageOverMCP(t *testing.T) {
 	for _, v := range views {
 		if v["name"] == "Cards" {
 			id, _ = v["id"].(string)
-			if v["cardImage"] != "link" {
+			if v["cardImage"] != "prop:link" {
 				t.Errorf("stored %v (%s)", v["cardImage"], out)
 			}
 		}
@@ -168,5 +173,35 @@ func TestAnEmbedsGalleryTakesACardImage(t *testing.T) {
 	}
 	if f.dbViews(t) != before {
 		t.Error("the database's views changed")
+	}
+}
+
+// Property ids are made from names: a Files & media property called "Cover"
+// has the id cover, made by update_schema. The keyword cover stays the page's
+// cover, and the property is chosen by its prefix (code review).
+func TestACardImagePropertyNamedLikeAKeyword(t *testing.T) {
+	f := cardImageFixture(t)
+	if _, err := callTool(t, f.s, f.agent, "update_schema", `{"page_id":"`+f.col+`","properties":[{"name":"Cover","type":"files"},{"name":"Auto","type":"url"}]}`); err != nil {
+		t.Fatal(err)
+	}
+	var schema string
+	f.s.db.QueryRow(`SELECT schema FROM collections WHERE page_id = ?`, f.col).Scan(&schema)
+	if !strings.Contains(schema, `"id":"cover"`) || !strings.Contains(schema, `"id":"auto"`) {
+		t.Fatalf("the ids are not the names: %s", schema)
+	}
+	for v, want := range map[string]string{"cover": "cover", "prop:cover": "prop:cover", "prop:auto": "prop:auto"} {
+		if code, body := f.putViews(t, galleryWith(`"`+v+`"`)); code != 200 {
+			t.Fatalf("%s: %d %s", v, code, body)
+		}
+		if got := f.viewByID(t, "g")["cardImage"]; got != want {
+			t.Errorf("%s: stored %v, want %s", v, got, want)
+		}
+	}
+	// "auto" is automatic, not the property.
+	if code, body := f.putViews(t, galleryWith(`"auto"`)); code != 200 {
+		t.Fatalf("auto: %d %s", code, body)
+	}
+	if _, has := f.viewByID(t, "g")["cardImage"]; has {
+		t.Error(`"auto" was stored`)
 	}
 }

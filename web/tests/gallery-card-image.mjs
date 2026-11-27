@@ -111,7 +111,7 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
 
   // ---- a property ----
   await pick('Photos');
-  await eventually(async () => (await stored()) === 'photos');
+  await eventually(async () => (await stored()) === 'prop:photos');
   await eventually(async () => (await shows('Covered')) === 'panel');
   assert.equal(await shows('Photographed'), photo, 'the chosen property is not drawn');
   assert.equal(await shows('Iconed'), 'panel', 'a row with nothing in the property is not the panel');
@@ -134,7 +134,7 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
   await api('PUT', path, { schema: [{ id: 'link', name: 'Link', type: 'url' }] });
   await page.reload();
   await page.locator('.gallery').waitFor();
-  assert.equal(await stored(), 'photos', 'the stale choice was not kept on the server');
+  assert.equal(await stored(), 'prop:photos', 'the stale choice was not kept on the server');
   assert.equal(await shows('Covered'), cover, 'a stale choice is not drawn as Automatic');
 
   // ---- Automatic again, at phone width ----

@@ -74,24 +74,40 @@ try {
   check('cover, none there', cardImageFor(row({ icon: '🍋', firstImage: '/files/body.png' }), 'cover', schema), placeholder);
   check('content', cardImageFor(full, 'content', schema), img('/files/body.png'));
   check('content, none there', cardImageFor(row({ cover: '/files/c.png' }), 'content', schema), placeholder);
-  check('a files property', cardImageFor(full, 'photos', schema), img('/files/p1.jpg'));
-  check('a files property with no image', cardImageFor(row({ cover: '/files/c.png', props: { docs: [pdf] } }), 'docs', schema), placeholder);
-  check('a URL property', cardImageFor(full, 'link', schema), img('https://example.com/a.webp'));
-  check('a URL property, an upload', cardImageFor(row({ props: { link: '/files/x.png' } }), 'link', schema), img('/files/x.png'));
-  check('a URL that is no image', cardImageFor(row({ props: { link: 'https://example.com/page' } }), 'link', schema), placeholder);
-  check('a javascript: address', cardImageFor(row({ props: { link: 'javascript:alert(1)//.png' } }), 'link', schema), placeholder);
-  check('a URL breaking out of url()', cardImageFor(row({ props: { link: 'https://x.test/a.png") , url("https://y.test/b.png' } }), 'link', schema), placeholder);
-  check('a path escaping /files/', cardImageFor(row({ props: { link: '/files/../secret.png' } }), 'link', schema), placeholder);
+  check('a files property', cardImageFor(full, 'prop:photos', schema), img('/files/p1.jpg'));
+  check('a files property with no image', cardImageFor(row({ cover: '/files/c.png', props: { docs: [pdf] } }), 'prop:docs', schema), placeholder);
+  check('a URL property', cardImageFor(full, 'prop:link', schema), img('https://example.com/a.webp'));
+  check('a URL property, an upload', cardImageFor(row({ props: { link: '/files/x.png' } }), 'prop:link', schema), img('/files/x.png'));
+  check('a URL that is no image', cardImageFor(row({ props: { link: 'https://example.com/page' } }), 'prop:link', schema), placeholder);
+  check('a javascript: address', cardImageFor(row({ props: { link: 'javascript:alert(1)//.png' } }), 'prop:link', schema), placeholder);
+  check('a URL breaking out of url()', cardImageFor(row({ props: { link: 'https://x.test/a.png") , url("https://y.test/b.png' } }), 'prop:link', schema), placeholder);
+  check('a path escaping /files/', cardImageFor(row({ props: { link: '/files/../secret.png' } }), 'prop:link', schema), placeholder);
   check('a content image not an image address', cardImageFor(row({ firstImage: 'data:image/png;base64,xx' }), 'content', schema), placeholder);
   check('none', cardImageFor(full, 'none', schema), { kind: 'none' });
 
+  // A property whose id is a keyword (ids are made from names: "Cover" is
+  // cover) is chosen by its prefix, and the keyword still means the page's
+  // cover (code review).
+  const clash = [{ id: 'cover', name: 'Cover', type: 'files' }, { id: 'auto', name: 'Auto', type: 'url' }];
+  const clashRow = row({ cover: '/files/page.png', props: { cover: [photo], auto: 'https://example.com/auto.png' } });
+  check('the keyword cover is the page cover', cardImageFor(clashRow, 'cover', clash), img('/files/page.png'));
+  check('a property called Cover', cardImageFor(clashRow, 'prop:cover', clash), img('/files/p1.jpg'));
+  check('a property called Auto', cardImageFor(clashRow, 'prop:auto', clash), img('https://example.com/auto.png'));
+  check('choice: a property called Auto', cardImageChoice('prop:auto', clash), 'prop:auto');
+
+  // A content image is a picture whatever its address ends in.
+  check('content: a CDN address with no extension', cardImageFor(row({ firstImage: 'https://images.example.com/photo-1?w=800' }), 'content', schema), img('https://images.example.com/photo-1?w=800'));
+  check('content: an upload with no extension', cardImageFor(row({ firstImage: '/files/abc123' }), undefined, schema), img('/files/abc123'));
+  check('content: a javascript: address', cardImageFor(row({ firstImage: 'javascript:alert(1)' }), 'content', schema), placeholder);
+
   // Stale or unknown is Automatic (FR-009).
-  check('a deleted property', cardImageFor(full, 'gone', schema), img('/files/p1.jpg'));
-  check('a property now a select', cardImageFor(full, 'kind', schema), img('/files/p1.jpg'));
-  check('choice: a deleted property', cardImageChoice('gone', schema), 'auto');
+  check('a deleted property', cardImageFor(full, 'prop:gone', schema), img('/files/p1.jpg'));
+  check('a property now a select', cardImageFor(full, 'prop:kind', schema), img('/files/p1.jpg'));
+  check('choice: a deleted property', cardImageChoice('prop:gone', schema), 'auto');
   check('choice: absent', cardImageChoice(undefined, schema), 'auto');
   check('choice: a number', cardImageChoice(3, schema), 'auto');
-  check('choice: kept', cardImageChoice('link', schema), 'link');
+  check('choice: kept', cardImageChoice('prop:link', schema), 'prop:link');
+  check('choice: a bare id is no choice', cardImageChoice('link', schema), 'auto');
   check('choice: none', cardImageChoice('none', schema), 'none');
 
   // The picker lists Files & media and URL properties, in schema order (FR-006).

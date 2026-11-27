@@ -11,7 +11,10 @@ import { isImageUrl, isStoredFileUrl, readFiles } from './filesValue';
 //              then the placeholder (FR-002)
 //   "cover"    the cover only; "content" the first content image only
 //   "none"     no image area at all (FR-004)
-//   a prop id  that Files & media or URL property only (FR-003)
+//   "prop:<id>" that Files & media or URL property only (FR-003); stored
+//              with its prefix because a property's id is made from its
+//              name, and a property called "Cover" has the id cover
+//              (server/cardimage.go)
 // A choice naming a property the database no longer has, or one that can no
 // longer hold an image, is Automatic (FR-009): the server keeps such a value
 // on a view nobody touched, so the browser must not draw it as empty.
@@ -37,11 +40,18 @@ export function cardImageProps(schema: PropDef[]): PropDef[] {
   return schema.filter((p) => p.type === 'files' || p.type === 'url');
 }
 
+/** The stored value that chooses a property. */
+export const cardImagePropValue = (id: string): string => PROP_PREFIX + id;
+const PROP_PREFIX = 'prop:';
+
 /** What the view's stored choice means against this schema: 'auto' when it is
- *  absent, unknown or stale. */
+ *  absent, unknown or stale; otherwise the stored value itself. */
 export function cardImageChoice(stored: unknown, schema: PropDef[]): string {
   if (stored === 'cover' || stored === 'content' || stored === 'none') return stored;
-  if (typeof stored === 'string' && cardImageProps(schema).some((p) => p.id === stored)) return stored;
+  if (typeof stored === 'string' && stored.startsWith(PROP_PREFIX)) {
+    const id = stored.slice(PROP_PREFIX.length);
+    if (cardImageProps(schema).some((p) => p.id === id)) return stored;
+  }
   return 'auto';
 }
 
@@ -67,9 +77,13 @@ function fromCover(cover: string): CardImage | null {
   return { kind: 'image', url: cover };
 }
 
+// The first content image is an image block's address: it is a picture
+// whatever its address ends in (a CDN's "?w=800", an upload with no
+// extension), as the notes list draws it. Only where it points is checked.
 function fromContent(row: CardImageRow): CardImage | null {
   const u = row.firstImage ?? '';
-  return u && drawable(u) ? { kind: 'image', url: u } : null;
+  if (!u) return null;
+  return isStoredFileUrl(u.split(/[?#]/)[0]) || /^https?:\/\/[^\s"'()\\]+$/i.test(u) ? { kind: 'image', url: u } : null;
 }
 
 export function cardImageFor(row: CardImageRow, stored: unknown, schema: PropDef[]): CardImage {
@@ -79,7 +93,7 @@ export function cardImageFor(row: CardImageRow, stored: unknown, schema: PropDef
   if (choice === 'cover') return fromCover(row.cover) ?? placeholder;
   if (choice === 'content') return fromContent(row) ?? placeholder;
   if (choice !== 'auto') {
-    const p = schema.find((d) => d.id === choice)!;
+    const p = schema.find((d) => cardImagePropValue(d.id) === choice)!;
     const url = fromProp(row, p);
     return url ? { kind: 'image', url } : placeholder;
   }

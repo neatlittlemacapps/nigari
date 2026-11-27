@@ -1247,8 +1247,10 @@ removes the lanes. Only a board has one. `get_collection` returns it as
 
 `card_image` says where a gallery's cards take their picture from: `cover`
 (the row's cover only), `content` (the first image in the row's page only),
-`none` (no image area, text-only cards), or the id of a Files & media or URL
-property. `""` goes back to automatic: the first image in a Files & media
+`none` (no image area, text-only cards), or a Files & media or URL property as
+`prop:<id>`. A bare property id is taken too when it is none of those words,
+and stored with the prefix: ids are made from names, so a property called
+"Cover" has the id `cover`, which means the page's cover. `""` goes back to automatic: the first image in a Files & media
 property, then the cover, the icon, the first image in the content. Any other
 property, or a card image on a view that is not a gallery, is refused.
 `get_collection` returns it as `cardImage`; the interface's own save checks the
