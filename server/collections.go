@@ -102,7 +102,11 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 		var viewGroupErr errViewGroup
 		var groupErr errGroupFilter
 		var typeErr errViewType
+		var cardErr errViewCardImage
 		switch {
+		case errors.As(err, &cardErr):
+			httpErrorCode(w, 400, "invalid_view_card_image", err.Error())
+			return
 		case errors.As(err, &typeErr):
 			httpErrorCode(w, 400, "invalid_view_type", err.Error())
 			return

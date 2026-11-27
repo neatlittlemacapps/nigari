@@ -463,6 +463,10 @@ type viewSpec struct {
 	// A grouped table or list draws options with no rows (spec 024), stored
 	// as showEmptyGroups.
 	ShowEmptyGroups *bool `json:"show_empty_groups"`
+	// A gallery's card image (spec 028), stored as cardImage: cover, content,
+	// none, a Files & media or URL property id, or "" for automatic. Checked
+	// by checkViewCardImage, the rule PUT /api/collections applies too.
+	CardImage *string `json:"card_image"`
 }
 
 var validFilterOps = map[string]bool{
@@ -699,6 +703,12 @@ func applyViewSpec(view map[string]any, spec viewSpec, schema []map[string]any) 
 			return fmt.Errorf("sub_group_by: %q is not a property of this database (use the property ids from get_collection)", *spec.SubGroupBy)
 		}
 		view["subGroupBy"] = *spec.SubGroupBy
+	}
+	if spec.CardImage != nil {
+		view["cardImage"] = *spec.CardImage
+	}
+	if err := checkViewCardImage(view, schema, spec.CardImage != nil); err != nil {
+		return err
 	}
 	// Both on every create and update, as normalizeViews does for REST.
 	if err := checkViewQuickFilters(view, schema, spec.QuickFilters != nil); err != nil {

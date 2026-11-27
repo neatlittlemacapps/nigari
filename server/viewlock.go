@@ -189,7 +189,9 @@ func (e errPropertyInLockedView) Error() string {
 }
 
 // viewPropertyRefs are the properties a view uses for what it shows: its
-// filters, sort, grouping, dates, a chart's totals, a table's sub-items.
+// filters, sort, grouping, dates, a chart's totals, a table's sub-items, a
+// gallery's card image (spec 028: cover, content and none are no property id,
+// so they never match a removed one).
 // Layout (hidden, colOrder, colWidths) is left out: a stale id there changes
 // nothing, and the server already drops one from colOrder.
 func viewPropertyRefs(v map[string]any) []string {
@@ -199,7 +201,7 @@ func viewPropertyRefs(v map[string]any) []string {
 			out = append(out, s)
 		}
 	}
-	for _, k := range []string{"groupBy", "subGroupBy", "dateProp", "endDateProp", "aggProp", "subItemProp"} {
+	for _, k := range []string{"groupBy", "subGroupBy", "dateProp", "endDateProp", "aggProp", "subItemProp", "cardImage"} {
 		str(k)
 	}
 	if fs, ok := v["filters"].([]any); ok {
