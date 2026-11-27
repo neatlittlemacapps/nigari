@@ -31,8 +31,8 @@
 
 ## Notes
 
-- Three markers wait for the owner: FR-006 (files & media property now or
-  later), FR-012 (board cards too), FR-013 (image fit and card size).
+- Two markers wait for the owner: FR-012 (board cards too) and FR-013 (image
+  fit and card size). FR-006 was answered: Q1 "B", Files & media built here.
 - The Context section names code (`GalleryView`, `normalizeViews`, the
   `content` column) as this project's specs do: it records what the code graph
   showed, not how to build the feature. The requirements themselves stay free

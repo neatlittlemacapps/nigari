@@ -38,6 +38,14 @@ From the code graph (`codegraph explore` on `GalleryView`, `coverStyle`,
   select, multi-select, status, date, checkbox, checklist, url, person,
   relation, back-relation, rollup, formula and last activity. A `url`
   property can hold a link to an image.
+- **Uploads already exist for documents.** `POST /api/upload` stores a file
+  under `/files/`, and the file index (`files` table, `recordFile`,
+  `scanBlocksForFiles` in `files.go`) ties each file to the page that carries
+  it. That page's read permission decides who may list it (`handleListFiles`
+  checks `canRead` per carrier page). The index learns about files from a
+  page's blocks and its cover. A file held in a property value is not among
+  those today, so it would count as unreferenced and its carrier page would
+  be unknown.
 - **Per-view settings live on the view** (`ViewDef`: grouping, hidden
   properties, column widths …) and are set from the view's Settings menu
   (`ViewSettingsMenu`). The server checks what a view may store in
@@ -46,6 +54,12 @@ From the code graph (`codegraph explore` on `GalleryView`, `coverStyle`,
 - **Only the gallery draws an image.** Board cards and list rows show none.
 - **The wiki** (`views.md`, "gallery") says the top of the card is the row's
   cover, else its icon.
+
+## Clarifications
+
+### Session 2026-11-26
+
+- Q1: Where do card images from a property come from, given that no property type holds a file today? → A: Build a "Files & media" property type in this feature (owner "B"). Turned down: A, URL properties only now with the new type in its own spec later (Claude's recommendation); C, no property choice at all.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -110,10 +124,49 @@ every card follows it, and that a reload keeps the choice.
 
 ---
 
-### User Story 3 - An agent can read and set the same choice (Priority: P2)
+### User Story 3 - A database holds files and images in a property (Priority: P1)
+
+Someone adds a "Files & media" property to a database, for example "Photos"
+on a product list. In a row's cell (table) or on its page they upload one or
+more files, see them as thumbnails (images) or named chips (other files),
+open one, reorder them, and remove one. A gallery set to Automatic, or to
+that property, shows the property's first image on the card.
+
+**Why this priority**: The owner chose to build it in this feature (Q1 "B").
+It is step 1 of the fallback order and the only property the picker can offer
+besides links.
+
+**Independent Test**: Add a Files & media property, upload two images and a
+PDF to one row, check the cell, the row page and the gallery card, remove the
+first image and check the card shows the second.
+
+**Acceptance Scenarios**:
+
+1. **Given** a database, **When** someone adds a property, **Then** "Files &
+   media" is among the types, with an icon of its own.
+2. **Given** a Files & media cell, **When** someone who may edit the row
+   uploads files (picker or drag and drop), **Then** they appear in the cell
+   in the order added and stay after a reload.
+3. **Given** a cell with files, **When** it is shown in a table, **Then** it
+   shows the first files as small thumbnails or chips and a count of the
+   rest, on one line, like other multi-value cells.
+4. **Given** a file in a cell, **When** someone clicks it, **Then** it opens
+   (an image in a preview, another file in a new tab, as a document's file
+   block does).
+5. **Given** a reader who may not edit the row, **When** they open the cell,
+   **Then** they see and open the files but cannot add or remove any.
+6. **Given** a file in a row of a page someone may not read, **When** they
+   ask for the workspace's files, **Then** it is not listed for them (the
+   row page is its carrier, as for a document's files).
+
+---
+
+### User Story 4 - An agent can read and set the same choice (Priority: P2)
 
 An agent arranging a gallery over MCP sets the card image source with the
-same rules the interface uses, and sees it when it reads the view.
+same rules the interface uses, and sees it when it reads the view. It can
+also add a Files & media property, put a file it uploaded into a row's value,
+and read the files back.
 
 **Why this priority**: Agent parity is a principle of the project. A view
 setting the interface can store must be one an agent can store, with the same
@@ -130,6 +183,12 @@ refusal that says why.
 2. **Given** a select property, **When** an agent sets it as the card image
    source, **Then** the request is refused with a message naming the property
    types that are allowed.
+3. **Given** a Files & media property, **When** an agent uploads a file and
+   sets it as a row's value, **Then** the row shows it in every view, as if a
+   person had uploaded it.
+4. **Given** a value naming a file the agent may not reach (another
+   workspace's, or one that does not exist), **When** the agent sets it,
+   **Then** it is refused.
 
 ---
 
@@ -150,6 +209,18 @@ refusal that says why.
   the new first image the next time the rows load, as other row changes do.
 - A reader who may not edit the database sees the images but no Card image
   item.
+- A file removed from a cell: it leaves the cell at once; the stored file
+  is not deleted on the spot, so an undo or a version restore can bring it
+  back (as with a document's files).
+- A row duplicated or made from a template: the copy's cell names the same
+  files.
+- A property changed to another type, or from another type to Files & media:
+  values that cannot be converted are cleared after a confirmation, as for
+  other conversions.
+- An upload too large or of a type the server refuses: the cell says why and
+  keeps what it had.
+- A Files & media property in a filter: "is empty" and "is not empty" only;
+  it cannot be sorted or grouped by, or charted.
 
 ## Requirements *(mandatory)*
 
@@ -168,8 +239,28 @@ refusal that says why.
   from the design system's menu, with an icon of its own, and only to someone
   who may change the view.
 - **FR-006**: The picker MUST list only properties that can hold an image:
-  [NEEDS CLARIFICATION: build a files & media property type in this feature,
-  or only offer url properties now and add the new type in its own feature?].
+  Files & media properties and URL properties (owner, Q1 "B": the new type is
+  built in this feature).
+- **FR-006a**: A database MUST offer a "Files & media" property type that
+  holds an ordered list of uploaded files per row.
+- **FR-006b**: Someone who may edit a row MUST be able to add files (picker
+  and drag and drop), open, reorder and remove them from the row's cell in a
+  table and from the row's page. A reader MUST be able to see and open them
+  only.
+- **FR-006c**: Each view MUST show the property compactly: thumbnails for
+  images and named chips for other files, on one line with a count of the
+  rest in a table, and on cards and list rows as other multi-value properties
+  are shown.
+- **FR-006d**: A file in a property value MUST be in the file index with the
+  row as its carrier page, so the same read rules decide who may see it as
+  for a document's files, and it is not counted as unreferenced.
+- **FR-006e**: Filters on the property MUST offer "is empty" and "is not
+  empty"; sort, grouping and charts MUST NOT offer it.
+- **FR-006f**: An agent MUST be able to add the property over MCP and set,
+  read and clear a row's files with the same checks as a person: only files
+  the credential may reach, in the row's workspace.
+- **FR-006g**: Markdown and HTML export MUST include the property's files as
+  links, as they do for a document's file blocks.
 - **FR-007**: The first image in a page's content MUST be known for every row
   without reading each row's whole content when the gallery loads.
 - **FR-008**: A content or property image MUST fill the card's image area,
@@ -191,6 +282,9 @@ refusal that says why.
 
 - **Card image source** (a setting of a gallery view): Automatic, cover,
   content, none, or a property's id.
+- **Files & media value** (a row's value in such a property): an ordered list
+  of files, each with the stored file's address and the name it was uploaded
+  under.
 - **A page's first content image**: the address of the first image block in
   the page's content, in reading order, kept up to date as the content
   changes.
@@ -207,6 +301,11 @@ refusal that says why.
   most three clicks from the view (Settings, Card image, the property).
 - **SC-004**: An agent can set and read the same choice over MCP, and is
   refused with a reason for a property that cannot hold an image.
+- **SC-005**: A person can add a Files & media property and upload an image
+  to a row in under a minute, and the gallery card shows it without a setting
+  changed.
+- **SC-006**: A file in a property value of a page someone may not read is
+  never listed or served to them (a test of the refusal, REST and MCP).
 
 ## Assumptions
 
@@ -219,5 +318,14 @@ refusal that says why.
   without an icon shows the picture.
 - Rows of a database are pages, so a row's cover, icon and content are the
   same ones its page shows.
-- Lists, calendars, timelines and tables are out of scope: they show no card
-  image today.
+- Lists, calendars, timelines and tables are out of scope for the card
+  image: they show no card image today. They do show a Files & media
+  property's value like any other property (FR-006c).
+- Upload limits (size, allowed types) are the ones document uploads already
+  have.
+- A form view may offer a Files & media field only if its upload can be
+  limited to the form's own row. Otherwise the field is left out of forms in
+  this feature and the plan says why.
+- The new property type is a new concept for the registry
+  (`.specify/memory/surfaces.md`): later features that touch property types,
+  exports or the file index must account for it.
