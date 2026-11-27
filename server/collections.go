@@ -326,7 +326,7 @@ func (s *Server) typeFilters(collectionID string, filters []rowFilter) []rowFilt
 	for _, p := range schema {
 		id, _ := p["id"].(string)
 		switch t, _ := p["type"].(string); t {
-		case "number", "checkbox":
+		case "number", "checkbox", "files":
 			kinds[id] = t
 		}
 	}
@@ -414,6 +414,13 @@ func (f rowFilter) where() (string, []any) {
 		} else {
 			op = "is"
 		}
+	}
+	// A Files & media property asks only empty or not (spec 028). Any other
+	// condition on it is one stored before its type changed: it does not
+	// filter, as an unfinished condition does not, rather than compare the
+	// stored list as text. Agents are refused one (checkFilesFilterOp).
+	if f.Kind == "files" && op != "is_empty" && op != "is_not_empty" {
+		return "", nil
 	}
 	vals := f.vals()
 	// A half-typed relative day ("today-") is not a value yet. Comparing it

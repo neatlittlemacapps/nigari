@@ -143,6 +143,14 @@ func cleanViewState(raw []byte, schema []map[string]any) (map[string]any, error)
 			if op, _ := f["op"].(string); statusGroupOps[op] && checkGroupCondition(schema, "filter", prop, op, filterValues(f)) != nil {
 				continue
 			}
+			// The same for a condition on a property turned into Files &
+			// media since (spec 028): left out, not refusing the save (code
+			// review). The rows query ignores one anyway (rowFilter.where).
+			if op, _ := f["op"].(string); op != "" {
+				if v, _ := f["value"].(string); checkFilesFilterOp(schema, "filter", prop, op, v) != nil {
+					continue
+				}
+			}
 			entry, err := checkViewFilter(f, "filter", has, schema)
 			if err != nil {
 				return nil, err

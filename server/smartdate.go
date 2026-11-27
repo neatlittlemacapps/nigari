@@ -278,7 +278,7 @@ func (s *Server) checkDayValues(collectionID string, sets ...[]rowFilter) error 
 		for _, f := range filters {
 			// Not a day question, but the same place: query_rows and
 			// aggregate run every condition through here before they query.
-			if err := checkFilesFilterOp(schema, "filter", f.Prop, f.Op); err != nil {
+			if err := checkFilesFilterOp(schema, "filter", f.Prop, f.Op, f.Value); err != nil {
 				return err
 			}
 			if !dates[f.Prop] {

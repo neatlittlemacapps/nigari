@@ -335,3 +335,98 @@ func TestChartAndBoardRefuseToGroupByFiles(t *testing.T) {
 		}
 	}
 }
+
+// Code review, PR 1: the ways past the check, each closed.
+
+// A template of a database has no parent (template_of names the database),
+// and its files are copied into every row made from it.
+func TestTemplateFilesAreChecked(t *testing.T) {
+	f := newFilesFixture(t)
+	tpl := f.s.makePage(t, f.ws, f.uid, "", "Visit template", `{}`)
+	f.s.db.Exec(`UPDATE pages SET is_template = 1, template_of = ? WHERE id = ?`, f.db, tpl)
+	rec := requestAs(t, f.s, f.cookie, "PATCH", "/api/pages/"+tpl, `{"propsPatch":{"media":`+filesValue(f.foreign)+`}}`)
+	if rec.Code != 400 || !strings.Contains(rec.Body.String(), "invalid_files_value") {
+		t.Errorf("a template took another workspace's file: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+// A PATCH that moves a row and writes its props is judged by the database it
+// moves to: the old one may have no Files & media property at all.
+func TestMoveAndWriteIsCheckedByTheNewDatabase(t *testing.T) {
+	f := newFilesFixture(t)
+	plain := f.s.makeCollection(t, f.ws, f.uid, "Plain", `[{"id":"name","name":"Name","type":"text"}]`)
+	row := f.s.makeRow(t, f.ws, f.uid, plain, "Elsewhere", `{}`)
+	rec := requestAs(t, f.s, f.cookie, "PATCH", "/api/pages/"+row, `{"parentId":"`+f.db+`","propsPatch":{"media":`+filesValue(f.foreign)+`}}`)
+	if rec.Code != 400 || !strings.Contains(rec.Body.String(), "invalid_files_value") {
+		t.Errorf("a move into the files database carried another workspace's file in: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+// A value written as text, then the property turned into Files & media: the
+// row must not take over the other workspace's file in the index.
+func TestTypeChangeDoesNotTakeOverAnotherWorkspacesFile(t *testing.T) {
+	f := newFilesFixture(t)
+	var before string
+	f.s.db.QueryRow(`SELECT workspace_id FROM files WHERE file_name = ?`, f.foreign).Scan(&before)
+	if _, err := callTool(t, f.s, f.u, "set_properties", `{"page_id":"`+f.row+`","properties":{"note":`+filesValue(f.foreign)+`}}`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := callTool(t, f.s, f.u, "update_schema", `{"page_id":"`+f.db+`","properties":[{"id":"media","name":"Media","type":"files"},{"id":"note","name":"Note","type":"files"}]}`); err != nil {
+		t.Fatal(err)
+	}
+	f.s.reindexPage(f.row)
+	var after, page string
+	f.s.db.QueryRow(`SELECT workspace_id, COALESCE(page_id, '') FROM files WHERE file_name = ?`, f.foreign).Scan(&after, &page)
+	if after != before || page == f.row {
+		t.Errorf("the file's entry moved: workspace %q → %q, carrier %q", before, after, page)
+	}
+}
+
+// A personal view keeps saving when a condition went stale with a type
+// change, and the rows query ignores such a condition rather than compare
+// the list as text. A shared view's save over REST refuses a new one, as
+// set_view does.
+func TestStaleFilesConditionDoesNotBlockOrFilter(t *testing.T) {
+	f := newFilesFixture(t)
+	if _, err := callTool(t, f.s, f.u, "set_properties", `{"page_id":"`+f.row+`","properties":{"media":`+filesValue(f.own)+`}}`); err != nil {
+		t.Fatal(err)
+	}
+	f.s.db.Exec(`UPDATE collections SET views = ? WHERE page_id = ?`, `[{"id":"t","name":"T","type":"table"}]`, f.db)
+	rec := requestAs(t, f.s, f.cookie, "PUT", "/api/collections/"+f.db+"/personal/t", `{"filters":[{"property":"media","op":"contains","value":"x"}],"sort":null}`)
+	if rec.Code != 200 {
+		t.Errorf("a personal view with a stale files condition was refused: %d %s", rec.Code, rec.Body.String())
+	}
+	typed := f.s.typeFilters(f.db, []rowFilter{{Prop: "media", Op: "contains", Value: "nothing-matches"}, {Prop: "media", Op: "is_empty"}})
+	if cond, _ := typed[0].where(); cond != "" {
+		t.Errorf("a stale contains on a files property still filters: %s", cond)
+	}
+	if cond, _ := typed[1].where(); cond == "" {
+		t.Error("is_empty on a files property no longer filters")
+	}
+	rec = requestAs(t, f.s, f.cookie, "PUT", "/api/collections/"+f.db, `{"views":[{"id":"t","name":"T","type":"table","filters":[{"property":"media","op":"contains","value":"x"}]}]}`)
+	if rec.Code != 400 {
+		t.Errorf("REST saved a new contains on a files property: %d %s", rec.Code, rec.Body.String())
+	}
+	if _, err := callTool(t, f.s, f.u, "query_rows", `{"page_id":"`+f.db+`","filter":[{"property":"media","value":"x"}]}`); err == nil {
+		t.Error("query_rows accepted a value with no op (an is) on a files property")
+	}
+}
+
+func TestFileNamesAreBounded(t *testing.T) {
+	f := newFilesFixture(t)
+	for why, name := range map[string]string{
+		"a line break": "a\nb.png",
+		"a tab":        "a\tb.png",
+		"256 letters":  strings.Repeat("a", 256),
+	} {
+		v := `[{"url":"/files/` + f.own + `","name":` + jsonString(name) + `}]`
+		if err := f.s.checkFilesValue(f.ws, json.RawMessage(v)); err == nil {
+			t.Errorf("a name with %s was accepted", why)
+		}
+	}
+	ok := `[{"url":"/files/` + f.own + `","name":` + jsonString(strings.Repeat("é", 255)) + `}]`
+	if err := f.s.checkFilesValue(f.ws, json.RawMessage(ok)); err != nil {
+		t.Errorf("a name of 255 letters was refused: %v", err)
+	}
+}
+

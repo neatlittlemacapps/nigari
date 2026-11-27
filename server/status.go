@@ -626,6 +626,12 @@ func checkViewGroupFilters(schema []map[string]any, view map[string]any, name st
 			if err := checkGroupCondition(schema, fmt.Sprintf("%s, %s %d", name, label, i+1), prop, op, filterValues(f)); err != nil {
 				return err
 			}
+			// Files & media asks only empty or not (spec 028), as set_view
+			// refuses (code review: REST and MCP disagreed).
+			v, _ := f["value"].(string)
+			if err := checkFilesFilterOp(schema, fmt.Sprintf("%s, %s %d", name, label, i+1), prop, op, v); err != nil {
+				return err
+			}
 		}
 		return nil
 	}

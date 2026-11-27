@@ -718,14 +718,22 @@ func (s *Server) handleUpdatePage(w http.ResponseWriter, r *http.Request) {
 	// A Files & media value holds this workspace's uploads only (spec 028, D2),
 	// whether it comes as the whole props or as a patch. Before tx.Begin(), as
 	// the parent check above.
+	// A request that also moves the row is judged by the database it moves to.
+	into := ""
+	if len(body.ParentID) > 0 {
+		var np string
+		if json.Unmarshal(bytes.TrimSpace(body.ParentID), &np) == nil {
+			into = np
+		}
+	}
 	if len(body.Props) > 0 {
-		if err := s.checkRowFilesJSON(id, body.Props); err != nil {
+		if err := s.checkRowFilesJSON(id, into, body.Props); err != nil {
 			httpErrorFrom(w, 400, err)
 			return
 		}
 	}
 	if len(body.PropsPatch) > 0 {
-		if err := s.checkRowFilesJSON(id, body.PropsPatch); err != nil {
+		if err := s.checkRowFilesJSON(id, into, body.PropsPatch); err != nil {
 			httpErrorFrom(w, 400, err)
 			return
 		}
@@ -1037,7 +1045,7 @@ func (s *Server) reindexPage(id string) error {
 	s.db.Exec(`UPDATE pages SET snippet = ?, thumb = ? WHERE id = ?`, sn, th, id)
 	body := extractText([]byte(content))
 	var props, parentID string
-	if s.db.QueryRow(`SELECT props, COALESCE(parent_id, '') FROM pages WHERE id = ?`, id).Scan(&props, &parentID) == nil {
+	if s.db.QueryRow(`SELECT props, COALESCE(parent_id, NULLIF(template_of, ''), '') FROM pages WHERE id = ?`, id).Scan(&props, &parentID) == nil {
 		body += " " + extractPropsText([]byte(props))
 		// The uploads its Files & media values hold (spec 028, D3).
 		s.recordRowFiles(id, parentID, props)

@@ -127,7 +127,7 @@ func (s *Server) mcpSetProperties(pageID string, properties json.RawMessage, act
 	s.normalizePropValues(pageID, patch)
 	// A Files & media value holds this workspace's uploads only (spec 028, D2).
 	// Before tx.Begin() for the same reason as above.
-	if err := s.checkRowFiles(pageID, patch); err != nil {
+	if err := s.checkRowFiles(pageID, "", patch); err != nil {
 		return "", err
 	}
 

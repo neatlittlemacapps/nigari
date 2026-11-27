@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 // A Files & media property (spec 028) holds a list of uploads to this
@@ -89,10 +91,22 @@ func parseFilesValue(raw json.RawMessage) ([]filesItem, error) {
 		if err := dec.Decode(&it); err != nil {
 			return nil, fmt.Errorf("file %d is not {\"url\": \"/files/…\", \"name\": \"…\"}", i+1)
 		}
+		// A name is shown, written into the Markdown export's table and used
+		// as a download's name: a newline would break the table, and a name of
+		// megabytes is not a name. Claude's default: 255 characters, as most
+		// file systems allow.
+		if utf8.RuneCountInString(it.Name) > maxFileNameLen {
+			return nil, fmt.Errorf("file %d: the name is longer than %d characters", i+1, maxFileNameLen)
+		}
+		if strings.IndexFunc(it.Name, unicode.IsControl) >= 0 {
+			return nil, fmt.Errorf("file %d: the name holds a line break or another control character", i+1)
+		}
 		items = append(items, it)
 	}
 	return items, nil
 }
+
+const maxFileNameLen = 255
 
 // storedFileName gives the stored name behind a /files/ address, or "" when the
 // address is not a plain upload of this instance.
@@ -167,15 +181,23 @@ func (s *Server) checkFilesProps(collectionID, workspaceID string, props map[str
 // (BenchmarkStoragePropertyWriteBurst, p=0.004, 6 runs); with the check off
 // the difference was gone. A committed schema read a moment early is all it
 // needs: a type change racing the write is not a gate the check can be.
-func (s *Server) checkRowFiles(rowID string, props map[string]json.RawMessage) error {
+//
+// The database is the row's parent, or for a template (parent_id NULL) the
+// database it is a template of: a template's files are copied into every row
+// made from it (code review). `into`, when not empty, is the database a
+// request moves the row to while it writes, whose schema is the one the
+// values land in (code review: a move and a write in one PATCH were judged
+// by the old database's schema).
+func (s *Server) checkRowFiles(rowID, into string, props map[string]json.RawMessage) error {
 	if len(props) == 0 {
 		return nil
 	}
 	var ws, schemaJSON string
 	if err := s.rdb.QueryRow(`SELECT p.workspace_id,
 			CASE WHEN c.schema LIKE '%"files"%' THEN c.schema ELSE '' END
-		FROM pages p LEFT JOIN collections c ON c.page_id = p.parent_id
-		WHERE p.id = ?`, rowID).Scan(&ws, &schemaJSON); err != nil || schemaJSON == "" {
+		FROM pages p LEFT JOIN collections c
+			ON c.page_id = COALESCE(NULLIF(?, ''), p.parent_id, NULLIF(p.template_of, ''))
+		WHERE p.id = ?`, into, rowID).Scan(&ws, &schemaJSON); err != nil || schemaJSON == "" {
 		return nil // no files property, or the caller reports the missing page
 	}
 	var schema []map[string]any
@@ -198,12 +220,12 @@ func (s *Server) checkRowFiles(rowID string, props map[string]json.RawMessage) e
 
 // checkRowFilesJSON is checkRowFiles for props sent as raw JSON. Anything
 // that is not an object is left to the caller's own error.
-func (s *Server) checkRowFilesJSON(rowID string, raw json.RawMessage) error {
+func (s *Server) checkRowFilesJSON(rowID, into string, raw json.RawMessage) error {
 	var props map[string]json.RawMessage
 	if json.Unmarshal(raw, &props) != nil {
 		return nil
 	}
-	return s.checkRowFiles(rowID, props)
+	return s.checkRowFiles(rowID, into, props)
 }
 
 // recordRowFiles records the row as the carrier of every file its Files &
@@ -237,10 +259,23 @@ func (s *Server) recordRowFiles(rowID, collectionID, props string) []string {
 			continue // a value written before the type changed; not ours
 		}
 		for _, it := range items {
-			if name := storedFileName(it.URL); name != "" {
-				s.recordFile(name, rowID, it.Name)
-				out = append(out, name)
+			name := storedFileName(it.URL)
+			if name == "" {
+				continue
 			}
+			// A value that reached the row without the check (written under
+			// another type, then the type changed; or moved here from another
+			// database) may name another workspace's upload. Recording the
+			// row then would move the file's entry into this workspace: gone
+			// from its owner's file list, and the owner's own writes of it
+			// refused (code review). The entry stays its owner's.
+			var owner sql.NullString
+			if s.db.QueryRow(`SELECT workspace_id FROM files WHERE file_name = ?`, name).Scan(&owner) == nil &&
+				owner.Valid && owner.String != "" && owner.String != s.pageWorkspace(rowID) {
+				continue
+			}
+			s.recordFile(name, rowID, it.Name)
+			out = append(out, name)
 		}
 	}
 	return out
@@ -251,7 +286,12 @@ func (s *Server) recordRowFiles(rowID, collectionID, props string) []string {
 // name or "gt" a list compare the stored JSON as text: the answer would look
 // like a filter and mean nothing. An empty op is is_not_empty here, as
 // rowFilter.where reads it without a value.
-func checkFilesFilterOp(schema []map[string]any, label, prop, op string) error {
+func checkFilesFilterOp(schema []map[string]any, label, prop, op string, value ...string) error {
+	// An empty op with a value runs as "is" (rowFilter.where), so it is
+	// judged as one (code review).
+	if op == "" && len(value) > 0 && value[0] != "" {
+		op = "is"
+	}
 	for _, p := range schema {
 		if id, _ := p["id"].(string); id != prop {
 			continue

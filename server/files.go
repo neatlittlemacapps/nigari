@@ -157,8 +157,8 @@ func (s *Server) migrateFileIndex() error {
 	// Rows whose Files & media values hold uploads (spec 028). Collected first,
 	// like the pages above: recordRowFiles queries, and the cursor holds the
 	// one connection.
-	rowRows, err := s.db.Query(`SELECT id, props, parent_id FROM pages
-		WHERE parent_id IS NOT NULL AND props LIKE '%/files/%'`)
+	rowRows, err := s.db.Query(`SELECT id, props, COALESCE(parent_id, template_of) FROM pages
+		WHERE (parent_id IS NOT NULL OR template_of != '') AND props LIKE '%/files/%'`)
 	if err != nil {
 		return err
 	}

@@ -494,7 +494,8 @@ func checkViewFilter(f map[string]any, label string, has func(string) bool, sche
 	if err := checkGroupCondition(schema, label, prop, op, filterValues(f)); err != nil {
 		return nil, err
 	}
-	if err := checkFilesFilterOp(schema, label, prop, op); err != nil {
+	v, _ := f["value"].(string)
+	if err := checkFilesFilterOp(schema, label, prop, op, v); err != nil {
 		return nil, err
 	}
 	entry := map[string]any{"property": prop, "op": op}
