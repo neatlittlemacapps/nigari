@@ -89,7 +89,7 @@
       ],
       "takenAt": {
         "web/src/components/Sidebar.tsx": "3c862f899846",
-        "web/src/components/Editor.tsx": "708a64d3df14",
+        "web/src/components/Editor.tsx": "906c0b702827",
         "web/src/App.tsx": "95623b97e39c",
         "web/src/tokens.css": "8d21b71b2e0e",
         "web/src/theme.css": "3feaedbcede5"
@@ -154,7 +154,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/Editor.tsx": "708a64d3df14",
+        "web/src/components/Editor.tsx": "906c0b702827",
         "web/src/tokens.css": "8d21b71b2e0e",
         "web/src/theme.css": "3feaedbcede5"
       }
@@ -700,7 +700,7 @@
       ],
       "takenAt": {
         "server/public.go": "cbfeead97f66",
-        "web/src/components/Editor.tsx": "708a64d3df14",
+        "web/src/components/Editor.tsx": "906c0b702827",
         "web/src/tokens.css": "8d21b71b2e0e",
         "web/src/theme.css": "3feaedbcede5"
       }
@@ -839,7 +839,7 @@
       ],
       "takenAt": {
         "web/src/components/AgentConnect.tsx": "f782d67997ca",
-        "server/mcp.go": "45435c9a4225",
+        "server/mcp.go": "fb941df45c2f",
         "web/src/tokens.css": "8d21b71b2e0e",
         "web/src/theme.css": "3feaedbcede5"
       },
