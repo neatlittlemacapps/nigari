@@ -7,6 +7,25 @@ entries are not edited away.
 
 ---
 
+## 2026-11-27 — A bug found while working on an epic belongs to that epic
+
+- **Why.** Spec 028 (#980) turned up bugs as it went: #1117 and #1118 in
+  PR 1, #1120 in PR 2. Under the 2026-10-30 rule each waited in the general
+  queue for its own turn, though it was found in, and understood within, the
+  epic's work. The owner asked for #1117 and #1118 to be fixed in PR 1, then
+  for #1120 to be fixed at once: "No, fix here. I suggest bugs appearing when
+  fixing a specific bug epic should be part of the epic".
+- **Decided (owner):** a bug found while working on an epic gets its issue
+  at once as a sub-issue of the epic and is fixed within the epic: in the
+  pull request that found it or the epic's next one. It counts toward "one
+  bug for each feature" (2026-11-26). Bugs found outside an epic keep the
+  2026-10-30 rule (own issue, own small pull request, by Priority).
+- **Turned down:** keeping every bug in the general queue (the 2026-10-30
+  rule alone), which left a bug the epic had just found waiting behind
+  unrelated work.
+
+---
+
 ## 2026-11-27 — The files check before every row write reads from the read pool
 
 - **Why.** Spec 028's Files & media value is checked on every door that

@@ -167,11 +167,10 @@ The item reads the count of fields shown over the total, `4 of 7`. Open
 shortened.
 
 Hiding is per view, so hiding a property on the form leaves the table untouched,
-and a field you hide is not sent to the visitor's browser at all. The server does
-not re-check it when an entry arrives, though: a value posted for a hidden
-property by hand is still stored. **Hiding shortens the form; it does not seal
-the property off.** For a field nobody outside may ever touch, that means a
-hidden column is a tidiness measure, not a lock.
+and a field you hide is not sent to the visitor's browser at all. The server
+checks it again when an entry arrives: a value posted for a hidden property by
+hand is dropped, so a hidden field stays the team's to fill in. (Before
+November 2026 such a value was stored; [#1120](https://github.com/neatlittlemacapps/nigari/issues/1120).)
 
 **Properties** on the same bar opens the schema editor, for adding or retyping a
 property ([Collections](collections.md)). A form view has no filter, no sort and
@@ -279,6 +278,7 @@ silently and the rest of the entry is saved.
 | Title | required; blank is rejected outright, and the visitor sees *Sending failed* |
 | Title length | at most 2000 characters, otherwise rejected |
 | Unknown property | dropped |
+| A property the form hides | dropped, even if the browser sent it |
 | A property that cannot be filled in | dropped, even if the browser sent it |
 | `text`, `person`, `date` | must be text; trimmed; empty is dropped; longer than 4000 characters is cut. A date is not parsed: the browser's picker sends a calendar day, but any text is accepted |
 | `select` | must be one of that property's option ids; anything else dropped |
@@ -296,7 +296,7 @@ three seconds. Over it, the visitor reads that too many files were sent and to
 wait a minute. What may wait to be sent is capped too: 100 files and 1 GiB per
 database, 4 GiB for the whole instance; past that, the form takes no more files
 for now. A form whose database shows no `files` field takes no files at all, and
-a `files` field the form hides takes none either.
+a `files` field the form hides takes none either, like every hidden field.
 
 That address is the visitor's only when the instance is told to trust its proxy's
 headers. Without that, everybody arriving through the same reverse proxy or
