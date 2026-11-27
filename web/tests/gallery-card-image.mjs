@@ -9,7 +9,8 @@ import { eventually, withFixture } from './fixture.mjs';
 //   FR-004) and kept over a reload;
 // - a picture that fails to load shows the panel, not a broken image;
 // - a picture fills the card's top, cropped (FR-008);
-// - at phone width the same menu is a sheet and the choice still applies.
+// - at phone width the same menu is a sheet and the choice still applies;
+// - Tab reaches a card's title and Enter opens its row (#1125).
 
 // A 1×1 PNG.
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
@@ -142,4 +143,17 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
   await pick('Automatic');
   await eventually(async () => (await stored()) === undefined);
   assert.equal(await shows('Content only'), body, 'Automatic at phone width');
+
+  // ---- the keyboard opens a card (#1125) ----
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.locator('.collection-toolbar').getByRole('button', { name: 'Settings', exact: true }).focus();
+  let reached = '';
+  for (let i = 0; i < 12 && !reached; i++) {
+    await page.keyboard.press('Tab');
+    reached = await page.evaluate(() => (document.activeElement?.matches('.gallery-title-link') ? document.activeElement.textContent : ''));
+  }
+  assert.ok(reached, 'Tab never reaches a gallery card');
+  const opened = (await api('GET', `${path}/rows`)).rows.find((r) => r.title === reached);
+  await page.keyboard.press('Enter');
+  await page.waitForURL(`**/p/${opened.id}`);
 });

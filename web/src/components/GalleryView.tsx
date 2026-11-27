@@ -69,7 +69,28 @@ export default function GalleryView({
           <div className="gallery-body">
             <div className="gallery-title">
               {r.icon && image.kind !== 'icon' ? <span className="inline-icon"><PageIcon icon={r.icon} size={14} /> </span> : null}
-              {r.title || t('Untitled')}
+              {/* The title is a link: the card's own click is the pointer's
+                  way in, and a div is no Tab stop, so a keyboard could not
+                  open a row from a gallery at all (#1125). A link, not a
+                  button: Enter opens it, ⌘/Ctrl+Enter a new tab, a screen
+                  reader names it by the title, and the card's chips are not
+                  nested in a control. Its href is the row's own address. */}
+              <a
+                className="gallery-title-link"
+                href={`/p/${r.id}`}
+                draggable={false}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  openRow(e, r.id);
+                }}
+                onAuxClick={(e) => {
+                  e.stopPropagation();
+                  openPageAux(e, r.id, { onNavigate, onOpenInNewTab });
+                }}
+              >
+                {r.title || t('Untitled')}
+              </a>
             </div>
             {!!r.tags?.length && (
               <div className="db-row-tags card-tags">
