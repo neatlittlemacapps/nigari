@@ -335,3 +335,36 @@ func TestSharedFileFoundWhenTheIndexNamesAnotherCarrier(t *testing.T) {
 		t.Error("the shared row's file was refused because the index names the private copy")
 	}
 }
+
+// A public form fills only the fields it shows (#1120). The config always
+// left hidden fields out; the submit accepted them anyway, so anyone with the
+// link could set a hidden "Reviewed" box by sending it directly.
+func TestPublicFormIgnoresHiddenFieldsOfEveryType(t *testing.T) {
+	f := newFormFixture(t)
+	f.s.db.Exec(`UPDATE collections SET schema = ? WHERE page_id = ?`, `[
+		{"id":"where","name":"Where","type":"text"},
+		{"id":"note","name":"Note","type":"text"},
+		{"id":"prio","name":"Priority","type":"select","options":[{"id":"high","name":"High"}]},
+		{"id":"tags","name":"Tags","type":"multiselect","options":[{"id":"x","name":"X"}]},
+		{"id":"reviewed","name":"Reviewed","type":"checkbox"},
+		{"id":"cost","name":"Cost","type":"number"},
+		{"id":"due","name":"Due","type":"date"}]`, f.db)
+	f.s.db.Exec(`UPDATE collections SET views = ? WHERE page_id = ?`,
+		`[{"id":"form","name":"Form","type":"form","hidden":["note","prio","tags","reviewed","cost","due"]}]`, f.db)
+	rec := f.submit(t, f.form, "Sneaky", `{"where":"Gate 3","note":"n","prio":"high","tags":["x"],"reviewed":true,"cost":5,"due":"2027-01-01"}`)
+	if rec.Code != 200 {
+		t.Fatalf("submit: %d %s", rec.Code, rec.Body.String())
+	}
+	var raw string
+	f.s.db.QueryRow(`SELECT props FROM pages WHERE parent_id = ? AND title = 'Sneaky'`, f.db).Scan(&raw)
+	var props map[string]any
+	json.Unmarshal([]byte(raw), &props)
+	if props["where"] != "Gate 3" {
+		t.Errorf("the shown field was not saved: %s", raw)
+	}
+	for _, id := range []string{"note", "prio", "tags", "reviewed", "cost", "due"} {
+		if _, ok := props[id]; ok {
+			t.Errorf("the hidden %s field was filled: %s", id, raw)
+		}
+	}
+}

@@ -179,10 +179,11 @@ func formFileName(raw string) string {
 	return name
 }
 
-// formHiddenFiles lists the files fields the form view hides.
-func (s *Server) formHiddenFiles(colID string) map[string]bool {
-	var schemaJSON, viewsJSON string
-	if s.db.QueryRow(`SELECT schema, views FROM collections WHERE page_id = ?`, colID).Scan(&schemaJSON, &viewsJSON) != nil {
+// formHidden lists the properties the form view hides. The config leaves
+// them out of the form, and the submission refuses to fill them (#1120).
+func (s *Server) formHidden(colID string) map[string]bool {
+	var viewsJSON string
+	if s.db.QueryRow(`SELECT views FROM collections WHERE page_id = ?`, colID).Scan(&viewsJSON) != nil {
 		return nil
 	}
 	var views []formView
@@ -196,13 +197,7 @@ func (s *Server) formHiddenFiles(colID string) map[string]bool {
 			break
 		}
 	}
-	out := map[string]bool{}
-	for _, p := range parseFormSchema(schemaJSON) {
-		if p.Type == "files" && hidden[p.ID] {
-			out[p.ID] = true
-		}
-	}
-	return out
+	return hidden
 }
 
 // errUnclaimed is a submission naming an upload it cannot claim: another

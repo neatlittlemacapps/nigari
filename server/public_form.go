@@ -214,23 +214,21 @@ func (s *Server) handlePublicFormSubmit(w http.ResponseWriter, r *http.Request) 
 	for _, p := range parseFormSchema(schemaJSON) {
 		byID[p.ID] = p
 	}
-	// A files field the form hides takes nothing: an upload of the form's
-	// visible files field could otherwise be claimed into a hidden one (code
-	// review). Other hidden fields keep their older leniency (#1120).
-	hiddenFiles := s.formHiddenFiles(colID)
+	// A field the form hides takes nothing. The config leaves hidden fields
+	// out, but the submit used to accept any fillable property, so anyone
+	// with the link could set a hidden "Reviewed" box or a "Priority" the
+	// owner meant to set themselves by sending it directly (#1120).
+	hidden := s.formHidden(colID)
 	clean := map[string]any{}
 	var claimed []formClaim
 	for id, v := range body.Props {
 		p, ok := byID[id]
-		if !ok || !formFillable(p.Type) {
+		if !ok || !formFillable(p.Type) || hidden[id] {
 			continue
 		}
 		// Files are not dropped quietly like a bad option: a file the visitor
 		// added and the row does not get is a loss they would not notice.
 		if p.Type == "files" {
-			if hiddenFiles[id] {
-				continue
-			}
 			items, names, err := s.claimFormFiles(colID, v)
 			if err != nil {
 				httpErrorCode(w, 400, "form_upload_unclaimed", "A file of this form is no longer waiting to be sent. Add it again, then send the form.")
