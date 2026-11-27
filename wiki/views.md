@@ -26,7 +26,7 @@ filter and sort](#your-own-filter-and-sort)).
 | `table` | rows and columns, one column per property | nothing |
 | `board` | cards in columns | a select, multi-select or relation to group by |
 | `list` | one quiet line per row | nothing |
-| `gallery` | cards with the row's cover image | nothing |
+| `gallery` | cards with a picture per row | nothing (where the picture comes from is optional) |
 | `calendar` | a month grid, rows on their day | a date property |
 | `timeline` | bars across a day grid | a start date; an end date is optional |
 | `form` | fields that create a row when submitted | nothing |
@@ -343,11 +343,27 @@ takes seconds to draw again when grouping is turned on or off (#994).
 
 ### `gallery`
 
-A responsive grid of cards, each at least 200 px wide. The top of the card is the
-row's **cover**: the image or gradient set on the row itself. A row without one
-shows its icon on a plain panel instead.
+A responsive grid of cards, each at least 200 px wide. The top of the card is a
+picture. Where it comes from is the gallery's **Card image** setting, in its
+**Settings** menu:
 
-Below the cover: the title, the tags, and the visible properties. Select and
+| Card image | The card shows |
+| --- | --- |
+| **Automatic** (the default) | the first image in a Files & media property, else the row's cover, else its icon, else the first image in the row's page, else a plain panel |
+| **Page cover** | the cover only |
+| **Page content** | the first image in the row's page only |
+| a Files & media or URL property | that property's first image only |
+| **No image** | nothing: the cards are text only |
+
+Any choice but Automatic uses that one source: a row with nothing there gets the
+plain panel, not a picture from somewhere else. A picture fills the card's top,
+cropped to it, as a cover does. A URL property counts when its address ends in
+an image's extension (`.png`, `.jpg`, `.webp` and the like). A property chosen
+earlier that has since been deleted or changed into another type is treated as
+Automatic. Only someone who may change the views sees the setting, and an
+embed's gallery in a document keeps its own choice.
+
+Below the picture: the title, the tags, and the visible properties. Select and
 multi-select are editable straight on the card and are shown even when they are
 empty, so you can set one. Every other property is read-only here and is left off
 entirely when it has no value, which is why gallery cards are different heights,

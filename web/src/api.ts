@@ -512,6 +512,8 @@ export const api = {
         position: number;
         props: Record<string, unknown>;
         tags?: string[];
+        /** The first image in the row's content, '' if none (spec 028). */
+        firstImage?: string;
       }[];
       total: number;
       offset: number;

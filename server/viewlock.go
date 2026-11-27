@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 // The views lock (spec 013, US2, research R3). A database's views can be
@@ -189,7 +190,8 @@ func (e errPropertyInLockedView) Error() string {
 }
 
 // viewPropertyRefs are the properties a view uses for what it shows: its
-// filters, sort, grouping, dates, a chart's totals, a table's sub-items.
+// filters, sort, grouping, dates, a chart's totals, a table's sub-items, a
+// gallery's card image.
 // Layout (hidden, colOrder, colWidths) is left out: a stale id there changes
 // nothing, and the server already drops one from colOrder.
 func viewPropertyRefs(v map[string]any) []string {
@@ -201,6 +203,11 @@ func viewPropertyRefs(v map[string]any) []string {
 	}
 	for _, k := range []string{"groupBy", "subGroupBy", "dateProp", "endDateProp", "aggProp", "subItemProp"} {
 		str(k)
+	}
+	// A gallery's card image names a property only with its prefix (spec 028,
+	// server/cardimage.go); cover, content and none name none.
+	if c, _ := v["cardImage"].(string); strings.HasPrefix(c, "prop:") {
+		out = append(out, strings.TrimPrefix(c, "prop:"))
 	}
 	if fs, ok := v["filters"].([]any); ok {
 		for _, f := range fs {

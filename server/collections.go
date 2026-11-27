@@ -102,7 +102,11 @@ func (s *Server) handlePutCollection(w http.ResponseWriter, r *http.Request) {
 		var viewGroupErr errViewGroup
 		var groupErr errGroupFilter
 		var typeErr errViewType
+		var cardErr errViewCardImage
 		switch {
+		case errors.As(err, &cardErr):
+			httpErrorCode(w, 400, "invalid_view_card_image", err.Error())
+			return
 		case errors.As(err, &typeErr):
 			httpErrorCode(w, 400, "invalid_view_type", err.Error())
 			return
@@ -616,16 +620,20 @@ func (s *Server) collectionRowsQuery(ctx context.Context, u *user, colID string,
 	// The total rides along as a window count. It used to be a COUNT(*) of
 	// its own, which scanned and filtered every row a second time: the sort
 	// already visits all of them, so counting there is nearly free (#79).
-	rows, err := s.rdb.QueryContext(ctx, `SELECT id, title, icon, cover, position, props, tags, COUNT(*) OVER () FROM pages WHERE `+whereSQL+` ORDER BY `+orderSQL+` LIMIT ? OFFSET ?`, append(append(args, orderArgs...), limit, offset)...)
+	// thumb is the first image in the row's content, in reading order, kept
+	// by reindexPage for the notes list. A gallery card falls back to it
+	// (spec 028, D4): stored on every content write, so no row's document is
+	// read here.
+	rows, err := s.rdb.QueryContext(ctx, `SELECT id, title, icon, cover, position, props, tags, thumb, COUNT(*) OVER () FROM pages WHERE `+whereSQL+` ORDER BY `+orderSQL+` LIMIT ? OFFSET ?`, append(append(args, orderArgs...), limit, offset)...)
 	if err != nil {
 		return nil, 0, readErr(ctx, err)
 	}
 	defer rows.Close()
 	list = []map[string]any{}
 	for rows.Next() {
-		var id, title, icon, cover, props, tags string
+		var id, title, icon, cover, props, tags, thumb string
 		var position float64
-		if rows.Scan(&id, &title, &icon, &cover, &position, &props, &tags, &total) != nil {
+		if rows.Scan(&id, &title, &icon, &cover, &position, &props, &tags, &thumb, &total) != nil {
 			continue
 		}
 		var pm map[string]any
@@ -638,6 +646,7 @@ func (s *Server) collectionRowsQuery(ctx context.Context, u *user, colID string,
 		}
 		list = append(list, map[string]any{
 			"id": id, "title": title, "icon": icon, "cover": cover, "position": position, "props": pm, "tags": tagList,
+			"firstImage": thumb,
 		})
 	}
 	// A cursor stopped by the deadline ends the loop like a finished one; only

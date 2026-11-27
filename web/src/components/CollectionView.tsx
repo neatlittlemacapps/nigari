@@ -470,7 +470,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         sort: serverSort,
         today: todayStr,
       });
-      if (epoch !== epochRef.current) return; // inzwischen neu geladen
+      if (epoch !== epochRef.current) return; // reloaded in the meantime
       const mapped: Row[] = res.rows.map((r) => ({
         id: r.id,
         title: r.title,
@@ -479,6 +479,7 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         props: r.props || {},
         position: r.position,
         tags: r.tags ?? [],
+        firstImage: r.firstImage ?? '',
       }));
       acc = [...acc, ...mapped];
       setTotal(res.total);
@@ -1343,6 +1344,8 @@ export default function CollectionView({ collectionId, pages, tagColors, onNavig
         <GalleryView
           rows={listedRows}
           schema={visibleSchema}
+          imageSchema={schema}
+          cardImage={view.cardImage}
           emptyLabel={emptyLabel}
           tagColors={tagColors}
           onNavigate={onNavigate}

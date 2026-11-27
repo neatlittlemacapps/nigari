@@ -3,6 +3,7 @@ import { SlidersHorizontal } from 'lucide-react';
 import { t } from '../i18n';
 import { CENTER_PEEK_SHIPPED } from '../peek';
 import { MAX_QUICK_FILTERS, quickFilterProps, subGroupProps } from '../quickFilters';
+import { cardImageChoice, cardImagePropValue, cardImageProps } from '../cardImage';
 import { isSingleOptionType, type PropDef, type ViewDef } from '../types';
 import { Button } from '../ui/Button';
 import { Menu, MenuCheckboxItem, MenuItem, MenuLabel, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuSubmenu } from '../ui/Menu';
@@ -118,6 +119,13 @@ export default function ViewSettingsMenu({
   // property (CollectionView's TimelineView call), so None would be a value
   // the view is not using: the item says which property that is.
   const timelineStart = view.dateProp || dateProps[0]?.id;
+  // A gallery's card image (spec 028): Automatic, the page's cover or
+  // content, a Files & media or URL property, None. A stored choice that has
+  // gone stale reads as Automatic, as the cards draw it (cardImage.ts).
+  const imageProps = cardImageProps(schema);
+  const cardChoice = cardImageChoice(view.cardImage, schema);
+  const cardChoiceLabel =
+    cardChoice === 'auto' ? t('Automatic') : cardChoice === 'cover' ? t('Page cover') : cardChoice === 'content' ? t('Page content') : cardChoice === 'none' ? t('No image') : imageProps.find((p) => cardImagePropValue(p.id) === cardChoice)?.name;
   // A radio group over properties, with "none" first: the timeline's end date
   // and the table's sub-items are optional, and the old <select>s offered
   // "(none)" for the start date too. Its label is passed in rather than one
@@ -197,6 +205,21 @@ export default function ViewSettingsMenu({
           {view.type !== 'form' && (
             <MenuSubmenu fn="openRowsIn" label={t('Open rows in')} value={openInLabel(view)}>
               <ViewOpenMenu view={view} onChange={(openIn) => onChange({ openIn })} bare />
+            </MenuSubmenu>
+          )}
+          {view.type === 'gallery' && (
+            <MenuSubmenu fn="cardImage" label={t('Card image')} value={cardChoiceLabel}>
+              <MenuRadioGroup value={cardChoice} onValueChange={(v) => onChange({ cardImage: v === 'auto' ? undefined : v })}>
+                <MenuRadioItem value="auto">{t('Automatic')}</MenuRadioItem>
+                <MenuRadioItem value="cover">{t('Page cover')}</MenuRadioItem>
+                <MenuRadioItem value="content">{t('Page content')}</MenuRadioItem>
+                {imageProps.map((p) => (
+                  <MenuRadioItem key={p.id} value={cardImagePropValue(p.id)}>
+                    {p.name}
+                  </MenuRadioItem>
+                ))}
+                <MenuRadioItem value="none">{t('No image')}</MenuRadioItem>
+              </MenuRadioGroup>
             </MenuSubmenu>
           )}
           {/* A calendar's date is its start: one item, named for what it is.

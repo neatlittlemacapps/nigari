@@ -5093,6 +5093,22 @@ body.is-col-resizing {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+/* A gallery card's title is its link (#1125): it reads as the title, not as
+   a link, since the whole card opens the row too. */
+.gallery-title-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* A card's picture fills its area, cropped as a cover was (spec 028). */
+.gallery-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .gallery-cover-icon {

@@ -1455,5 +1455,11 @@
   "Last activity": "Letzte Aktivität",
   "Formula": "Formel",
   "Too many files were sent from here. Wait a minute, then try again.": "Von hier wurden zu viele Dateien gesendet. Warte eine Minute und versuche es dann erneut.",
-  "A file of this form is no longer waiting to be sent. Remove it, add it again, then send the form.": "Eine Datei dieses Formulars wartet nicht mehr auf das Senden. Entferne sie, füge sie erneut hinzu und sende dann das Formular."
+  "A file of this form is no longer waiting to be sent. Remove it, add it again, then send the form.": "Eine Datei dieses Formulars wartet nicht mehr auf das Senden. Entferne sie, füge sie erneut hinzu und sende dann das Formular.",
+  "Card image": "Kartenbild",
+  "Page cover": "Seitencover",
+  "Page content": "Seiteninhalt",
+  "No image": "Kein Bild",
+  "This card image cannot be used: a gallery takes its card images from the page cover, the page content, or a Files & media or URL property, so the view was not saved.": "Dieses Kartenbild kann nicht verwendet werden: Eine Galerie nimmt ihre Kartenbilder aus dem Seitencover, dem Seiteninhalt oder einer Eigenschaft vom Typ Dateien und Medien oder URL. Die Ansicht wurde deshalb nicht gespeichert.",
+  "Add a tag": "Tag hinzufügen"
 }

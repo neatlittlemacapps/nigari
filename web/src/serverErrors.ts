@@ -97,6 +97,10 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
     case 'invalid_view_sub_group':
       return t("A board's lanes need a select, person, relation, formula or rollup property other than its columns.");
 
+    // ---- a gallery's card image (spec 028) ----
+    case 'invalid_view_card_image':
+      return t('This card image cannot be used: a gallery takes its card images from the page cover, the page content, or a Files & media or URL property, so the view was not saved.');
+
     // ---- a table's or list's grouping (spec 024) ----
     case 'invalid_view_group':
       return t('This grouping cannot be used: a table or list groups by a select, multi-select, status, relation, person, checkbox, date, formula or rollup, so the view was not saved.');

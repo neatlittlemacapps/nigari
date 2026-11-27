@@ -106,6 +106,10 @@ var parityActs = []parityAct{
 		"set_view", `{"page_id":"%s","view_id":"v-parity","quick_filters":["status"]}`, true},
 	{"set a sub-group", "PUT", "/api/collections/%s", `{"views":[{"id":"v-parity","name":"To do","type":"table","filters":[{"property":"status","op":"is","value":"todo"}]},{"id":"v-board","name":"Board","type":"board","groupBy":"status","subGroupBy":"owner"}]}`,
 		"set_view", `{"page_id":"%s","type":"board","name":"Board","group_by":"status","sub_group_by":"owner"}`, true},
+	// A gallery's card image (spec 028): one rule (checkViewCardImage) on
+	// both doors, behind the database's write gate.
+	{"set a card image", "PUT", "/api/collections/%s", `{"views":[{"id":"v-parity","name":"To do","type":"table","filters":[{"property":"status","op":"is","value":"todo"}]},{"id":"v-gallery","name":"Gallery","type":"gallery","cardImage":"cover"}]}`,
+		"set_view", `{"page_id":"%s","type":"gallery","name":"Gallery","card_image":"cover"}`, true},
 	// A table grouped by a property (spec 024): one rule
 	// (checkViewGrouping) on both doors, behind the database's write gate.
 	{"group a table", "PUT", "/api/collections/%s", `{"views":[{"id":"v-parity","name":"To do","type":"table","grouped":true,"groupBy":"status","filters":[{"property":"status","op":"is","value":"todo"}]}]}`,

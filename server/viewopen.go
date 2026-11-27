@@ -155,6 +155,9 @@ func normalizeViews(raw []byte, schema []map[string]any, stored []map[string]any
 			{"subGroupBy", func() error {
 				return checkViewSubGroup(view, schema, changedKey("subGroupBy"), changedKey("groupBy"))
 			}, func(m string) error { return errViewSubGroup{m} }},
+			// A gallery's card image (spec 028): strict only when this save
+			// changes it, so a property deleted since is kept as Automatic.
+			{"cardImage", func() error { return checkViewCardImage(view, schema, changedKey("cardImage")) }, func(m string) error { return errViewCardImage{m} }},
 		} {
 			moved, err := normalizeKey(view, k.key, k.check)
 			if err != nil {
