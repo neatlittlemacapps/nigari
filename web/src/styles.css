@@ -11240,3 +11240,10 @@ body:has(.live-down) .update-banner {
   gap: var(--space-200);
   min-width: 0;
 }
+
+/* The cell's button fills the cell, so an empty cell is as easy to click as
+   a filled one (ux-ui-audit: an empty one was an 18px wide target). */
+.ui-button.prop-files-cell {
+  width: 100%;
+  justify-content: flex-start;
+}

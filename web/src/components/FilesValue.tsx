@@ -122,7 +122,7 @@ export default function FilesValue({ def, value, onChange, readOnly, compact, sh
       align="start"
       className="prop-files-popover"
       trigger={
-        <Button emphasis="low" size="sm" aria-label={cellLabel}>
+        <Button emphasis="low" size="sm" className="prop-files-cell" aria-label={cellLabel}>
           {items.length ? <FileList variant="compact" label={def.name} items={items} moreLabel={more} /> : <span className="prop-empty" />}
         </Button>
       }

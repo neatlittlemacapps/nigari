@@ -65,7 +65,11 @@
   max-width: var(--file-list-chip-max);
   padding-inline-end: var(--space-150);
   border-radius: var(--radius-scale-sm);
-  background: var(--color-pill-default);
+  /* The hover fill and a hairline, not --color-pill-default: that is the
+     solid dark pill, and the chip's name sat on its own colour (ux-ui-audit:
+     1:1 in light, 1.36:1 in dark). */
+  border: 1px solid var(--color-border-default);
+  background: var(--color-hover);
   font-size: var(--font-size-xs);
 }
 .ui-file-list[data-variant='compact'] .ui-file-item[data-kind='file'] .ui-file-thumb {
@@ -98,6 +102,9 @@
 }
 .ui-file-list[data-variant='full'] .ui-file-name {
   flex: 1;
+  /* A taller link than its line of text: a target of at least 24px
+     (WCAG 2.5.8) without spacing the rows further apart. */
+  padding-block: var(--space-150);
   font-size: var(--font-size-sm);
   text-decoration: none;
 }
