@@ -155,5 +155,39 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
   assert.ok(inner && inner.x + inner.width <= box.x + box.width, `the files run past the panel's edge: ${JSON.stringify(inner)}`);
   await phoneCtx.close();
 
-  console.log('files-property: picker, drop, reorder, remove, reload, peek, reader and phone hold');
+  // ---- a public form takes a file, and a shared database shows it ----
+  // (spec 028 PR 2) Anonymous: a context with no sign-in.
+  const formCfg = await api('GET', path);
+  formCfg.views.push({ id: 'form', name: 'Form', type: 'form' });
+  await api('PUT', path, { views: formCfg.views });
+  const share = await api('POST', `/api/collections/${db.id}/form-share`, {});
+  const anon = await context.browser().newContext({ viewport: { width: 1200, height: 900 }, locale: 'en-US' });
+  const visitor = await anon.newPage();
+  await visitor.goto(`${base}/form/${share.token}`);
+  await visitor.getByPlaceholder('Name of the entry').fill('From the form');
+  await visitor.getByRole('button', { name: 'Add files' }).waitFor();
+  await visitor.locator('.ui-file-drop input[type=file]').setInputFiles([{ name: 'form-photo.png', mimeType: 'image/png', buffer: PNG }]);
+  // Names only: the visitor cannot open a file that is not sent yet.
+  await visitor.locator('.ui-file-list[data-variant=full] .ui-file-name', { hasText: 'form-photo.png' }).waitFor();
+  assert.equal(await visitor.locator('.ui-file-list[data-variant=full] a').count(), 0, 'a public form links a file its visitor cannot open');
+  await visitor.locator('.form-submit').click();
+  await visitor.getByRole('button', { name: 'Send another answer' }).waitFor();
+  const rows = await api('GET', `/api/collections/${db.id}/rows`);
+  const sent = (rows.rows ?? rows).find((r) => r.title === 'From the form');
+  assert.ok(sent, 'the form made no row');
+  assert.deepEqual((sent.props.media ?? []).map((m) => m.name), ['form-photo.png'], 'the form row does not hold its file');
+  assert.ok(!JSON.stringify(sent.props.media).includes('claim'), 'the claim was stored with the file');
+
+  // The database shared read-only: the row's image is a thumbnail served
+  // under the share.
+  const readShare = await api('POST', `/api/pages/${db.id}/share`, {});
+  await visitor.goto(`${base}/public/${readShare.token}`);
+  const thumb = visitor.locator(`.public-files img[alt="form-photo.png"]`);
+  await thumb.waitFor();
+  const src = await thumb.getAttribute('src');
+  assert.ok(src.startsWith(`/public/${readShare.token}/files/`), `the thumbnail is not served under the share: ${src}`);
+  assert.equal((await visitor.request.get(base + src)).status(), 200, "the shared row's image is not served");
+  await anon.close();
+
+  console.log('files-property: picker, drop, reorder, remove, reload, peek, reader, phone, public form and shared page hold');
 });

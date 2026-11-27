@@ -372,6 +372,11 @@ function Catalog() {
             />
           </div>
         </Row>
+        <Row label="full, names only (a public form's uploads, openable false)">
+          <div className="cat-stack cat-files">
+            <FileList variant="full" label="Media" items={sampleFiles.slice(0, 3)} openLabel={(name) => `Open ${name}`} removeLabel={(name) => `Remove ${name}`} onRemove={() => setLast('file removed')} openable={false} />
+          </div>
+        </Row>
         <Row label="full, read only">
           <div className="cat-stack cat-files">
             <FileList variant="full" label="Media" items={sampleFiles.slice(0, 2)} openLabel={(name) => `Open ${name}`} />
