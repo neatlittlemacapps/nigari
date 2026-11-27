@@ -48,7 +48,7 @@ mutation-checked: each fails with its fix taken out.
 - [x] T017 [wiki] `wiki/databases.md` (or the property-types page `check-wiki` names): the Files & media type, what it holds, who can add and open files; `wiki/mcp-tools.md`: files values in `set_properties` and `create_rows`, attaching with `upload_file`; `docs/what-it-does.md`: the new type. Retake the shots `check-wiki` names as stale
 - [x] T018 [backend] `.specify/memory/surfaces.md`: new row "File references" (plan, New concepts) with what a later feature checks
 - [x] T019 [perf] `server/bench_world_test.go`: the rows query and a `set_properties` with a files value within their p95 budgets; nothing new on the rows path in PR 1
-- [ ] T020 [test] Reviews before PR 1 is offered: `/code-review`, `ux-ui-audit` (light and dark, 1280 and 390), `/security-review` (a new value gate); screenshots in the PR; `codegraph callers` on every export added
+- [x] T020 [test] Reviews before PR 1 is offered: `/code-review`, `ux-ui-audit` (light and dark, 1280 and 390), `/security-review` (a new value gate); screenshots in the PR; `codegraph callers` on every export added
 
 ## Phase 4: Files in forms and on shared pages (PR 2, FR-006h, FR-006i)
 
