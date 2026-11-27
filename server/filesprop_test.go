@@ -429,4 +429,3 @@ func TestFileNamesAreBounded(t *testing.T) {
 		t.Errorf("a name of 255 letters was refused: %v", err)
 	}
 }
-
