@@ -186,6 +186,13 @@ added on the REST side and missing on the MCP side, found later one by one.
   folded into a feature. Its place in the queue is its Priority; it is raised
   to P1 automatically only when it is breaking (above). The 2026-10-30 "bugs
   before features" order was replaced on 2026-11-03.
+- **A bug found while working on an epic is part of that epic** (owner,
+  2026-11-27: "bugs appearing when fixing a specific bug epic should be part
+  of the epic"). It still gets its issue at once, as a sub-issue of the
+  epic's issue, and it is fixed within the epic's work: in the pull request
+  that found it, or in the epic's next one, not left in the general queue.
+  Such a fix counts toward "one bug for each feature". A bug found outside
+  any epic keeps the rule above.
 
 ## Commits
 
