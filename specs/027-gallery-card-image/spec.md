@@ -222,8 +222,8 @@ refusal that says why.
 - A row duplicated or made from a template: the copy's cell names the same
   files.
 - A property changed to another type, or from another type to Files & media:
-  values that cannot be converted are cleared after a confirmation, as for
-  other conversions.
+  stored values are kept, as every type change keeps them, and a Files &
+  media property shows only values in its own shape (plan D10).
 - An upload too large or of a type the server refuses: the cell says why and
   keeps what it had.
 - A shared database page: link visitors open its rows' files, and no file of
@@ -338,7 +338,10 @@ refusal that says why.
   be fetched by anyone who may not read the database (a test of the
   refusal).
 - **SC-006**: A file in a property value of a page someone may not read is
-  never listed or served to them (a test of the refusal, REST and MCP).
+  never listed to them, and never reachable through a share link of a page
+  that does not hold it (a test of the refusal, REST and MCP). Corrected at
+  planning (plan D10): signed-in users fetch any upload by its unguessable
+  name today, document files included; that rule is not changed here.
 
 ## Assumptions
 
