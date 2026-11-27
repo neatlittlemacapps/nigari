@@ -98,7 +98,7 @@ it. Pressing Enter in the Title field submits the form.
 ### Which fields appear
 
 Every property of the collection whose type can be filled in appears as a field,
-in schema order, labelled with the property's name. Eight of the fourteen
+in schema order, labelled with the property's name. Nine of the fifteen
 property types qualify.
 
 | Property type | On a form | What the field is |
@@ -111,6 +111,7 @@ property types qualify.
 | `date` | yes | the browser's own date picker |
 | `checkbox` | yes | a checkbox |
 | `person` | yes | a single-line text box (see below) |
+| `files` | yes | **Add files**: a button and a drop target (see below) |
 | `url` | no | none |
 | `checklist` | no | none |
 | `relation` | no | none |
@@ -131,6 +132,12 @@ Two details worth knowing before you design the schema around a form:
   else renders as a chip with the typed text. (A member's internal id matches
   first, which is what an agent writing the same property usually stores.) That
   is fine for "who should we contact" and wrong for "assign this to somebody".
+- **A `files` field takes uploads.** Signed in, it works as on a row's page. On
+  a public form the visitor adds files the same way and sees them as names only:
+  until the form is sent, a file is held apart and nobody can open it, the
+  visitor included. Sending the form puts the files into the new row. A file
+  added and never sent is removed after **24 hours**, together with its record.
+  The instance's upload size limit applies ([Files](files.md#size-limits)).
 - **A `multiselect` property with no options defined** shows the line
   **No options defined** instead of a field, and nothing can be submitted for it.
   The fix is **Settings** › **Edit properties** on the view bar: open the property there
@@ -278,10 +285,15 @@ silently and the rest of the entry is saved.
 | `multiselect` | must be a list; unknown ids dropped; if none survive, the whole value is dropped |
 | `number` | must be a number |
 | `checkbox` | must be true or false |
+| `files` | each file must have been added through this same form and not sent yet; anything else is **refused, not dropped**: the visitor reads that a file is no longer waiting to be sent, and no row is made |
 
 On top of that, submissions are rate-limited to **20 per minute per IP address**,
 with a burst of 8: eight in quick succession, then one every three seconds. Over
-the limit, the visitor gets *Sending failed*.
+the limit, the visitor gets *Sending failed*. Files added to a form are counted
+separately, with the same limit per address, so a form with several files is
+not refused its submission; over it, the visitor reads that too many files were
+sent and to wait a minute. A form whose database shows no `files` field takes no
+files at all.
 
 That address is the visitor's only when the instance is told to trust its proxy's
 headers. Without that, everybody arriving through the same reverse proxy or
