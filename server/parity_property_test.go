@@ -241,14 +241,12 @@ func (w parityWorld) viaREST(tok string, act parityAct, page string) (bool, stri
 	return rec.Code >= 200 && rec.Code < 300, strconv.Itoa(rec.Code) + " " + strings.TrimSpace(rec.Body.String())
 }
 
-func (w parityWorld) viaMCP(tok string, act parityAct, page string) (bool, string) {
-	call := fmt.Sprintf(`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":%q,"arguments":%s}}`,
-		act.tool, fmt.Sprintf(act.args, page))
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest("POST", "/mcp", strings.NewReader(call))
-	req.Header.Set("Authorization", "Bearer "+tok)
-	req.Header.Set("Content-Type", "application/json")
-	w.s.ServeHTTP(rec, req)
+// viaMCP calls the act's tool over /mcp in one protocol era (spec 027): the
+// legacy envelope, or a 2026-07-28 request with its _meta and headers. Both
+// must reach the same verdict as REST, because both end in mcpCall.
+func (w parityWorld) viaMCP(t testing.TB, tok, era string, act parityAct, page string) (bool, string) {
+	params := fmt.Sprintf(`{"name":%q,"arguments":%s}`, act.tool, fmt.Sprintf(act.args, page))
+	rec := mcpRequest(t, w.s, tok, era, "tools/call", params)
 	if rec.Code != 200 {
 		return false, strconv.Itoa(rec.Code) + " " + strings.TrimSpace(rec.Body.String())
 	}
@@ -316,9 +314,10 @@ func TestAgentParityHoldsForEveryCredentialShape(t *testing.T) {
 		if _, err := w.s.db.Exec(`UPDATE workspaces SET agent_access = ? WHERE id = ?`, access, target); err != nil {
 			t.Fatalf("agent_access: %v", err)
 		}
-		// Two identical pages, one per door, so an act that changes the page
-		// (trash, rename) cannot change what the other door sees.
-		pages := [2]string{}
+		// Identical pages, one per door (REST, then MCP in each protocol era),
+		// so an act that changes the page (trash, rename) cannot change what
+		// another door sees.
+		pages := [3]string{}
 		for j := range pages {
 			pages[j] = w.s.makePage(t, target, w.owner, "", "Parity page", `{}`)
 			w.s.db.Exec(`UPDATE pages SET content = '[{"id":"p","type":"paragraph","props":{},"content":[{"type":"text","text":"x","styles":{}}],"children":[]}]' WHERE id = ?`, pages[j])
@@ -348,10 +347,15 @@ func TestAgentParityHoldsForEveryCredentialShape(t *testing.T) {
 
 		ids := pages
 		if onWorkspace {
-			ids = [2]string{target, target}
+			ids = [3]string{target, target, target}
 		}
 		restOK, restSaid := w.viaREST(tok, act, ids[0])
-		mcpOK, mcpSaid := w.viaMCP(tok, act, ids[1])
+		mcpOK, mcpSaid := w.viaMCP(t, tok, eraLegacy, act, ids[1])
+		modernOK, modernSaid := w.viaMCP(t, tok, eraModern, act, ids[2])
+		if modernOK != mcpOK {
+			t.Errorf("case %d: %s over MCP: legacy era allowed=%v (%s), 2026-07-28 allowed=%v (%s)",
+				i, act.name, mcpOK, mcpSaid, modernOK, modernSaid)
+		}
 		if os.Getenv("PARITY_TRACE") != "" {
 			t.Logf("trace %d holder=%s kind=%s scope=%s narrowed=%v target=%s access=%q private=%v %s rest=%v mcp=%v", i, map[string]string{w.owner: "admin", w.colleague: "member", w.outsider: "outsider"}[holder], kind, scope, narrowTo != "", map[string]string{w.team: "team", w.other: "other"}[target], access, private, act.name, restOK, mcpOK)
 		}

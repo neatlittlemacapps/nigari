@@ -412,3 +412,31 @@ func BenchmarkPersonalViewState(b *testing.B) {
 		l.report(b)
 	})
 }
+
+// Spec 027 SC-006: the 2026-07-28 era adds no measurable time per call. It
+// decodes a few headers and one more _meta object beside the legacy work, and
+// both end in the same mcpCall, so get_page on a seeded workspace is timed
+// through each era's full HTTP path.
+func BenchmarkMCPGetPageByEra(b *testing.B) {
+	w := sharedBenchWorld(b, 1000, 0)
+	tok := mcpToken(b, w.s, w.member().ID, "write")
+	// The per-account limit (240 a minute) would answer most timed calls
+	// with "rate limit exceeded"; the parity test lifts it the same way.
+	w.s.mcpRate = newRateLimiter(1e9, 1e9)
+	params := `{"name":"get_page","arguments":{"page_id":"` + w.pages[len(w.pages)/2] + `"}}`
+	for _, era := range []string{eraLegacy, eraModern} {
+		b.Run(era, func(b *testing.B) {
+			var l latencies
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				l.time(func() {
+					rec := mcpRequest(b, w.s, tok, era, "tools/call", params)
+					if _, isErr := mcpToolText(b, rec); isErr {
+						b.Fatalf("get_page refused: %s", rec.Body.String())
+					}
+				})
+			}
+			l.report(b)
+		})
+	}
+}

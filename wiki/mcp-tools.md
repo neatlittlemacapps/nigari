@@ -39,10 +39,30 @@ in its own right: this entry point does not run through the same wrapper the
 rest of the product uses, so without it a deactivated account would keep working
 over MCP while the browser turned it away.
 
-Methods answered: `initialize`, `ping`, `tools/list`, `tools/call`, and
-`notifications/*` (accepted with `202`, no body). JSON-RPC **batches** (a
-top-level array) are refused with "batch requests are not supported". Anything
-else comes back as "method not found".
+JSON-RPC **batches** (a top-level array) are refused with "batch requests are
+not supported", in either protocol era.
+
+### Protocol eras
+
+nigari speaks two versions of MCP on the same `/mcp` endpoint, and decides
+which one per request. Nothing has to be configured on either side.
+
+| Era | How a request belongs to it | Who sends it |
+| --- | --- | --- |
+| **2026-07-28** | `params._meta` holds `io.modelcontextprotocol/protocolVersion` | Current clients (Claude, Claude Code) |
+| **Legacy** (2025-11-25, 2025-06-18) | the client starts with `initialize`, or sends no per-request version | Every client from before, and connectors set up before this |
+
+The legacy era is answered exactly as it always was. It stays until every
+client nigari is tested with speaks 2026-07-28, and is then removed in a
+release of its own, announced in the release notes.
+
+Both eras end in the same place: the same tools, the same permission checks,
+the same read-only tokens, idempotency keys and rate limit. A refusal is the
+same sentence in both.
+
+**Legacy era.** Methods answered: `initialize`, `ping`, `tools/list`,
+`tools/call`, and `notifications/*` (accepted with `202`, no body). Anything
+else comes back as "method not found" (`-32601`), with HTTP `200`.
 
 `initialize` returns the server name `nigari`, its version, an `icons` array
 and an instructions string. The icons are this instance's logo (an embedded SVG
@@ -50,6 +70,53 @@ that survives a strict content policy, plus an absolute link to the PNG for
 clients that dislike SVG), so a client can show the instance instead of a
 placeholder. The instructions tell the agent one thing before its first call:
 workspaces can carry rules, and it should read them.
+
+**2026-07-28 era.** There is no handshake. Every request carries, in
+`params._meta`, the protocol version and the client's capabilities
+(`io.modelcontextprotocol/clientCapabilities`, an empty object if it has none),
+and repeats its routing in headers. Methods answered:
+
+| Method | Answer |
+| --- | --- |
+| `server/discover` | The supported versions, the capabilities, `serverInfo` (name, version, icons) and the same instructions `initialize` gives |
+| `tools/list` | The same catalogue as the legacy era, in the same order |
+| `tools/call` | The same result as the legacy era |
+| `notifications/*` | `202`, no body |
+
+`ping` and `logging/setLevel` are not answered in this era, because the
+revision removed them. Every other method gets "method not found" (`-32601`)
+with HTTP `404`.
+
+Every answer carries `resultType` (`"complete"`) and, in `_meta`,
+`io.modelcontextprotocol/serverInfo` with the name and version. Only
+`server/discover` adds the icons, because the SVG is several kilobytes and
+would otherwise travel with every call. `server/discover` and `tools/list` are
+cacheable: `ttlMs` is `3600000` (an hour) and `cacheScope` is `"public"`,
+because the catalogue is the same for every credential (a read-only token is
+refused per call, not shown fewer tools).
+
+The headers must agree with the body, or the request is refused before any
+tool runs:
+
+| Header | Must equal | On |
+| --- | --- | --- |
+| `MCP-Protocol-Version` | the version in `_meta` | every request |
+| `Mcp-Method` | `method` | every request |
+| `Mcp-Name` | the tool's `name` | `tools/call` |
+
+A value that is not plain ASCII is sent as `=?base64?<Base64 of the UTF-8>?=`
+and decoded before the comparison. A header that is missing or disagrees gets
+HTTP `400` with `-32020` (header mismatch). The refusals of this era:
+
+| Code | HTTP | When | `data` |
+| --- | --- | --- | --- |
+| `-32020` | 400 | a routing header is missing or disagrees with the body | — |
+| `-32022` | 400 | the version in `_meta` is not one nigari speaks | `supported` (every version nigari answers) and `requested` |
+| `-32602` | 400 | `_meta` lacks the client's capabilities, or `tools/call` params are unreadable | — |
+| `-32601` | 404 | the method is not answered in this era | — |
+
+A tool that refuses still answers with an `isError` result, as below, in both
+eras.
 
 ### What a tool returns
 

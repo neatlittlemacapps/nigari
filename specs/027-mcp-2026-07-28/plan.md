@@ -251,6 +251,7 @@ subscriptions, MCP Apps, file uploads) is out of scope (spec Decisions).
 | Embedded views | `delete_view` with `embed_id` is confirmable like a database view, with the same question. | backend |
 | Content actions | No change: no menu action. | ui |
 | File references | No change: no new stored value points at an upload (the registry row came with spec 028 the same day). | backend |
+| Protocol era | Introduced here (New concepts): `mcpEra` picks the era per request, both end in `mcpCall`, `mcpRequest` sends a test call in either, and `check-wiki.mjs` names every method in the wiki's "Protocol eras" section. | mcp |
 
 **New concepts**: **Protocol era** joins the registry as a surface. A
 later change to an MCP answer works in both eras, or says why one is left

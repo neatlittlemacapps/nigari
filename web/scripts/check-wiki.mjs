@@ -61,6 +61,43 @@ for (const t of tools) {
   if (!named.has(t)) errors.push(`no wiki page documents the tool \`${t}\``);
 }
 
+// ---- 2b: protocol methods (spec 027) -------------------------------------
+//
+// Every JSON-RPC method /mcp answers, in either protocol era, is named in
+// mcp-tools.md's "Protocol eras" section. The methods are the case labels of
+// handleMCP (the legacy era) and serveModernMCP (2026-07-28); a method added
+// to either without a word in the wiki is one an agent author cannot find.
+
+function funcBody(src, signature) {
+  const at = src.indexOf(signature);
+  if (at < 0) return null;
+  const end = src.indexOf('\n}\n', at);
+  return src.slice(at, end < 0 ? undefined : end);
+}
+const protocolSrc = existsSync(join(repo, 'server/mcp_protocol.go'))
+  ? readFileSync(join(repo, 'server/mcp_protocol.go'), 'utf8') : '';
+const methodBodies = [
+  ['handleMCP', funcBody(mcp, 'func (s *Server) handleMCP(')],
+  ['serveModernMCP', funcBody(protocolSrc, 'func (s *Server) serveModernMCP(')],
+];
+const methods = new Set();
+for (const [fn, body] of methodBodies) {
+  if (!body) { errors.push(`server: ${fn} not found; check-wiki cannot list the MCP methods`); continue; }
+  for (const c of body.matchAll(/^\s*case\s+((?:"[^"]+"\s*,?\s*)+):/gm)) {
+    for (const m of c[1].matchAll(/"([^"]+)"/g)) methods.add(m[1]);
+  }
+}
+const toolsPage = pages.get('mcp-tools.md') ?? '';
+const eraAt = toolsPage.indexOf('### Protocol eras');
+const eraSection = eraAt < 0 ? '' : toolsPage.slice(eraAt, toolsPage.indexOf('\n### ', eraAt + 1));
+if (eraAt < 0) errors.push('mcp-tools.md: no "### Protocol eras" section');
+for (const m of methods) {
+  if (!eraSection.includes('`' + m + '`')) {
+    errors.push(`mcp-tools.md "Protocol eras" does not name the method \`${m}\` that /mcp answers`);
+  }
+}
+if (methods.size < 5) errors.push(`only ${methods.size} MCP methods found in handleMCP/serveModernMCP; the check no longer reads them`);
+
 // ---- 3: /api/ paths --------------------------------------------------------
 
 const server = readFileSync(join(repo, 'server/server.go'), 'utf8');
@@ -285,7 +322,7 @@ if (manifest) {
 
 // ---- report ----------------------------------------------------------------
 
-console.log(`\n  wiki: ${files.length} pages, ${tools.size} tools, ${routes.length} routes`);
+console.log(`\n  wiki: ${files.length} pages, ${tools.size} tools, ${methods.size} protocol methods, ${routes.length} routes`);
 for (const n of notes) console.log(`  note  ${n}`);
 for (const e of errors) console.log(`  FAIL  ${e}`);
 if (errors.length) {

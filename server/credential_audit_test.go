@@ -739,3 +739,48 @@ func TestAnAgentPlacesNoPageNextToOneItMayNotSee(t *testing.T) {
 		}
 	}
 }
+
+// Spec 027: the outsider shapes stay out through /mcp in both protocol eras.
+// The tests above call mcpCall directly, which both eras reach; this one goes
+// over HTTP, with a real bearer, so an era whose envelope found a way around
+// mcpCall (a dispatcher of its own, a user copied without its token fields)
+// fails here and not in production.
+func TestOutsidersStayOutInBothProtocolEras(t *testing.T) {
+	f := newScopeFixture(t)
+	page := f.s.makePage(t, f.other, f.owner, "", "Payroll", `{}`)
+	body := `[{"id":"a","type":"paragraph","props":{},"content":[{"type":"text","text":"salary 100","styles":{}}],"children":[]}]`
+	f.s.db.Exec(`UPDATE pages SET content = ? WHERE id = ?`, body, page)
+	calls := map[string]string{
+		"get_page":      `{"page_id":"` + page + `"}`,
+		"update_page":   `{"page_id":"` + page + `","title":"Renamed"}`,
+		"write_content": `{"page_id":"` + page + `","mode":"edit","edits":[{"old":"100","new":"999"}]}`,
+		"set_trashed":   `{"page_id":"` + page + `","trashed":true}`,
+		"get_workspace": `{"workspace_id":"` + f.other + `"}`,
+	}
+	for _, era := range []string{eraLegacy, eraModern} {
+		for _, o := range f.outsiders(t) {
+			o.setup()
+			for tool, args := range calls {
+				rec := mcpRequest(t, f.s, o.tok, era, "tools/call", `{"name":"`+tool+`","arguments":`+args+`}`)
+				if text, isErr := mcpToolText(t, rec); !isErr {
+					t.Errorf("%s era, %s: %s got in: %.120s", era, o.name, tool, text)
+				}
+			}
+			var title, content string
+			var trashed *string
+			f.s.db.QueryRow(`SELECT title, content, trashed_at FROM pages WHERE id = ?`, page).Scan(&title, &content, &trashed)
+			if title != "Payroll" || content != body || trashed != nil {
+				t.Fatalf("%s era, %s: the page was changed", era, o.name)
+			}
+		}
+	}
+	// Within bounds the same call works in both eras, so the refusals above
+	// are the gate and not a broken path.
+	f.setAgentAccess(t, f.other, "")
+	for _, era := range []string{eraLegacy, eraModern} {
+		rec := mcpRequest(t, f.s, f.openTok, era, "tools/call", `{"name":"get_page","arguments":{"page_id":"`+page+`"}}`)
+		if text, isErr := mcpToolText(t, rec); isErr || !strings.Contains(text, "Payroll") {
+			t.Errorf("%s era, within bounds: %v %.120s", era, isErr, text)
+		}
+	}
+}

@@ -7,6 +7,41 @@ entries are not edited away.
 
 ---
 
+## 2026-11-27 — /mcp serves MCP 2026-07-28 and the legacy era on one endpoint
+
+- **Why.** The 2026-07-28 revision of MCP removed the `initialize`
+  handshake: a request names its version and the client's capabilities in
+  `_meta` and repeats its routing in headers. nigari answered only the
+  legacy flow, so a current client either fell back to it or reached
+  `tools/call` by accident, with its headers unchecked and no
+  `server/discover` (epic #1034, spec 027).
+- **Decided (spec 027, owner's answers on #1034):** one endpoint, the era
+  chosen per request by `mcpEra` (`server/mcp_protocol.go`). The version in
+  `_meta` means 2026-07-28. `initialize`, or no version, means legacy, which
+  is answered byte for byte as before (`TestLegacyMCPAnswersAreUnchanged`).
+  Both eras end in `mcpCall`, the one function with the gates. The legacy
+  era stays until every client in our test list speaks 2026-07-28, and is
+  then removed in a release of its own, with an entry here.
+- **Details settled while building phase 1, from the published revision:**
+  - A missing routing header is refused like one that disagrees (HTTP 400,
+    `-32020`), because the revision requires them.
+  - An unknown method is HTTP 404 in the modern era. The legacy era keeps
+    its 200.
+  - The client's capabilities are read from every request and never
+    remembered, as the revision requires.
+  - Every modern answer carries `serverInfo` in `_meta` without the icons
+    (the SVG is several kilobytes). Only `server/discover` adds them.
+  - `server/discover` declares only what is built. The tasks and skills
+    extensions are declared by the phases that build them.
+- **Turned down:** a second endpoint (`/mcp2`), because every connector
+  already set up would need editing by hand; dropping the legacy era now,
+  because ChatGPT and other clients we test still send `initialize`; a
+  dispatcher per era, the "check on one door only" history constitution III
+  exists to stop; an MCP SDK, which would be the first dependency in this
+  path for about 150 lines of envelope.
+
+---
+
 ## 2026-11-27 — A bug found while working on an epic belongs to that epic
 
 - **Why.** Spec 028 (#980) turned up bugs as it went: #1117 and #1118 in
