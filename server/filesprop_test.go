@@ -212,3 +212,90 @@ func TestUpdateSchemaAcceptsFilesType(t *testing.T) {
 		t.Errorf("create_database with files: %v", err)
 	}
 }
+
+// The file list learns the row as the file's carrier when the value is
+// written, and the rebuild (filesVersion 4) finds values written before it
+// knew them (plan D3). Without it the file list showed a row's upload as
+// unreferenced, and the shared-page rule of PR 2 had no row to start from.
+func TestFileIndexRecordsTheRowThatHoldsAFile(t *testing.T) {
+	f := newFilesFixture(t)
+	carrier := func() (page, ws string) {
+		f.s.db.QueryRow(`SELECT COALESCE(page_id, ''), COALESCE(workspace_id, '') FROM files WHERE file_name = ?`, f.loose).Scan(&page, &ws)
+		return
+	}
+	if p, _ := carrier(); p != "" {
+		t.Fatalf("the loose upload starts with a carrier: %q", p)
+	}
+	if _, err := callTool(t, f.s, f.u, "set_properties", `{"page_id":"`+f.row+`","properties":{"media":`+filesValue(f.loose)+`}}`); err != nil {
+		t.Fatal(err)
+	}
+	if p, ws := carrier(); p != f.row || ws != f.ws {
+		t.Errorf("after the write the carrier is %q in %q, want the row %q in %q", p, ws, f.row, f.ws)
+	}
+	// The rebuild: forget everything and build again.
+	f.s.db.Exec(`DELETE FROM files`)
+	f.s.setSetting("files_version", "3")
+	if err := f.s.migrateFileIndex(); err != nil {
+		t.Fatal(err)
+	}
+	if p, _ := carrier(); p != f.row {
+		t.Errorf("after the rebuild the carrier is %q, want the row %q", p, f.row)
+	}
+}
+
+// A Files & media property is asked whether it holds files, nothing else
+// (FR-006e): "is" or "contains" would compare the stored JSON as text.
+func TestFilesFilterOnlyAsksEmptyOrNot(t *testing.T) {
+	f := newFilesFixture(t)
+	empty := s2row(t, f, "Empty")
+	if _, err := callTool(t, f.s, f.u, "set_properties", `{"page_id":"`+f.row+`","properties":{"media":`+filesValue(f.own)+`}}`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := callTool(t, f.s, f.u, "set_properties", `{"page_id":"`+empty+`","properties":{"media":[]}}`); err != nil {
+		t.Fatal(err)
+	}
+	for op, want := range map[string]string{"is_not_empty": f.row, "is_empty": empty} {
+		out, err := callTool(t, f.s, f.u, "query_rows", `{"page_id":"`+f.db+`","filter":[{"property":"media","op":"`+op+`"}]}`)
+		if err != nil {
+			t.Fatalf("%s: %v", op, err)
+		}
+		if !strings.Contains(out, want) {
+			t.Errorf("%s did not return %s: %s", op, want, out)
+		}
+	}
+	for _, op := range []string{"is", "contains", "gt"} {
+		if _, err := callTool(t, f.s, f.u, "query_rows", `{"page_id":"`+f.db+`","filter":[{"property":"media","op":"`+op+`","value":"x"}]}`); err == nil {
+			t.Errorf("query_rows accepted %s on a files property", op)
+		}
+		if _, err := callTool(t, f.s, f.u, "set_view", `{"page_id":"`+f.db+`","type":"table","name":"T","filters":[{"property":"media","op":"`+op+`","value":"x"}]}`); err == nil {
+			t.Errorf("set_view accepted %s on a files property", op)
+		}
+	}
+}
+
+func s2row(t *testing.T, f *filesFixture, title string) string {
+	t.Helper()
+	return f.s.makeRow(t, f.ws, f.uid, f.db, title, `{}`)
+}
+
+// The Markdown export writes each file as a link named as it was uploaded
+// (FR-006g); before, a list of objects came out as an empty cell.
+func TestCollectionMarkdownWritesFilesAsLinks(t *testing.T) {
+	f := newFilesFixture(t)
+	v := `[{"url":"/files/` + f.own + `","name":"plan [v2].png"},{"url":"/files/` + f.loose + `","name":""}]`
+	if _, err := callTool(t, f.s, f.u, "set_properties", `{"page_id":"`+f.row+`","properties":{"media":`+v+`}}`); err != nil {
+		t.Fatal(err)
+	}
+	p, err := f.s.getPage(f.db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	md, err := f.s.collectionMarkdown(p, f.uid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `[plan \[v2\].png](/files/` + f.own + `), [` + f.loose + `](/files/` + f.loose + `)`
+	if !strings.Contains(md, want) {
+		t.Errorf("export lacks %s:\n%s", want, md)
+	}
+}

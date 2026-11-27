@@ -1036,9 +1036,11 @@ func (s *Server) reindexPage(id string) error {
 	sn, th := extractSnippetAndThumb([]byte(content))
 	s.db.Exec(`UPDATE pages SET snippet = ?, thumb = ? WHERE id = ?`, sn, th, id)
 	body := extractText([]byte(content))
-	var props string
-	if s.db.QueryRow(`SELECT props FROM pages WHERE id = ?`, id).Scan(&props) == nil {
+	var props, parentID string
+	if s.db.QueryRow(`SELECT props, COALESCE(parent_id, '') FROM pages WHERE id = ?`, id).Scan(&props, &parentID) == nil {
 		body += " " + extractPropsText([]byte(props))
+		// The uploads its Files & media values hold (spec 028, D3).
+		s.recordRowFiles(id, parentID, props)
 	}
 	// Attached file texts (e.g. extracted PDFs) are searchable under the page.
 	if rows, err := s.db.Query(`SELECT text FROM file_texts WHERE page_id = ?`, id); err == nil {

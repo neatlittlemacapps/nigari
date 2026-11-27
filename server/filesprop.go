@@ -175,3 +175,89 @@ func (s *Server) checkRowFilesJSON(rowID string, raw json.RawMessage) error {
 	}
 	return s.checkRowFiles(rowID, props)
 }
+
+// recordRowFiles records the row as the carrier of every file its Files &
+// media values hold (plan D3), so the file list shows the file under the row,
+// counts it as used and moves it with the row's workspace. Called from
+// reindexPage, which every write of a row's props already runs, so no door
+// can store a value without it. Returns the stored names it recorded.
+//
+// A file taken out of a value keeps its entry, as a file whose block was
+// deleted does: undo and version restore bring the value back.
+func (s *Server) recordRowFiles(rowID, collectionID, props string) []string {
+	// Most rows hold no upload at all: no schema read for them.
+	if collectionID == "" || !strings.Contains(props, "/files/") {
+		return nil
+	}
+	ids := s.filesPropIDs(collectionID)
+	if len(ids) == 0 {
+		return nil
+	}
+	var m map[string]json.RawMessage
+	if json.Unmarshal([]byte(props), &m) != nil {
+		return nil
+	}
+	var out []string
+	for k, v := range m {
+		if !ids[k] {
+			continue
+		}
+		items, err := parseFilesValue(v)
+		if err != nil {
+			continue // a value written before the type changed; not ours
+		}
+		for _, it := range items {
+			if name := storedFileName(it.URL); name != "" {
+				s.recordFile(name, rowID, it.Name)
+				out = append(out, name)
+			}
+		}
+	}
+	return out
+}
+
+// checkFilesFilterOp refuses a condition on a Files & media property that asks
+// anything but whether it holds files (FR-006e). "is" a file, "contains" a
+// name or "gt" a list compare the stored JSON as text: the answer would look
+// like a filter and mean nothing. An empty op is is_not_empty here, as
+// rowFilter.where reads it without a value.
+func checkFilesFilterOp(schema []map[string]any, label, prop, op string) error {
+	for _, p := range schema {
+		if id, _ := p["id"].(string); id != prop {
+			continue
+		}
+		if t, _ := p["type"].(string); t != "files" {
+			return nil
+		}
+		switch op {
+		case "", "is_empty", "is_not_empty":
+			return nil
+		}
+		return fmt.Errorf("%s: %q is a Files & media property; it filters with is_empty or is_not_empty only, not %q", label, prop, op)
+	}
+	return nil
+}
+
+// filesMarkdown writes a Files & media value as Markdown links, the uploaded
+// name as the text: "[plan.pdf](/files/ab12….pdf), [photo.jpg](/files/…)".
+// A value in any other shape writes nothing, as the cell shows nothing.
+func filesMarkdown(raw json.RawMessage) string {
+	items, err := parseFilesValue(raw)
+	if err != nil {
+		return ""
+	}
+	esc := strings.NewReplacer(`\`, `\\`, "[", `\[`, "]", `\]`)
+	parts := make([]string, 0, len(items))
+	for _, it := range items {
+		name := storedFileName(it.URL)
+		if name == "" {
+			continue
+		}
+		label := it.Name
+		if label == "" {
+			label = name
+		}
+		parts = append(parts, "["+esc.Replace(label)+"](/files/"+name+")")
+	}
+	return strings.Join(parts, ", ")
+}
