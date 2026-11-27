@@ -1590,8 +1590,9 @@ function FormView({
       await api.createPage(collectionId, title.trim(), 'doc', props);
       onSubmitted();
       setDone(true);
-    } catch {
-      toastError(t('Sending failed'));
+    } catch (e) {
+      // A refused file says why (spec 028, code review), as the public form does.
+      toastError(e instanceof ApiError && e.code ? serverMessage(e.code, t('Sending failed')) : t('Sending failed'));
     } finally {
       setBusy(false);
     }
@@ -1675,10 +1676,9 @@ function FormView({
             />
           </label>
           {fields.map((f) => (
-            <label key={f.id} className={'form-field' + (f.type === 'checkbox' ? ' form-field--check' : '')}>
-              <span className="form-label">{f.name}</span>
+            <FormFieldFrame key={f.id} def={f}>
               {formField(f, values[f.id], (v) => set(f.id, v))}
-            </label>
+            </FormFieldFrame>
           ))}
         </div>
         <div className="form-actions">
@@ -1688,6 +1688,30 @@ function FormView({
         </div>
       </div>
     </div>
+  );
+}
+
+/** A form field's frame: its name, and the control. A Files & media field
+ *  holds several controls (open, remove, Add files), so it is a labelled
+ *  group: inside a <label>, a click on its name or a file's name went to the
+ *  label's first control, the first file's Remove (code review). */
+export function FormFieldFrame({ def, children }: { def: PropDef; children: React.ReactNode }) {
+  if (def.type === 'files') {
+    const id = `form-field-${def.id}`;
+    return (
+      <div className="form-field" role="group" aria-labelledby={id}>
+        <span className="form-label" id={id}>
+          {def.name}
+        </span>
+        {children}
+      </div>
+    );
+  }
+  return (
+    <label className={'form-field' + (def.type === 'checkbox' ? ' form-field--check' : '')}>
+      <span className="form-label">{def.name}</span>
+      {children}
+    </label>
   );
 }
 

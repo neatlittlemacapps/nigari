@@ -40,6 +40,17 @@ import (
 // link's visitors cannot keep files on the instance.
 const formUploadTTL = 24 * time.Hour
 
+// What may wait at once, so a form's link cannot fill the disk (code review:
+// at the per-address rate alone, one address could park over a terabyte in a
+// day, and a full disk stops every write on the instance). Claude's defaults:
+// a database's form far more than a busy day of entries needs, the instance
+// a small share of a modest server's disk.
+const (
+	formUploadsPerDatabase  = 100
+	formUploadBytesPerDB    = 1 << 30 // 1 GiB
+	formUploadBytesInstance = 4 << 30 // 4 GiB
+)
+
 // handlePublicFormUpload (POST /api/public/form/{token}/upload) takes one file
 // for a public form. Counted per address with the form's own limiter, under a
 // key of its own so a form with several files is not refused its submit.
@@ -59,7 +70,9 @@ func (s *Server) handlePublicFormUpload(w http.ResponseWriter, r *http.Request) 
 	}
 	maxUploadSize := s.maxUploadBytes()
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize+1<<20)
-	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
+	// At most 1 MiB of an anonymous request in memory; the rest goes to a
+	// temporary file (code review: up to the size limit per request in RAM).
+	if err := r.ParseMultipartForm(1 << 20); err != nil {
 		var tooLarge *http.MaxBytesError
 		if errors.As(err, &tooLarge) || strings.Contains(err.Error(), "too large") {
 			httpError(w, http.StatusRequestEntityTooLarge, fmt.Sprintf("file too large: max %d MB", maxUploadSize>>20))
@@ -79,6 +92,11 @@ func (s *Server) handlePublicFormUpload(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	if !s.formUploadFits(colID, header.Size) {
+		httpErrorCode(w, 429, "form_upload_full", "This form takes no more files for now. Please try again later.")
+		return
+	}
+
 	name := newID() + sanitizeExt(header)
 	path := filepath.Join(s.dataDir, "files", name)
 	dst, err := os.Create(path)
@@ -94,13 +112,23 @@ func (s *Server) handlePublicFormUpload(w http.ResponseWriter, r *http.Request) 
 	}
 	dst.Close()
 	claim := newID()
-	if _, err := s.db.Exec(`INSERT INTO form_uploads (file_name, collection_id, claim, created_at) VALUES (?, ?, ?, ?)`,
-		name, colID, tokenHash(claim), now()); err != nil {
+	if _, err := s.db.Exec(`INSERT INTO form_uploads (file_name, collection_id, claim, size, created_at) VALUES (?, ?, ?, ?, ?)`,
+		name, colID, tokenHash(claim), header.Size, now()); err != nil {
 		os.Remove(path)
 		httpError(w, 500, "could not store the file")
 		return
 	}
 	writeJSON(w, map[string]string{"url": "/files/" + name, "name": formFileName(header.Filename), "claim": claim})
+}
+
+// formUploadFits reports whether one more upload of size bytes stays within
+// the caps on what may wait (formUploadsPerDatabase and the two byte caps).
+// The waiting set is small by those very caps, so the sums stay cheap.
+func (s *Server) formUploadFits(colID string, size int64) bool {
+	var n, dbBytes, all int64
+	s.db.QueryRow(`SELECT COUNT(*), COALESCE(SUM(size), 0) FROM form_uploads WHERE collection_id = ?`, colID).Scan(&n, &dbBytes)
+	s.db.QueryRow(`SELECT COALESCE(SUM(size), 0) FROM form_uploads`).Scan(&all)
+	return n < formUploadsPerDatabase && dbBytes+size <= formUploadBytesPerDB && all+size <= formUploadBytesInstance
 }
 
 // formTakesFiles reports whether a form's database has a Files & media field
@@ -151,6 +179,32 @@ func formFileName(raw string) string {
 	return name
 }
 
+// formHiddenFiles lists the files fields the form view hides.
+func (s *Server) formHiddenFiles(colID string) map[string]bool {
+	var schemaJSON, viewsJSON string
+	if s.db.QueryRow(`SELECT schema, views FROM collections WHERE page_id = ?`, colID).Scan(&schemaJSON, &viewsJSON) != nil {
+		return nil
+	}
+	var views []formView
+	json.Unmarshal([]byte(viewsJSON), &views)
+	hidden := map[string]bool{}
+	for _, v := range views {
+		if v.Type == "form" {
+			for _, h := range v.Hidden {
+				hidden[h] = true
+			}
+			break
+		}
+	}
+	out := map[string]bool{}
+	for _, p := range parseFormSchema(schemaJSON) {
+		if p.Type == "files" && hidden[p.ID] {
+			out[p.ID] = true
+		}
+	}
+	return out
+}
+
 // errUnclaimed is a submission naming an upload it cannot claim: another
 // form's, one already claimed or swept, or one never made.
 var errUnclaimed = errors.New("unclaimed")
@@ -158,13 +212,17 @@ var errUnclaimed = errors.New("unclaimed")
 // claimFormFiles reads a Files & media value a public form submitted: a list
 // of {url, name, claim}, each an upload of this form's database waiting with
 // that claim. It returns the value to store and the uploads it claims.
-func (s *Server) claimFormFiles(colID string, v any) ([]filesItem, []string, error) {
+// formClaim is one upload a submission spends: its stored name and the
+// claim's hash, deleted together with the new row's insert.
+type formClaim struct{ name, hash string }
+
+func (s *Server) claimFormFiles(colID string, v any) ([]filesItem, []formClaim, error) {
 	list, ok := v.([]any)
 	if !ok || len(list) > maxFilesPerValue {
 		return nil, nil, errUnclaimed
 	}
 	var items []filesItem
-	var claimed []string
+	var claimed []formClaim
 	seen := map[string]bool{}
 	for _, el := range list {
 		m, ok := el.(map[string]any)
@@ -187,7 +245,7 @@ func (s *Server) claimFormFiles(colID string, v any) ([]filesItem, []string, err
 		display, _ := m["name"].(string)
 		seen[name] = true
 		items = append(items, filesItem{URL: "/files/" + name, Name: formFileName(display)})
-		claimed = append(claimed, name)
+		claimed = append(claimed, formClaim{name: name, hash: stored})
 	}
 	return items, claimed, nil
 }
@@ -210,7 +268,13 @@ func (s *Server) cleanupFormUploads(at time.Time) int {
 	}
 	rows.Close()
 	for _, name := range stale {
-		if publicFileName(name) {
+		// A file something now holds stays: a signed-in person may have put
+		// a waiting upload's address into a row (checkFilesValue accepts a
+		// file with no index entry), and the index records that row (code
+		// review). Only the waiting record goes then.
+		var held int
+		s.db.QueryRow(`SELECT COUNT(*) FROM files WHERE file_name = ? AND page_id IS NOT NULL`, name).Scan(&held)
+		if held == 0 && publicFileName(name) {
 			os.Remove(filepath.Join(s.dataDir, "files", name))
 		}
 		s.db.Exec(`DELETE FROM form_uploads WHERE file_name = ?`, name)

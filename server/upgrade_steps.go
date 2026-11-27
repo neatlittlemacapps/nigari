@@ -349,12 +349,14 @@ func commentEditsAndReactions(ctx context.Context, tx *sql.Tx) error {
 // alone does not let anyone claim an upload. An upload nobody claims is
 // removed with its file after 24 hours (cleanupFormUploads); the index on
 // created_at is what that sweep reads. collection_id has no foreign key: the
-// sweep removes an upload whose form's database is gone as well.
+// sweep removes an upload whose form's database is gone as well. size is
+// what the caps on waiting uploads add up (formUploadCaps).
 func formUploads(ctx context.Context, tx *sql.Tx) error {
 	if _, err := tx.Exec(`CREATE TABLE form_uploads (
 		file_name TEXT PRIMARY KEY,
 		collection_id TEXT NOT NULL,
 		claim TEXT NOT NULL,
+		size INTEGER NOT NULL DEFAULT 0,
 		created_at TEXT NOT NULL
 	)`); err != nil {
 		return fmt.Errorf("create form_uploads: %w", err)

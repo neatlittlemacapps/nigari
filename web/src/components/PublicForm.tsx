@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Check, Send } from 'lucide-react';
 import { api, ApiError } from '../api';
 import { serverMessage } from '../serverErrors';
-import { formField } from './CollectionView';
+import { formField, FormFieldFrame } from './CollectionView';
 import { PageIcon } from '../pageIcon';
 import { PublicFormConfig, PropDef } from '../types';
 import { toastError } from '../toast';
@@ -127,10 +127,9 @@ export default function PublicForm({ token }: { token: string }) {
             />
           </label>
           {cfg.schema.map((f: PropDef) => (
-            <label key={f.id} className={'form-field' + (f.type === 'checkbox' ? ' form-field--check' : '')}>
-              <span className="form-label">{f.name}</span>
+            <FormFieldFrame key={f.id} def={f}>
               {formField(f, values[f.id], (v) => set(f.id, v), publicFiles)}
-            </label>
+            </FormFieldFrame>
           ))}
         </div>
         <div className="form-actions">

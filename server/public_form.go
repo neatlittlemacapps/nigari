@@ -214,8 +214,12 @@ func (s *Server) handlePublicFormSubmit(w http.ResponseWriter, r *http.Request) 
 	for _, p := range parseFormSchema(schemaJSON) {
 		byID[p.ID] = p
 	}
+	// A files field the form hides takes nothing: an upload of the form's
+	// visible files field could otherwise be claimed into a hidden one (code
+	// review). Other hidden fields keep their older leniency (#1120).
+	hiddenFiles := s.formHiddenFiles(colID)
 	clean := map[string]any{}
-	var claimed []string
+	var claimed []formClaim
 	for id, v := range body.Props {
 		p, ok := byID[id]
 		if !ok || !formFillable(p.Type) {
@@ -224,6 +228,9 @@ func (s *Server) handlePublicFormSubmit(w http.ResponseWriter, r *http.Request) 
 		// Files are not dropped quietly like a bad option: a file the visitor
 		// added and the row does not get is a loss they would not notice.
 		if p.Type == "files" {
+			if hiddenFiles[id] {
+				continue
+			}
 			items, names, err := s.claimFormFiles(colID, v)
 			if err != nil {
 				httpErrorCode(w, 400, "form_upload_unclaimed", "A file of this form is no longer waiting to be sent. Add it again, then send the form.")
@@ -248,10 +255,35 @@ func (s *Server) handlePublicFormSubmit(w http.ResponseWriter, r *http.Request) 
 		httpError(w, 500, err.Error())
 		return
 	}
-	if _, err := s.db.Exec(
+	// The claims are spent in the same transaction that makes the row, each
+	// one exactly once: two submissions racing with one claim cannot both
+	// get the file, and a row that is not made leaves its uploads waiting
+	// (code review: checked, then deleted later, the result ignored).
+	tx, err := s.db.Begin()
+	if err != nil {
+		httpError(w, 500, err.Error())
+		return
+	}
+	defer tx.Rollback()
+	for _, c := range claimed {
+		res, err := tx.Exec(`DELETE FROM form_uploads WHERE file_name = ? AND collection_id = ? AND claim = ?`, c.name, colID, c.hash)
+		if err != nil {
+			httpError(w, 500, err.Error())
+			return
+		}
+		if n, _ := res.RowsAffected(); n != 1 {
+			httpErrorCode(w, 400, "form_upload_unclaimed", "A file of this form is no longer waiting to be sent. Add it again, then send the form.")
+			return
+		}
+	}
+	if _, err := tx.Exec(
 		`INSERT INTO pages (id, parent_id, title, icon, content, position, created_at, updated_at, type, props, workspace_id, owner_id, visibility) VALUES (?, ?, ?, '', '[]', ?, ?, ?, 'doc', ?, ?, ?, 'workspace')`,
 		id, colID, title, pos, ts, ts, string(propsJSON), wsID, ownerID,
 	); err != nil {
+		httpError(w, 500, err.Error())
+		return
+	}
+	if err := tx.Commit(); err != nil {
 		httpError(w, 500, err.Error())
 		return
 	}
@@ -261,11 +293,7 @@ func (s *Server) handlePublicFormSubmit(w http.ResponseWriter, r *http.Request) 
 		httpError(w, 500, err.Error())
 		return
 	}
-	// The uploads are the row's now: no longer waiting, never swept.
-	// reindexPage below records the row as their carrier.
-	for _, name := range claimed {
-		s.db.Exec(`DELETE FROM form_uploads WHERE file_name = ?`, name)
-	}
+	// reindexPage records the row as the claimed files' carrier.
 	if err := s.reindexPage(id); err != nil {
 		httpError(w, 500, err.Error())
 		return

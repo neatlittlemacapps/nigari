@@ -251,3 +251,87 @@ func TestSharedDatabaseServesOnlyItsVisibleRowsFiles(t *testing.T) {
 func (f *formFixture) upload2(t *testing.T, display, row string) string {
 	return f.filesFixture.upload(t, display, row)
 }
+
+// Code review, PR 2.
+
+// What may wait at once is capped, so a form's link cannot fill the disk.
+func TestFormUploadsAreCappedPerDatabase(t *testing.T) {
+	f := newFormFixture(t)
+	for i := 0; i < formUploadsPerDatabase; i++ {
+		f.s.db.Exec(`INSERT INTO form_uploads (file_name, collection_id, claim, size, created_at) VALUES (?, ?, 'x', 1, ?)`, newID(), f.db, now())
+	}
+	rec, _ := f.upload(t, f.form, "203.0.113.20", "one-more.pdf", []byte("pdf"))
+	if rec.Code != 429 || !strings.Contains(rec.Body.String(), "form_upload_full") {
+		t.Errorf("an upload past the database's cap: %d %s", rec.Code, rec.Body.String())
+	}
+	// Another database's form is not held back by this one's count.
+	if rec, _ := f.upload(t, f.other, "203.0.113.21", "elsewhere.pdf", []byte("pdf")); rec.Code != 200 {
+		t.Errorf("another form was refused: %d", rec.Code)
+	}
+	// Bytes: the instance-wide cap counts every form.
+	f.s.db.Exec(`DELETE FROM form_uploads`)
+	f.s.db.Exec(`INSERT INTO form_uploads (file_name, collection_id, claim, size, created_at) VALUES (?, 'elsewhere', 'x', ?, ?)`, newID(), int64(formUploadBytesInstance), now())
+	if rec, _ := f.upload(t, f.form, "203.0.113.22", "over.pdf", []byte("pdf")); rec.Code != 429 {
+		t.Errorf("an upload past the instance's byte cap: %d", rec.Code)
+	}
+}
+
+// A files field the form hides takes nothing, even with a good claim.
+func TestHiddenFilesFieldTakesNothing(t *testing.T) {
+	f := newFormFixture(t)
+	f.s.db.Exec(`UPDATE collections SET schema = ? WHERE page_id = ?`,
+		`[{"id":"media","name":"Media","type":"files"},{"id":"secret","name":"Secret","type":"files"}]`, f.db)
+	f.s.db.Exec(`UPDATE collections SET views = ? WHERE page_id = ?`, `[{"id":"form","name":"Form","type":"form","hidden":["secret"]}]`, f.db)
+	_, up := f.upload(t, f.form, "203.0.113.23", "a.png", []byte("png"))
+	if rec := f.submit(t, f.form, "Hidden", `{"secret":`+filesJSON(up)+`}`); rec.Code != 200 {
+		t.Fatalf("submit: %d %s", rec.Code, rec.Body.String())
+	}
+	var props string
+	f.s.db.QueryRow(`SELECT props FROM pages WHERE parent_id = ? AND title = 'Hidden'`, f.db).Scan(&props)
+	if strings.Contains(props, "secret") {
+		t.Errorf("a hidden files field was filled: %s", props)
+	}
+	if f.waiting() != 1 {
+		t.Error("the unclaimed upload no longer waits")
+	}
+}
+
+// The sweep keeps a file a row now holds, and drops only its waiting record.
+func TestSweepKeepsAFileARowHolds(t *testing.T) {
+	f := newFormFixture(t)
+	_, up := f.upload(t, f.form, "203.0.113.24", "kept.png", []byte("png"))
+	// A signed-in person puts the waiting upload's address into a row.
+	if _, err := callTool(t, f.s, f.u, "set_properties", `{"page_id":"`+f.row+`","properties":{"media":[{"url":"`+up.URL+`","name":"kept.png"}]}}`); err != nil {
+		t.Fatal(err)
+	}
+	f.s.db.Exec(`UPDATE form_uploads SET created_at = ?`, time.Now().UTC().Add(-25*time.Hour).Format(time.RFC3339Nano))
+	f.s.cleanupFormUploads(time.Now())
+	if _, err := os.Stat(filepath.Join(f.s.dataDir, "files", storedFileName(up.URL))); err != nil {
+		t.Error("the sweep deleted a file a row holds")
+	}
+	if f.waiting() != 0 {
+		t.Error("the waiting record stayed")
+	}
+}
+
+// The index names one carrier per file. When it names a private copy, the
+// shared row that also holds the file is still found.
+func TestSharedFileFoundWhenTheIndexNamesAnotherCarrier(t *testing.T) {
+	f := newFormFixture(t)
+	if _, err := callTool(t, f.s, f.u, "set_properties", `{"page_id":"`+f.row+`","properties":{"media":`+filesValue(f.own)+`}}`); err != nil {
+		t.Fatal(err)
+	}
+	copyRow := f.s.makeRow(t, f.ws, f.uid, f.db, "Private copy", `{}`)
+	if _, err := callTool(t, f.s, f.u, "set_properties", `{"page_id":"`+copyRow+`","properties":{"media":`+filesValue(f.own)+`}}`); err != nil {
+		t.Fatal(err)
+	}
+	f.s.db.Exec(`UPDATE pages SET visibility = 'private' WHERE id = ?`, copyRow)
+	var carrier string
+	f.s.db.QueryRow(`SELECT page_id FROM files WHERE file_name = ?`, f.own).Scan(&carrier)
+	if carrier != copyRow {
+		t.Fatalf("the fixture did not move the carrier (%s)", carrier)
+	}
+	if !f.s.sharedRowHoldsFile(f.db, f.own) {
+		t.Error("the shared row's file was refused because the index names the private copy")
+	}
+}

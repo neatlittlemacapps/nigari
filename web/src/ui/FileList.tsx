@@ -104,7 +104,7 @@ function FullList({ label, items, openLabel, removeLabel, onRemove, onMove, open
   // After a keyboard move the moved file's name keeps the focus, at its new
   // place: the list re-renders under it.
   const refocus = useRef<number | null>(null);
-  const links = useRef<(HTMLAnchorElement | null)[]>([]);
+  const links = useRef<(HTMLElement | null)[]>([]);
   useLayoutEffect(() => {
     if (refocus.current === null) return;
     links.current[refocus.current]?.focus();
@@ -112,7 +112,7 @@ function FullList({ label, items, openLabel, removeLabel, onRemove, onMove, open
   });
   if (items.length === 0) return null;
 
-  const onKey = (i: number) => (e: KeyboardEvent<HTMLAnchorElement>) => {
+  const onKey = (i: number) => (e: KeyboardEvent<HTMLElement>) => {
     if (!onMove || !(e.metaKey || e.ctrlKey)) return;
     const to = e.key === 'ArrowUp' ? i - 1 : e.key === 'ArrowDown' ? i + 1 : -1;
     if (to < 0 || to >= items.length) return;
@@ -157,7 +157,17 @@ function FullList({ label, items, openLabel, removeLabel, onRemove, onMove, open
         >
           <Thumb item={openable ? it : { ...it, image: false }} />
           {!openable ? (
-            <span className="ui-file-name" title={it.name}>
+            // Focusable when the rows can be moved, so ⌘/Ctrl+↑/↓ still works
+            // without a link to carry the focus (code review).
+            <span
+              ref={(el) => {
+                links.current[i] = el;
+              }}
+              className="ui-file-name"
+              title={it.name}
+              tabIndex={onMove ? 0 : undefined}
+              onKeyDown={onKey(i)}
+            >
               {it.name}
             </span>
           ) : (
