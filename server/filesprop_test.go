@@ -299,3 +299,39 @@ func TestCollectionMarkdownWritesFilesAsLinks(t *testing.T) {
 		t.Errorf("export lacks %s:\n%s", want, md)
 	}
 }
+
+// A duplicated row keeps the same files, not copies (plan D11): duplicating a
+// row with a large video must not double the storage.
+func TestDuplicatedRowKeepsTheSameFiles(t *testing.T) {
+	f := newFilesFixture(t)
+	v := filesValue(f.own)
+	if _, err := callTool(t, f.s, f.u, "set_properties", `{"page_id":"`+f.row+`","properties":{"media":`+v+`}}`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := callTool(t, f.s, f.u, "duplicate_page", `{"page_id":"`+f.row+`"}`); err != nil {
+		t.Fatal(err)
+	}
+	var copyID, props string
+	f.s.db.QueryRow(`SELECT id, props FROM pages WHERE parent_id = ? AND id != ? ORDER BY created_at DESC LIMIT 1`, f.db, f.row).Scan(&copyID, &props)
+	var m map[string]json.RawMessage
+	json.Unmarshal([]byte(props), &m)
+	if string(m["media"]) != v {
+		t.Errorf("the copy holds %s, want %s", m["media"], v)
+	}
+	entries, _ := os.ReadDir(filepath.Join(f.s.dataDir, "files"))
+	if len(entries) != 3 {
+		t.Errorf("duplicating made files: %d on disk, want the fixture's 3", len(entries))
+	}
+}
+
+// A chart and a board refuse to group by a Files & media property: a column
+// or a bar per list of files would be one per row.
+func TestChartAndBoardRefuseToGroupByFiles(t *testing.T) {
+	f := newFilesFixture(t)
+	for _, view := range []string{"chart", "board"} {
+		_, err := callTool(t, f.s, f.u, "set_view", `{"page_id":"`+f.db+`","type":"`+view+`","name":"V","group_by":"media"}`)
+		if err == nil || !strings.Contains(err.Error(), "files") {
+			t.Errorf("%s grouped by a files property: %v", view, err)
+		}
+	}
+}

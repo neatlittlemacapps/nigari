@@ -73,6 +73,11 @@ var parityActs = []parityAct{
 	// gate. An agent does the same with update_page's after and
 	// set_properties; the move is what both doors gate alike.
 	{"place into a group", "POST", "/api/pages/%s/place", `{"after":"%s","propsPatch":{"x":"y"}}`, "update_page", `{"page_id":"%[1]s","after":"%[1]s"}`, false},
+	// Setting a property value (spec 028 added the Files & media value, whose
+	// own check is in filesprop_test.go): propsPatch and set_properties behind
+	// the same page write gate. An empty list passes the files check on any
+	// page, so what is compared is who may write a value.
+	{"set a property value", "PATCH", "/api/pages/%s", `{"propsPatch":{"media":[]}}`, "set_properties", `{"page_id":"%s","properties":{"media":[]}}`, false},
 	{"backlinks", "GET", "/api/pages/%s/backlinks", "", "get_links", `{"page_id":"%s"}`, false},
 	{"note", "POST", "/api/pages/%s/notes", `{"body":"A note"}`, "note", `{"page_id":"%s","text":"A note"}`, false},
 	// Every parity page's body is the one paragraph "x" (see the loop below),
