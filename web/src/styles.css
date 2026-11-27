@@ -11246,4 +11246,8 @@ body:has(.live-down) .update-banner {
 .ui-button.prop-files-cell {
   width: 100%;
   justify-content: flex-start;
+  /* The cell's files read like every other cell value, not in a button's
+     monospace label (the look checklist: the same thing looks the same). */
+  font-family: var(--font-family-sans);
+  letter-spacing: normal;
 }
