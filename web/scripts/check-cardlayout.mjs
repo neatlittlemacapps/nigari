@@ -57,6 +57,7 @@ try {
   check('date is a fact', cl.zoneOf(def('a', 'date'), '2026-01-01'), 'fact');
   check('number is a fact', cl.zoneOf(def('a', 'number'), 55), 'fact');
   check('checklist is a fact', cl.zoneOf(def('a', 'checklist'), []), 'fact');
+  check('files are a fact', cl.zoneOf(def('a', 'files'), [{ url: '/files/a.png', name: 'a.png' }]), 'fact');
   // A computed value is an OBJECT, and the text branch turns one into
   // "[object Object]" on every card. That shipped once, so every computed type
   // gets a line here.

@@ -11231,3 +11231,15 @@ body:has(.live-down) .update-banner {
   pointer-events: none;
   background: var(--color-focus);
 }
+
+/* A Files & media value being edited (spec 028): the files, then Add files,
+   in the cell's panel and on the row's page. */
+.prop-files-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-200);
+  min-width: 0;
+}
+.prop-files-popover .prop-files-editor {
+  width: min(var(--popover-width), calc(100vw - var(--space-400)));
+}

@@ -14,6 +14,7 @@ import { PageIcon } from '../pageIcon';
 import { t } from '../i18n';
 import { Button } from '../ui/Button';
 import { isUnset } from '../isUnset';
+import FilesValue from './FilesValue';
 
 interface Props {
   def: PropDef;
@@ -1007,7 +1008,7 @@ export default function PropertyValue({
   // field reads "Empty" whatever its type, as it does for someone who can
   // edit. Computed types (formula, rollup, backrelation, last activity) keep
   // their own "—", and a checkbox is never empty.
-  if (ro && showEmpty && isUnset(value) && ['text', 'number', 'select', 'multiselect', 'status', 'date', 'url', 'person', 'relation', 'checklist'].includes(def.type)) {
+  if (ro && showEmpty && isUnset(value) && ['text', 'number', 'select', 'multiselect', 'status', 'date', 'url', 'person', 'relation', 'checklist', 'files'].includes(def.type)) {
     return <EmptyValue show />;
   }
 
@@ -1128,6 +1129,8 @@ export default function PropertyValue({
           onChange={(e) => onChange?.(e.target.checked)}
         />
       );
+    case 'files':
+      return <FilesValue def={def} value={value} onChange={onChange} readOnly={readOnly} compact={compact} showEmpty={showEmpty} />;
     case 'checklist':
       return <ChecklistValue def={def} value={value} onChange={onChange} readOnly={readOnly} compact={compact} />;
     case 'number': {

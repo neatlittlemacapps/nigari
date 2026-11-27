@@ -21,6 +21,8 @@ export const TYPES: { value: PropType; label: string }[] = [
   // The server has long known url (validPropTypes) and MCP advertises it —
   // only the interface never offered it and quietly treated it as text.
   { value: 'url', label: 'URL' },
+  // Uploads to this nigari, shown as thumbnails and file chips (spec 028).
+  { value: 'files', label: 'Files & media' },
   { value: 'person', label: 'Person' },
   { value: 'relation', label: 'Relation' },
   { value: 'backrelation', label: 'Backrelation' },

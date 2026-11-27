@@ -1963,6 +1963,10 @@ function FilterSortControls({
     const prop = schema.find((p) => p.id === propId);
     const ty = prop?.type;
     const many = takesSeveral(propId);
+    // Files & media asks whether it holds files, nothing else (spec 028,
+    // FR-006e): "is" or "contains" would compare the stored list as text. The
+    // server refuses the rest for an agent too (checkFilesFilterOp).
+    if (ty === 'files') return [{ value: 'is_not_empty', label: t('is not empty') }, { value: 'is_empty', label: t('is empty') }];
     const base: { value: FilterOp; label: string }[] = [
       { value: 'is', label: many ? t('is any of') : t('is') },
       { value: 'is_not', label: many ? t('is none of') : t('is not') },
@@ -2233,7 +2237,10 @@ function FilterSortControls({
             value=""
             onChange={(e) => {
               if (!e.target.value) return;
-              onChange({ filters: [...filters, { property: e.target.value, op: 'is', value: '' }] });
+              // A Files & media filter starts as "is not empty", its first and
+              // only useful question; "is" is not among its operations.
+              const files = schema.find((p) => p.id === e.target.value)?.type === 'files';
+              onChange({ filters: [...filters, { property: e.target.value, op: files ? 'is_not_empty' : 'is', value: '' }] });
             }}
           >
             <option value="">{t('+ Add filter…')}</option>
@@ -2258,7 +2265,8 @@ function FilterSortControls({
               }
             >
               <option value="">{t('No sort')}</option>
-              {schema.map((p) => (
+              {/* A list of files has no order to sort by (spec 028, FR-006e). */}
+              {schema.filter((p) => p.type !== 'files' || sort?.property === p.id).map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>

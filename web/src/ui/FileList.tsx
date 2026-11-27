@@ -73,18 +73,24 @@ function CompactList({ label, items, max = 3, moreLabel }: Extract<FileListProps
   if (items.length === 0) return null;
   const shown = items.slice(0, max);
   const hidden = items.length - shown.length;
+  // Spans with list roles, not <ul>: the compact list sits inside the table
+  // cell's button, which may hold only phrasing content.
   return (
-    <ul className="ui-file-list" data-variant="compact" aria-label={label}>
+    <span className="ui-file-list" data-variant="compact" role="list" aria-label={label}>
       {shown.map((it, i) => (
-        <li key={it.url + i} className="ui-file-item" data-kind={it.image ? 'image' : 'file'} title={it.name}>
+        <span key={it.url + i} role="listitem" className="ui-file-item" data-kind={it.image ? 'image' : 'file'} title={it.name}>
           <Thumb item={it} />
           {/* A file chip names its file; an image speaks for itself, and its
               name is in the title and for a screen reader. */}
           {it.image ? <span className="ui-file-sr">{it.name}</span> : <span className="ui-file-name">{it.name}</span>}
-        </li>
+        </span>
       ))}
-      {hidden > 0 && <li className="ui-file-more">{moreLabel(hidden)}</li>}
-    </ul>
+      {hidden > 0 && (
+        <span role="listitem" className="ui-file-more">
+          {moreLabel(hidden)}
+        </span>
+      )}
+    </span>
   );
 }
 

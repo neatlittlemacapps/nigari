@@ -1434,5 +1434,11 @@
   "Week of {day}": "Woche vom {day}",
   "Every group is hidden. Show one from the Group menu.": "Alle Gruppen sind ausgeblendet. Zeige eine über das Gruppieren-Menü an.",
   "Open {name}": "{name} öffnen",
-  "Close {name}": "{name} schließen"
+  "Close {name}": "{name} schließen",
+  "Add files": "Dateien hinzufügen",
+  "Drop files here": "Dateien hier ablegen",
+  "Remove {name}": "{name} entfernen",
+  "+{count}": "+{count}",
+  "Uploading {name}": "{name} wird hochgeladen",
+  "These files could not be saved: a file is no longer there, or it belongs to another workspace.": "Diese Dateien konnten nicht gespeichert werden: Eine Datei ist nicht mehr da oder gehört zu einem anderen Arbeitsbereich."
 }

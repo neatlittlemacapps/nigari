@@ -775,7 +775,9 @@ export const api = {
   // XHR-based so we can drive a global progress bar and give a precise
   // over-limit / server error message. Progress is broadcast on
   // "nigari:upload-progress" (0-1) and "nigari:upload-done".
-  upload: (file: File, pageId?: string): Promise<string> =>
+  // onProgress: this one file's share (0-1), for a control that shows each
+  // upload of its own (ui/FileDrop, spec 028); the global bar still runs.
+  upload: (file: File, pageId?: string, onProgress?: (p: number) => void): Promise<string> =>
     new Promise((resolve, reject) => {
       if (file.size > api.uploadMaxBytes) {
         reject(
@@ -794,7 +796,9 @@ export const api = {
       const emit = (p: number) => window.dispatchEvent(new CustomEvent('nigari:upload-progress', { detail: p }));
       emit(0);
       xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) emit(e.loaded / e.total);
+        if (!e.lengthComputable) return;
+        emit(e.loaded / e.total);
+        onProgress?.(e.loaded / e.total);
       };
       const finish = () => window.dispatchEvent(new Event('nigari:upload-done'));
       xhr.onload = () => {
