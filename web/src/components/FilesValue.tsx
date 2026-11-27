@@ -55,18 +55,29 @@ function useFileEdits(files: FileItem[], onChange?: (v: unknown) => void) {
     latest.current = next;
     onChange?.(next);
   };
+  // One write for the whole batch, once every file in it has finished, in the
+  // order chosen. A write per file sent one PATCH per upload, and requests in
+  // flight can arrive out of order: a list of three landing after the list of
+  // four stored three (found by files-property.mjs, one run in three).
   const upload = (chosen: File[]) => {
-    for (const file of chosen) {
+    const batch = chosen.map((file) => {
       const key = Math.random().toString(36).slice(2) + file.name;
       setUploads((u) => [...u, { key, name: file.name, progress: 0 }]);
-      api
+      return api
         .upload(file, undefined, (p) => setUploads((u) => u.map((x) => (x.key === key ? { ...x, progress: p } : x))))
         .then((url) => {
           setUploads((u) => u.filter((x) => x.key !== key));
-          write(addFiles(latest.current, [{ url, name: file.name }]));
+          return { url, name: file.name } as FileItem;
         })
-        .catch((e) => setUploads((u) => u.map((x) => (x.key === key ? { ...x, progress: undefined, error: uploadError(e) } : x))));
-    }
+        .catch((e) => {
+          setUploads((u) => u.map((x) => (x.key === key ? { ...x, progress: undefined, error: uploadError(e) } : x)));
+          return null;
+        });
+    });
+    void Promise.all(batch).then((done) => {
+      const added = done.filter((f): f is FileItem => f !== null);
+      if (added.length) write(addFiles(latest.current, added));
+    });
   };
   return {
     uploads,

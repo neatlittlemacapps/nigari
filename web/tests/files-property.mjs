@@ -46,7 +46,7 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
     { name: 'quote.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF\n') },
   ]);
   await eventually(async () => (await media()).length === 4);
-  assert.deepEqual(new Set(await names()), new Set(['one.png', 'two.png', 'three.png', 'quote.pdf']), 'the picked files are not all in the value');
+  assert.deepEqual(await names(), ['one.png', 'two.png', 'three.png', 'quote.pdf'], 'the picked files are not in the value in the order chosen');
   for (const f of await media()) assert.match(f.url, /^\/files\/[^/]+$/, `${f.name} is not stored as an upload of this instance`);
 
   // ---- a drop on the panel ----
@@ -130,6 +130,7 @@ await withFixture(async ({ page, context, api, base, workspace }) => {
   await reader.locator('.db-table').waitFor();
   // The table's cells still offer a reader their editor, for every type
   // (#1118): the row's page is where a reader is held to reading today.
+  await row(reader).locator('.ui-file-list[data-variant=compact] [role=listitem].ui-file-item').first().waitFor();
   assert.equal(await row(reader).locator('.ui-file-list[data-variant=compact] [role=listitem].ui-file-item').count(), 3, 'a reader does not see the files');
   await reader.goto(`${base}/p/${visit.id}`);
   const list = reader.locator('.ui-file-list[data-variant=full]');
