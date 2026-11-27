@@ -20,15 +20,15 @@ comes first. B to E depend only on A and may run as two streams
 
 ## Phase A: Protocol core, both eras (US1, P1) 🎯 MVP
 
-- [ ] T001 [US1] [test] `server/mcp_protocol_test.go` (new): the `mcpRequest(t, s, u, era, method, params)` helper beside `callTool`. It builds a legacy or a 2026-07-28 request, headers included, and runs it through `handleMCP`
-- [ ] T002 [US1] [mcp] `server/mcp_protocol.go` (new): `mcpEra(r, req)` per D1 (`initialize` or nothing means legacy, `_meta` version means modern, an unknown version gets -32022 with `data.supported`), header decoding with `=?base64?…?=`, and the -32020 header-mismatch check per D3
-- [ ] T003 [US1] [mcp] `server/mcp.go` `handleMCP`: dispatch by era. The modern writer adds `resultType` and `_meta` `serverInfo`. `ping` and `logging/setLevel` are legacy only (FR-006). Tool errors stay `isError` results, and both eras call `mcpCall` unchanged (D2)
-- [ ] T004 [US1] [mcp] `server/mcp.go`: `server/discover` (D5). One builder supplies `serverInfo` with icons, the capabilities and the instructions to both `initialize` and `server/discover`. `tools/list` and `server/discover` carry `ttlMs` and `cacheScope` (D4)
-- [ ] T005 [P] [US1] [test] Go: header mismatch on method, name and version; an unsupported version; a modern read token refused for a write tool; an idempotency key reused across eras; legacy answers unchanged byte for byte (golden answers for `initialize`, `tools/list` and one `tools/call`)
-- [ ] T006 [P] [US1] [test] `server/parity_property_test.go`: `TestAgentParityHoldsForEveryCredentialShape` runs its acts in both eras. `server/credential_audit_test.go` sends its outsider shapes in both eras
-- [ ] T007 [P] [US1] [perf] Benchmark `get_page` in both eras on the seeded workspace (`server/bench_world_test.go`). Record the numbers in the pull request (SC-006)
-- [ ] T008 [P] [US1] [wiki] `wiki/mcp-tools.md`: a protocol section (both eras, `server/discover`, cache hints, errors). `check-wiki.mjs` checks that each method `handleMCP` answers is named there (constitution IV)
-- [ ] T009 [US1] [backend] `.specify/memory/surfaces.md`: add the **Protocol era** surface (plan, New concepts). `capabilities.json` `infrastructure.transport` summary names the protocol methods. `docs/decisions.md`: an entry for serving both eras on one endpoint, with the options turned down
+- [x] T001 [US1] [test] `server/mcp_protocol_test.go` (new): the `mcpRequest(t, s, u, era, method, params)` helper beside `callTool`. It builds a legacy or a 2026-07-28 request, headers included, and runs it through `handleMCP`
+- [x] T002 [US1] [mcp] `server/mcp_protocol.go` (new): `mcpEra(r, req)` per D1 (`initialize` or nothing means legacy, `_meta` version means modern, an unknown version gets -32022 with `data.supported`), header decoding with `=?base64?…?=`, and the -32020 header-mismatch check per D3
+- [x] T003 [US1] [mcp] `server/mcp.go` `handleMCP`: dispatch by era. The modern writer adds `resultType` and `_meta` `serverInfo`. `ping` and `logging/setLevel` are legacy only (FR-006). Tool errors stay `isError` results, and both eras call `mcpCall` unchanged (D2)
+- [x] T004 [US1] [mcp] `server/mcp.go`: `server/discover` (D5). One builder supplies `serverInfo` with icons, the capabilities and the instructions to both `initialize` and `server/discover`. `tools/list` and `server/discover` carry `ttlMs` and `cacheScope` (D4)
+- [x] T005 [P] [US1] [test] Go: header mismatch on method, name and version; an unsupported version; a modern read token refused for a write tool; an idempotency key reused across eras; legacy answers unchanged byte for byte (golden answers for `initialize`, `tools/list` and one `tools/call`)
+- [x] T006 [P] [US1] [test] `server/parity_property_test.go`: `TestAgentParityHoldsForEveryCredentialShape` runs its acts in both eras. `server/credential_audit_test.go` sends its outsider shapes in both eras
+- [x] T007 [P] [US1] [perf] Benchmark `get_page` in both eras on the seeded workspace (`server/bench_world_test.go`). Record the numbers in the pull request (SC-006)
+- [x] T008 [P] [US1] [wiki] `wiki/mcp-tools.md`: a protocol section (both eras, `server/discover`, cache hints, errors). `check-wiki.mjs` checks that each method `handleMCP` answers is named there (constitution IV)
+- [x] T009 [US1] [backend] `.specify/memory/surfaces.md`: add the **Protocol era** surface (plan, New concepts). `capabilities.json` `infrastructure.transport` summary names the protocol methods. `docs/decisions.md`: an entry for serving both eras on one endpoint, with the options turned down
 
 ## Phase B: Authorization hardening (US5, P3)
 

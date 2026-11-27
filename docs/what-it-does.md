@@ -153,7 +153,7 @@ one SQLite file you own.
 ### Extending it
 
 There is no plugin system, and that is on purpose. Extension happens from
-outside the process, through the **REST API** or the **49 MCP tools** — which
+outside the process, through the **REST API** or the **34 MCP tools** — which
 reaches further than a plugin API usually does, and does not ask you to run
 somebody else's code inside the thing holding your company's notes.
 
@@ -164,8 +164,10 @@ this is not the tool yet.
 
 nigari speaks the Model Context Protocol. Point Claude, ChatGPT or any
 MCP-capable assistant at your instance and it can search, read, write, create
-databases, fill rows, move pages, comment and share — **49 tools** as of the
-current build.
+databases, fill rows, move pages, comment and share — **34 tools** as of the
+current build. It speaks both the current revision of the protocol
+(2026-07-28, which current Claude clients use) and the earlier one, on the
+same address, so a connector set up before keeps working.
 
 To change part of a page it quotes the passage and its replacement, and only
 that passage changes. A quote that matches twice, or not at all, is refused
@@ -233,7 +235,7 @@ are structural rather than a matter of quality:
 | Cost | per user, per month | free to self-host |
 | Offline | limited | typing offline is normal |
 | Your data | export | it is already yours |
-| Extending it | their API and integrations | full REST API and 49 MCP tools |
+| Extending it | their API and integrations | full REST API and 34 MCP tools |
 | Maturity | many years, huge feature surface | young; the core is solid, the edges are not filled in |
 
 **Choose Notion if** you want a large, polished feature surface, do not want to
@@ -398,7 +400,7 @@ Read this section as a sign that the rest is accurate.
   also the limit. This is right for a team; it is not built for tens of
   thousands of concurrent editors.
 - **No plugin system** — deliberately, and there is a route that does the same
-  job. Extending nigari means the REST API or the 49 MCP tools, from outside
+  job. Extending nigari means the REST API or the 34 MCP tools, from outside
   the process. That covers more than a plugin API usually does, and it does not
   ask you to run somebody else's code inside the thing holding your company's
   notes. What it does not give you is new block types in the editor.
@@ -440,7 +442,7 @@ accidentally forbade.
 Accurate at the time of writing, and cheap to re-check:
 
 - **1** executable, **1** SQLite file, **0** other services required
-- **49** MCP tools (48 in the released 1.5.0)
+- **34** MCP tools
 - **7** database views, **11** property types
 - **~19k** lines of Go, **~14k** lines of hand-written TypeScript
   (**~22k** counting the generated icon tables) and **~7k** lines of CSS

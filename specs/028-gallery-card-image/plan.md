@@ -239,6 +239,7 @@ upload limit (`max_upload_mb`, default 50).
 | Embedded views | `cardImage` is part of the view object, so an embed's own views carry it in the document (`embedViews.ts`, `server/embedviews.go`); `normalizeViews` checks both. A case in `server/testdata/embedviews`. | ui |
 | Content actions | Property actions list (`actions/`): no new action, the type is chosen in the existing type picker. View actions: "Card image" is a view setting in the Settings menu (a choice among values, so a submenu). Row actions: none new. | ui |
 | File references | Introduced here (New concepts): `checkFilesValue` on every door, the row recorded as carrier (`recordRowFiles` from `reindexPage`, `filesVersion` 4), the Markdown export writes links, a removed file stays stored. PR 2 adds the shared-row rule for share links (D9). | backend |
+| Protocol era | No change: the row came with spec 027 the same day. `set_view`'s `card_image` and the rows' `firstImage` are tool arguments and results, which both eras reach through `mcpCall`. | mcp |
 
 **New concepts**: **File references.** This feature is the second place,
 after document blocks, where a stored value points at an upload. Every later
