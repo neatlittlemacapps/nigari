@@ -93,7 +93,10 @@ Every answer carries `resultType` (`"complete"`) and, in `_meta`,
 would otherwise travel with every call. `server/discover` and `tools/list` are
 cacheable: `ttlMs` is `3600000` (an hour) and `cacheScope` is `"public"`,
 because the catalogue is the same for every credential (a read-only token is
-refused per call, not shown fewer tools).
+refused per call, not shown fewer tools). One exception: when no public
+address is configured, `server/discover` builds the PNG icon's address from
+the request's own host, and then answers `cacheScope: "private"`, so a shared
+cache cannot hand one caller's host to everyone.
 
 The headers must agree with the body, or the request is refused before any
 tool runs:
@@ -102,17 +105,19 @@ tool runs:
 | --- | --- | --- |
 | `MCP-Protocol-Version` | the version in `_meta` | every request |
 | `Mcp-Method` | `method` | every request |
-| `Mcp-Name` | the tool's `name` | `tools/call` |
+| `Mcp-Name` | the tool's `name`, or the `uri` | `tools/call` and `prompts/get` (`name`), `resources/read` (`uri`) |
 
 A value that is not plain ASCII is sent as `=?base64?<Base64 of the UTF-8>?=`
 and decoded before the comparison. A header that is missing or disagrees gets
-HTTP `400` with `-32020` (header mismatch). The refusals of this era:
+HTTP `400` with `-32020` (header mismatch). A legacy request never needs these
+headers, but if it sends `Mcp-Method` or `Mcp-Name` they are checked the same
+way, so a gateway that routes on them cannot be passed by leaving `_meta` out. The refusals of this era:
 
 | Code | HTTP | When | `data` |
 | --- | --- | --- | --- |
-| `-32020` | 400 | a routing header is missing or disagrees with the body | — |
+| `-32020` | 400 | a routing header is missing or disagrees with the body, including a `MCP-Protocol-Version` that names another version than `_meta` | — |
 | `-32022` | 400 | the version in `_meta` is not one nigari speaks | `supported` (every version nigari answers) and `requested` |
-| `-32602` | 400 | `_meta` lacks the client's capabilities, or `tools/call` params are unreadable | — |
+| `-32602` | 400 | `_meta` lacks the client's capabilities, its version is not a string, or `tools/call` params are unreadable | — |
 | `-32601` | 404 | the method is not answered in this era | — |
 
 A tool that refuses still answers with an `isError` result, as below, in both

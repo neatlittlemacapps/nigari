@@ -75,7 +75,14 @@ func mcpRequest(t testing.TB, s *Server, tok, era, method, params string) *httpt
 	t.Helper()
 	if era == eraModern {
 		body, headers := mcpModernBody(t, method, params)
-		return mcpPost(s, tok, body, headers)
+		rec := mcpPost(s, tok, body, headers)
+		// A modern call answered as a legacy one would still pass every gate
+		// test that only reads the text; this makes each of them prove the
+		// modern path ran (security review, spec 027 phase 1).
+		if rec.Code == 200 && !strings.Contains(rec.Body.String(), `"resultType":"complete"`) {
+			t.Fatalf("a modern %s was not answered in the modern era: %.200s", method, rec.Body.String())
+		}
+		return rec
 	}
 	if params == "" {
 		params = "{}"
@@ -132,6 +139,10 @@ func TestLegacyMCPAnswersAreUnchanged(t *testing.T) {
 	tok := mcpToken(t, s, uid, "write")
 
 	t.Run("initialize", func(t *testing.T) {
+		// testServer's build has no favicon.svg; give it a logo, so both
+		// icon entries are part of what is pinned (code review).
+		s.mcpIcon = "data:image/svg+xml;base64,PHN2Zy8+"
+		defer func() { s.mcpIcon = "" }()
 		rec := mcpPost(s, tok, `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}`, nil)
 		req := httptest.NewRequest("POST", "/mcp", nil)
 		info := map[string]any{"name": "nigari", "version": Version}
@@ -142,9 +153,10 @@ func TestLegacyMCPAnswersAreUnchanged(t *testing.T) {
 		if base := s.publicShareBase(req); base != "" {
 			icons = append(icons, map[string]any{"src": base + "/icon-192.png", "mimeType": "image/png", "sizes": []string{"192x192"}})
 		}
-		if len(icons) > 0 {
-			info["icons"] = icons
+		if len(icons) != 2 {
+			t.Fatalf("expected both icons in the pinned answer, have %d", len(icons))
 		}
+		info["icons"] = icons
 		want := rpcBody(t, map[string]any{"jsonrpc": "2.0", "id": 1, "result": map[string]any{
 			"protocolVersion": "2025-06-18",
 			"capabilities":    map[string]any{"tools": map[string]any{}},
@@ -206,14 +218,14 @@ func TestLegacyMCPAnswersAreUnchanged(t *testing.T) {
 			t.Errorf("notification changed: %d %q", rec.Code, rec.Body.String())
 		}
 	})
-	// The headers a 2026-07-28 client sends mean nothing to the legacy era:
-	// a legacy client after initialize sends MCP-Protocol-Version as well,
-	// and nothing in its body says it is modern.
-	t.Run("headers alone do not make a request modern", func(t *testing.T) {
+	// A legacy client after initialize sends MCP-Protocol-Version with the
+	// version it agreed on, and nothing in its body to compare it with: the
+	// header neither makes the request modern nor refuses it.
+	t.Run("a version header alone does not make a request modern", func(t *testing.T) {
 		rec := mcpPost(s, tok, `{"jsonrpc":"2.0","id":7,"method":"tools/list"}`,
-			map[string]string{"MCP-Protocol-Version": "2025-06-18", "Mcp-Method": "ping"})
+			map[string]string{"MCP-Protocol-Version": "2025-06-18"})
 		if rec.Code != 200 || strings.Contains(rec.Body.String(), "resultType") || strings.Contains(rec.Body.String(), `"error"`) {
-			t.Errorf("legacy request with headers: %d %s", rec.Code, rec.Body.String()[:min(200, rec.Body.Len())])
+			t.Errorf("legacy request with a version header: %d %.200s", rec.Code, rec.Body.String())
 		}
 	})
 }
@@ -254,7 +266,7 @@ func TestModernClientDiscoversListsAndCalls(t *testing.T) {
 	tok := mcpToken(t, s, uid, "write")
 
 	d := modernResult(t, mcpRequest(t, s, tok, eraModern, "server/discover", ""))
-	if d["resultType"] != "complete" || d["instructions"] != mcpInstructions || d["cacheScope"] != "public" || d["ttlMs"] != float64(mcpListTTLms) {
+	if d["resultType"] != "complete" || d["instructions"] != mcpInstructions || d["ttlMs"] != float64(mcpListTTLms) {
 		t.Errorf("discover: %v", d)
 	}
 	if v, _ := json.Marshal(d["supportedVersions"]); !strings.Contains(string(v), `"2026-07-28"`) || !strings.Contains(string(v), `"2025-06-18"`) {
@@ -473,5 +485,88 @@ func TestInitializeIsLegacyEvenWithMeta(t *testing.T) {
 	rec := mcpPost(s, tok, body, headers)
 	if rec.Code != 200 || !strings.Contains(rec.Body.String(), `"protocolVersion":"2025-11-25"`) || strings.Contains(rec.Body.String(), "resultType") {
 		t.Errorf("initialize with _meta: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+// A legacy request that carries the 2026-07-28 routing headers has them
+// checked too. Legacy clients never send Mcp-Method or Mcp-Name, so this
+// changes nothing for them; without it a call could pass a gateway's rule on
+// "Mcp-Name: get_page" by leaving _meta out and run another tool (security
+// review L1).
+func TestLegacyRequestWithRoutingHeadersIsChecked(t *testing.T) {
+	s := testServer(t)
+	uid, _ := signedIn(t, s, "gateway@example.test")
+	tok := mcpToken(t, s, uid, "write")
+	ws := s.firstWorkspaceOf(t, uid)
+	body := `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"create_page","arguments":{"workspace_id":"` + ws + `","title":"Behind the gateway"}}}`
+	for _, h := range []map[string]string{
+		{"Mcp-Name": "get_page"},
+		{"Mcp-Method": "tools/list"},
+		{"Mcp-Method": "tools/call", "Mcp-Name": "get_page"},
+	} {
+		status, code, _ := modernError(t, mcpPost(s, tok, body, h))
+		if status != 400 || code != rpcHeaderMismatch {
+			t.Errorf("%v: HTTP %d code %d, want 400 %d", h, status, code, rpcHeaderMismatch)
+		}
+	}
+	var n int
+	s.db.QueryRow(`SELECT COUNT(*) FROM pages WHERE title = 'Behind the gateway'`).Scan(&n)
+	if n != 0 {
+		t.Fatalf("a mismatched legacy request created %d page(s)", n)
+	}
+	// Headers that agree are fine, and so is no header at all.
+	for _, h := range []map[string]string{{"Mcp-Method": "tools/call", "Mcp-Name": "create_page"}, nil} {
+		if text, isErr := mcpToolText(t, mcpPost(s, tok, body, h)); isErr {
+			t.Errorf("%v: %s", h, text)
+		}
+	}
+}
+
+// A body naming one version and a header naming another disagree, which is
+// a header mismatch whichever of the two nigari speaks (code review).
+func TestModernVersionHeaderIsComparedBeforeTheVersion(t *testing.T) {
+	s := testServer(t)
+	uid, _ := signedIn(t, s, "order@example.test")
+	tok := mcpToken(t, s, uid, "write")
+	body, headers := mcpModernBody(t, "tools/list", "")
+	body = strings.Replace(body, mcpModernVersion, "1900-01-01", 1)
+	if status, code, _ := modernError(t, mcpPost(s, tok, body, headers)); status != 400 || code != rpcHeaderMismatch {
+		t.Errorf("HTTP %d code %d, want 400 %d", status, code, rpcHeaderMismatch)
+	}
+}
+
+// The rate limit holds in both eras: they share mcpToolsCall, and a modern
+// client must not get a second budget by switching eras.
+func TestRateLimitHoldsInBothEras(t *testing.T) {
+	s := testServer(t)
+	uid, _ := signedIn(t, s, "rate@example.test")
+	tok := mcpToken(t, s, uid, "write")
+	s.mcpRate = newRateLimiter(0, 1) // one call, then none
+	call := `{"name":"whoami","arguments":{}}`
+	if _, isErr := mcpToolText(t, mcpRequest(t, s, tok, eraLegacy, "tools/call", call)); isErr {
+		t.Fatal("the first call was refused")
+	}
+	for _, era := range []string{eraModern, eraLegacy} {
+		if text, isErr := mcpToolText(t, mcpRequest(t, s, tok, era, "tools/call", call)); !isErr || !strings.Contains(text, "rate limit") {
+			t.Errorf("%s era after the budget: %v %q", era, isErr, text)
+		}
+	}
+}
+
+// server/discover is public-cacheable only when its icon address comes from
+// configuration. Built from the request's Host, a shared cache would hand
+// one caller's Host to everyone (security review L2).
+func TestDiscoverIsPrivateWhenItsIconComesFromTheHost(t *testing.T) {
+	s := testServer(t)
+	uid, _ := signedIn(t, s, "cache@example.test")
+	tok := mcpToken(t, s, uid, "write")
+	if d := modernResult(t, mcpRequest(t, s, tok, eraModern, "server/discover", "")); d["cacheScope"] != "private" {
+		t.Errorf("Host-derived icon: cacheScope %v", d["cacheScope"])
+	}
+	s.setSetting("public_base_url", "https://notes.example.test")
+	d := modernResult(t, mcpRequest(t, s, tok, eraModern, "server/discover", ""))
+	icons, _ := json.Marshal(d["_meta"])
+	if d["cacheScope"] != "public" || !strings.Contains(string(icons), "https://notes.example.test/icon-192.png") {
+		t.Errorf("configured address: cacheScope %v, %s", d["cacheScope"], icons)
 	}
 }

@@ -129,10 +129,15 @@ type mcpModernRequest struct {
 // the legacy era: initialize, a notification, or a request without the
 // per-request version in _meta, so clients that skip initialize today keep
 // working. A modern request is checked in full here, before any tool runs:
-// its version, its headers against its body (plan D3) and the capabilities
+// its headers against its body (plan D3), its version and the capabilities
 // the revision requires it to send.
+//
+// The headers repeat what the body says, so a gateway can route and
+// authorise on them without parsing JSON. A request whose headers say one
+// thing and whose body another is refused, or the gateway's decision and
+// nigari's would be about two different calls.
 func mcpEra(r *http.Request, req rpcRequest) (*mcpModernRequest, *mcpRefusal) {
-	if req.Method == "initialize" || strings.HasPrefix(req.Method, "notifications/") {
+	if strings.HasPrefix(req.Method, "notifications/") {
 		return nil, nil
 	}
 	var params struct {
@@ -144,47 +149,64 @@ func mcpEra(r *http.Request, req rpcRequest) (*mcpModernRequest, *mcpRefusal) {
 	// own handler refuses them as it always has.
 	_ = json.Unmarshal(req.Params, &params)
 	rawVersion, modern := params.Meta[mcpMetaProtocolVersion]
-	if !modern {
-		return nil, nil
-	}
-	var version string
-	if err := json.Unmarshal(rawVersion, &version); err != nil || version == "" {
-		return nil, &mcpRefusal{http.StatusBadRequest, rpcInvalidParams,
-			"_meta " + mcpMetaProtocolVersion + " must be a version string", nil}
-	}
-	if version != mcpModernVersion {
-		return nil, &mcpRefusal{http.StatusBadRequest, rpcUnsupportedProtocolVersion, "Unsupported protocol version",
-			map[string]any{"supported": mcpSupportedVersions, "requested": version}}
+	if req.Method == "initialize" {
+		modern = false
 	}
 
-	// The headers repeat what the body says, so a gateway can route and
-	// authorise on them without parsing JSON. A request whose headers say one
-	// thing and whose body another is refused, or the gateway's decision and
-	// nigari's would be about two different calls. A missing header is a
-	// mismatch too: the revision requires each of them.
-	mismatch := func(header, want string) *mcpRefusal {
-		got, ok := mcpHeaderValue(r.Header.Get(header))
+	// required: a missing header is a mismatch too, because the revision
+	// requires each of them on a modern request.
+	mismatch := func(header, want string, required bool) *mcpRefusal {
+		raw := r.Header.Get(header)
+		if raw == "" && !required {
+			return nil
+		}
+		got, ok := mcpHeaderValue(raw)
 		if ok && got == want {
 			return nil
 		}
 		return &mcpRefusal{http.StatusBadRequest, rpcHeaderMismatch,
 			"the " + header + " header does not match the request body", nil}
 	}
-	if e := mismatch("MCP-Protocol-Version", version); e != nil {
+	routing := func(required bool) *mcpRefusal {
+		if e := mismatch("Mcp-Method", req.Method, required); e != nil {
+			return e
+		}
+		switch req.Method {
+		case "tools/call", "prompts/get":
+			return mismatch("Mcp-Name", params.Name, required)
+		case "resources/read":
+			return mismatch("Mcp-Name", params.URI, required)
+		}
+		return nil
+	}
+
+	if !modern {
+		// A legacy client never sends Mcp-Method or Mcp-Name (they came with
+		// 2026-07-28), so where they are present they are checked as well:
+		// otherwise a call could pass a gateway's rule on "Mcp-Name: get_page"
+		// by leaving _meta out and run another tool behind it (security
+		// review, spec 027 phase 1). MCP-Protocol-Version is not compared:
+		// legacy clients send it after initialize, with nothing in the body
+		// to compare it with.
+		return nil, routing(false)
+	}
+
+	var version string
+	if err := json.Unmarshal(rawVersion, &version); err != nil || version == "" {
+		return nil, &mcpRefusal{http.StatusBadRequest, rpcInvalidParams,
+			"_meta " + mcpMetaProtocolVersion + " must be a version string", nil}
+	}
+	// The header first: a body and a header naming two versions disagree,
+	// which is a mismatch whichever of them nigari happens to speak.
+	if e := mismatch("MCP-Protocol-Version", version, true); e != nil {
 		return nil, e
 	}
-	if e := mismatch("Mcp-Method", req.Method); e != nil {
-		return nil, e
+	if version != mcpModernVersion {
+		return nil, &mcpRefusal{http.StatusBadRequest, rpcUnsupportedProtocolVersion, "Unsupported protocol version",
+			map[string]any{"supported": mcpSupportedVersions, "requested": version}}
 	}
-	switch req.Method {
-	case "tools/call", "prompts/get":
-		if e := mismatch("Mcp-Name", params.Name); e != nil {
-			return nil, e
-		}
-	case "resources/read":
-		if e := mismatch("Mcp-Name", params.URI); e != nil {
-			return nil, e
-		}
+	if e := routing(true); e != nil {
+		return nil, e
 	}
 
 	caps, ok := params.Meta[mcpMetaClientCapabilities]
@@ -237,13 +259,22 @@ func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user,
 		// what is built: the tasks and skills extensions are declared by the
 		// phases that implement them, not before.
 		info := s.mcpServerInfo(r, true)
+		// The PNG icon's address comes from the Host header when no public
+		// address is configured. A shared cache that keys on the path alone
+		// would then hand one caller's Host to everyone (a logo, and a
+		// beacon, from wherever that caller named): such an answer is only
+		// for its own credential (security review, spec 027 phase 1).
+		scope := "public"
+		if s.publicShareBaseFromHost(r) {
+			scope = "private"
+		}
 		rpcResult(w, req.ID, map[string]any{
 			"resultType":        "complete",
 			"supportedVersions": mcpSupportedVersions,
 			"capabilities":      map[string]any{"tools": map[string]any{}},
 			"instructions":      mcpInstructions,
 			"ttlMs":             mcpListTTLms,
-			"cacheScope":        "public",
+			"cacheScope":        scope,
 			"_meta":             map[string]any{mcpMetaServerInfo: info},
 		})
 	case "tools/list":
@@ -289,4 +320,16 @@ func (s *Server) mcpToolsCall(r *http.Request, u *user, raw json.RawMessage) (ma
 		return textResult(err.Error(), true), ""
 	}
 	return textResult(result, false), ""
+}
+
+// publicShareBaseFromHost reports whether publicShareBase fell through to the
+// request's own Host header: no public address, HTTPS domain or tunnel is
+// configured. A configured address that equals the Host also counts, which
+// only makes an answer private that could have been public.
+func (s *Server) publicShareBaseFromHost(r *http.Request) bool {
+	proto := "http"
+	if isHTTPS(r) {
+		proto = "https"
+	}
+	return s.publicShareBase(r) == proto+"://"+r.Host
 }
