@@ -1453,5 +1453,7 @@
   "Backrelation": "Rückrelation",
   "Rollup": "Rollup",
   "Last activity": "Letzte Aktivität",
-  "Formula": "Formel"
+  "Formula": "Formel",
+  "Too many files were sent from here. Wait a minute, then try again.": "Von hier wurden zu viele Dateien gesendet. Warte eine Minute und versuche es dann erneut.",
+  "A file of this form is no longer waiting to be sent. Remove it, add it again, then send the form.": "Eine Datei dieses Formulars wartet nicht mehr auf das Senden. Entferne sie, füge sie erneut hinzu und sende dann das Formular."
 }

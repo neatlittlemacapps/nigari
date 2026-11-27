@@ -162,7 +162,7 @@ func TestAnonymousAndDesktopRoutesAreNotRefusedByOrigin(t *testing.T) {
 		s.ServeHTTP(rec, originRequest("POST", target, `{}`, "", map[string]string{"Origin": origin}))
 		return strings.Contains(rec.Body.String(), `"cross_origin"`)
 	}
-	for _, target := range []string{"/public/sometoken", "/api/public/form/sometoken/submit"} {
+	for _, target := range []string{"/public/sometoken", "/api/public/form/sometoken/submit", "/api/public/form/sometoken/upload"} {
 		if refused(target, "null") || refused(target, "http://elsewhere.example.com") {
 			t.Errorf("POST %s was refused by origin", target)
 		}

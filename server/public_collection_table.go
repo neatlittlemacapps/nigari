@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -12,7 +13,9 @@ import (
 // This is presentation only: the rows and values are the same immediate,
 // non-trashed children that collectionMarkdown exports. It grants no row-page
 // navigation or child content access.
-func (s *Server) publicCollectionTable(p *page, nonces ...string) (string, error) {
+// token is the share's, for the addresses of the rows' files (spec 028):
+// publicAssetURL serves them under the share, never under /files/.
+func (s *Server) publicCollectionTable(p *page, token string, nonces ...string) (string, error) {
 	nonce := ""
 	if len(nonces) > 0 {
 		nonce = nonces[0]
@@ -76,8 +79,17 @@ func (s *Server) publicCollectionTable(p *page, nonces ...string) (string, error
 		}
 		var props map[string]any
 		json.Unmarshal([]byte(raw), &props)
+		var rawProps map[string]json.RawMessage
+		json.Unmarshal([]byte(raw), &rawProps)
 		body.WriteString(`<tr><th scope="row">` + html.EscapeString(rowTitle) + `</th>`)
 		for _, prop := range schema {
+			// Files & media (spec 028, FR-006i): images as thumbnails, other
+			// files as links, all through the share's own file route, which
+			// serves a file only while this row may be seen (sharedRowHoldsFile).
+			if prop.Type == "files" {
+				body.WriteString(`<td>` + publicFilesCell(rawProps[prop.ID], token) + `</td>`)
+				continue
+			}
 			body.WriteString(`<td>` + html.EscapeString(publicCollectionTypedCell(props[prop.ID], prop.Type, prop.ID, options)) + `</td>`)
 		}
 		body.WriteString(`</tr>`)
@@ -102,7 +114,7 @@ func (s *Server) publicCollectionTable(p *page, nonces ...string) (string, error
 
 // Only the table scrolls on a small screen; headings and empty states remain
 // part of the ordinary document flow. Native tokens come from the app build.
-const publicCollectionStyle = `*{box-sizing:border-box}.public-collection{margin:0;height:auto;min-height:100vh;background:var(--bg,#fbfaf7);color:var(--fg,#1c1a15);font:16px/1.6 var(--mono,ui-monospace,monospace)}.public-view .public-doc{max-width:1100px;margin:auto;padding:48px 32px}.public-doc h1{font-size:clamp(28px,4vw,40px);line-height:1.2;margin:0 0 20px}.collection-description{color:var(--muted,#7e7d78);margin:0 0 24px}.collection-scroll{overflow:auto;max-width:100%;max-height:70vh;border:1px solid var(--border,#ddd);border-radius:var(--radius,10px)}.public-view .collection-scroll{scrollbar-width:auto}.public-view .collection-scroll::-webkit-scrollbar{display:block;height:12px;width:12px}.public-view .collection-scroll::-webkit-scrollbar-thumb{background:var(--muted,#7e7d78);border-radius:6px}.public-view .collection-scroll::-webkit-scrollbar-track{background:var(--hover,#eee)}.collection-scroll:focus-visible{outline:2px solid var(--accent,#b3123f);outline-offset:3px}.collection-scroll table{border-collapse:collapse;min-width:100%;width:max-content;margin:0}.collection-scroll th,.collection-scroll td{min-width:140px;max-width:360px;padding:12px 16px;text-align:left;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere;border-right:1px solid var(--border,#ddd);border-bottom:1px solid var(--border,#ddd)}.collection-scroll thead{background:var(--sidebar-bg,#f2f1ea)}.collection-scroll thead th{position:sticky;top:0;z-index:1;background:var(--sidebar-bg,#f2f1ea);font-size:13px;font-weight:600;color:var(--muted,#7e7d78)}.collection-scroll tbody th{font-weight:500}.collection-scroll tr>*:last-child{border-right:0}.collection-scroll tbody tr:last-child>*{border-bottom:0}.collection-scroll .collection-empty{padding:32px;text-align:center;color:var(--muted,#7e7d78)}@media(max-width:600px){.public-view .public-doc{padding:28px 16px}}@media print{.public-collection{background:white;color:black}.public-view .public-doc{padding:0;max-width:none}.collection-scroll{overflow:visible;max-height:none}.collection-scroll thead th{position:static}.collection-scroll table{width:100%;table-layout:fixed}.collection-scroll th,.collection-scroll td{min-width:0}}`
+const publicCollectionStyle = `*{box-sizing:border-box}.public-collection{margin:0;height:auto;min-height:100vh;background:var(--bg,#fbfaf7);color:var(--fg,#1c1a15);font:16px/1.6 var(--mono,ui-monospace,monospace)}.public-view .public-doc{max-width:1100px;margin:auto;padding:48px 32px}.public-doc h1{font-size:clamp(28px,4vw,40px);line-height:1.2;margin:0 0 20px}.collection-description{color:var(--muted,#7e7d78);margin:0 0 24px}.collection-scroll{overflow:auto;max-width:100%;max-height:70vh;border:1px solid var(--border,#ddd);border-radius:var(--radius,10px)}.public-view .collection-scroll{scrollbar-width:auto}.public-view .collection-scroll::-webkit-scrollbar{display:block;height:12px;width:12px}.public-view .collection-scroll::-webkit-scrollbar-thumb{background:var(--muted,#7e7d78);border-radius:6px}.public-view .collection-scroll::-webkit-scrollbar-track{background:var(--hover,#eee)}.collection-scroll:focus-visible{outline:2px solid var(--accent,#b3123f);outline-offset:3px}.collection-scroll table{border-collapse:collapse;min-width:100%;width:max-content;margin:0}.collection-scroll th,.collection-scroll td{min-width:140px;max-width:360px;padding:12px 16px;text-align:left;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere;border-right:1px solid var(--border,#ddd);border-bottom:1px solid var(--border,#ddd)}.collection-scroll thead{background:var(--sidebar-bg,#f2f1ea)}.collection-scroll thead th{position:sticky;top:0;z-index:1;background:var(--sidebar-bg,#f2f1ea);font-size:13px;font-weight:600;color:var(--muted,#7e7d78)}.collection-scroll tbody th{font-weight:500}.collection-scroll tr>*:last-child{border-right:0}.collection-scroll tbody tr:last-child>*{border-bottom:0}.collection-scroll .collection-empty{padding:32px;text-align:center;color:var(--muted,#7e7d78)}.public-files{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.public-files img{width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--border,#ddd);display:block}.public-files a{color:inherit}@media(max-width:600px){.public-view .public-doc{padding:28px 16px}}@media print{.public-collection{background:white;color:black}.public-view .public-doc{padding:0;max-width:none}.collection-scroll{overflow:visible;max-height:none}.collection-scroll thead th{position:static}.collection-scroll table{width:100%;table-layout:fixed}.collection-scroll th,.collection-scroll td{min-width:0}}`
 
 // Values from an old property type must not survive a schema change. Relations
 // and people stay blank rather than exposing internal IDs or unpublished names.
@@ -143,4 +155,45 @@ func publicCollectionTypedCell(value any, kind, property string, options map[str
 		}
 	}
 	return ""
+}
+
+// publicFilesCell draws a Files & media value on a shared database page: each
+// image as a small thumbnail, each other file as a link, both named as they
+// were uploaded and both served under the share (publicAssetURL). A value of
+// any other shape draws nothing, as it does in the app.
+func publicFilesCell(raw json.RawMessage, token string) string {
+	items, err := parseFilesValue(raw)
+	if err != nil || len(items) == 0 || token == "" {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString(`<span class="public-files">`)
+	for _, it := range items {
+		name := storedFileName(it.URL)
+		if name == "" {
+			continue
+		}
+		label := it.Name
+		if label == "" {
+			label = name
+		}
+		href := html.EscapeString(publicAssetURL(token, name))
+		if publicImageExt(name) {
+			b.WriteString(`<a href="` + href + `" title="` + html.EscapeString(label) + `"><img src="` + href + `" alt="` + html.EscapeString(label) + `" loading="lazy"></a>`)
+		} else {
+			b.WriteString(`<a href="` + href + `">` + html.EscapeString(label) + `</a>`)
+		}
+	}
+	b.WriteString(`</span>`)
+	return b.String()
+}
+
+// publicImageExt is filesValue.ts' isImageUrl on the server: the formats a
+// browser draws in an <img>.
+func publicImageExt(name string) bool {
+	switch strings.ToLower(filepath.Ext(name)) {
+	case ".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".bmp", ".svg":
+		return true
+	}
+	return false
 }

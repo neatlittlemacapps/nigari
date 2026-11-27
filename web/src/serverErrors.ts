@@ -39,6 +39,10 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
       return t("This request did not come from nigari's own page, so it was refused. Behind a proxy, pass on the address you opened nigari by (Host or X-Forwarded-Host).");
 
     // ---- a property's visibility on a row's page (spec 015) ----
+    case 'form_upload_limit':
+      return t('Too many files were sent from here. Wait a minute, then try again.');
+    case 'form_upload_unclaimed':
+      return t('A file of this form is no longer waiting to be sent. Remove it, add it again, then send the form.');
     case 'invalid_files_value':
       return t('These files could not be saved: a file is no longer there, or it belongs to another workspace.');
     case 'invalid_property_visibility':

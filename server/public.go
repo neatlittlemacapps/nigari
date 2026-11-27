@@ -69,7 +69,7 @@ func (s *Server) handlePublicView(w http.ResponseWriter, r *http.Request) {
 		s.setPublicGrant(w, r, token)
 	}
 	if p.Type == "collection" {
-		table, err := s.publicCollectionTable(p, nonce)
+		table, err := s.publicCollectionTable(p, token, nonce)
 		if err != nil {
 			httpError(w, 500, err.Error())
 			return

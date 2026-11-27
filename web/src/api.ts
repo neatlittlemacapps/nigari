@@ -778,61 +778,71 @@ export const api = {
   // onProgress: this one file's share (0-1), for a control that shows each
   // upload of its own (ui/FileDrop, spec 028); the global bar still runs.
   upload: (file: File, pageId?: string, onProgress?: (p: number) => void): Promise<string> =>
-    new Promise((resolve, reject) => {
-      if (file.size > api.uploadMaxBytes) {
-        reject(
-          new ApiError(
-            t('File too large ({size}), 50 MB max.', { size: formatBytes(file.size) }),
-            413,
-            'file_too_large',
-          ),
-        );
+    sendFile<{ url: string }>(`/api/upload${pageId ? `?page=${pageId}` : ''}`, file, onProgress, true).then((r) => r.url),
+  // A file for a public form (spec 028): no sign-in, so no global progress
+  // bar and no sign-in screen on a 401; the answer's claim goes back with the
+  // submission, which is what puts the file into the new row.
+  publicFormUpload: (token: string, file: File, onProgress?: (p: number) => void) =>
+    sendFile<{ url: string; name: string; claim: string }>(`/api/public/form/${token}/upload`, file, onProgress, false),
+};
+
+// sendFile posts one file as multipart, with its progress (0-1) as it goes.
+// XHR, not fetch: fetch reports no upload progress. A signed-in upload also
+// drives the global progress bar ("nigari:upload-progress" and
+// "nigari:upload-done") and leads to the sign-in screen when the session has
+// expired, instead of landing as text in the editor while the interface goes
+// on pretending you are signed in. A public form's upload does neither.
+function sendFile<T>(path: string, file: File, onProgress: ((p: number) => void) | undefined, signedIn: boolean): Promise<T> {
+  return new Promise((resolve, reject) => {
+    if (file.size > api.uploadMaxBytes) {
+      reject(new ApiError(t('File too large ({size}), 50 MB max.', { size: formatBytes(file.size) }), 413, 'file_too_large'));
+      return;
+    }
+    const fd = new FormData();
+    fd.append('file', file);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', path);
+    const emit = (p: number) => {
+      if (signedIn) window.dispatchEvent(new CustomEvent('nigari:upload-progress', { detail: p }));
+    };
+    emit(0);
+    xhr.upload.onprogress = (e) => {
+      if (!e.lengthComputable) return;
+      emit(e.loaded / e.total);
+      onProgress?.(e.loaded / e.total);
+    };
+    const finish = () => {
+      if (signedIn) window.dispatchEvent(new Event('nigari:upload-done'));
+    };
+    xhr.onload = () => {
+      finish();
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText) as T);
+        } catch {
+          reject(new ApiError(t('Upload failed'), xhr.status));
+        }
         return;
       }
-      const fd = new FormData();
-      fd.append('file', file);
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `/api/upload${pageId ? `?page=${pageId}` : ''}`);
-      const emit = (p: number) => window.dispatchEvent(new CustomEvent('nigari:upload-progress', { detail: p }));
-      emit(0);
-      xhr.upload.onprogress = (e) => {
-        if (!e.lengthComputable) return;
-        emit(e.loaded / e.total);
-        onProgress?.(e.loaded / e.total);
-      };
-      const finish = () => window.dispatchEvent(new Event('nigari:upload-done'));
-      xhr.onload = () => {
-        finish();
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            resolve((JSON.parse(xhr.responseText) as { url: string }).url);
-          } catch {
-            reject(new ApiError(t('Upload failed'), xhr.status));
-          }
-          return;
-        }
-        // Status and reason here too — and an expired session leads to the
-        // sign-in screen instead of landing as text in the editor while the
-        // interface goes on pretending you are signed in.
-        if (xhr.status === 401) {
-          window.dispatchEvent(new Event('nigari:unauthorized'));
-          return reject(new ApiError('unauthorized', 401, 'session_expired'));
-        }
-        let msg = xhr.status === 413 ? t('The file is too large for this instance.') : t('Upload failed');
-        let code = '';
-        try {
-          const body = JSON.parse(xhr.responseText) as { error?: string; code?: string };
-          msg = body.error ?? msg;
-          code = body.code ?? '';
-        } catch {
-          /* not a JSON response (a proxy's error page, say) */
-        }
-        reject(new ApiError(msg, xhr.status, code));
-      };
-      xhr.onerror = () => {
-        finish();
-        reject(new ApiError(t('Upload failed: no connection to the server.'), 0));
-      };
-      xhr.send(fd);
-    }),
-};
+      if (signedIn && xhr.status === 401) {
+        window.dispatchEvent(new Event('nigari:unauthorized'));
+        return reject(new ApiError('unauthorized', 401, 'session_expired'));
+      }
+      let msg = xhr.status === 413 ? t('The file is too large for this instance.') : t('Upload failed');
+      let code = '';
+      try {
+        const body = JSON.parse(xhr.responseText) as { error?: string; code?: string };
+        msg = body.error ?? msg;
+        code = body.code ?? '';
+      } catch {
+        /* not a JSON response (a proxy's error page, say) */
+      }
+      reject(new ApiError(msg, xhr.status, code));
+    };
+    xhr.onerror = () => {
+      finish();
+      reject(new ApiError(t('Upload failed: no connection to the server.'), 0));
+    };
+    xhr.send(fd);
+  });
+}

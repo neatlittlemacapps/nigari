@@ -367,6 +367,8 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	m.HandleFunc("DELETE /api/collections/{id}/form-share", s.auth(s.handleUnshareForm))
 	m.HandleFunc("GET /api/public/form/{token}", s.handlePublicFormConfig)
 	m.HandleFunc("POST /api/public/form/{token}/submit", s.handlePublicFormSubmit)
+	// A file for a public form, held until its submission claims it (spec 028).
+	m.HandleFunc("POST /api/public/form/{token}/upload", s.handlePublicFormUpload)
 	m.HandleFunc("GET /api/public/{token}", s.handlePublicPage)
 	m.HandleFunc("GET /public/{token}/files/{name}", s.handlePublicFile)
 	m.HandleFunc("GET /public/{token}", s.handlePublicView)

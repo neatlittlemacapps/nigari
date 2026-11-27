@@ -1,8 +1,9 @@
 import { Button } from '../ui/Button';
 import { useEffect, useState } from 'react';
 import { Check, Send } from 'lucide-react';
-import { api } from '../api';
-import { formField } from './CollectionView';
+import { api, ApiError } from '../api';
+import { serverMessage } from '../serverErrors';
+import { formField, FormFieldFrame } from './CollectionView';
 import { PageIcon } from '../pageIcon';
 import { PublicFormConfig, PropDef } from '../types';
 import { toastError } from '../toast';
@@ -30,6 +31,14 @@ export default function PublicForm({ token }: { token: string }) {
   }, [token]);
 
   const set = (id: string, v: unknown) => setValues((p) => ({ ...p, [id]: v }));
+  // A file goes up through the form's own route and comes back with a claim,
+  // sent with the submission (spec 028). Its visitor cannot open it before
+  // then, so the list shows names only.
+  const publicFiles = {
+    uploadFile: (file: File, onProgress: (p: number) => void) =>
+      api.publicFormUpload(token, file, onProgress).then((r) => ({ url: r.url, name: r.name || file.name, claim: r.claim })),
+    openable: false,
+  };
 
   const submit = async () => {
     if (!title.trim() || busy || !cfg) return;
@@ -44,8 +53,10 @@ export default function PublicForm({ token }: { token: string }) {
       }
       await api.publicFormSubmit(token, title.trim(), props);
       setDone(true);
-    } catch {
-      toastError(t('Sending failed'));
+    } catch (e) {
+      // A file no longer waiting to be sent says so (spec 028); anything else
+      // stays the general sentence.
+      toastError(e instanceof ApiError && e.code ? serverMessage(e.code, t('Sending failed')) : t('Sending failed'));
     } finally {
       setBusy(false);
     }
@@ -116,10 +127,9 @@ export default function PublicForm({ token }: { token: string }) {
             />
           </label>
           {cfg.schema.map((f: PropDef) => (
-            <label key={f.id} className={'form-field' + (f.type === 'checkbox' ? ' form-field--check' : '')}>
-              <span className="form-label">{f.name}</span>
-              {formField(f, values[f.id], (v) => set(f.id, v))}
-            </label>
+            <FormFieldFrame key={f.id} def={f}>
+              {formField(f, values[f.id], (v) => set(f.id, v), publicFiles)}
+            </FormFieldFrame>
           ))}
         </div>
         <div className="form-actions">

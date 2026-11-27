@@ -11,7 +11,10 @@
 
 import type { FileListItem } from './ui/FileList';
 
-export type FileItem = { url: string; name: string };
+/** One file of a value. `claim` only on a public form's upload before it is
+ *  sent: the server takes it back with the submission (form_uploads.go) and
+ *  never stores it. */
+export type FileItem = { url: string; name: string; claim?: string };
 
 /** A plain upload of this instance: one path segment under /files/. */
 export function isStoredFileUrl(url: string): boolean {
@@ -26,9 +29,9 @@ export function readFiles(value: unknown): FileItem[] {
   const out: FileItem[] = [];
   for (const it of value) {
     if (!it || typeof it !== 'object' || Array.isArray(it)) continue;
-    const { url, name } = it as { url?: unknown; name?: unknown };
+    const { url, name, claim } = it as { url?: unknown; name?: unknown; claim?: unknown };
     if (typeof url !== 'string' || !isStoredFileUrl(url)) continue;
-    out.push({ url, name: typeof name === 'string' ? name : '' });
+    out.push({ url, name: typeof name === 'string' ? name : '', ...(typeof claim === 'string' && claim ? { claim } : {}) });
   }
   return out;
 }

@@ -53,6 +53,9 @@ func newCrossOriginGuard() *http.CrossOriginProtection {
 		// Referrer-Policy: no-referrer, so its own form posts "Origin: null".
 		"POST /public/{token}",
 		"POST /api/public/form/{token}/submit",
+		// A public form's file (spec 028): anonymous like its submit, and
+		// held until that submit claims it.
+		"POST /api/public/form/{token}/upload",
 	} {
 		c.AddInsecureBypassPattern(p)
 	}

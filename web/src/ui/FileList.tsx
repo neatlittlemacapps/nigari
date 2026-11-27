@@ -52,6 +52,10 @@ export type FileListProps = Common &
         onRemove?: (index: number) => void;
         /** Move the file at `from` to `to`. Without it the rows stay put. */
         onMove?: (from: number, to: number) => void;
+        /** false: names only, no link and no thumbnail of the file itself.
+         *  A public form's visitor cannot open an upload that is not sent
+         *  yet (spec 028), so a link would lead to a refusal. */
+        openable?: boolean;
       }
   );
 
@@ -94,13 +98,13 @@ function CompactList({ label, items, max = 3, moreLabel }: Extract<FileListProps
   );
 }
 
-function FullList({ label, items, openLabel, removeLabel, onRemove, onMove }: Extract<FileListProps, { variant: 'full' }>) {
+function FullList({ label, items, openLabel, removeLabel, onRemove, onMove, openable = true }: Extract<FileListProps, { variant: 'full' }>) {
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const [dropAt, setDropAt] = useState<number | null>(null);
   // After a keyboard move the moved file's name keeps the focus, at its new
   // place: the list re-renders under it.
   const refocus = useRef<number | null>(null);
-  const links = useRef<(HTMLAnchorElement | null)[]>([]);
+  const links = useRef<(HTMLElement | null)[]>([]);
   useLayoutEffect(() => {
     if (refocus.current === null) return;
     links.current[refocus.current]?.focus();
@@ -108,7 +112,7 @@ function FullList({ label, items, openLabel, removeLabel, onRemove, onMove }: Ex
   });
   if (items.length === 0) return null;
 
-  const onKey = (i: number) => (e: KeyboardEvent<HTMLAnchorElement>) => {
+  const onKey = (i: number) => (e: KeyboardEvent<HTMLElement>) => {
     if (!onMove || !(e.metaKey || e.ctrlKey)) return;
     const to = e.key === 'ArrowUp' ? i - 1 : e.key === 'ArrowDown' ? i + 1 : -1;
     if (to < 0 || to >= items.length) return;
@@ -151,7 +155,22 @@ function FullList({ label, items, openLabel, removeLabel, onRemove, onMove }: Ex
           }}
           onDrop={drop(i)}
         >
-          <Thumb item={it} />
+          <Thumb item={openable ? it : { ...it, image: false }} />
+          {!openable ? (
+            // Focusable when the rows can be moved, so ⌘/Ctrl+↑/↓ still works
+            // without a link to carry the focus (code review).
+            <span
+              ref={(el) => {
+                links.current[i] = el;
+              }}
+              className="ui-file-name"
+              title={it.name}
+              tabIndex={onMove ? 0 : undefined}
+              onKeyDown={onKey(i)}
+            >
+              {it.name}
+            </span>
+          ) : (
           <a
             ref={(el) => {
               links.current[i] = el;
@@ -168,6 +187,7 @@ function FullList({ label, items, openLabel, removeLabel, onRemove, onMove }: Ex
           >
             {it.name}
           </a>
+          )}
           {onRemove && removeLabel && (
             <Button emphasis="low" size="sm" icon={<MenuIcon fn="delete" />} label={removeLabel(it.name)} onClick={() => onRemove(i)} />
           )}

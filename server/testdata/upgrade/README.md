@@ -12,6 +12,7 @@ is the newest one.
 | `step-0.db` | `main` at `f9e35b9` (v1.6.10; the server code was unchanged since), before any step existed | step 1 |
 | `step-1.db` | `main` at `f3fbaba`, the last commit with step 1 as the newest step | step 2 |
 | `step-2.db` | `main` at `d106b79`, the last commit with step 2 as the newest step | step 3 |
+| `step-3.db` | `main` at `0977418`, the last commit with step 3 as the newest step | step 4 |
 
 ## Adding one
 

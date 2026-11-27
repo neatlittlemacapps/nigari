@@ -199,7 +199,13 @@ func (s *Server) handlePublicFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p, err := s.getPage(id)
-	if err != nil || p.Trashed || !publicPageReferencesFile(p, name) {
+	if err != nil || p.Trashed {
+		http.NotFound(w, r)
+		return
+	}
+	// A shared database also serves the files its rows hold in a Files &
+	// media value, for the rows the shared table shows (spec 028, D9).
+	if !publicPageReferencesFile(p, name) && !(p.Type == "collection" && s.sharedRowHoldsFile(p.ID, name)) {
 		http.NotFound(w, r)
 		return
 	}
@@ -261,4 +267,74 @@ func publicCSSHref(index []byte) string {
 		}
 	}
 	return ""
+}
+
+// sharedRowHoldsFile reports whether a row of the shared database colID that
+// an anonymous visitor may see (not trashed, not private: the rows
+// publicCollectionTable draws) holds the stored file name in a Files & media
+// value. The file index names the candidate row; the row's own stored value
+// decides, since the index is derived and never authority (spec 028, D9).
+//
+// The index holds one carrier per file, the page that recorded it last: a
+// copy in a private duplicate or an image block elsewhere moves it (code
+// review). So when the indexed row does not confirm, the database's visible
+// rows whose props mention the name are read, which is a scan of this one
+// database's rows and only for a file the first look did not find.
+func (s *Server) sharedRowHoldsFile(colID, name string) bool {
+	rule, args := s.privateRowRule("", colID)
+	ids := s.filesPropIDs(colID)
+	if len(ids) == 0 {
+		return false
+	}
+	var rowID string
+	if s.db.QueryRow(`SELECT COALESCE(page_id, '') FROM files WHERE file_name = ?`, name).Scan(&rowID) == nil && rowID != "" {
+		var props string
+		if s.db.QueryRow(`SELECT props FROM pages WHERE id = ? AND parent_id = ? AND trashed_at IS NULL AND `+rule,
+			append([]any{rowID, colID}, args...)...).Scan(&props) == nil && propsHoldFile(props, ids, name) {
+			return true
+		}
+	}
+	rows, err := s.db.Query(`SELECT props FROM pages WHERE parent_id = ? AND trashed_at IS NULL AND instr(props, ?) > 0 AND `+rule,
+		append([]any{colID, name}, args...)...)
+	if err != nil {
+		return false
+	}
+	var candidates []string
+	for rows.Next() {
+		var props string
+		if rows.Scan(&props) == nil {
+			candidates = append(candidates, props)
+		}
+	}
+	rows.Close()
+	for _, props := range candidates {
+		if propsHoldFile(props, ids, name) {
+			return true
+		}
+	}
+	return false
+}
+
+// propsHoldFile reports whether a row's props hold the stored name in one of
+// the Files & media properties ids.
+func propsHoldFile(props string, ids map[string]bool, name string) bool {
+	var m map[string]json.RawMessage
+	if json.Unmarshal([]byte(props), &m) != nil {
+		return false
+	}
+	for k, v := range m {
+		if !ids[k] {
+			continue
+		}
+		items, err := parseFilesValue(v)
+		if err != nil {
+			continue
+		}
+		for _, it := range items {
+			if storedFileName(it.URL) == name {
+				return true
+			}
+		}
+	}
+	return false
 }

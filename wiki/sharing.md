@@ -224,7 +224,13 @@ table scrolls horizontally and can be focused with the keyboard.
 Columns follow the schema. Values incompatible with the current property type
 are blank. Select options use their names; numbers and checkboxes use readable
 values. Relations, people and computed properties are blank: the public table
-does not publish internal IDs, names or related page titles. Row bodies,
+does not publish internal IDs, names or related page titles. A
+[Files & media](properties.md#files) column shows each image as a small
+thumbnail and each other file as a link, named as it was uploaded. The files
+are served under the link, like a shared page's own, and only those of rows a
+visitor may see: a private row's or a trashed row's file is not reachable
+through it. (The table lists the first 1,000 rows; a file of a later visible row
+is reachable by its address, as the row itself would be.) Row bodies,
 sub-pages and saved view filters are not included.
 
 ## Sharing more than one page

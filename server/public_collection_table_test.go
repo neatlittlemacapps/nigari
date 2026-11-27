@@ -20,7 +20,7 @@ func TestPublicCollectionTableKeepsExportRowsAndEscapesText(t *testing.T) {
 	s.db.Exec(`UPDATE pages SET trashed_at=? WHERE id='trashed-row'`, now())
 	seedPage(t, s, "nested-row", "private-row", ws, user, "workspace", `[]`)
 	p, _ := s.getPage("table-root")
-	got, err := s.publicCollectionTable(p)
+	got, err := s.publicCollectionTable(p, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestPublicCollectionTableEmptyAndCellValues(t *testing.T) {
 	seedPage(t, s, "empty-table", "", ws, user, "workspace", `[]`)
 	s.db.Exec(`INSERT INTO collections(page_id,schema,views)VALUES('empty-table','[]','[]')`)
 	p, _ := s.getPage("empty-table")
-	got, err := s.publicCollectionTable(p)
+	got, err := s.publicCollectionTable(p, "")
 	if err != nil || !strings.Contains(got, `colspan="1">No rows yet.`) {
 		t.Fatal(err, got)
 	}
@@ -67,7 +67,7 @@ func TestPublicCollectionTableEmptyAndCellValues(t *testing.T) {
 func TestPublicCollectionTableMissingSchemaKeepsDocumentFallback(t *testing.T) {
 	s := testServer(t)
 	p := &page{Content: []byte(`[{"type":"paragraph","content":[{"type":"text","text":"Fallback <content>"}]}]`)}
-	got, err := s.publicCollectionTable(p)
+	got, err := s.publicCollectionTable(p, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +103,7 @@ func TestPublicCollectionRowLimit(t *testing.T) {
 		seedPage(t, s, fmt.Sprint("row-", i), "limited", ws, user, "workspace", `[]`)
 	}
 	p, _ := s.getPage("limited")
-	got, err := s.publicCollectionTable(p)
+	got, err := s.publicCollectionTable(p, "")
 	if err != nil || strings.Count(got, `scope="row"`) != 1000 || !strings.Contains(got, "2 more rows.") {
 		t.Fatal("row budget", err)
 	}
@@ -119,7 +119,7 @@ func TestPublicCollectionRemainderUsesSingular(t *testing.T) {
 		seedPage(t, s, fmt.Sprint("singular-row-", i), "single-extra", ws, user, "workspace", `[]`)
 	}
 	p, _ := s.getPage("single-extra")
-	got, err := s.publicCollectionTable(p)
+	got, err := s.publicCollectionTable(p, "")
 	if err != nil || !strings.Contains(got, "1 more row.") || strings.Contains(got, "1 more rows.") {
 		t.Fatal("singular remainder", err)
 	}

@@ -54,6 +54,8 @@ try {
   check('a text left from a type change', readFiles('plan.pdf'), []);
   check('a list of strings', readFiles(['/files/a1.png']), []);
   check('a select id list', readFiles(['opt1', 'opt2']), []);
+  check('a public form upload keeps its claim', readFiles([{ url: '/files/a1.png', name: 'a', claim: 'c1' }]), [{ url: '/files/a1.png', name: 'a', claim: 'c1' }]);
+  check('an empty claim is left out', readFiles([{ url: '/files/a1.png', name: 'a', claim: '' }]), [{ url: '/files/a1.png', name: 'a' }]);
   check('a missing name reads as empty', readFiles([{ url: '/files/a1.png' }]), [{ url: '/files/a1.png', name: '' }]);
   check('an outside link is dropped', readFiles([{ url: 'https://example.com/x.png', name: 'x' }, a]), [a]);
   check('a path out of files/ is dropped', readFiles([{ url: '/files/../nigari.db', name: 'x' }]), []);
