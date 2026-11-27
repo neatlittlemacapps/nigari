@@ -1434,6 +1434,10 @@ function PageHeader({
               <span className="tag-input-wrap">
                 <input
                   className="page-tag-input"
+                  // A placeholder is no name: it is gone once something is
+                  // typed, and the field was announced as a bare edit box
+                  // (#1124).
+                  aria-label={t('Add a tag')}
                   value={tagDraft}
                   placeholder={tags.length ? t('+ Tag') : t('+ Add a tag')}
                   onChange={(e) => {
@@ -1452,7 +1456,7 @@ function PageHeader({
                       // A highlighted suggestion beats the raw text — otherwise
                       // Enter creates a duplicate after all.
                       const pick = tagSuggestOpen ? tagHits[tagSel] : undefined;
-                      if (!pick && !tagDraft.trim()) return; // Tab darf normal weiterspringen
+                      if (!pick && !tagDraft.trim()) return; // an empty Tab moves on as usual
                       e.preventDefault();
                       addTag(pick?.tag);
                     } else if (e.key === 'Escape') {

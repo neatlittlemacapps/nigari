@@ -1460,5 +1460,6 @@
   "Page cover": "Portada de la página",
   "Page content": "Contenido de la página",
   "No image": "Sin imagen",
-  "This card image cannot be used: a gallery takes its card images from the page cover, the page content, or a Files & media or URL property, so the view was not saved.": "No se puede usar esta imagen de tarjeta: una galería toma las imágenes de sus tarjetas de la portada de la página, del contenido de la página o de una propiedad de tipo Archivos y multimedia o URL, así que la vista no se guardó."
+  "This card image cannot be used: a gallery takes its card images from the page cover, the page content, or a Files & media or URL property, so the view was not saved.": "No se puede usar esta imagen de tarjeta: una galería toma las imágenes de sus tarjetas de la portada de la página, del contenido de la página o de una propiedad de tipo Archivos y multimedia o URL, así que la vista no se guardó.",
+  "Add a tag": "Añadir etiqueta"
 }
