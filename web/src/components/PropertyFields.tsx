@@ -15,7 +15,7 @@ import { Check, Trash2 } from 'lucide-react';
 import { t } from '../i18n';
 import { ToggleGroup } from '../ui/ToggleGroup';
 import { loadMembers, type Member } from './PropertyValue';
-export { TYPES, PropertyTypeSelect, changePropertyType } from './propertyTypes';
+export { propertyTypes, PropertyTypeSelect, changePropertyType } from './propertyTypes';
 
 // One property's fields: its options (select, multi-select) and the settings
 // its type has (number display, relation, backrelation, rollup, formula,

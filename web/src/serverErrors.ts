@@ -39,6 +39,8 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
       return t("This request did not come from nigari's own page, so it was refused. Behind a proxy, pass on the address you opened nigari by (Host or X-Forwarded-Host).");
 
     // ---- a property's visibility on a row's page (spec 015) ----
+    case 'invalid_files_value':
+      return t('These files could not be saved: a file is no longer there, or it belongs to another workspace.');
     case 'invalid_property_visibility':
       return t('This property could not be saved: it can be shown, hidden while empty, or always hidden on a row’s page.');
 

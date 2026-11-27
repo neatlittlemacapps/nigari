@@ -87,7 +87,7 @@ person**, **Add link**, **Add sub-task**. Formulas, rollups and other computed
 values show `—`, because there is nothing to fill in. In a table or on a board,
 empty cells stay blank so the values that are there stand out.
 
-## The fourteen types
+## The fifteen types
 
 | Type | In the dialog | Stores |
 | --- | --- | --- |
@@ -100,6 +100,7 @@ empty cells stay blank so the values that are there stand out.
 | [checkbox](#checkbox) | Checkbox | true or false |
 | [checklist](#checklist) | Checklist | a list of sub-tasks |
 | [url](#url) | URL | a link |
+| [files](#files) | Files & media | a list of uploaded files |
 | [person](#person) | Person | one person |
 | [relation](#relation) | Relation | a list of row ids |
 | [backrelation](#backrelation) | Backrelation | nothing (computed) |
@@ -372,6 +373,48 @@ text.
 **On a board card** it is a link icon in the bottom row, next to the other
 contact icons: on a card a full address is noise.
 
+### files
+
+Files uploaded to this nigari: photos, PDFs, anything a row should carry. The
+order is the order you put them in.
+
+- **In a table cell** the files are one line: small thumbnails for images, a
+  chip with the name for anything else, then **+N** for the ones that do not
+  fit. A row with files is as tall as a row without. Click the cell (or press
+  Enter on it) and a panel opens with every file, **Add files**, a **Remove**
+  button on each, and the order to change: drag a file, or press ⌘↑ / ⌘↓
+  (Ctrl on Windows and Linux) on its name.
+- **On the row's page** the same list and **Add files** sit in place.
+- **On a board, list or gallery card** the files show small and cannot be
+  changed there; open the row to change them.
+- **Add files** opens the file picker; files dragged onto the panel land too.
+  Each upload shows how far it is, and a refused one (too large for this
+  instance, see [size limits](files.md#size-limits)) says
+  why in its place. New files go after the ones already there.
+- A file's name opens it in a new tab.
+
+**Who may do what.** Anyone who may edit the row adds, removes and reorders its
+files; a reader sees and opens them, in a cell and on the row's page, and
+has nothing to change them with.
+
+**What it will not hold.** Only uploads of this nigari, in the row's own
+workspace. An outside link belongs in a [URL](#url) property. A file from
+another workspace, an address outside `/files/`, or a file that no longer
+exists is refused, from the interface, the API and an agent alike, and nothing
+is changed. At most 100 files per value.
+
+**Removing a file** takes it out of the value; the file itself stays stored,
+as a file whose block was deleted from a document does, so undo and version
+history can bring it back. **Duplicating** a row gives the copy the same files,
+not copies of them. Changing a property **to** Files & media keeps the old
+values, as every type change does, and shows an empty cell until files are
+added; changing it back shows them again.
+
+A Files & media property filters by **is empty** and **is not empty** only, is
+not offered to sort by, and cannot group a board or a chart. The
+[Markdown export](import-export.md) writes each file as a link named as it was
+uploaded.
+
 ### person
 
 One person, or several: an account, or a name typed for somebody without one.
@@ -622,6 +665,9 @@ columns.
   ignoring case and accents and treating digits inside text as numbers.
 - **Group** appears on a board and chooses the column property. Only select,
   multi-select and relation properties can be grouped by.
+- A [Files & media](#files) property asks only whether it holds files: its
+  filter offers **is not empty** and **is empty**, and it is not in the Sort
+  list.
 - **Settings** › **Property visibility** lists every property with a tick for
   the shown ones; clicking one shows or hides it, and **Show all** / **Hide
   all** do the obvious. A hidden property is dropped from every renderer of that view

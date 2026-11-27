@@ -78,6 +78,9 @@ export function zoneOf(def: PropDef, value: unknown): CardZone {
     case 'date':
     case 'checkbox':
     case 'checklist':
+    // A row's files: small thumbnails with the field's name (spec 028), read
+    // only on the card. The card's image is a separate choice (PR 3).
+    case 'files':
     case 'rollup':
     case 'formula':
     // A moment with a name beside it, which is exactly what the fact zone is

@@ -36,7 +36,12 @@ import (
 // one, and the file list filters on that column. The move carries the index
 // along now; this rebuild puts the files of pages moved before that where
 // their pages are.
-const filesVersion = "3"
+//
+// 4: a Files & media property (spec 028) holds uploads in a row's props, not
+// in its blocks. The index learns those rows as carriers now (recordRowFiles);
+// this rebuild finds the ones written before, so the file list shows them
+// under their row and does not count them as unreferenced.
+const filesVersion = "4"
 
 // fileRef is one `/files/…` reference found in a page's content.
 type fileRef struct {
@@ -147,6 +152,28 @@ func (s *Server) migrateFileIndex() error {
 		for _, ref := range scanBlocksForFiles(p.content) {
 			referenced[ref.name] = true
 			s.recordFile(ref.name, p.id, ref.displayName)
+		}
+	}
+	// Rows whose Files & media values hold uploads (spec 028). Collected first,
+	// like the pages above: recordRowFiles queries, and the cursor holds the
+	// one connection.
+	rowRows, err := s.db.Query(`SELECT id, props, COALESCE(parent_id, template_of) FROM pages
+		WHERE (parent_id IS NOT NULL OR template_of != '') AND props LIKE '%/files/%'`)
+	if err != nil {
+		return err
+	}
+	type rowProps struct{ id, props, parent string }
+	var withFiles []rowProps
+	for rowRows.Next() {
+		var r rowProps
+		if rowRows.Scan(&r.id, &r.props, &r.parent) == nil {
+			withFiles = append(withFiles, r)
+		}
+	}
+	rowRows.Close()
+	for _, r := range withFiles {
+		for _, name := range s.recordRowFiles(r.id, r.parent, r.props) {
+			referenced[name] = true
 		}
 	}
 

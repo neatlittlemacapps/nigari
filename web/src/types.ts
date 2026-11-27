@@ -208,6 +208,8 @@ export type PropType =
   | 'checkbox'
   | 'checklist'
   | 'url'
+  // Files & media (spec 028): [{url: "/files/<name>", name}], see filesValue.ts.
+  | 'files'
   | 'person'
   | 'relation'
   | 'backrelation'

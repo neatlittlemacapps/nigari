@@ -448,9 +448,18 @@ func (s *Server) collectionMarkdown(p *page, userID string) (string, error) {
 		}
 		var props map[string]any
 		json.Unmarshal([]byte(propsJSON), &props)
+		var propsRaw map[string]json.RawMessage
+		json.Unmarshal([]byte(propsJSON), &propsRaw)
 		b.WriteString("| " + strings.ReplaceAll(rowTitle, "|", "\\|") + " |")
 		for _, prop := range schema {
 			cell := ""
+			// Files & media (spec 028, FR-006g): each file as a link named as
+			// it was uploaded, as a document's file block is written. Read from
+			// the raw value: the generic list case below keeps strings only.
+			if prop.Type == "files" {
+				b.WriteString(" " + strings.ReplaceAll(filesMarkdown(propsRaw[prop.ID]), "|", "\\|") + " |")
+				continue
+			}
 			switch v := props[prop.ID].(type) {
 			case string:
 				if n, ok := optionName[prop.ID+"/"+v]; ok {

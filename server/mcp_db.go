@@ -125,6 +125,11 @@ func (s *Server) mcpSetProperties(pageID string, properties json.RawMessage, act
 	// MUST come before tx.Begin(): the pool holds exactly ONE connection, so a
 	// query inside the open transaction would block forever.
 	s.normalizePropValues(pageID, patch)
+	// A Files & media value holds this workspace's uploads only (spec 028, D2).
+	// Before tx.Begin() for the same reason as above.
+	if err := s.checkRowFiles(pageID, "", patch); err != nil {
+		return "", err
+	}
 
 	tx, err := s.db.Begin()
 	if err != nil {

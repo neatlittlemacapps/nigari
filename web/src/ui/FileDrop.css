@@ -1,0 +1,84 @@
+/* ui/FileDrop (spec 028): Add files and the drop target. Every value is a
+   token. */
+
+.ui-file-drop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-150);
+  padding: var(--space-100);
+  border: 1px dashed transparent;
+  border-radius: var(--radius-scale-md);
+}
+
+/* Files over it: the whole target says where they will land. */
+.ui-file-drop[data-over] {
+  border-color: var(--color-accent-default);
+  background: var(--color-accent-soft);
+}
+
+/* The picker is opened by the button; the input itself is never seen. */
+.ui-file-drop-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ui-file-drop-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-default);
+}
+
+.ui-file-drop-uploads {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-100);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-file-drop-upload {
+  display: flex;
+  align-items: center;
+  gap: var(--space-200);
+  min-width: 0;
+  font-size: var(--font-size-xs);
+}
+
+.ui-file-drop-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+}
+
+.ui-file-drop-progress {
+  flex: 1;
+  height: var(--file-drop-progress-height);
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-scale-full);
+  background: var(--color-hover);
+  overflow: hidden;
+}
+.ui-file-drop-progress::-webkit-progress-bar {
+  background: var(--color-hover);
+}
+.ui-file-drop-progress::-webkit-progress-value {
+  background: var(--color-accent-default);
+}
+.ui-file-drop-progress::-moz-progress-bar {
+  background: var(--color-accent-default);
+}
+
+.ui-file-drop-error {
+  flex: 1;
+  color: var(--color-danger);
+}

@@ -468,5 +468,48 @@
       },
       "$description": "The tap area round the button on a touch screen (WCAG 2.5.5)."
     }
+  },
+  "file-list": {
+    "$description": "ui/FileList (spec 028): the files of one Files & media value, compact in a cell or card, full on a row's page.",
+    "thumb-compact": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$description": "A thumbnail in the compact list: fits a table row's line without raising it (rows are 42px at 1280)."
+    },
+    "thumb-full": {
+      "$type": "dimension",
+      "$value": {
+        "value": 40,
+        "unit": "px"
+      },
+      "$description": "A thumbnail in the full list: large enough to tell two photos apart."
+    },
+    "chip-max": {
+      "$type": "dimension",
+      "$value": {
+        "value": 140,
+        "unit": "px"
+      },
+      "$description": "The widest a file chip grows in the compact list before its name is cut off, so one long name cannot take the whole cell."
+    },
+    "gap": {
+      "$type": "dimension",
+      "$value": "{space.100}",
+      "$description": "Between files in the compact list."
+    }
+  },
+  "file-drop": {
+    "$description": "ui/FileDrop (spec 028): Add files and the drop target.",
+    "progress-height": {
+      "$type": "dimension",
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      },
+      "$description": "The bar showing how much of a file is uploaded."
+    }
   }
 }

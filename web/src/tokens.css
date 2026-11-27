@@ -618,6 +618,11 @@
   --menu-icon-size: 16px;
   --cell-action-inset: 6px;
   --cell-action-tap: 44px;
+  --file-list-thumb-compact: 20px;
+  --file-list-thumb-full: 40px;
+  --file-list-chip-max: 140px;
+  --file-list-gap: 4px;
+  --file-drop-progress-height: 4px;
 }
 
 [data-theme='dark'] {

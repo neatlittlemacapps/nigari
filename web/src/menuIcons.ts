@@ -93,6 +93,7 @@ import {
   PanelRight,
   PanelTop,
   Paperclip,
+  CloudUpload,
   Pencil,
   Pilcrow,
   Plus,
@@ -171,6 +172,10 @@ export const MENU_ICONS = {
   exportHtml: FileCode,
   print: Printer,
   importFile: Upload,
+  // Files into a Files & media value (spec 028): not importFile, which turns
+  // a file into a page. Removing one is `delete` (gone from the value, not
+  // into the trash) and opening one is `openInNewTab`, as everywhere.
+  addFiles: CloudUpload,
   moveToTrash: Trash2,
 
   // The page "…"

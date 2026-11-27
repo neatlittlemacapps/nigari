@@ -395,6 +395,17 @@ func (s *Server) handleCreatePage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// A new row's Files & media values (the signed-in form among them) hold
+	// this workspace's uploads only (spec 028, D2).
+	if body.ParentID != nil {
+		var initial map[string]json.RawMessage
+		if json.Unmarshal([]byte(props), &initial) == nil {
+			if err := s.checkFilesProps(*body.ParentID, workspaceID, initial); err != nil {
+				httpErrorFrom(w, 400, err)
+				return
+			}
+		}
+	}
 	id := newID()
 	ts := now()
 	var pos float64
@@ -704,6 +715,30 @@ func (s *Server) handleUpdatePage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// A Files & media value holds this workspace's uploads only (spec 028, D2),
+	// whether it comes as the whole props or as a patch. Before tx.Begin(), as
+	// the parent check above.
+	// A request that also moves the row is judged by the database it moves to.
+	into := ""
+	if len(body.ParentID) > 0 {
+		var np string
+		if json.Unmarshal(bytes.TrimSpace(body.ParentID), &np) == nil {
+			into = np
+		}
+	}
+	if len(body.Props) > 0 {
+		if err := s.checkRowFilesJSON(id, into, body.Props); err != nil {
+			httpErrorFrom(w, 400, err)
+			return
+		}
+	}
+	if len(body.PropsPatch) > 0 {
+		if err := s.checkRowFilesJSON(id, into, body.PropsPatch); err != nil {
+			httpErrorFrom(w, 400, err)
+			return
+		}
+	}
+
 	// Cycle check and update must be atomic: with concurrent moves a
 	// check-then-act on separate statements can persist A<->B cycles.
 	// The transaction holds the single DB connection until commit.
@@ -1009,9 +1044,11 @@ func (s *Server) reindexPage(id string) error {
 	sn, th := extractSnippetAndThumb([]byte(content))
 	s.db.Exec(`UPDATE pages SET snippet = ?, thumb = ? WHERE id = ?`, sn, th, id)
 	body := extractText([]byte(content))
-	var props string
-	if s.db.QueryRow(`SELECT props FROM pages WHERE id = ?`, id).Scan(&props) == nil {
+	var props, parentID string
+	if s.db.QueryRow(`SELECT props, COALESCE(parent_id, NULLIF(template_of, ''), '') FROM pages WHERE id = ?`, id).Scan(&props, &parentID) == nil {
 		body += " " + extractPropsText([]byte(props))
+		// The uploads its Files & media values hold (spec 028, D3).
+		s.recordRowFiles(id, parentID, props)
 	}
 	// Attached file texts (e.g. extracted PDFs) are searchable under the page.
 	if rows, err := s.db.Query(`SELECT text FROM file_texts WHERE page_id = ?`, id); err == nil {

@@ -22,6 +22,10 @@ The name a person recognises is kept separately (in the block on the page and
 in the file index), which is why a file can be downloaded under its real name
 while the byte on disk stays anonymous.
 
+A file can also live in a database row's [Files & media](properties.md#files)
+property instead of a block. It is stored the same way; the row is then the
+file's page in the file index, so the file list shows it under that row.
+
 Files are served from `/files/<stored name>` and that path **requires a signed-in
 account or an API token**. Three things follow from how it is served:
 

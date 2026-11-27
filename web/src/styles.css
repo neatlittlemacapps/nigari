@@ -11231,3 +11231,23 @@ body:has(.live-down) .update-banner {
   pointer-events: none;
   background: var(--color-focus);
 }
+
+/* A Files & media value being edited (spec 028): the files, then Add files,
+   in the cell's panel and on the row's page. */
+.prop-files-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-200);
+  min-width: 0;
+}
+
+/* The cell's button fills the cell, so an empty cell is as easy to click as
+   a filled one (ux-ui-audit: an empty one was an 18px wide target). */
+.ui-button.prop-files-cell {
+  width: 100%;
+  justify-content: flex-start;
+  /* The cell's files read like every other cell value, not in a button's
+     monospace label (the look checklist: the same thing looks the same). */
+  font-family: var(--font-family-sans);
+  letter-spacing: normal;
+}

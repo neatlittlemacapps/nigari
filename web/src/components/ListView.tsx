@@ -44,7 +44,9 @@ export default function ListView({
   tagColors: Record<string, string>;
   onNavigate: (id: string) => void;
   onOpenInNewTab?: (id: string) => void;
-  onSetProp: (rowId: string, propId: string, value: unknown) => void;
+  /** Absent for someone who may only read the rows: every cell then draws
+   *  its read-only face (#1118). */
+  onSetProp?: (rowId: string, propId: string, value: unknown) => void;
   onSetOptions: (propId: string, options: PropOption[]) => void;
   /** Grouped by a property (spec 024, T027): a header before each group's
    *  rows, as in a table, without totals. A chart's list of its rows stays
@@ -79,7 +81,7 @@ export default function ListView({
             // The cell around the box takes the tap, so a near miss ticks
             // instead of opening the row.
             <span className="list-row-check" onClick={(e) => e.stopPropagation()} onAuxClick={(e) => e.stopPropagation()}>
-              <LeadCheckBox prop={check} title={r.title} value={r.props?.[check.id]} onChange={(v) => onSetProp(r.id, check.id, v)} />
+              <LeadCheckBox prop={check} title={r.title} value={r.props?.[check.id]} onChange={onSetProp ? (v) => onSetProp(r.id, check.id, v) : undefined} />
             </span>
           )}
           <span className="list-row-body">
@@ -108,7 +110,7 @@ export default function ListView({
                     def={p}
                     value={r.props?.[p.id]}
                     compact
-                    onChange={(v) => onSetProp(r.id, p.id, v)}
+                    onChange={onSetProp ? (v) => onSetProp(r.id, p.id, v) : undefined}
                     onOptionsChange={(opts) => onSetOptions(p.id, opts)}
                   />
                 </span>

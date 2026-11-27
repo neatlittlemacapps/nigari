@@ -190,3 +190,15 @@ body {
 .cat-palette .cat-swatch {
   width: auto;
 }
+
+/* FileList and FileDrop (spec 028): a column of examples, as wide as a row's
+   page column, so a long name is cut off as it is there. */
+.cat-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-300);
+  min-width: 0;
+}
+.cat-files {
+  width: min(360px, 100%); /* token-ok: a sample column's width */
+}

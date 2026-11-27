@@ -31,7 +31,8 @@ export function LeadCheckBox({
   prop: PropDef;
   title: string;
   value: unknown;
-  onChange: (checked: boolean) => void;
+  /** Absent for someone who may only read: the box shows, disabled (#1118). */
+  onChange?: (checked: boolean) => void;
   className?: string;
 }) {
   return (
@@ -39,7 +40,8 @@ export function LeadCheckBox({
       className={'lead-check' + (className ? ' ' + className : '')}
       label={`${prop.name}: ${title || t('Untitled')}`}
       checked={value === true}
-      onCheckedChange={onChange}
+      onCheckedChange={(v) => onChange?.(v)}
+      disabled={!onChange}
     />
   );
 }
