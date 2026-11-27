@@ -683,7 +683,7 @@
   "Search templates…": "Buscar plantillas…",
   "Search the trash": "Buscar en la papelera",
   "Search…": "Buscar…",
-  "Select": "Seleccionar",
+  "Select": "Selección",
   "Select a collection…": "Seleccionar una colección…",
   "Select a relation…": "Seleccionar una relación…",
   "Select a value…": "Seleccionar un valor…",
@@ -1440,5 +1440,18 @@
   "Remove {name}": "Quitar {name}",
   "+{count}": "+{count}",
   "Uploading {name}": "Subiendo {name}",
-  "These files could not be saved: a file is no longer there, or it belongs to another workspace.": "No se pudieron guardar estos archivos: un archivo ya no existe o pertenece a otro espacio de trabajo."
+  "These files could not be saved: a file is no longer there, or it belongs to another workspace.": "No se pudieron guardar estos archivos: un archivo ya no existe o pertenece a otro espacio de trabajo.",
+  "Text": "Texto",
+  "Multi-select": "Selección múltiple",
+  "Status": "Estado",
+  "Checkbox": "Casilla",
+  "Checklist": "Lista de comprobación",
+  "URL": "URL",
+  "Files & media": "Archivos y multimedia",
+  "Person": "Persona",
+  "Relation": "Relación",
+  "Backrelation": "Relación inversa",
+  "Rollup": "Rollup",
+  "Last activity": "Última actividad",
+  "Formula": "Fórmula"
 }

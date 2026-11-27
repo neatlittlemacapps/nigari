@@ -1440,5 +1440,18 @@
   "Remove {name}": "{name} entfernen",
   "+{count}": "+{count}",
   "Uploading {name}": "{name} wird hochgeladen",
-  "These files could not be saved: a file is no longer there, or it belongs to another workspace.": "Diese Dateien konnten nicht gespeichert werden: Eine Datei ist nicht mehr da oder gehört zu einem anderen Arbeitsbereich."
+  "These files could not be saved: a file is no longer there, or it belongs to another workspace.": "Diese Dateien konnten nicht gespeichert werden: Eine Datei ist nicht mehr da oder gehört zu einem anderen Arbeitsbereich.",
+  "Text": "Text",
+  "Multi-select": "Mehrfachauswahl",
+  "Status": "Status",
+  "Checkbox": "Kontrollkästchen",
+  "Checklist": "Checkliste",
+  "URL": "URL",
+  "Files & media": "Dateien und Medien",
+  "Person": "Person",
+  "Relation": "Relation",
+  "Backrelation": "Rückrelation",
+  "Rollup": "Rollup",
+  "Last activity": "Letzte Aktivität",
+  "Formula": "Formel"
 }

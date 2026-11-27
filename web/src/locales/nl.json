@@ -661,7 +661,7 @@
   "Search templates…": "Sjablonen zoeken…",
   "Search the trash": "De prullenbak doorzoeken",
   "Search…": "Zoeken…",
-  "Select": "Selecteren",
+  "Select": "Selectie",
   "Select a collection…": "Selecteer een verzameling…",
   "Select a relation…": "Selecteer een relatie…",
   "Select a value…": "Selecteer een waarde…",
@@ -1440,5 +1440,18 @@
   "Remove {name}": "{name} verwijderen",
   "+{count}": "+{count}",
   "Uploading {name}": "{name} wordt geüpload",
-  "These files could not be saved: a file is no longer there, or it belongs to another workspace.": "Deze bestanden konden niet worden opgeslagen: een bestand is er niet meer, of het hoort bij een andere werkruimte."
+  "These files could not be saved: a file is no longer there, or it belongs to another workspace.": "Deze bestanden konden niet worden opgeslagen: een bestand is er niet meer, of het hoort bij een andere werkruimte.",
+  "Text": "Tekst",
+  "Multi-select": "Meervoudige selectie",
+  "Status": "Status",
+  "Checkbox": "Selectievakje",
+  "Checklist": "Checklist",
+  "URL": "URL",
+  "Files & media": "Bestanden en media",
+  "Person": "Persoon",
+  "Relation": "Relatie",
+  "Backrelation": "Terugrelatie",
+  "Rollup": "Rollup",
+  "Last activity": "Laatste activiteit",
+  "Formula": "Formule"
 }

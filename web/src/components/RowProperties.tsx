@@ -11,7 +11,7 @@ import { Input } from '../ui/Field';
 import { Menu, MenuValueItem, MenuValues, type MenuPoint } from '../ui/Menu';
 import { PropertyActionItems } from './PropertyActionItems';
 import { RowPageVisibilityMenu } from './RowPageVisibilityMenu';
-import { TYPES } from './propertyTypes';
+import { propertyTypes } from './propertyTypes';
 import { deletePropertyMessage } from '../propertyDelete';
 import { changeSchema } from '../propertyChange';
 import { addProperty, applyPropertyChange, duplicateProperty, emptyAtOpen, visibleOnRowPage } from '../rowProperties';
@@ -300,7 +300,7 @@ export default function RowProperties({
                   of values, not a panel: the popover would have put its
                   library in the main bundle (spec 015, the bundle's cap). */}
               <MenuValues reason="the property types a new property can have" label={t('Type')}>
-                {TYPES.map((x) => (
+                {propertyTypes().map((x) => (
                   <MenuValueItem key={x.value} onClick={() => void add(x.value, x.label)}>
                     {x.label}
                   </MenuValueItem>
