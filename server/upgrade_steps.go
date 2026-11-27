@@ -26,6 +26,7 @@ func upgradeSteps() []*goose.Migration {
 		goose.NewGoMigration(1, &goose.GoFunc{RunTx: baseSchema}, nil),
 		goose.NewGoMigration(2, &goose.GoFunc{RunTx: viewPrefsAndLock}, nil),
 		goose.NewGoMigration(3, &goose.GoFunc{RunTx: commentEditsAndReactions}, nil),
+		goose.NewGoMigration(4, &goose.GoFunc{RunTx: formUploads}, nil),
 	}
 }
 
@@ -334,6 +335,32 @@ func commentEditsAndReactions(ctx context.Context, tx *sql.Tx) error {
 		PRIMARY KEY (comment_id, user_id, reaction)
 	)`); err != nil {
 		return fmt.Errorf("create comment_reactions: %w", err)
+	}
+	return nil
+}
+
+// formUploads is step 4 (spec 028, plan D8): a file uploaded through a public
+// form waits here until the submission that carries it claims it.
+//
+// Anyone with a form's link may upload, without an account, so an upload is
+// held apart from every other file: it is served to no one, and only a
+// submission to the same form that presents its claim can put it into a row.
+// The claim is stored as its hash (tokenHash), like a share token: the table
+// alone does not let anyone claim an upload. An upload nobody claims is
+// removed with its file after 24 hours (cleanupFormUploads); the index on
+// created_at is what that sweep reads. collection_id has no foreign key: the
+// sweep removes an upload whose form's database is gone as well.
+func formUploads(ctx context.Context, tx *sql.Tx) error {
+	if _, err := tx.Exec(`CREATE TABLE form_uploads (
+		file_name TEXT PRIMARY KEY,
+		collection_id TEXT NOT NULL,
+		claim TEXT NOT NULL,
+		created_at TEXT NOT NULL
+	)`); err != nil {
+		return fmt.Errorf("create form_uploads: %w", err)
+	}
+	if _, err := tx.Exec(`CREATE INDEX form_uploads_created ON form_uploads(created_at)`); err != nil {
+		return fmt.Errorf("create form_uploads_created: %w", err)
 	}
 	return nil
 }
