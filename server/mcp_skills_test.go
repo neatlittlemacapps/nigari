@@ -415,3 +415,42 @@ func TestSkillTemplatesQueryUsesItsIndex(t *testing.T) {
 		t.Errorf("plan: %s", joined)
 	}
 }
+
+// A database moved to a workspace this token may not enter takes its
+// templates along (#1137), and the old workspace's skill no longer names it
+// (security review of phase E). Before, the templates stayed behind and the
+// skill printed the moved database's id and title.
+func TestMovedDatabaseTakesItsTemplatesAndLeavesTheSkill(t *testing.T) {
+	f := newSkillFixture(t)
+	col := f.s.makeCollection(t, f.open, f.uid, "Moving tasks", `[]`)
+	tpl, err := f.s.addDatabaseTemplate(f.uid, col, "Moving template", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.s.moveSubtreeToWorkspace(f.uid, col, f.closed, func(string) bool { return true }); err != nil {
+		t.Fatal(err)
+	}
+	if ws := f.s.pageWorkspace(tpl); ws != f.closed {
+		t.Errorf("the template stayed in %s; want it moved with its database to %s", ws, f.closed)
+	}
+	text, _ := readSkillFile(t, f.s, f.tok, "skill://nigari-product-team-1/SKILL.md")
+	if strings.Contains(text, col) || strings.Contains(text, "Moving") {
+		t.Error("the open workspace's skill names a database now in a workspace closed to agents")
+	}
+}
+
+// Even a template left behind by an older move (before #1137 was fixed)
+// stays out of the skill: the database must be in the template's workspace.
+func TestLeftBehindTemplateIsNotInTheSkill(t *testing.T) {
+	f := newSkillFixture(t)
+	col := f.s.makeCollection(t, f.open, f.uid, "Elsewhere", `[]`)
+	if _, err := f.s.addDatabaseTemplate(f.uid, col, "Left behind", ""); err != nil {
+		t.Fatal(err)
+	}
+	// As an older release's move left it: the database moved, the template not.
+	f.s.db.Exec(`UPDATE pages SET workspace_id = ? WHERE id = ?`, f.closed, col)
+	text, _ := readSkillFile(t, f.s, f.tok, "skill://nigari-product-team-1/SKILL.md")
+	if strings.Contains(text, col) || strings.Contains(text, "Elsewhere") {
+		t.Error("a left-behind template names a database in a workspace closed to agents")
+	}
+}

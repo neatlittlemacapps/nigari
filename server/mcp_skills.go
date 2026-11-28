@@ -153,8 +153,11 @@ func (s *Server) skillTemplates(userID, wsID string) []skillTemplate {
 	// template's parent is not its database (addDatabaseTemplate), so a
 	// trashed database leaves its templates live: the join drops them, as
 	// listDatabaseTemplates' callers do with isLiveCollection (code review).
+	// The database must be in the same workspace: a template left behind by a
+	// database moved elsewhere (#1137) would otherwise name a database in a
+	// workspace this credential may not enter (security review).
 	rows, err := s.db.Query(`SELECT t.id, t.title, t.template_of, c.title
-		FROM pages t JOIN pages c ON c.id = t.template_of AND c.trashed_at IS NULL
+		FROM pages t JOIN pages c ON c.id = t.template_of AND c.trashed_at IS NULL AND c.workspace_id = t.workspace_id
 		WHERE t.workspace_id = ? AND t.is_template = 1 AND t.template_of != '' AND t.trashed_at IS NULL
 		ORDER BY c.title, t.title`, wsID)
 	if err != nil {
