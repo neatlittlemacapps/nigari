@@ -1,3 +1,8 @@
+> **Not the current handoff.** This file is pre-rename history (kept on purpose,
+> `docs/decisions.md` 2026-11-14). The handoff is the pinned issue
+> [#643](https://github.com/neatlittlemacapps/nigari/issues/643) and its newest comment.
+> A session asked to "read handoff" that read this file instead started from a month-old state (twice).
+
 # active-memory handoff: salt.md agentic setup and feature roadmap
 
 **Handoff #10** · 2026-10-29 · Lineage:
