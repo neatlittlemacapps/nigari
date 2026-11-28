@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net"
@@ -251,8 +252,9 @@ func TestAMetadataURLOnAPrivateAddressIsNeverFetched(t *testing.T) {
 	}
 }
 
-// notPublicIP is wider than the import guard; blockedIP keeps what imports
-// and webhooks have always had until #1129 is decided.
+// notPublicIP covers what the old import guard (localIP) missed. Since
+// #1129 blockedIP refuses all of it too, unless the operator opened imports
+// up with NIGARI_IMPORT_ALLOW_PRIVATE.
 func TestNotPublicIPCoversWhatTheImportGuardMisses(t *testing.T) {
 	for _, a := range []string{"100.64.1.1", "0.1.2.3", "198.18.0.1", "240.0.0.1", "192.0.0.8",
 		"64:ff9b::7f00:1", "64:ff9b::a00:1", "2002:7f00:1::", "2002:c0a8:101::", "fec0::1", "64:ff9b:1::1",
@@ -260,14 +262,36 @@ func TestNotPublicIPCoversWhatTheImportGuardMisses(t *testing.T) {
 		if !notPublicIP(net.ParseIP(a)) {
 			t.Errorf("%s counted as public", a)
 		}
+		if !allowPrivateImport && !blockedIP(net.ParseIP(a)) {
+			t.Errorf("%s reaches imports and webhooks (#1129)", a)
+		}
 	}
 	for _, a := range []string{"8.8.8.8", "64:ff9b::808:808", "2002:808:808::", "2606:4700::1", "1.1.1.1"} {
 		if notPublicIP(net.ParseIP(a)) {
 			t.Errorf("%s counted as not public", a)
 		}
 	}
-	if blockedIP(net.ParseIP("100.64.1.1")) {
-		t.Error("the import guard changed; that is #1129's decision, not this one's")
+	for _, a := range []string{"8.8.8.8", "64:ff9b::808:808", "2002:808:808::"} {
+		if blockedIP(net.ParseIP(a)) {
+			t.Errorf("%s is public and must reach imports and webhooks", a)
+		}
+	}
+}
+
+// The refusal for an import or a webhook says how the operator opens it up,
+// so someone importing from a Tailscale machine sees what to set; a client
+// metadata fetch, which has no switch, does not offer one (#1129).
+func TestRefusalNamesTheSwitchOnlyWhereThereIsOne(t *testing.T) {
+	if allowPrivateImport {
+		t.Skip("NIGARI_IMPORT_ALLOW_PRIVATE is set")
+	}
+	_, err := safeDial(context.Background(), "tcp", "100.64.1.1:80")
+	if err == nil || !strings.Contains(err.Error(), "NIGARI_IMPORT_ALLOW_PRIVATE=1") {
+		t.Errorf("import refusal: %v", err)
+	}
+	_, err = publicDial(context.Background(), "tcp", "100.64.1.1:443")
+	if err == nil || strings.Contains(err.Error(), "NIGARI_IMPORT_ALLOW_PRIVATE") {
+		t.Errorf("metadata refusal: %v", err)
 	}
 }
 
