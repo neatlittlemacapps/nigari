@@ -302,6 +302,10 @@ func TestZipAndMCPServeTheSameSkill(t *testing.T) {
 	if strings.Contains(main, f.open) || strings.Contains(main, "Every task gets an owner") {
 		t.Error("the built-in skill carries one workspace's id or rules")
 	}
+	// It points to them instead of the zip's "Main workspace" line.
+	if strings.Contains(main, "Main workspace:") || !strings.Contains(main, "## The rules of each workspace") {
+		t.Error("the built-in skill over MCP reads as the zip's, not as one text for every workspace")
+	}
 }
 
 // The extension is for 2026-07-28: a legacy client gets "method not found".
