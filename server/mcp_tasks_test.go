@@ -451,7 +451,7 @@ func TestTaskMethodsCheckTheRoutingHeader(t *testing.T) {
 func TestDiscoverDeclaresTasks(t *testing.T) {
 	f := newTaskFixture(t)
 	rec := taskCall(t, f.s, f.tok, `{}`, "server/discover", map[string]any{})
-	if !strings.Contains(rec.Body.String(), `"extensions":{"io.modelcontextprotocol/tasks":{}}`) {
+	if !strings.Contains(rec.Body.String(), `"io.modelcontextprotocol/tasks":{}`) {
 		t.Errorf("discover: %s", rec.Body.String())
 	}
 }

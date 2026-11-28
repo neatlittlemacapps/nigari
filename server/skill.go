@@ -91,23 +91,27 @@ func (s *Server) buildSkill(u *user, base string, chosen string) []skillDoc {
 	}
 
 	return []skillDoc{
-		{"nigari/SKILL.md", s.skillMain(base, main, all)},
+		{"nigari/SKILL.md", s.skillMain(base, main, all, false)},
 		{"nigari/reference/tools.md", skillTools()},
 		{"nigari/reference/block.md", skillBlock(base, main)},
 		{"nigari/README.md", skillReadme(base)},
 	}
 }
 
+// skillDescription is the built-in skill's description, in its SKILL.md and in
+// skills/list alike.
+const skillDescription = "Work with this team's nigari instance — the shared workspace where decisions, tasks and documentation live. Use at the START of any task that touches project knowledge, and whenever the user says to record, look up or file something. Also installs the standing rules into this repo so they survive a lost context."
+
 // skillMain is what the agent reads when the skill is invoked.
-func (s *Server) skillMain(base string, main *skillWorkspace, all []skillWorkspace) string {
-	name, id := "your workspace", ""
-	if main != nil {
-		name, id = main.Name, main.ID
-	}
+//
+// overMCP is the built-in skill served over MCP (mcp_skills.go): one text for
+// every workspace, so it names none. What the zip says about the chosen
+// workspace and the others, each workspace's own skill says there.
+func (s *Server) skillMain(base string, main *skillWorkspace, all []skillWorkspace, overMCP bool) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, `---
 name: nigari
-description: Work with this team's nigari instance — the shared workspace where decisions, tasks and documentation live. Use at the START of any task that touches project knowledge, and whenever the user says to record, look up or file something. Also installs the standing rules into this repo so they survive a lost context.
+description: `+skillDescription+`
 ---
 
 # Working with nigari
@@ -115,9 +119,7 @@ description: Work with this team's nigari instance — the shared workspace wher
 nigari at %s is where this team keeps what it knows: decisions and why they
 were made, what is being worked on, and the documentation that outlives the
 conversation. It is reachable over MCP, so you can read and write it directly.
-
-Main workspace: **%s** (`+"`%s`"+`)
-
+%s
 ## If the tools are not there yet
 
 The endpoint is `+"`%s/mcp`"+`. Most clients sign in from that address alone —
@@ -188,9 +190,11 @@ time.
 **Read before you write.** `+"`search`"+` and `+"`get_page`"+` are cheap. A
 second page about a thing that already has one is worse than no page.
 
-`, base, name, id, strings.TrimRight(base, "/"))
+`, base, skillMainWorkspace(main, overMCP), strings.TrimRight(base, "/"))
 
-	if main != nil && strings.TrimSpace(main.Rules) != "" {
+	if overMCP {
+		b.WriteString("## The rules of each workspace\n\nEach workspace you can reach that has rules or database templates has a skill of\nits own here, named `nigari-` and the workspace's name. Load the one for the\nworkspace you are about to work in: it holds that workspace's rules, its\ntemplates and the block to install. `get_workspace(workspace_id)` returns the\nlive rules at any moment, and they outrank this file.\n\n")
+	} else if main != nil && strings.TrimSpace(main.Rules) != "" {
 		b.WriteString("## The rules of this workspace\n\n")
 		b.WriteString("Written by the people who work here. They are the authority; re-read them\nwith `get_workspace()` when you return, because they change and this file does\nnot.\n\n")
 		for _, line := range strings.Split(strings.TrimSpace(main.Rules), "\n") {
@@ -201,7 +205,7 @@ second page about a thing that already has one is worse than no page.
 		b.WriteString("## The rules of this workspace\n\nNone are written yet. `get_workspace()` will say so too. If you notice conventions\nwhile working here, offer to draft some — `propose_workspace_rules` leaves a\nproposal for a person to approve, it never sets them itself.\n\n")
 	}
 
-	if len(all) > 1 {
+	if len(all) > 1 && !overMCP {
 		b.WriteString("## The other workspaces you can reach\n\n")
 		for _, w := range all {
 			if main != nil && w.ID == main.ID {
@@ -238,13 +242,27 @@ are not missing by accident; they are closed to agents on purpose.
 	return b.String()
 }
 
+// skillMainWorkspace is the line that names the main workspace, with the
+// blank line around it, as the zip has always had it. The built-in skill over
+// MCP names none.
+func skillMainWorkspace(main *skillWorkspace, overMCP bool) string {
+	if overMCP {
+		return ""
+	}
+	name, id := "your workspace", ""
+	if main != nil {
+		name, id = main.Name, main.ID
+	}
+	return fmt.Sprintf("\nMain workspace: **%s** (`%s`)\n", name, id)
+}
+
 // skillBlock is the part that survives a lost context. Kept deliberately short:
 // it is pasted into a file that every session reads, so every line costs
 // attention on every future task, and a long block is one people delete.
 func skillBlock(base string, main *skillWorkspace) string {
-	name, id := "the workspace", ""
+	where := "in the workspace you work in"
 	if main != nil {
-		name, id = main.Name, main.ID
+		where = fmt.Sprintf("workspace **%s** (`%s`)", main.Name, main.ID)
 	}
 	return fmt.Sprintf(`# The block to install
 
@@ -262,7 +280,7 @@ deletes.
 ## This project is documented in nigari — use it at every step
 
 Decisions, tasks and documentation live at %s,
-workspace **%s** (`+"`%s`"+`), reachable over MCP. It is not a place to file
+%s, reachable over MCP. It is not a place to file
 things at the end; it is where the work is recorded while it happens.
 
 - **Before starting anything that takes more than a moment:** `+"`working_on(page_id, agent, label, note)`"+`,
@@ -291,7 +309,7 @@ A skill is loaded when it is invoked. `+"`CLAUDE.md`"+` and `+"`AGENTS.md`"+` ar
 read at the start of every session, by every agent, without anybody remembering
 to ask. The rules were being forgotten because of where they were kept, not
 because agents are careless — so the fix is where they are kept.
-`, base, name, id)
+`, base, where)
 }
 
 func skillTools() string {

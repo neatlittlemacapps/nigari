@@ -272,9 +272,9 @@ func TestModernClientDiscoversListsAndCalls(t *testing.T) {
 	if v, _ := json.Marshal(d["supportedVersions"]); !strings.Contains(string(v), `"2026-07-28"`) || !strings.Contains(string(v), `"2025-06-18"`) {
 		t.Errorf("supportedVersions: %s", v)
 	}
-	if c, _ := json.Marshal(d["capabilities"]); string(c) != `{"extensions":{"io.modelcontextprotocol/tasks":{}},"tools":{}}` {
+	if c, _ := json.Marshal(d["capabilities"]); string(c) != `{"extensions":{"io.modelcontextprotocol/skills":{},"io.modelcontextprotocol/tasks":{}},"resources":{},"tools":{}}` {
 		// Extensions are declared by the phase that builds them, not before:
-		// tasks since phase D, skills not yet.
+		// tasks since phase D, skills (with the resources they need) since E.
 		t.Errorf("capabilities: %s", c)
 	}
 	info, _ := d["_meta"].(map[string]any)[mcpMetaServerInfo].(map[string]any)
@@ -323,7 +323,10 @@ func TestModernEraDropsPingAndAnswersUnknownMethodsWith404(t *testing.T) {
 	s := testServer(t)
 	uid, _ := signedIn(t, s, "removed@example.test")
 	tok := mcpToken(t, s, uid, "write")
-	for _, m := range []string{"ping", "logging/setLevel", "resources/list", "nope/nope"} {
+	// resources/list was the example of an unanswered method until spec 027
+	// phase E: the Skills extension requires the resources capability, so it
+	// is answered now. prompts/list still is not.
+	for _, m := range []string{"ping", "logging/setLevel", "prompts/list", "nope/nope"} {
 		status, code, _ := modernError(t, mcpRequest(t, s, tok, eraModern, m, ""))
 		if status != 404 || code != rpcMethodNotFound {
 			t.Errorf("%s: HTTP %d code %d, want 404 %d", m, status, code, rpcMethodNotFound)

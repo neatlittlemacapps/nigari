@@ -262,8 +262,8 @@ func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user,
 	case "server/discover":
 		// What initialize used to hand over once, asked for whenever the
 		// client wants it, and cacheable (plan D4, D5). Capabilities name only
-		// what is built: the skills extension is declared by the phase that
-		// implements it, not before.
+		// what is built. The skills extension requires the resources
+		// capability beside it (skill files are read through resources/read).
 		info := s.mcpServerInfo(r, true)
 		// The PNG icon's address comes from the Host header when no public
 		// address is configured. A shared cache that keys on the path alone
@@ -278,8 +278,12 @@ func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user,
 			"resultType":        "complete",
 			"supportedVersions": mcpSupportedVersions,
 			"capabilities": map[string]any{
-				"tools":      map[string]any{},
-				"extensions": map[string]any{mcpTasksExtension: map[string]any{}},
+				"tools":     map[string]any{},
+				"resources": map[string]any{},
+				"extensions": map[string]any{
+					mcpTasksExtension:  map[string]any{},
+					mcpSkillsExtension: map[string]any{},
+				},
 			},
 			"instructions": mcpInstructions,
 			"ttlMs":        mcpListTTLms,
@@ -339,6 +343,8 @@ func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user,
 		s.rpcResultModern(w, r, req.ID, result)
 	case "tasks/get", "tasks/update", "tasks/cancel":
 		s.serveTaskMethod(w, r, u, req, modern)
+	case "skills/list", "skills/get", "resources/list", "resources/read":
+		s.serveSkillMethod(w, r, u, req)
 	default:
 		rpcErrorStatus(w, http.StatusNotFound, req.ID, rpcMethodNotFound, "method not found: "+req.Method, nil)
 	}
