@@ -148,8 +148,7 @@ func dialChecked(ctx context.Context, network, addr string, blocked func(net.IP)
 	d := &net.Dialer{Timeout: 10 * time.Second}
 	for _, ip := range ips {
 		if blocked(ip) {
-			return nil, fmt.Errorf("refusing to fetch from %s (%s): only public addresses are allowed, "+
-				"so this server cannot be made to reach a private network.%s", host, ip, hint)
+			return nil, errNotPublic{host: host, ip: ip, hint: hint}
 		}
 	}
 	var lastErr error
@@ -161,6 +160,28 @@ func dialChecked(ctx context.Context, network, addr string, blocked func(net.IP)
 		lastErr = err
 	}
 	return nil, lastErr
+}
+
+// errNotPublic is the guard's refusal. A type, so a caller with little room
+// for the reason (a webhook's status line, cut at 120 characters) can say
+// the part that matters, the switch included, instead of losing it at the end.
+type errNotPublic struct {
+	host string
+	ip   net.IP
+	hint string
+}
+
+func (e errNotPublic) Error() string {
+	return fmt.Sprintf("refusing to fetch from %s (%s): only public addresses are allowed, "+
+		"so this server cannot be made to reach a private network.%s", e.host, e.ip, e.hint)
+}
+
+// short is the refusal in a few words, for a status line.
+func (e errNotPublic) short() string {
+	if e.hint == "" {
+		return fmt.Sprintf("refused %s: not a public address", e.ip)
+	}
+	return fmt.Sprintf("refused %s: not a public address (NIGARI_IMPORT_ALLOW_PRIVATE=1 allows it)", e.ip)
 }
 
 func ingestHTTPClient() *http.Client {

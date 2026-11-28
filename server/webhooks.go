@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -261,11 +262,23 @@ func (s *Server) deliverWebhook(id, target, secret string, payload []byte) {
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		s.recordWebhookResult(id, "failed: "+truncate(err.Error(), 120))
+		s.recordWebhookResult(id, webhookFailure(err))
 		return
 	}
 	defer resp.Body.Close()
 	s.recordWebhookResult(id, fmt.Sprintf("HTTP %d", resp.StatusCode))
+}
+
+// webhookFailure is the status line of a delivery that failed. The guard's
+// refusal comes first in its short form: in full it runs past the 120
+// characters a status keeps, and the switch that would open it was lost at
+// the end (review of #1129).
+func webhookFailure(err error) string {
+	var np errNotPublic
+	if errors.As(err, &np) {
+		return "failed: " + np.short()
+	}
+	return "failed: " + truncate(err.Error(), 120)
 }
 
 func (s *Server) recordWebhookResult(id, status string) {
