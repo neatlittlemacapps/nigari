@@ -55,6 +55,7 @@ type Server struct {
 	// (oauth_cimd.go): nil in every real build, a loopback receiver in tests.
 	clientMetadataTransport http.RoundTripper
 	clientMetadataRate      *rateLimiter
+	clientMetadataAll       *rateLimiter
 }
 
 // Close stops background maintenance and releases the database. Call on
@@ -154,6 +155,10 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 		// Client metadata documents fetched for /oauth/authorize, per address.
 		// Anyone may send a URL there without signing in (oauth_cimd.go).
 		clientMetadataRate: newRateLimiter(20, 10),
+		// And across all addresses, so many addresses together cannot make
+		// nigari store documents without end; generous, because a cap
+		// everyone shares is one anyone can use up.
+		clientMetadataAll: newRateLimiter(120, 60),
 		stopCleanup: make(chan struct{}),
 	}
 	if err := s.seed(); err != nil {

@@ -350,6 +350,10 @@ func (s *Server) handleOAuthApprove(w http.ResponseWriter, r *http.Request) {
 		httpErrorCode(w, 400, "invalid_client", "unknown client or redirect_uri")
 		return
 	}
+	if s.clientMetadataStale(client.ID) {
+		httpErrorCode(w, 400, "client_metadata_stale", "This sign-in is out of date. Start it again from the app that asked for access.")
+		return
+	}
 	if body.Method != "S256" || body.Challenge == "" {
 		httpErrorCode(w, 400, "pkce_required", "code_challenge with S256 is required")
 		return
@@ -659,6 +663,10 @@ func (s *Server) handleOAuthRequestInfo(w http.ResponseWriter, r *http.Request) 
 	c, err := s.connectorClient(r.URL.Query().Get("client_id"))
 	if err != nil {
 		httpErrorCode(w, 404, "unknown_client", "unknown client_id")
+		return
+	}
+	if s.clientMetadataStale(c.ID) {
+		httpErrorCode(w, 400, "client_metadata_stale", "This sign-in is out of date. Start it again from the app that asked for access.")
 		return
 	}
 	type wsInfo struct {

@@ -110,11 +110,16 @@ by MCP: its `client_id` is the https address of a small document that lists its
 name and the addresses it wants the answer sent to. nigari fetches that document
 when the sign-in starts, and refuses the sign-in, with a sentence saying why, if
 a check fails (nothing is stored then). What is checked: the address must be
-public; the document may be at most 5 KB, must arrive within 5 seconds and may
+an https address on the standard port, with no query and a host written in
+plain letters (a lookalike letter from another alphabet is refused, so the host
+shown on the consent screen cannot imitate another); it must be public; the document may be at most 5 KB, must arrive within 5 seconds and may
 not redirect; the `client_id` inside it must be the address it was fetched from;
 and it may hold no secret and must not ask for any client login method other
 than none. nigari keeps the document and reads it again on the first sign-in
-after 24 hours. Fetches are rate-limited per address.
+after 24 hours. Fetches are rate-limited per address. A consent screen opened
+for such a client whose document is more than a day old (a forwarded or saved
+link, which skips the re-reading) says the sign-in is out of date, and asks to
+start it again from the app.
 
 This is why such a name means more than a registered one: the consent screen
 shows the host the name came from, and a name served by a host you recognise

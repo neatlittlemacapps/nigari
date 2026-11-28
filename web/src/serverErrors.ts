@@ -35,6 +35,11 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
       return t('This account has been deactivated. Talk to an admin.');
     // Seen only when a proxy hides the address nigari was opened by
     // (server/crossorigin.go); a page on another address never shows it.
+    // The consent screen opened on a metadata-URL client whose document is
+    // more than a day old: normally the sign-in just started and refreshed
+    // it, so this is a stale or forwarded consent link (server/oauth_cimd.go).
+    case 'client_metadata_stale':
+      return t('This sign-in is out of date. Start it again from the app that asked for access.');
     case 'cross_origin':
       return t("This request did not come from nigari's own page, so it was refused. Behind a proxy, pass on the address you opened nigari by (Host or X-Forwarded-Host).");
 

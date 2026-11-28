@@ -24,27 +24,89 @@ import (
 var allowPrivateImport = os.Getenv("NIGARI_IMPORT_ALLOW_PRIVATE") == "1"
 
 // blockedIP decides whether an address is off limits for an import or a
-// webhook: every address notPublicIP refuses, unless the admin started the
+// webhook: every address localIP refuses, unless the admin started the
 // service with NIGARI_IMPORT_ALLOW_PRIVATE=1.
+//
+// It is narrower than notPublicIP on purpose, for now: imports and webhooks
+// have reached the shared carrier range (100.64.0.0/10, where Tailscale
+// machines live) and the other ranges below for as long as they existed, and
+// closing that is a decision of its own (#1129), not a side effect of moving
+// this code.
 func blockedIP(ip net.IP) bool {
 	if allowPrivateImport {
 		return false
 	}
-	return notPublicIP(ip)
+	return localIP(ip)
 }
 
-// notPublicIP is everything that is not publicly routable: loopback, private
-// networks, link-local (which is where 169.254.169.254 lives, the metadata
-// service of many providers), multicast and the unspecified address.
+// localIP is the guard imports and webhooks have always had: loopback,
+// private networks, link-local (which is where 169.254.169.254 lives, the
+// metadata service of many providers), multicast and the unspecified address.
+func localIP(ip net.IP) bool {
+	return ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() ||
+		ip.IsLinkLocalMulticast() || ip.IsInterfaceLocalMulticast() ||
+		ip.IsMulticast() || ip.IsUnspecified()
+}
+
+// notPublicIPNets are ranges that are not public though localIP lets them
+// through (security review, spec 027 phase 2).
+var notPublicIPNets = func() []*net.IPNet {
+	var out []*net.IPNet
+	for _, cidr := range []string{
+		"0.0.0.0/8",      // "this network"; 0.0.0.0 is localIP's already
+		"100.64.0.0/10",  // shared carrier space (CGNAT, Tailscale)
+		"192.0.0.0/24",   // protocol assignments
+		"198.18.0.0/15",  // benchmarking
+		"240.0.0.0/4",    // reserved, and broadcast
+		"fec0::/10",      // site-local, deprecated but still routed in places
+		"64:ff9b:1::/48", // local-use NAT64
+	} {
+		_, n, _ := net.ParseCIDR(cidr)
+		out = append(out, n)
+	}
+	return out
+}()
+
+// notPublicIP is everything that is not publicly routable: localIP's ranges,
+// notPublicIPNets, and an IPv4 address carried inside an IPv6 one (NAT64
+// 64:ff9b::/96 and 6to4 2002::/16), judged by the IPv4 address it carries,
+// so 64:ff9b::7f00:1 is the 127.0.0.1 it reaches.
 //
 // It has no switch. A fetch a stranger can cause without signing in (a client
 // metadata document, spec 027) uses it directly: the admin's permission for
 // imports from their own network is a permission for the people they let
 // import, not for anyone who can reach /oauth/authorize.
 func notPublicIP(ip net.IP) bool {
-	return ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() ||
-		ip.IsLinkLocalMulticast() || ip.IsInterfaceLocalMulticast() ||
-		ip.IsMulticast() || ip.IsUnspecified()
+	if localIP(ip) {
+		return true
+	}
+	for _, n := range notPublicIPNets {
+		if n.Contains(ip) {
+			return true
+		}
+	}
+	if v6 := ip.To16(); v6 != nil && ip.To4() == nil {
+		var embedded net.IP
+		switch {
+		case v6[0] == 0x00 && v6[1] == 0x64 && v6[2] == 0xff && v6[3] == 0x9b && isZero(v6[4:12]):
+			embedded = net.IPv4(v6[12], v6[13], v6[14], v6[15])
+		case v6[0] == 0x20 && v6[1] == 0x02:
+			embedded = net.IPv4(v6[2], v6[3], v6[4], v6[5])
+		}
+		if embedded != nil && notPublicIP(embedded) {
+			return true
+		}
+	}
+	return false
+}
+
+func isZero(b []byte) bool {
+	for _, c := range b {
+		if c != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // safeDial resolves the name, checks EVERY address and then connects to

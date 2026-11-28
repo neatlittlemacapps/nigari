@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -223,23 +224,98 @@ func TestASlowMetadataDocumentTimesOut(t *testing.T) {
 
 // The real transport (no test override) reaches public addresses only, and
 // the admin's switch for private imports does not open it: anyone can send a
-// client_id to /oauth/authorize without signing in.
+// client_id to /oauth/authorize without signing in. Each id is refused at the
+// dial, by the address check, before any connection is made.
 func TestAMetadataURLOnAPrivateAddressIsNeverFetched(t *testing.T) {
 	s := testServer(t)
-	received := atomic.Int32{}
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { received.Add(1) }))
-	defer ts.Close()
-	id := ts.URL + "/client.json" // https://127.0.0.1:<port>/client.json
-	for _, allow := range []bool{false, true} {
-		allowPrivateImport = allow
-		rec := authorize(s, "", id, cimdRedirect, nil)
-		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "only public addresses") {
-			t.Errorf("private imports allowed=%v: %d %s", allow, rec.Code, rec.Body.String())
+	s.clientMetadataRate = newRateLimiter(1e9, 1e9) // 18 tries from one address
+	defer func() { allowPrivateImport = false }()
+	for _, id := range []string{
+		"https://127.0.0.1/client.json",
+		"https://localhost/client.json",
+		"https://[::1]/client.json",
+		"https://10.0.0.8/client.json",
+		"https://169.254.169.254/client.json",
+		"https://100.64.0.1/client.json",         // shared carrier space
+		"https://[64:ff9b::7f00:1]/client.json",  // 127.0.0.1 through NAT64
+		"https://[2002:7f00:1::1]/client.json",   // 127.0.0.1 through 6to4
+		"https://[::ffff:127.0.0.1]/client.json", // IPv4-mapped
+	} {
+		for _, allow := range []bool{false, true} {
+			allowPrivateImport = allow
+			rec := authorize(s, "", id, cimdRedirect, nil)
+			if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "only public addresses") {
+				t.Errorf("%s, private imports allowed=%v: %d %s", id, allow, rec.Code, rec.Body.String())
+			}
 		}
 	}
-	allowPrivateImport = false
-	if received.Load() != 0 {
-		t.Errorf("the private address was contacted %d time(s)", received.Load())
+}
+
+// notPublicIP is wider than the import guard; blockedIP keeps what imports
+// and webhooks have always had until #1129 is decided.
+func TestNotPublicIPCoversWhatTheImportGuardMisses(t *testing.T) {
+	for _, a := range []string{"100.64.1.1", "0.1.2.3", "198.18.0.1", "240.0.0.1", "192.0.0.8",
+		"64:ff9b::7f00:1", "64:ff9b::a00:1", "2002:7f00:1::", "2002:c0a8:101::", "fec0::1", "64:ff9b:1::1"} {
+		if !notPublicIP(net.ParseIP(a)) {
+			t.Errorf("%s counted as public", a)
+		}
+	}
+	for _, a := range []string{"8.8.8.8", "64:ff9b::808:808", "2002:808:808::", "2606:4700::1", "1.1.1.1"} {
+		if notPublicIP(net.ParseIP(a)) {
+			t.Errorf("%s counted as not public", a)
+		}
+	}
+	if blockedIP(net.ParseIP("100.64.1.1")) {
+		t.Error("the import guard changed; that is #1129's decision, not this one's")
+	}
+}
+
+// A link straight to the consent screen skips /oauth/authorize, which is
+// where a document is read again. The screen and the approval refuse a
+// document older than a day, so a redirect address the client has since
+// dropped is not honoured (security review, phase 2).
+func TestAStaleMetadataClientCannotBeApproved(t *testing.T) {
+	s, _ := cimdServer(t, cimdDoc(goodCIMD()))
+	uid, cookie := signedIn(t, s, "stale@example.test")
+	ws := s.firstWorkspaceOf(t, uid)
+	authorize(s, cookie, cimdURL, cimdRedirect, nil)
+	info := func() int {
+		r := httptest.NewRequest("GET", "/api/oauth/request?client_id="+url.QueryEscape(cimdURL), nil)
+		r.Header.Set("Cookie", cookie)
+		rec := httptest.NewRecorder()
+		s.ServeHTTP(rec, r)
+		return rec.Code
+	}
+	if info() != 200 {
+		t.Fatal("a fresh document was refused")
+	}
+	s.db.Exec(`UPDATE oauth_clients SET metadata_fetched_at = ? WHERE id = ?`,
+		time.Now().UTC().Add(-25*time.Hour).Format(time.RFC3339Nano), cimdURL)
+	if code := info(); code != 400 {
+		t.Errorf("request info for a stale document: %d", code)
+	}
+	payload, _ := json.Marshal(map[string]any{"clientId": cimdURL, "redirectUri": cimdRedirect,
+		"codeChallenge": pkce("v-0123456789-0123456789-0123456789-0123"), "codeChallengeMethod": "S256",
+		"scope": "read", "workspaces": []string{ws}})
+	r := httptest.NewRequest("POST", "/api/oauth/approve", strings.NewReader(string(payload)))
+	r.Header.Set("Cookie", cookie)
+	r.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, r)
+	if rec.Code != 400 || !strings.Contains(rec.Body.String(), "client_metadata_stale") {
+		t.Errorf("approve on a stale document: %d %s", rec.Code, rec.Body.String())
+	}
+	// A registered client has no document and is never stale.
+	if s.clientMetadataStale(oauthClientFixture(t, s, "https://claude.ai/cb")) {
+		t.Error("a registered client counted as stale")
+	}
+}
+
+// One machine with an IPv6 /64 gets one bucket, not one per address.
+func TestRateKeyGroupsAnIPv6Network(t *testing.T) {
+	a, b := rateKeyForAddress("2001:db8:1:2::1"), rateKeyForAddress("2001:db8:1:2:ffff::9")
+	if a != b || a == rateKeyForAddress("2001:db8:1:3::1") || rateKeyForAddress("203.0.113.9") != "203.0.113.9" {
+		t.Errorf("keys: %q %q", a, b)
 	}
 }
 
@@ -296,16 +372,20 @@ func TestMetadataFetchesAreRateLimited(t *testing.T) {
 // 3); anything else is looked up as a registered id, and is unknown.
 func TestWhichClientIDsAreMetadataURLs(t *testing.T) {
 	for id, want := range map[string]bool{
-		cimdURL:                                  true,
-		"https://client.example.test/a?x=1":      true,
-		"http://client.example.test/client.json": false,
-		"https://client.example.test":            false,
-		"https://client.example.test/":           false,
-		"https://u:p@client.example.test/c.json": false,
-		"https://client.example.test/c.json#x":   false,
-		"https://client.example.test/a/../c":     false,
-		"https://client.example.test/./c":        false,
-		"nigari-0123456789abcdef01234567":        false,
+		cimdURL:                                   true,
+		"https://client.example.test/a?x=1":       false,
+		"https://client.example.test:443/c.json":  true,
+		"https://client.example.test:8443/c.json": false,
+		"https://xn--nthropic-3ag.com/c.json":     true,
+		"https://аnthropic.com/c.json":            false,
+		"http://client.example.test/client.json":  false,
+		"https://client.example.test":             false,
+		"https://client.example.test/":            false,
+		"https://u:p@client.example.test/c.json":  false,
+		"https://client.example.test/c.json#x":    false,
+		"https://client.example.test/a/../c":      false,
+		"https://client.example.test/./c":         false,
+		"nigari-0123456789abcdef01234567":         false,
 	} {
 		if got := isClientMetadataURL(id); got != want {
 			t.Errorf("%q: %v, want %v", id, got, want)

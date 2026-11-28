@@ -141,11 +141,13 @@ a better key is not a boundary.
 
 Instead of registering, a client may use as its `client_id` the https URL of a
 metadata document that lists its `client_name` and `redirect_uris`. nigari
-fetches it when authorization starts (public addresses only, at most 5 KB,
+fetches it when authorization starts (https on port 443, no query, an ASCII
+host; public addresses only, at most 5 KB,
 5 seconds, no redirects; its `client_id` must equal its URL; no
 `client_secret`; `token_endpoint_auth_method` absent or `none`). A document
 that fails a check answers 400 `invalid_client` with the reason; too many
-fetches from one address answer 429. The authorization-server metadata says
+fetches from one address answer 429. Approval refuses a document read more than
+24 hours ago with `"code": "client_metadata_stale"`. The authorization-server metadata says
 `client_id_metadata_document_supported` and
 `authorization_response_iss_parameter_supported`, both `true`, and every
 redirect back to the client carries `iss` (RFC 9207).

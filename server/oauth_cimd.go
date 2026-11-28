@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -49,14 +50,29 @@ var clientMetadataTimeout = 5 * time.Second
 // document's address, by the draft's rules (section 3): https, a host, a path
 // other than "/", no fragment, no user or password, no dot segments. An id
 // from /oauth/register ("nigari-…") is never one.
+//
+// Three rules are nigari's own, from the security review of phase 2:
+//   - The host is plain ASCII. The consent screen shows it so a person can
+//     spot a name imitating another client; "аnthropic.com" with a Cyrillic
+//     а would defeat that. A punycode name (xn--…) shows as what it is.
+//   - No query (the draft: SHOULD NOT). One host could otherwise mint
+//     endless distinct ids, each a stored row.
+//   - No port but 443, so a client_id is no probe of other ports.
 func isClientMetadataURL(id string) bool {
 	if !strings.HasPrefix(id, "https://") {
 		return false
 	}
 	u, err := url.Parse(id)
 	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.Fragment != "" ||
-		strings.Contains(id, "#") || u.Path == "" || u.Path == "/" {
+		strings.Contains(id, "#") || u.Path == "" || u.Path == "/" ||
+		u.RawQuery != "" || strings.Contains(id, "?") ||
+		(u.Port() != "" && u.Port() != "443") {
 		return false
+	}
+	for _, r := range u.Hostname() {
+		if r > 0x7e || r < 0x21 {
+			return false
+		}
 	}
 	for _, seg := range strings.Split(u.Path, "/") {
 		if seg == "." || seg == ".." {
@@ -92,7 +108,7 @@ func (s *Server) refreshClientMetadata(r *http.Request, id string) error {
 			return nil
 		}
 	}
-	if !s.clientMetadataRate.allow(s.clientIP(r)) {
+	if !s.clientMetadataRate.allow(rateKeyForAddress(s.clientIP(r))) || !s.clientMetadataAll.allow("all") {
 		return errClientMetadataRate
 	}
 	doc, err := s.fetchClientMetadata(id)
@@ -109,6 +125,33 @@ func (s *Server) refreshClientMetadata(r *http.Request, id string) error {
 			metadata_fetched_at = excluded.metadata_fetched_at`,
 		id, doc.ClientName, string(uris), at, at)
 	return err
+}
+
+// clientMetadataStale reports whether a metadata-URL client's stored document
+// is too old to approve on. The consent screen and the approval read the
+// stored row; /oauth/authorize refreshes it, but a link straight to the
+// consent screen skips that, and a document that has since dropped a
+// redirect address (on a domain its owner let lapse) would still be honoured
+// (security review, phase 2). A registered client is never stale.
+func (s *Server) clientMetadataStale(id string) bool {
+	if !isClientMetadataURL(id) {
+		return false
+	}
+	var fetched string
+	s.db.QueryRow(`SELECT metadata_fetched_at FROM oauth_clients WHERE id = ?`, id).Scan(&fetched)
+	t, err := time.Parse(time.RFC3339Nano, fetched)
+	return err != nil || time.Since(t) >= clientMetadataMaxAge
+}
+
+// rateKeyForAddress buckets an IPv6 address by its /64, which is what one
+// customer is usually given: a bucket per address would let one machine take
+// a fresh one for every request.
+func rateKeyForAddress(addr string) string {
+	ip := net.ParseIP(addr)
+	if ip == nil || ip.To4() != nil {
+		return addr
+	}
+	return ip.Mask(net.CIDRMask(64, 128)).String() + "/64"
 }
 
 type clientMetadataDoc struct {
