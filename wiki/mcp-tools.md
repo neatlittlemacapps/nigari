@@ -1904,7 +1904,7 @@ has: …`; `database "…" not found`.
 | --- | --- | --- |
 | `job_id` | string | yes |
 
-Poll every few seconds until the status is done. The answer carries the whole
+Poll every few seconds until the status is no longer running. The answer carries the whole
 job: job_id, status (running, done, failed or cancelled), total, created,
 failed, up to ten errors, target, started_at, finished_at, and a reason when
 it failed or was cancelled.

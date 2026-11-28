@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -557,8 +558,10 @@ func (s *Server) startIngest(u *user, spec ingestSpec) (string, error) {
 //
 // Before each record it checks that the task is still working (a cancel
 // stops it there; records already written stay) and that the credential that
-// started it still exists: revoking a token is how a person stops an agent,
-// and an import of thousands of records must not run on for minutes after.
+// started it may still write there: revoking or narrowing a token is how a
+// person stops an agent, and an import of thousands of records must not run
+// on for minutes after. Measured on 2000 records (2026-11-28, three runs
+// each): 1.67–1.71 s with the checks, 1.40–1.70 s without them.
 func (s *Server) runIngest(job *ingestJob, owner taskOwner, parentID, workspaceID string, items []ingestItem, nameToID map[string]string) {
 	userID := owner.userID
 	defer s.pagesChanged()
@@ -574,12 +577,16 @@ func (s *Server) runIngest(job *ingestJob, owner taskOwner, parentID, workspaceI
 	}
 
 	for _, it := range items {
-		if !s.credentialAlive(owner) {
+		if !s.mayStillWrite(job.ID, workspaceID) {
 			job.Finished = now()
 			s.endTask(job.ID, taskFailed, taskRevoked, taskRevoked, job)
 			return
 		}
-		if !s.progressTask(job.ID, importMessage(job), job) {
+		working, perr := s.progressTask(job.ID, importMessage(job), job)
+		if perr != nil {
+			log.Printf("import %s: progress not written: %v", job.ID, perr)
+		}
+		if !working {
 			// Cancelled. endTask keeps the cancelled state and stores the
 			// final count.
 			job.Finished = now()

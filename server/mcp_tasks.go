@@ -95,6 +95,13 @@ func (s *Server) serveTaskMethod(w http.ResponseWriter, r *http.Request, u *user
 		rpcErrorStatus(w, http.StatusBadRequest, req.ID, rpcInvalidParams, "taskId is required", nil)
 		return
 	}
+	// The same budget tools/call spends: each of these reads the one writer
+	// connection, and a client that ignores pollIntervalMs must not crowd
+	// out the import it is polling (code review).
+	if !s.mcpRate.allow(u.ID) {
+		rpcErrorStatus(w, http.StatusTooManyRequests, req.ID, rpcInternalError, "rate limit exceeded: too many requests, slow down", nil)
+		return
+	}
 	// Unknown, expired and another credential's task get the same answer.
 	notFound := func() {
 		rpcErrorStatus(w, http.StatusOK, req.ID, rpcInvalidParams, "Failed to retrieve task: Task not found", nil)
@@ -125,8 +132,7 @@ func (s *Server) serveTaskMethod(w http.ResponseWriter, r *http.Request, u *user
 				notFound()
 				return
 			}
-			b, _ := json.Marshal(j)
-			res["result"] = textResult(string(b), false)
+			res["result"] = textResult(importJobText(j), false)
 		case taskFailed:
 			res["error"] = map[string]any{"code": rpcInternalError, "message": t.Error}
 		}
@@ -144,9 +150,20 @@ func (s *Server) serveTaskMethod(w http.ResponseWriter, r *http.Request, u *user
 		}
 		answer(map[string]any{})
 	case "tasks/cancel":
-		if err := s.cancelTask(u, p.TaskID); err != nil {
+		// A cancel stops an import: a write, which a read-only credential
+		// may not make (mcpCall's own rule for tools).
+		if u.TokenScope == "read" {
+			s.insufficientScope(w, r, "this API token is read-only; cancelling a task requires a write token")
+			return
+		}
+		stopped, err := s.cancelTask(u, p.TaskID)
+		if err != nil {
 			notFound()
 			return
+		}
+		if stopped {
+			// In the activity log beside the import it stops, as an agent's.
+			s.audit("agent", u.ID, u.Name+" (MCP)", "mcp.tasks_cancel", "", "", p.TaskID)
 		}
 		answer(map[string]any{})
 	}
@@ -172,4 +189,16 @@ func mcpResultText(result map[string]any) (string, bool) {
 	}
 	text, ok := content[0]["text"].(string)
 	return text, ok
+}
+
+// importJobText is an import's record as an agent reads it. Its errors quote
+// the titles of the source's records, text from outside that nobody here
+// wrote, so the record is framed as untrusted (.claude/rules/mcp.md). It was
+// returned bare before phase D, by get_import_status (code review).
+func importJobText(j ingestJob) string {
+	b, _ := json.Marshal(j)
+	if len(j.Errors) == 0 {
+		return string(b)
+	}
+	return wrapUntrusted(string(b))
 }

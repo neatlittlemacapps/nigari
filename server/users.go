@@ -52,10 +52,43 @@ type user struct {
 	// Cookie/session auth is always nil (unrestricted). Not serialized.
 	TokenWorkspaces []string `json:"-"`
 	// TokenID is the API token's id or the OAuth grant's id: the credential
-	// itself, which outlives the access tokens a grant hands out. Work that
-	// runs on after the request (an import task) checks it is still there,
-	// so revoking a credential stops what it started. Not serialized.
+	// itself. Work that runs on after the request (an import task) belongs
+	// to it and checks before each step that it still exists and still
+	// reaches where it writes, so revoking or narrowing a credential stops
+	// what it started. A grant's id changes on every refresh (rotation), and
+	// oauthRefresh moves the tasks to the new one. Not serialized.
 	TokenID string `json:"-"`
+}
+
+// apiTokenUser is the user an API token acts as: its account with the
+// token's scope and workspace list. currentUser and a running task
+// (credentialNow) build it here, so the reach a task re-checks is the reach
+// the request had.
+func (s *Server) apiTokenUser(id, userID, scope, wsScope string) *user {
+	u := s.userByID(userID)
+	if u == nil {
+		return nil
+	}
+	if scope != "read" {
+		scope = "write"
+	}
+	u.TokenScope = scope
+	u.TokenKind = tokenKindAPI
+	u.TokenID = id
+	u.TokenWorkspaces = splitWorkspaces(wsScope)
+	return u
+}
+
+// splitWorkspaces reads a stored workspace list. Empty means unrestricted,
+// which is nil, never an empty list.
+func splitWorkspaces(list string) []string {
+	var out []string
+	for _, w := range strings.Split(list, ",") {
+		if w = strings.TrimSpace(w); w != "" {
+			out = append(out, w)
+		}
+	}
+	return out
 }
 
 type ctxKey int
@@ -194,23 +227,7 @@ func (s *Server) currentUser(r *http.Request) *user {
 			// CAN be done is make a stranger using it obvious, and rotating cheap.
 			s.db.Exec(`UPDATE api_tokens SET last_used_at = ?, last_used_ip = ? WHERE id = ?`,
 				now(), s.clientIP(r), id)
-			u := s.userByID(userID)
-			if u != nil {
-				if scope != "read" {
-					scope = "write"
-				}
-				u.TokenScope = scope
-				u.TokenKind = tokenKindAPI
-				u.TokenID = id
-				if strings.TrimSpace(wsScope) != "" {
-					for _, w := range strings.Split(wsScope, ",") {
-						if w = strings.TrimSpace(w); w != "" {
-							u.TokenWorkspaces = append(u.TokenWorkspaces, w)
-						}
-					}
-				}
-			}
-			return u
+			return s.apiTokenUser(id, userID, scope, wsScope)
 		}
 		// A REJECTED token is throttled; a valid one is not. An agent makes
 		// hundreds of calls a minute with a good token and must not be slowed,

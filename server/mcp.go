@@ -594,7 +594,7 @@ var mcpTools = []map[string]any{
 	},
 	{
 		"name":        "get_import_status",
-		"description": "Progress of an import_url job: how many records are written, whether it finished, and any errors. Poll every few seconds until status is \"done\". Read-only.",
+		"description": "Progress of an import_url job: how many records are written, whether it finished, and any errors. Poll every few seconds until status is no longer \"running\": done, failed (with a reason) or cancelled. Read-only.",
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{"job_id": map[string]any{"type": "string"}},
 			"required":   []string{"job_id"}},
@@ -1295,7 +1295,7 @@ func (s *Server) mcpCallAsk(u *user, name string, rawArgs json.RawMessage, publi
 			b, _ := json.Marshal(map[string]any{
 				"job_id": jobID, "status": j.Status, "total": j.Total, "target": j.Target,
 				"note": j.Note,
-				"next": "nigari is writing these records itself — nothing further is needed from you. Poll get_import_status with this job_id until status is \"done\".",
+				"next": "nigari is writing these records itself — nothing further is needed from you. Poll get_import_status with this job_id until status is no longer \"running\" (done, failed or cancelled).",
 			})
 			return string(b), nil
 		case "get_import_status":
@@ -1306,8 +1306,7 @@ func (s *Server) mcpCallAsk(u *user, name string, rawArgs json.RawMessage, publi
 			if err != nil {
 				return "", fmt.Errorf("import job %q not found — a finished import is kept for 24 hours (pages already created stay)", args.JobID)
 			}
-			b, _ := json.Marshal(j)
-			return string(b), nil
+			return importJobText(j), nil
 		case "get_collection":
 			if args.EmbedID != "" {
 				out, err := s.mcpGetEmbed(u, args.PageID, args.EmbedID)

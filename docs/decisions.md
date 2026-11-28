@@ -16,18 +16,31 @@ Spec 027, phase D (US3, plan D6) and #1133.
   its progress into the row after each record; `get_import_status` and
   `tasks/get` read it. *Turned down*: keeping the map and persisting beside
   it (two sources for one job, plan D6).
-- **The task belongs to the credential**: user, token kind and token
-  workspaces, the key the idempotency cache uses. `get_import_status` now
-  checks the same, so a narrower token of the same person no longer reads a
-  wider one's job (it checked the account only). Another credential's task,
-  an expired one and an unknown id all get the same "not found" (`-32602`),
-  so an id says nothing about whose it is.
-- **A revoked credential stops its import.** Not in the plan: the row also
-  keeps the API token's or OAuth grant's id (`user.TokenID`, new), and the
-  runner checks before each record that it still exists and the account is
-  not deactivated. Revoking is how a person stops an agent; an import of
-  20000 records ran on for minutes after it. *Turned down*: checking every N
-  records (cheaper, but the check is one indexed lookup beside an insert).
+- **The task belongs to the credential itself**: the account, the kind and
+  the API token's or OAuth grant's id (`user.TokenID`, new). The plan keyed it
+  on the token's workspace list, as the idempotency cache does; the code
+  review showed a snapshot of the list fails both ways (a token narrowed
+  mid-import lost sight of its own task; two tokens alike in reach could read
+  each other's). `get_import_status` checks the same, so another token of the
+  same person no longer reads a job (it checked the account only). Another
+  credential's task, an expired one and an unknown id all get the same "not
+  found" (`-32602`), so an id says nothing about whose it is. An OAuth
+  refresh replaces the grant row, so it moves the grant's tasks to the new id.
+- **A credential that can no longer write there stops its import.** Before
+  each record the runner rebuilds the credential from the row (through
+  `apiTokenUser` / `grantUser`, the functions `currentUser` uses) and checks
+  it exists, is not read-only, its account is active and `credentialMayEnter`
+  the target workspace. Revoking or narrowing a token is how a person stops
+  an agent; an import of 20000 records ran on for minutes after it. Measured
+  on 2000 records: 1.67–1.71 s with the checks, 1.40–1.70 s without.
+  *Turned down*: checking every N records (no measurable saving, and a cancel
+  or revoke would land N records late).
+- **Cancelling is a write**: a read-only credential gets 403
+  `insufficient_scope`, and an agent's cancel is in the activity log
+  (`mcp.tasks_cancel`). `tasks/*` share the MCP rate limit.
+- **An import's record is framed as untrusted when it carries errors**: they
+  quote the source's titles. It went out bare through `get_import_status`
+  before (found by the review).
 - **Cancel is a status change the runner sees.** `tasks/cancel` sets the
   row to `cancelled` only while it is `working`; the runner's progress write
   is conditional on `working`, so the next record finds it and stops.

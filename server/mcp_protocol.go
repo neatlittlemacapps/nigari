@@ -312,12 +312,7 @@ func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user,
 		// a 403 in the middle of a session.
 		var scopeErr errReadOnlyToken
 		if errors.As(callErr, &scopeErr) {
-			w.Header().Set("WWW-Authenticate", `Bearer error="insufficient_scope", scope="write", `+
-				`resource_metadata="`+s.publicBase(r)+`/.well-known/oauth-protected-resource", `+
-				// A fixed sentence: the tool name is quoted in the error's
-				// text, and a quote inside a quoted header value ends it.
-				`error_description="this credential is read-only; the tool needs the write scope"`)
-			httpError(w, http.StatusForbidden, scopeErr.Error())
+			s.insufficientScope(w, r, scopeErr.Error())
 			return
 		}
 		// The person has to be asked first (spec 027 US2): an input_required
@@ -371,6 +366,17 @@ func (s *Server) mcpToolsCall(r *http.Request, u *user, raw json.RawMessage, ask
 		return textResult(err.Error(), true), "", err
 	}
 	return textResult(out, false), "", nil
+}
+
+// insufficientScope answers a read-only credential's write with 403 and the
+// scope it lacks, so the client can ask the person for more (step-up).
+func (s *Server) insufficientScope(w http.ResponseWriter, r *http.Request, msg string) {
+	w.Header().Set("WWW-Authenticate", `Bearer error="insufficient_scope", scope="write", `+
+		`resource_metadata="`+s.publicBase(r)+`/.well-known/oauth-protected-resource", `+
+		// A fixed sentence: the tool name is quoted in the error's text, and
+		// a quote inside a quoted header value ends it.
+		`error_description="this credential is read-only; the tool needs the write scope"`)
+	httpError(w, http.StatusForbidden, msg)
 }
 
 // errReadOnlyToken is mcpCall's refusal of a write tool to a read-only
