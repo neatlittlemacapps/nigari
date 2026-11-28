@@ -118,7 +118,7 @@ func (e errInputRequired) result() map[string]any {
 type confirmArgs struct {
 	PageID, EmbedID, ViewID         string
 	WorkspaceID, FromWorkspace, Tag string
-	Name, Password                  string
+	Name, Password, Icon            string
 	ExpiresInDays                   int
 	Trashed, Public                 *bool
 }
@@ -157,7 +157,9 @@ func (s *Server) confirmQuestion(u *user, name string, a confirmArgs) (string, s
 			for _, id := range ids[1:] {
 				idArgs = append(idArgs, id)
 			}
-			s.db.QueryRow(`SELECT COUNT(*) FROM pages WHERE trashed_at IS NULL AND id IN (`+placeholders(len(idArgs))+`)`, idArgs...).Scan(&n)
+			if err := s.db.QueryRow(`SELECT COUNT(*) FROM pages WHERE trashed_at IS NULL AND id IN (`+placeholders(len(idArgs))+`)`, idArgs...).Scan(&n); err != nil {
+				return "", "", err
+			}
 		}
 		// A page on its own is one click to restore: no question. The trash
 		// keeps a tree too, but a tree is what a person does not see going.
@@ -185,7 +187,9 @@ func (s *Server) confirmQuestion(u *user, name string, a confirmArgs) (string, s
 			q += " Opening it needs a password."
 		}
 		var existing int
-		s.db.QueryRow(`SELECT COUNT(*) FROM share_links WHERE page_id = ? AND mode != 'form'`, a.PageID).Scan(&existing)
+		// An expired link already stopped working: it is not mentioned.
+		s.db.QueryRow(`SELECT COUNT(*) FROM share_links WHERE page_id = ? AND mode != 'form'
+			AND (expires_at IS NULL OR expires_at > ?)`, a.PageID, time.Now().UTC().Format(time.RFC3339Nano)).Scan(&existing)
 		if existing > 0 {
 			q += " It replaces the page's current link, which stops working."
 		}
@@ -231,11 +235,14 @@ func (s *Server) confirmQuestion(u *user, name string, a confirmArgs) (string, s
 			"View: " + viewName(v) + "\nDatabase: " + untitled(title), nil
 
 	case "workspace":
-		if a.Tag != "" || a.WorkspaceID != "" || a.FromWorkspace == "" {
+		if a.Tag != "" || a.WorkspaceID != "" || a.FromWorkspace == "" || a.Icon != "" {
 			return "", "", nil
 		}
+		// Everything mcpWorkspace and blueprintWorkspace refuse with a
+		// sentence of their own, in their order: no question, they say it.
 		newName := strings.TrimSpace(a.Name)
-		if newName == "" || narrowedToWorkspaces(u) || !s.isMember(u.ID, a.FromWorkspace) || !s.credentialMayEnter(u, a.FromWorkspace) {
+		if narrowedToWorkspaces(u) || newName == "" || !s.isMember(u.ID, a.FromWorkspace) || !s.credentialMayEnter(u, a.FromWorkspace) ||
+			s.mayCreateWorkspace(u.ID, newName) != nil {
 			return "", "", nil
 		}
 		sources, err := s.blueprintDBs(u, a.FromWorkspace)
@@ -299,7 +306,7 @@ func (s *Server) confirmGate(u *user, name string, rawArgs json.RawMessage, a co
 			// A yes for an act that no longer needs one: the page was trashed
 			// in between, its last sub-page went, the view is already gone.
 			// The person agreed to something that is not what would happen now.
-			return true, "", fmt.Errorf("this call no longer needs the person's confirmation, so their answer does not apply: the page or view changed since they were asked. Nothing was changed; check it again before you retry without requestState")
+			return true, "", fmt.Errorf("this call does not need the person's confirmation, so the answer sent with it does not apply. If they were asked about it, the page or view changed since. Nothing was changed; check it again before you retry without requestState")
 		}
 		return false, "", nil
 	}
@@ -310,15 +317,6 @@ func (s *Server) confirmGate(u *user, name string, rawArgs json.RawMessage, a co
 	if ask.state == "" {
 		return fresh()
 	}
-	if err := mcpConfirms.check(u, name, rawArgs, message, ask.state); err != nil {
-		if errors.Is(err, errConfirmChanged) {
-			// Same caller, same call, but what it would do changed (more
-			// sub-pages, a renamed view): the person is asked about what
-			// would happen now, not held to an answer about something else.
-			return fresh()
-		}
-		return true, "", err
-	}
 	var answer struct {
 		Action  string `json:"action"`
 		Content struct {
@@ -328,15 +326,28 @@ func (s *Server) confirmGate(u *user, name string, rawArgs json.RawMessage, a co
 	if r, ok := ask.responses[mcpConfirmKey]; ok {
 		json.Unmarshal(r, &answer)
 	}
-	if answer.Action == "accept" && answer.Content.Confirm != nil && *answer.Content.Confirm {
+	yes := answer.Action == "accept" && answer.Content.Confirm != nil && *answer.Content.Confirm
+	if err := mcpConfirms.check(u, name, rawArgs, message, ask.state); err != nil {
+		// Same caller, same call, but what it would do changed (more
+		// sub-pages, a renamed view): a yes is not held to something else,
+		// so the person is asked about what would happen now. A no still
+		// stands: nothing happens either way.
+		if !errors.Is(err, errConfirmChanged) {
+			return true, "", err
+		}
+		if yes {
+			return fresh()
+		}
+	} else if yes {
 		return false, "", nil
 	}
 	ws := s.pageWorkspace(a.PageID)
 	if ws == "" && name == "workspace" {
 		ws = a.FromWorkspace
 	}
-	if answer.Action == "cancel" || answer.Action == "" {
-		// Dismissed without a choice: nobody said no, so the log says nothing.
+	if answer.Action != "decline" && answer.Action != "accept" {
+		// Dismissed without a choice (cancel, or an answer that is none of
+		// the three): nobody said no, so the log says nothing.
 		return true, "The person closed the question without answering. Nothing was changed. Ask them again only if they want this done.", nil
 	}
 	s.audit("agent", u.ID, u.Name+" (MCP)", "mcp.declined", a.PageID, ws, name)
@@ -386,7 +397,9 @@ type confirmPayload struct {
 // made for one token is refused for a token of the account narrowed to
 // other workspaces, and for another account.
 func confirmCredential(u *user) string {
-	return u.ID + ":" + u.TokenKind + ":" + strings.Join(u.TokenWorkspaces, ",")
+	// A digest: the state is signed, not encrypted, and the client has no
+	// business reading account and workspace ids out of it.
+	return digest(u.ID + ":" + u.TokenKind + ":" + strings.Join(u.TokenWorkspaces, ","))
 }
 
 // argsDigest hashes the arguments in a canonical form, so a client that

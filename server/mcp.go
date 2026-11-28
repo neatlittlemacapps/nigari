@@ -1514,7 +1514,7 @@ func (s *Server) mcpCallAsk(u *user, name string, rawArgs json.RawMessage, publi
 	if done, reply, err := s.confirmGate(u, name, rawArgs, confirmArgs{
 		PageID: args.PageID, EmbedID: args.EmbedID, ViewID: args.ViewID,
 		WorkspaceID: args.WorkspaceID, FromWorkspace: args.FromWorkspace, Tag: args.Tag,
-		Name: args.Name, Password: args.Password, ExpiresInDays: args.ExpiresInDays,
+		Name: args.Name, Password: args.Password, Icon: args.Icon, ExpiresInDays: args.ExpiresInDays,
 		Trashed: args.Trashed, Public: args.Public,
 	}, ask); done {
 		return reply, err

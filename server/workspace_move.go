@@ -105,19 +105,29 @@ func (s *Server) moveSubtreeToWorkspace(userID, pageID, targetWS string, tokenOK
 	return len(ids), nil
 }
 
-// mcpCreateWorkspace creates a workspace; the caller becomes its admin.
-func (s *Server) mcpCreateWorkspace(userID, name string) (string, error) {
-	name = strings.TrimSpace(name)
+// mayCreateWorkspace is what refuses a new workspace before it is made. One
+// function, so the confirmation question (mcp_elicit.go) never asks a person
+// about a workspace this would then refuse.
+func (s *Server) mayCreateWorkspace(userID, name string) error {
 	if name == "" {
-		return "", fmt.Errorf("name is required")
+		return fmt.Errorf("name is required")
 	}
 	// The same gate as in the REST handler: an agent should not walk past a
 	// boundary that is set for a human in the interface.
 	if u := s.userByID(userID); (u == nil || !u.IsAdmin) && !s.loadSettings().AllowUserWorkspaces {
-		return "", fmt.Errorf("creating workspaces is disabled on this instance")
+		return fmt.Errorf("creating workspaces is disabled on this instance")
 	}
 	if len([]rune(name)) > 80 {
-		return "", fmt.Errorf("name is too long")
+		return fmt.Errorf("name is too long")
+	}
+	return nil
+}
+
+// mcpCreateWorkspace creates a workspace; the caller becomes its admin.
+func (s *Server) mcpCreateWorkspace(userID, name string) (string, error) {
+	name = strings.TrimSpace(name)
+	if err := s.mayCreateWorkspace(userID, name); err != nil {
+		return "", err
 	}
 	id := newID()
 	if _, err := s.db.Exec(`INSERT INTO workspaces (id, name, created_at, owner_id) VALUES (?, ?, ?, ?)`, id, name, now(), userID); err != nil {

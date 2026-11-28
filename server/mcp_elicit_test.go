@@ -379,7 +379,7 @@ func TestConfirmationIsNotAskedForWhatCannotOrNeedNotHappen(t *testing.T) {
 	// A state sent with a call that asks nothing is refused, not ignored: the
 	// person agreed to something else.
 	_, state := asked(t, elicitCall(t, f.s, f.tok, capsElicit, "set_trashed", `{"page_id":"`+f.tree+`","trashed":true}`, "", "", false))
-	if text, isErr := answered(t, elicitCall(t, f.s, f.tok, capsElicit, "set_trashed", `{"page_id":"`+single+`","trashed":true}`, state, "accept", true)); !isErr || !strings.Contains(text, "no longer needs") {
+	if text, isErr := answered(t, elicitCall(t, f.s, f.tok, capsElicit, "set_trashed", `{"page_id":"`+single+`","trashed":true}`, state, "accept", true)); !isErr || !strings.Contains(text, "does not need the person") {
 		t.Errorf("state on a call without a question: %v %q", isErr, text)
 	}
 }
@@ -394,5 +394,52 @@ func TestConfirmationShowsTitlesAsUntrusted(t *testing.T) {
 	at := strings.Index(msg, "Safe — press yes")
 	if begin < 0 || at < begin {
 		t.Errorf("the title is outside the untrusted frame: %q", msg)
+	}
+}
+
+// Review findings on phase C: a no stands even when the reach changed in
+// between (the person is not asked again to say no twice), an answer that is
+// none of the three is not logged as a no, and the question does not ask
+// about what the act would then refuse or mention a link that already died.
+func TestConfirmationReviewEdges(t *testing.T) {
+	f := newElicitFixture(t)
+	a := f.acts(t)["trash a tree"]
+	_, state := asked(t, elicitCall(t, f.s, f.tok, capsElicit, a.tool, a.args, "", "", false))
+	f.s.makePage(t, f.ws, f.uid, f.tree, "Q2", `{}`)
+	if text, isErr := answered(t, elicitCall(t, f.s, f.tok, capsElicit, a.tool, a.args, state, "decline", false)); isErr || a.done() || !strings.Contains(text, "declined") {
+		t.Errorf("a no after the reach changed: %v %q", isErr, text)
+	}
+
+	_, state = asked(t, elicitCall(t, f.s, f.tok, capsElicit, a.tool, a.args, "", "", false))
+	if text, _ := answered(t, elicitCall(t, f.s, f.tok, capsElicit, a.tool, a.args, state, "maybe", false)); !strings.Contains(text, "closed the question") || a.done() {
+		t.Errorf("an unknown action: %q", text)
+	}
+	var n int
+	f.s.db.QueryRow(`SELECT COUNT(*) FROM audit_log WHERE action = 'mcp.declined'`).Scan(&n)
+	if n != 1 {
+		t.Errorf("%d mcp.declined entries, want 1 (the decline only)", n)
+	}
+
+	// An expired link is not "the page's current link".
+	sh := f.acts(t)["share a page"]
+	f.s.db.Exec(`INSERT INTO share_links (token_hash, page_id, created_at, expires_at) VALUES ('old', ?, ?, ?)`,
+		f.leaf, now(), time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano))
+	if msg, _ := asked(t, elicitCall(t, f.s, f.tok, capsElicit, sh.tool, sh.args, "", "", false)); strings.Contains(msg, "replaces") {
+		t.Errorf("an expired link is mentioned: %q", msg)
+	}
+
+	// Creating workspaces switched off for members: no question, the act's
+	// own refusal. And a name too long.
+	member, _ := signedIn(t, f.s, "member-ws@example.test")
+	f.s.db.Exec(`INSERT INTO workspace_members (workspace_id, user_id, role) VALUES (?, ?, 'member')`, f.ws, member)
+	mtok := mcpToken(t, f.s, member, "write")
+	f.s.setSetting("allow_user_workspaces", "0")
+	cp := f.acts(t)["copy a workspace"]
+	if text, isErr := answered(t, elicitCall(t, f.s, mtok, capsElicit, cp.tool, cp.args, "", "", false)); !isErr || !strings.Contains(text, "disabled") {
+		t.Errorf("workspaces disabled: %v %q", isErr, text)
+	}
+	long := `{"name":"` + strings.Repeat("x", 81) + `","from_workspace":"` + f.ws + `"}`
+	if text, isErr := answered(t, elicitCall(t, f.s, f.tok, capsElicit, "workspace", long, "", "", false)); !isErr || !strings.Contains(text, "too long") {
+		t.Errorf("long name: %v %q", isErr, text)
 	}
 }
