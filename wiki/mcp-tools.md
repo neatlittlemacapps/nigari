@@ -1842,9 +1842,10 @@ property error and the source is never fetched at all, so the answer says
 nothing about whether the URL was reachable. Fix the target first, then the
 mapping.
 
-Only public hosts can be fetched: loopback, private ranges and link-local
-addresses (where cloud metadata services live) are refused. A self-hosted
-source needs the operator to start the server with
+Only public hosts can be fetched: loopback, private ranges, link-local
+addresses (where cloud metadata services live), the shared carrier range
+`100.64.x` (Tailscale) and other non-public ranges are refused. A
+self-hosted source needs the operator to start the server with
 `NIGARI_IMPORT_ALLOW_PRIVATE=1`; an agent cannot open that door.
 
 Returns immediately with `{job_id, status, total, target, note, next}`. Ceilings:

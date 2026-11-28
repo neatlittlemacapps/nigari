@@ -341,7 +341,7 @@ Every variable carries the `NIGARI_` prefix. The prefix is not optional: a bare
 | `NIGARI_TLS_CERT` | empty | certificate file; serves HTTPS directly |
 | `NIGARI_TLS_KEY` | empty | matching key file |
 | `NIGARI_RESTORE_FORCE` | empty | any value lets `nigari restore` overwrite an existing database |
-| `NIGARI_IMPORT_ALLOW_PRIVATE` | empty | must be exactly `1`; lets the URL importer reach private addresses |
+| `NIGARI_IMPORT_ALLOW_PRIVATE` | empty | must be exactly `1`; lets imports and webhooks reach addresses that are not public |
 | `NIGARI_UPDATE_CHECK` | empty | set to `0` to stop the daily check for a newer release |
 | `NIGARI_TRUST_PROXY` | empty | `1` or `true`: believe the proxy's `X-Forwarded-For`, as the admin checkbox does |
 
@@ -366,12 +366,13 @@ Notes worth having before you hit them:
   by whoever is calling, and they could name a new address for every password
   guess.
 - **`NIGARI_IMPORT_ALLOW_PRIVATE` opens a door that is shut on purpose.**
-  Importing a page from a URL refuses every address that is not publicly
-  routable: loopback, private ranges, link-local (which is where the cloud
-  metadata endpoint `169.254.169.254` lives), multicast. Set the variable to `1`
-  and that refusal is lifted for the whole process, so imports can reach a wiki
-  or a ticket system on your own network. It is deliberately a startup variable
-  and not an API setting: whoever runs the service makes that decision, and an
+  Importing a page from a URL refuses every address that is not public: loopback, private ranges, link-local (which is where the cloud
+  metadata endpoint `169.254.169.254` lives), multicast, the shared carrier
+  range `100.64.x`, and other reserved ranges. A Tailscale or CGNAT address
+  (`100.x.y.z`) therefore needs the variable. Set it to `1` and that refusal is
+  lifted for the whole process, for imports and webhooks alike, so they can
+  reach a wiki or a ticket system on your own network. It is deliberately a
+  startup variable and not an API setting: whoever runs the service makes that decision, and an
   agent cannot. Leave it unset on anything reachable from outside.
 - **Three limits are settings, not variables.** *Max. file size per upload (MB)*
   (1 to 2048, default 50), *Sign-in session length (days)* (1 to 365, default

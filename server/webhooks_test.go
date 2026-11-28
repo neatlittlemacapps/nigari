@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -288,5 +289,23 @@ func TestEveryWriteContentModeFiresPageUpdated(t *testing.T) {
 		case <-time.After(3 * time.Second):
 			t.Errorf("%s: no page.updated delivered", mode)
 		}
+	}
+}
+
+// A webhook's status line keeps 120 characters. The guard's refusal in full
+// is longer, so the switch that opens it was cut off; the short form leads
+// with the address and names the switch (review of #1129).
+func TestWebhookFailureNamesTheSwitch(t *testing.T) {
+	if allowPrivateImport {
+		t.Skip("NIGARI_IMPORT_ALLOW_PRIVATE is set")
+	}
+	client := &http.Client{Transport: &http.Transport{DialContext: safeDial}}
+	_, err := client.Post("https://100.64.1.1/hook-with-a-rather-long-path/that-eats/the-room", "application/json", nil)
+	got := webhookFailure(err)
+	if !strings.Contains(got, "100.64.1.1") || !strings.Contains(got, "NIGARI_IMPORT_ALLOW_PRIVATE=1") || len(got) > 120 {
+		t.Errorf("status %q (%d characters)", got, len(got))
+	}
+	if other := webhookFailure(errors.New(strings.Repeat("x", 300))); len(other) > len("failed: ")+125 {
+		t.Errorf("another failure is not cut: %d characters", len(other))
 	}
 }

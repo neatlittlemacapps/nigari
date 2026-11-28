@@ -1122,7 +1122,7 @@
       ],
       "takenAt": {
         "web/src/components/AdminSettings.tsx": "e508a8dd5896",
-        "server/webhooks.go": "db7b5d463d57",
+        "server/webhooks.go": "945e2359eccc",
         "web/src/tokens.css": "8d21b71b2e0e",
         "web/src/theme.css": "3feaedbcede5",
         "web/src/ui/Dialog.tsx": "cf65d6c96beb",

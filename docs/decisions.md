@@ -7,6 +7,26 @@ entries are not edited away.
 
 ---
 
+## 2026-11-28 — Imports and webhooks refuse every address that is not public; trashing takes the whole sub-tree
+
+- **Imports and webhooks (#1129).** The guard now refuses what client
+  metadata fetches refuse (`notPublicIP`): beside loopback, private,
+  link-local and multicast also the shared carrier range `100.64.0.0/10`,
+  the reserved ranges, and IPv4 carried inside IPv6 (NAT64, 6to4), judged by
+  the IPv4 address it carries. Owner: "I follow your recommendation".
+  `NIGARI_IMPORT_ALLOW_PRIVATE=1` still opens all of it, and the refusal
+  names that variable: an import from a Tailscale machine (`100.x.y.z`) now
+  needs it, and the sentence says so. *Turned down*: keeping the shared
+  carrier range open for Tailscale users (it is where CGNAT neighbours live
+  too, and the switch already exists for one's own network).
+- **Trashing a page takes its whole sub-tree (#1132, closed).** Owner: "It
+  moves the pages to the trash", as Notion does, including sub-pages the
+  person cannot see. nigari already did this over REST and MCP; nothing
+  changes. *Turned down*: leaving unreadable sub-pages behind, or refusing
+  the trash while such pages are in it.
+
+---
+
 ## 2026-11-28 — Four acts ask the person first, when the client can ask; the answer counts for one exact call
 
 - **Why.** Trashing a page with its sub-pages, making a page readable by

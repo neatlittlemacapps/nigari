@@ -244,13 +244,14 @@ not happen:
 | Loopback | `127.0.0.1`, `::1` |
 | Private networks | 10.x, 172.16–31.x, 192.168.x, IPv6 unique-local |
 | Link-local | including `169.254.169.254`, the cloud metadata service |
-| Multicast and the unspecified address | any multicast range, `0.0.0.0` |
+| Multicast and the unspecified address | any multicast range, the `0.x.y.z` block |
+| Shared carrier range | `100.64.x`, carrier-grade NAT, where Tailscale machines live |
+| Reserved, benchmarking and site-local | the IETF protocol block, the benchmarking block (`198.18.x`), the reserved `240.x` and above, IPv6 `fec0::/10` |
+| IPv4 inside IPv6 | NAT64 (`64:ff9b::/96`) and 6to4 (`2002::/16`), judged by the IPv4 address they carry |
+| Other special IPv6 forms | Teredo, IPv4-compatible and translated forms, local-use NAT64, the discard prefix |
 
-That list is the whole of the check. Anything not on it is dialled, including
-address ranges that are not reachable from the public internet: the shared
-range some providers put between a customer network and the internet (100.64.x)
-is the common example. So the rule is "these are refused", not "only the public
-internet is allowed".
+The URL importer and OAuth client lookups refuse the same set. A webhook to a
+Tailscale machine (a `100.x.y.z` address) needs the override below.
 
 The reason for it is not caution for its own sake. nigari sits inside a network
 and can reach neighbours that the internet cannot: routers, hypervisors, the
@@ -267,8 +268,8 @@ following a redirect is how a checked address turns into an unchecked one. A
 There is one override, and it belongs to whoever runs the server, not to an
 admin in the interface: starting nigari with `NIGARI_IMPORT_ALLOW_PRIVATE=1` lifts
 the restriction for the whole process. Its name says import, but it opens
-webhooks as well. Set it only on an instance where every URL in the settings
-dialog is one you put there (see [Self-hosting](self-hosting.md)).
+webhooks as well, and a refused delivery's status names it. Set it only on an
+instance where every URL in the settings dialog is one you put there (see [Self-hosting](self-hosting.md)).
 
 ## Delivery, failures and what you see
 

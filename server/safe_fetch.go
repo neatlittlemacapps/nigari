@@ -24,19 +24,20 @@ import (
 var allowPrivateImport = os.Getenv("NIGARI_IMPORT_ALLOW_PRIVATE") == "1"
 
 // blockedIP decides whether an address is off limits for an import or a
-// webhook: every address localIP refuses, unless the admin started the
-// service with NIGARI_IMPORT_ALLOW_PRIVATE=1.
+// webhook: every address that is not public (notPublicIP), unless the admin
+// started the service with NIGARI_IMPORT_ALLOW_PRIVATE=1.
 //
-// It is narrower than notPublicIP on purpose, for now: imports and webhooks
-// have reached the shared carrier range (100.64.0.0/10, where Tailscale
-// machines live) and the other ranges below for as long as they existed, and
-// closing that is a decision of its own (#1129), not a side effect of moving
-// this code.
+// It used to be localIP alone, and let through the shared carrier range
+// (100.64.0.0/10), the reserved ranges and IPv4 carried inside IPv6, so
+// 64:ff9b::7f00:1 reached 127.0.0.1 through a NAT64 gateway (#1129, found by
+// the security review of spec 027 phase 2). The owner chose to close them
+// (2026-11-28). The cost falls on an import from a Tailscale machine
+// (100.x.y.z), which now needs the switch; the refusal names it.
 func blockedIP(ip net.IP) bool {
 	if allowPrivateImport {
 		return false
 	}
-	return localIP(ip)
+	return notPublicIP(ip)
 }
 
 // localIP is the guard imports and webhooks have always had: loopback,
@@ -122,18 +123,20 @@ func isZero(b []byte) bool {
 // dialer runs again on EVERY redirect, this covers redirects to internal
 // targets as well.
 func safeDial(ctx context.Context, network, addr string) (net.Conn, error) {
-	return dialChecked(ctx, network, addr, blockedIP)
+	return dialChecked(ctx, network, addr, blockedIP,
+		" Whoever runs this server can allow addresses on its own network (a Tailscale machine, say) by starting it with NIGARI_IMPORT_ALLOW_PRIVATE=1.")
 }
 
 // publicDial is safeDial without the admin's switch: public addresses only,
 // always (see notPublicIP).
 func publicDial(ctx context.Context, network, addr string) (net.Conn, error) {
-	return dialChecked(ctx, network, addr, notPublicIP)
+	return dialChecked(ctx, network, addr, notPublicIP, "")
 }
 
 // dialChecked resolves, refuses the whole name if any address is blocked, and
-// dials one of the addresses it checked.
-func dialChecked(ctx context.Context, network, addr string, blocked func(net.IP) bool) (net.Conn, error) {
+// dials one of the addresses it checked. hint ends the refusal: how the
+// operator can open this up, where they can.
+func dialChecked(ctx context.Context, network, addr string, blocked func(net.IP) bool, hint string) (net.Conn, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
@@ -145,8 +148,7 @@ func dialChecked(ctx context.Context, network, addr string, blocked func(net.IP)
 	d := &net.Dialer{Timeout: 10 * time.Second}
 	for _, ip := range ips {
 		if blocked(ip) {
-			return nil, fmt.Errorf("refusing to fetch from %s (%s): only public addresses are allowed, "+
-				"so an import cannot be used to reach this server's private network", host, ip)
+			return nil, errNotPublic{host: host, ip: ip, hint: hint}
 		}
 	}
 	var lastErr error
@@ -158,6 +160,28 @@ func dialChecked(ctx context.Context, network, addr string, blocked func(net.IP)
 		lastErr = err
 	}
 	return nil, lastErr
+}
+
+// errNotPublic is the guard's refusal. A type, so a caller with little room
+// for the reason (a webhook's status line, cut at 120 characters) can say
+// the part that matters, the switch included, instead of losing it at the end.
+type errNotPublic struct {
+	host string
+	ip   net.IP
+	hint string
+}
+
+func (e errNotPublic) Error() string {
+	return fmt.Sprintf("refusing to fetch from %s (%s): only public addresses are allowed, "+
+		"so this server cannot be made to reach a private network.%s", e.host, e.ip, e.hint)
+}
+
+// short is the refusal in a few words, for a status line.
+func (e errNotPublic) short() string {
+	if e.hint == "" {
+		return fmt.Sprintf("refused %s: not a public address", e.ip)
+	}
+	return fmt.Sprintf("refused %s: not a public address (NIGARI_IMPORT_ALLOW_PRIVATE=1 allows it)", e.ip)
 }
 
 func ingestHTTPClient() *http.Client {
