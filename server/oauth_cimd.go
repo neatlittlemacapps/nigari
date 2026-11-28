@@ -133,12 +133,23 @@ func (s *Server) refreshClientMetadata(r *http.Request, id string) error {
 // consent screen skips that, and a document that has since dropped a
 // redirect address (on a domain its owner let lapse) would still be honoured
 // (security review, phase 2). A registered client is never stale.
+//
+// Whether a client is a metadata client is read from its row (a fetch time
+// is set), not from the shape of its id: a row stored under an earlier, looser
+// rule for ids would otherwise count as registered, never be read again and
+// keep its redirect addresses for good (second security review). Such a row,
+// whose id the rules no longer take, is stale for good.
 func (s *Server) clientMetadataStale(id string) bool {
-	if !isClientMetadataURL(id) {
-		return false
-	}
 	var fetched string
-	s.db.QueryRow(`SELECT metadata_fetched_at FROM oauth_clients WHERE id = ?`, id).Scan(&fetched)
+	if err := s.db.QueryRow(`SELECT metadata_fetched_at FROM oauth_clients WHERE id = ?`, id).Scan(&fetched); err != nil {
+		return isClientMetadataURL(id)
+	}
+	if fetched == "" {
+		return false // registered at /oauth/register: no document to go stale
+	}
+	if !isClientMetadataURL(id) {
+		return true
+	}
 	t, err := time.Parse(time.RFC3339Nano, fetched)
 	return err != nil || time.Since(t) >= clientMetadataMaxAge
 }

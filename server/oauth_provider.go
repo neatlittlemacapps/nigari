@@ -280,6 +280,13 @@ func (s *Server) handleOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 		oauthError(w, 400, "invalid_redirect_uri", "redirect_uri does not match a registered one")
 		return
 	}
+	// A metadata client was just read again above if its id still qualifies;
+	// one stored under an earlier, looser rule for ids is refused here instead
+	// of trusted for good (clientMetadataStale).
+	if s.clientMetadataStale(client.ID) {
+		oauthError(w, 400, "invalid_client", "this client_id is no longer accepted as a client metadata document")
+		return
+	}
 	state := q.Get("state")
 	fail := func(code, desc string) {
 		u, _ := url.Parse(redirectURI)

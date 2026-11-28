@@ -255,7 +255,8 @@ func TestAMetadataURLOnAPrivateAddressIsNeverFetched(t *testing.T) {
 // and webhooks have always had until #1129 is decided.
 func TestNotPublicIPCoversWhatTheImportGuardMisses(t *testing.T) {
 	for _, a := range []string{"100.64.1.1", "0.1.2.3", "198.18.0.1", "240.0.0.1", "192.0.0.8",
-		"64:ff9b::7f00:1", "64:ff9b::a00:1", "2002:7f00:1::", "2002:c0a8:101::", "fec0::1", "64:ff9b:1::1"} {
+		"64:ff9b::7f00:1", "64:ff9b::a00:1", "2002:7f00:1::", "2002:c0a8:101::", "fec0::1", "64:ff9b:1::1",
+		"::7f00:1", "::a00:1", "::ffff:0:7f00:1", "2001:0:4136:e378::1", "100::1"} {
 		if !notPublicIP(net.ParseIP(a)) {
 			t.Errorf("%s counted as public", a)
 		}
@@ -509,5 +510,27 @@ func TestAScriptRedirectIsRefusedEverywhere(t *testing.T) {
 	}
 	if code := infoCode(cimdURL, cimdRedirect); code != 200 {
 		t.Errorf("request info with the client's own address: %d", code)
+	}
+}
+
+// A row stored under the branch's first, looser rule for ids (a query, a
+// port, a lookalike host) is not taken for a registered client: it is stale
+// for good, at authorize, at the consent screen and at the approval (second
+// security review).
+func TestAMetadataClientStoredUnderOldRulesIsNotTrusted(t *testing.T) {
+	s := testServer(t)
+	_, cookie := signedIn(t, s, "oldrules@example.test")
+	for _, id := range []string{"https://client.example.test/c.json?v=1", "https://client.example.test:8443/c.json", "https://аnthropic.com/c.json"} {
+		s.db.Exec(`INSERT INTO oauth_clients (id, name, redirect_uris, created_at, metadata_fetched_at) VALUES (?, 'Old', ?, ?, ?)`,
+			id, `["`+cimdRedirect+`"]`, now(), now())
+		if !s.clientMetadataStale(id) {
+			t.Errorf("%s counts as fresh", id)
+		}
+		if rec := authorize(s, cookie, id, cimdRedirect, nil); rec.Code != 400 {
+			t.Errorf("%s: authorize %d %s", id, rec.Code, rec.Header().Get("Location"))
+		}
+	}
+	if s.clientMetadataStale(oauthClientFixture(t, s, "https://claude.ai/cb")) {
+		t.Error("a registered client counts as stale")
 	}
 }

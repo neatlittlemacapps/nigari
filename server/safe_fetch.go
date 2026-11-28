@@ -53,13 +53,17 @@ func localIP(ip net.IP) bool {
 var notPublicIPNets = func() []*net.IPNet {
 	var out []*net.IPNet
 	for _, cidr := range []string{
-		"0.0.0.0/8",      // "this network"; 0.0.0.0 is localIP's already
-		"100.64.0.0/10",  // shared carrier space (CGNAT, Tailscale)
-		"192.0.0.0/24",   // protocol assignments
-		"198.18.0.0/15",  // benchmarking
-		"240.0.0.0/4",    // reserved, and broadcast
-		"fec0::/10",      // site-local, deprecated but still routed in places
-		"64:ff9b:1::/48", // local-use NAT64
+		"0.0.0.0/8",       // "this network"; 0.0.0.0 is localIP's already
+		"100.64.0.0/10",   // shared carrier space (CGNAT, Tailscale)
+		"192.0.0.0/24",    // protocol assignments
+		"198.18.0.0/15",   // benchmarking
+		"240.0.0.0/4",     // reserved, and broadcast
+		"fec0::/10",       // site-local, deprecated but still routed in places
+		"64:ff9b:1::/48",  // local-use NAT64
+		"::/96",           // IPv4-compatible (::7f00:1), deprecated
+		"::ffff:0:0:0/96", // SIIT (::ffff:0:a.b.c.d)
+		"2001::/32",       // Teredo, whose IPv4 address is obfuscated
+		"100::/64",        // discard
 	} {
 		_, n, _ := net.ParseCIDR(cidr)
 		out = append(out, n)
