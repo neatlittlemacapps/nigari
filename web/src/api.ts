@@ -636,6 +636,8 @@ export const api = {
       workspaces: { id: string; name: string }[];
       instanceName: string;
       host: string;
+      clientHost: string;
+      issuer: string;
     }>(
       '/api/oauth/request?client_id=' + encodeURIComponent(clientId),
     ),

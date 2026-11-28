@@ -34,13 +34,16 @@ import (
 
 const (
 	clientMetadataMaxBytes = 5 << 10
-	clientMetadataTimeout  = 5 * time.Second
 	// A stored document is read again by the first authorization after this,
 	// so a client that changed its name or its redirect addresses is not held
 	// to the old ones for long. The token endpoint never fetches: a client's
 	// site being down must not end connections that are already granted.
 	clientMetadataMaxAge = 24 * time.Hour
 )
+
+// clientMetadataTimeout is a variable only so a test of a slow document need
+// not wait the full five seconds.
+var clientMetadataTimeout = 5 * time.Second
 
 // isClientMetadataURL reports whether a client_id is meant as a metadata
 // document's address, by the draft's rules (section 3): https, a host, a path

@@ -24,6 +24,13 @@ interface RequestInfo {
   workspaces: { id: string; name: string }[];
   instanceName: string;
   host: string;
+  // The host a metadata-URL client's document is served from; empty for a
+  // client that registered (server/oauth_cimd.go).
+  clientHost: string;
+  // RFC 9207: the issuer the redirect back to the client carries as iss, so a
+  // client talking to two servers can tell which one a code came from. The
+  // server names it, the same value its metadata names.
+  issuer: string;
 }
 
 export default function OAuthConsent() {
@@ -78,6 +85,7 @@ export default function OAuthConsent() {
     const u = new URL(redirectUri);
     u.searchParams.set('error', 'access_denied');
     if (state) u.searchParams.set('state', state);
+    if (info?.issuer) u.searchParams.set('iss', info.issuer);
     window.location.href = u.toString();
   };
 
@@ -99,6 +107,7 @@ export default function OAuthConsent() {
       const u = new URL(redirectUri);
       u.searchParams.set('code', code);
       if (state) u.searchParams.set('state', state);
+      if (info?.issuer) u.searchParams.set('iss', info.issuer);
       window.location.href = u.toString();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
