@@ -13,6 +13,7 @@ import (
 // 027, FR-016; the wiki has had the same check, check-wiki.mjs).
 //
 // So every lowercase identifier the skill writes in backticks must be a tool,
+// (letters and underscores only, as every tool name is: an id is no word)
 // a parameter of some tool, or one of the few other words listed below. A
 // word that is none of these is either a stale tool name or something the
 // list has to learn, and the failure says which word.
@@ -25,7 +26,7 @@ var skillWordsNotTools = map[string]bool{
 	"nigari":   true, // the built-in skill's own name, which a workspace skill points to
 }
 
-var skillCodeWord = regexp.MustCompile("`([a-z][a-z0-9_]*)(?:\\(|`)")
+var skillCodeWord = regexp.MustCompile("`([a-z][a-z_]*)(?:\\(|`)")
 
 func mcpToolsAndParams() (tools, params map[string]bool) {
 	tools, params = map[string]bool{}, map[string]bool{}
