@@ -83,51 +83,68 @@ func (s *Server) blueprintWorkspace(u *user, name, sourceWS string) (string, err
 	var rules string
 	s.db.QueryRow(`SELECT COALESCE(rules, '') FROM workspaces WHERE id = ?`, sourceWS).Scan(&rules)
 
-	// Create the workspace itself through the normal path, so its guards apply.
-	msg, err := s.mcpCreateWorkspace(u.ID, name)
-	if err != nil {
+	// The guards of a new workspace, the same ones the plain path asks.
+	if err := s.mayCreateWorkspace(u.ID, name); err != nil {
 		return "", err
 	}
-	newWS := ""
-	if i := strings.LastIndex(msg, "with id "); i >= 0 {
-		newWS = strings.Fields(msg[i+len("with id "):])[0]
-	}
-	if newWS == "" {
-		return "", fmt.Errorf("could not determine the new workspace id")
-	}
 
-	// Pass one: every database, so the ids exist before anything points at them.
+	// Everything is read before the transaction opens: the database has one
+	// writer connection, and a read on it inside the transaction would wait
+	// for the transaction forever (.claude/rules/go-server.md).
+	newWS := newID()
 	idMap := map[string]string{}
-	ts := now()
-	for i, c := range sources {
-		nid := newID()
-		if _, err := s.db.Exec(`INSERT INTO pages
-			(id, parent_id, title, icon, content, props, position, created_at, updated_at, type, workspace_id, owner_id, visibility)
-			VALUES (?, NULL, ?, ?, '[]', '{}', ?, ?, ?, 'collection', ?, ?, 'workspace')`,
-			nid, c.title, c.icon, float64(i+1), ts, ts, newWS, u.ID); err != nil {
-			return "", err
-		}
-		idMap[c.id] = nid
-	}
-
-	// Pass two: schemas and views, with every reference pointing at the new ids.
 	for _, c := range sources {
+		idMap[c.id] = newID()
+	}
+	type copied struct{ schema, views string }
+	collections := make([]copied, len(sources))
+	for i, c := range sources {
 		schema, views, err := s.loadCollection(c.id)
 		if err != nil {
 			return "", err
 		}
+		// Every reference points at the new ids.
 		remapSchema(schema, idMap)
 		views = blueprintViews(views, schema)
-		if _, err := s.db.Exec(`INSERT INTO collections (page_id, schema, views) VALUES (?, ?, ?)`,
-			idMap[c.id], mustJSONString(schema), mustJSONString(views)); err != nil {
+		collections[i] = copied{mustJSONString(schema), mustJSONString(views)}
+	}
+
+	// One transaction for the workspace, its databases, their schemas and its
+	// rules (#1133). Made step by step, a step that failed halfway (a full
+	// disk, say) left a workspace with some databases and no schemas behind,
+	// after the person had said yes to the whole of it (spec 027, US2).
+	tx, err := s.db.Begin()
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+	if err := insertWorkspace(tx, newWS, name, u.ID); err != nil {
+		return "", err
+	}
+	// Pass one: every database, so the ids exist before anything points at them.
+	ts := now()
+	for i, c := range sources {
+		if _, err := tx.Exec(`INSERT INTO pages
+			(id, parent_id, title, icon, content, props, position, created_at, updated_at, type, workspace_id, owner_id, visibility)
+			VALUES (?, NULL, ?, ?, '[]', '{}', ?, ?, ?, 'collection', ?, ?, 'workspace')`,
+			idMap[c.id], c.title, c.icon, float64(i+1), ts, ts, newWS, u.ID); err != nil {
 			return "", err
 		}
 	}
-
-	if rules != "" {
-		if _, err := s.db.Exec(`UPDATE workspaces SET rules = ? WHERE id = ?`, rules, newWS); err != nil {
+	// Pass two: schemas and views.
+	for i, c := range sources {
+		if _, err := tx.Exec(`INSERT INTO collections (page_id, schema, views) VALUES (?, ?, ?)`,
+			idMap[c.id], collections[i].schema, collections[i].views); err != nil {
 			return "", err
 		}
+	}
+	if rules != "" {
+		if _, err := tx.Exec(`UPDATE workspaces SET rules = ? WHERE id = ?`, rules, newWS); err != nil {
+			return "", err
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return "", err
 	}
 	s.pagesChanged()
 
