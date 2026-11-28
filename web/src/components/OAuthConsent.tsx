@@ -135,9 +135,16 @@ export default function OAuthConsent() {
         <p className="consent-lead">
           {t('“{client}” is asking to work in your account.').replace('{client}', info.clientName)}
         </p>
+        {/* A client may name itself with a metadata document at an https
+            address. Then the name is what that host serves, and showing the
+            host lets a person spot a name that imitates another client (section
+            6.4 of the draft). A registered client has no host to show. */}
+        {info.clientHost && (
+          <p className="consent-sub">{t('from {host}').replace('{host}', info.clientHost)}</p>
+        )}
 
         {/* Said plainly, because the name above is whatever the client typed
-            when it registered. */}
+            when it registered, or whatever its host serves. */}
         <p className="consent-warn">
           <TriangleAlert size={14} /> {t('That name was chosen by whoever set up the connection. Only continue if you started this yourself.')}
         </p>

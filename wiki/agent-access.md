@@ -75,6 +75,9 @@ When a client asks to sign in, the browser lands on a screen headed
 - The instance's name and the host you are on, so you can see *which* server you
   are about to hand something to.
 - The client's name, as "*<name>* is asking to work in your account."
+- When the client named itself with a metadata document (see below), the host
+  that document came from, in small grey type under that line: "from
+  *<host>*". A client that registered has no host to show.
 - A warning that the name is a claim: "That name was chosen by whoever set up
   the connection. Only continue if you started this yourself."
 - **It will be allowed to**: "read pages" or "read and change pages", as a
@@ -102,20 +105,47 @@ for one reason: a registered client can do **nothing** on its own. It can only
 ask a signed-in person for consent, and whatever it gets is bound to that
 person's own permissions. Registration creates an applicant, not an account.
 
+There is a second way for a client to identify itself, newer and now preferred
+by MCP: its `client_id` is the https address of a small document that lists its
+name and the addresses it wants the answer sent to. nigari fetches that document
+when the sign-in starts, and refuses the sign-in, with a sentence saying why, if
+a check fails (nothing is stored then). What is checked: the address must be
+public; the document may be at most 5 KB, must arrive within 5 seconds and may
+not redirect; the `client_id` inside it must be the address it was fetched from;
+and it may hold no secret and must not ask for any client login method other
+than none. nigari keeps the document and reads it again on the first sign-in
+after 24 hours. Fetches are rate-limited per address.
+
+This is why such a name means more than a registered one: the consent screen
+shows the host the name came from, and a name served by a host you recognise
+is harder to fake than one anybody typed into a form. It still proves nothing
+about who *started* the sign-in. A document on a host you do not recognise tells
+you only that somebody controls that host. Registering at `/oauth/register`
+still works, because older clients need it.
+
+Not built: clients that prove themselves with a signed key (`private_key_jwt`)
+are refused, and logos listed in the document are not shown.
+
 Two consequences worth knowing:
 
-- **The name on the consent screen is unverified.** Whoever registers picks it,
+- **A registered client's name is unverified.** Whoever registers picks it,
   up to 80 characters. That is why the screen says so out loud instead of
   presenting the name as an identity. If you did not start the sign-in yourself,
   the name proves nothing.
 - **There is no list of registered clients and no way to delete one.** The
   handle you keep is the *grant*: the connection on your account. Ending that
   ends the access; the applicant may still exist, and still cannot do anything
-  without somebody approving it again.
+  without somebody approving it again. A metadata client that nobody has
+  granted anything is forgotten after 30 days; if it comes back, its document
+  is fetched afresh.
 
 Approving requires being signed in with a browser session. A credential can
 never approve a new credential, so an agent cannot enlarge its own reach by
 asking itself for consent.
+
+Every answer sent back to the client (the code, a refusal, an error) carries
+`iss`, the address of this instance. A client that talks to two servers can tell
+which one an answer came from.
 
 What the client gets back is an access token good for one hour plus a renewal
 token it uses in the background, so nobody signs in again every hour. The

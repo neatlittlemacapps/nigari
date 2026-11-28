@@ -58,7 +58,9 @@ release of its own, announced in the release notes.
 
 Both eras end in the same place: the same tools, the same permission checks,
 the same read-only tokens, idempotency keys and rate limit. A refusal is the
-same sentence in both.
+same sentence in both, except that a read-only token calling a write tool is
+answered with HTTP `403` in the 2026-07-28 era and with an `isError` result in
+the legacy era.
 
 **Legacy era.** Methods answered: `initialize`, `ping`, `tools/list`,
 `tools/call`, and `notifications/*` (accepted with `202`, no body). Anything
@@ -119,9 +121,10 @@ way, so a gateway that routes on them cannot be passed by leaving `_meta` out. T
 | `-32022` | 400 | the version in `_meta` is not one nigari speaks | `supported` (every version nigari answers) and `requested` |
 | `-32602` | 400 | `_meta` lacks the client's capabilities, its version is not a string, or `tools/call` params are unreadable | — |
 | `-32601` | 404 | the method is not answered in this era | — |
+| none | 403 | a read-only credential calls a write tool. The body is `{"error":"this API token is read-only; \"<tool>\" requires a write token"}` and the answer carries `WWW-Authenticate: Bearer error="insufficient_scope", scope="write", resource_metadata="<base>/.well-known/oauth-protected-resource"`, so a client can ask the person for more access | — |
 
-A tool that refuses still answers with an `isError` result, as below, in both
-eras.
+A tool that refuses for any other reason still answers with an `isError`
+result, as below, in both eras.
 
 ### What a tool returns
 

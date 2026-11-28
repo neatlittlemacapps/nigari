@@ -124,7 +124,7 @@ PKCE, and a client that already speaks it needs no special handling:
 | --- | --- |
 | `/.well-known/oauth-protected-resource` | the signpost: where the doors are |
 | `/.well-known/oauth-authorization-server` | endpoints, scopes and methods |
-| `POST /oauth/register` | a client introduces itself and gets a `client_id` |
+| `POST /oauth/register` | a client introduces itself and gets a `client_id`; kept for older clients, which MCP 2026-07-28 deprecates |
 | `GET /oauth/authorize` | sends the human to the consent screen in their browser |
 | `POST /oauth/token` | exchange the code, or refresh |
 | `POST /oauth/revoke` | disconnect |
@@ -138,6 +138,17 @@ seconds, and redeeming one twice does not hand out a second token, it destroys
 the grant. And authorizing needs a **browser session**: an API token presented
 at `/oauth/authorize` is bounced to the sign-in screen, because a key approving
 a better key is not a boundary.
+
+Instead of registering, a client may use as its `client_id` the https URL of a
+metadata document that lists its `client_name` and `redirect_uris`. nigari
+fetches it when authorization starts (public addresses only, at most 5 KB,
+5 seconds, no redirects; its `client_id` must equal its URL; no
+`client_secret`; `token_endpoint_auth_method` absent or `none`). A document
+that fails a check answers 400 `invalid_client` with the reason; too many
+fetches from one address answer 429. The authorization-server metadata says
+`client_id_metadata_document_supported` and
+`authorization_response_iss_parameter_supported`, both `true`, and every
+redirect back to the client carries `iss` (RFC 9207).
 
 The two scopes are read and write, the same pair a token has. Scope is a
 space-separated list, unknown entries are ignored rather than refused, and

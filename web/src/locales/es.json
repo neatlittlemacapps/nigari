@@ -1090,6 +1090,7 @@
   "{n} without links": "{n} sin enlaces",
   "{pages} in shared workspaces stay where they are.": "{pages} en espacios de trabajo compartidos permanecen donde están.",
   "“{client}” is asking to work in your account.": "«{client}» solicita acceso para trabajar en tu cuenta.",
+  "from {host}": "de {host}",
   "“{name}” deleted.": "«{name}» eliminado.",
   "“{name}” is no longer assigned to new accounts.": "«{name}» ya no se asigna a cuentas nuevas.",
   "“{name}” is now open to every new account.": "«{name}» está ahora abierto a todas las cuentas nuevas.",
