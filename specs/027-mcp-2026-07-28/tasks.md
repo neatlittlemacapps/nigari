@@ -52,11 +52,11 @@ comes first. B to E depend only on A and may run as two streams
 
 ## Phase D: Tasks (US3, P2)
 
-- [ ] T024 [US3] [backend] Upgrade step: the `mcp_tasks` table (D6) with indexes on `(user_id, id)` and `status`, fixture first. `EXPLAIN QUERY PLAN` for the lookups, recorded in the pull request
-- [ ] T025 [US3] [backend] `server/ingest.go`: the runner writes progress to the task row instead of `ingestRegistry`, and `get_import_status` reads the row. The start-up pass marks rows still `working` as `failed` ("interrupted by a restart") and deletes expired rows, beside `deleteExpiredSessions` (FR-013)
-- [ ] T026 [US3] [mcp] `server/mcp_tasks.go` (new): for a client that declared `io.modelcontextprotocol/tasks`, `import_url` returns `resultType: "task"` with `taskId`, status, `ttlMs` and `pollIntervalMs`, after the row is stored. Adds `tasks/get`, `tasks/update` (acknowledged; imports take no input) and `tasks/cancel`, which stops at the next record. Ownership compares user, token kind and token workspaces (FR-011, FR-012, FR-014)
-- [ ] T027 [P] [US3] [test] Go: another person's and a narrower token's `tasks/get` and `tasks/cancel` get "not found"; cancel keeps the records already written; the restart test (SC-004); a client without the extension gets `job_id`; a revoked token's running import stops
-- [ ] T028 [P] [US3] [wiki] `wiki/mcp-tools.md`: `import_url` as a task, and `get_import_status` for older clients
+- [x] T024 [US3] [backend] Upgrade step: the `mcp_tasks` table (D6) with indexes on `(user_id, id)` and `status`, fixture first. `EXPLAIN QUERY PLAN` for the lookups, recorded in the pull request
+- [x] T025 [US3] [backend] `server/ingest.go`: the runner writes progress to the task row instead of `ingestRegistry`, and `get_import_status` reads the row. The start-up pass marks rows still `working` as `failed` ("interrupted by a restart") and deletes expired rows, beside `deleteExpiredSessions` (FR-013)
+- [x] T026 [US3] [mcp] `server/mcp_tasks.go` (new): for a client that declared `io.modelcontextprotocol/tasks`, `import_url` returns `resultType: "task"` with `taskId`, status, `ttlMs` and `pollIntervalMs`, after the row is stored. Adds `tasks/get`, `tasks/update` (acknowledged; imports take no input) and `tasks/cancel`, which stops at the next record. Ownership compares user, token kind and token workspaces (FR-011, FR-012, FR-014)
+- [x] T027 [P] [US3] [test] Go: another person's and a narrower token's `tasks/get` and `tasks/cancel` get "not found"; cancel keeps the records already written; the restart test (SC-004); a client without the extension gets `job_id`; a revoked token's running import stops
+- [x] T028 [P] [US3] [wiki] `wiki/mcp-tools.md`: `import_url` as a task, and `get_import_status` for older clients
 
 ## Phase E: Skills over MCP (US4, P3)
 

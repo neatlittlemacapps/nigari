@@ -7,6 +7,52 @@ entries are not edited away.
 
 ---
 
+## 2026-11-28 — An import is a stored task; a workspace copy is one transaction
+
+Spec 027, phase D (US3, plan D6) and #1133.
+
+- **One stored row per import, read by both eras.** `mcp_tasks` (upgrade
+  step 6) replaces the in-memory map of the last 20 jobs. The runner writes
+  its progress into the row after each record; `get_import_status` and
+  `tasks/get` read it. *Turned down*: keeping the map and persisting beside
+  it (two sources for one job, plan D6).
+- **The task belongs to the credential**: user, token kind and token
+  workspaces, the key the idempotency cache uses. `get_import_status` now
+  checks the same, so a narrower token of the same person no longer reads a
+  wider one's job (it checked the account only). Another credential's task,
+  an expired one and an unknown id all get the same "not found" (`-32602`),
+  so an id says nothing about whose it is.
+- **A revoked credential stops its import.** Not in the plan: the row also
+  keeps the API token's or OAuth grant's id (`user.TokenID`, new), and the
+  runner checks before each record that it still exists and the account is
+  not deactivated. Revoking is how a person stops an agent; an import of
+  20000 records ran on for minutes after it. *Turned down*: checking every N
+  records (cheaper, but the check is one indexed lookup beside an insert).
+- **Cancel is a status change the runner sees.** `tasks/cancel` sets the
+  row to `cancelled` only while it is `working`; the runner's progress write
+  is conditional on `working`, so the next record finds it and stops.
+  Records already written stay. A cancel of an ended task is acknowledged
+  and changes nothing (the extension: a terminal state does not change).
+  *Turned down*: an in-memory cancel flag (lost on restart, a second truth).
+- **A restart reads as `failed`** with the reason "interrupted by a
+  restart", set by the start-up pass. The extension reserves `failed` for a
+  JSON-RPC error, so the task carries `error` with code `-32603`. Per-record
+  failures are part of a `completed` result, as a tool result would carry
+  them.
+- **Only `import_url` becomes a task**, and only for a client that declares
+  `io.modelcontextprotocol/tasks` on that request; the server decides, as the
+  extension says. Its answer is built from mcpCall's own reply, so gates,
+  audit and idempotency are unchanged; an idempotent retry returns the same
+  task. Other long work (recursive duplicate, bulk rows) stays for later
+  (FR-011 says MAY).
+- **#1133: everything is read first, then one transaction** writes the
+  workspace, its member row, the databases, their schemas and the rules.
+  `insertWorkspace` takes the database or the transaction, and
+  `mcpCreateWorkspace` uses it too. Reads inside the transaction would wait
+  forever on the one writer connection.
+
+---
+
 ## 2026-11-28 — Imports and webhooks refuse every address that is not public; trashing takes the whole sub-tree
 
 - **Imports and webhooks (#1129).** The guard now refuses what client
