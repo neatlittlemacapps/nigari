@@ -126,6 +126,88 @@ way, so a gateway that routes on them cannot be passed by leaving `_meta` out. T
 A tool that refuses for any other reason still answers with an `isError`
 result, as below, in both eras.
 
+#### Confirmations
+
+Four acts are hard to take back, so a 2026-07-28 client that can ask its person
+is made to ask first. This happens only when the client declares the
+`elicitation` capability in its request (`"elicitation": {}` counts as form
+mode; a client that declares only `url` mode is not asked):
+
+- `set_trashed` with `trashed: true`, on a page that has sub-pages not already
+  in the trash. A page on its own is not asked about.
+- `set_sharing` with `public: true`. The question says when the link expires,
+  whether opening it needs a password, and whether it replaces a current link.
+- `delete_view`, for a database's view or an embed's view (`embed_id`). A locked
+  database's views are refused before anyone is asked, and the last view is not
+  asked about: the tool refuses it as it always did.
+- `workspace` with `from_workspace`. The question names how many databases are
+  copied, that no rows come along, and whether the workspace rules do.
+
+The first call changes nothing and answers `resultType: "input_required"` with
+one yes/no form question under the key `confirm`, and a `requestState`:
+
+```json
+{
+  "resultType": "input_required",
+  "inputRequests": {
+    "confirm": {
+      "method": "elicitation/create",
+      "params": {
+        "mode": "form",
+        "message": "Move this page and its 3 sub-pages to the trash? They stay there until someone restores them or empties the trash.\n\n<untrusted content frame: Page: Roadmap>",
+        "requestedSchema": {
+          "type": "object",
+          "properties": {
+            "confirm": {
+              "type": "boolean",
+              "title": "Go ahead",
+              "description": "Yes to do it, no to leave everything as it is."
+            }
+          },
+          "required": ["confirm"]
+        }
+      }
+    }
+  },
+  "requestState": "<opaque, signed by the server>"
+}
+```
+
+The client asks the person, then repeats the same `tools/call`, with the same
+arguments, adding `inputResponses` and the `requestState` it was given:
+
+```json
+{
+  "name": "set_trashed",
+  "arguments": { "page_id": "…", "trashed": true },
+  "inputResponses": {
+    "confirm": { "action": "accept", "content": { "confirm": true } }
+  },
+  "requestState": "<the value from the first answer>"
+}
+```
+
+The retry passes every permission check again: a yes is the person's agreement
+to what the permissions already allow, never a permission. The state is signed
+by the server and bound to the credential (the account, the kind of token and
+its workspace list), the tool and the exact arguments. It expires after 10
+minutes and counts once. Titles and names in the question sit inside the
+untrusted-content frame, because people and agents wrote them.
+
+- If what the act would do changed in between (more sub-pages, say), the person
+  is asked again with a new question.
+- If the act no longer needs a question (the page was trashed meanwhile), the
+  yes is refused and nothing changes.
+- A decline, or an accept with `confirm` false, changes nothing and is written
+  to the activity log as `mcp.declined`, with the tool's name as detail.
+- Cancel (the question closed without an answer) changes nothing and is not
+  logged.
+
+Legacy clients (the 2025 revisions) and 2026-07-28 clients without the
+capability get the old behaviour, unchanged. This is a safety net for the
+person, not a security boundary: a client can leave the capability out, as it
+always could.
+
 ### What a tool returns
 
 Every tool returns one block of text. Some return prose, most return JSON as
@@ -730,6 +812,8 @@ Returns `Duplicated page → new id <id>`.
 
 One tool rather than two, because neither direction destroys anything: the page
 keeps existing either way. See [Trash and recovery](trash-and-recovery.md).
+A client that can ask its person is asked before a page with live sub-pages is
+trashed; see [Confirmations](#confirmations).
 
 The two directions are not mirror images. **Trashing takes the whole sub-tree**
 and reports how many went with it:
@@ -1428,7 +1512,8 @@ order, how rows open, a chart's style) leaves no entry.
 
 The last remaining view cannot be deleted: a database needs something to show.
 Deleting is its own tool rather than an action word on `set_view`, so it is a
-deliberate choice and not a value an agent lands on by mistake.
+deliberate choice and not a value an agent lands on by mistake. A client that
+can ask its person is asked first; see [Confirmations](#confirmations).
 
 With `embed_id` (`page_id` is then the document) it deletes one of that embed's
 own views, never one of the database's. An embed keeps at least one view too.
@@ -1604,6 +1689,9 @@ made (see [Forms](forms.md)).
 
 Errors: `public is required (true to create a public link, false to revoke it)`.
 
+A client that can ask its person is asked before `public: true` goes through;
+see [Confirmations](#confirmations).
+
 More on what a visitor sees in [Sharing](sharing.md).
 
 ## Workspaces
@@ -1636,7 +1724,8 @@ ids, and their views. **No rows and no documents**: a blueprint carrying
 somebody's tasks is not a blueprint. There is no separate template object on
 purpose: the workspace you point at is the blueprint, so it cannot drift out of
 step with how you actually work. Use `update_page` with `workspace_id` afterwards
-to move existing pages in.
+to move existing pages in. A client that can ask its person is asked before a
+workspace is made this way; see [Confirmations](#confirmations).
 
 Creating from nothing returns `Created workspace "N" with id … — you are its
 admin.` followed by two more sentences: a reminder to move existing pages in,

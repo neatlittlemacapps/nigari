@@ -253,7 +253,7 @@ func (s *Server) rpcResultModern(w http.ResponseWriter, r *http.Request, id json
 //
 // ping and logging/setLevel are not answered: the revision removed them, and
 // a modern client never sends them (FR-006). initialize never arrives here.
-func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user, req rpcRequest, _ *mcpModernRequest) {
+func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user, req rpcRequest, modern *mcpModernRequest) {
 	switch req.Method {
 	case "server/discover":
 		// What initialize used to hand over once, asked for whenever the
@@ -291,7 +291,7 @@ func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user,
 			"cacheScope": "public",
 		})
 	case "tools/call":
-		result, bad, callErr := s.mcpToolsCall(r, u, req.Params)
+		result, bad, callErr := s.mcpToolsCall(r, u, req.Params, mcpAskFrom(modern, req.Params))
 		if bad != "" {
 			rpcErrorStatus(w, http.StatusBadRequest, req.ID, rpcInvalidParams, bad, nil)
 			return
@@ -313,6 +313,15 @@ func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user,
 			httpError(w, http.StatusForbidden, scopeErr.Error())
 			return
 		}
+		// The person has to be asked first (spec 027 US2): an input_required
+		// result, not an error, and nothing has changed.
+		var askErr errInputRequired
+		if errors.As(callErr, &askErr) {
+			out := askErr.result()
+			out["_meta"] = map[string]any{mcpMetaServerInfo: s.mcpServerInfo(r, false)}
+			rpcResult(w, req.ID, out)
+			return
+		}
 		s.rpcResultModern(w, r, req.ID, result)
 	default:
 		rpcErrorStatus(w, http.StatusNotFound, req.ID, rpcMethodNotFound, "method not found: "+req.Method, nil)
@@ -324,7 +333,7 @@ func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user,
 // a refusal is an isError result in both eras, as before (plan D2). callErr
 // is mcpCall's refusal itself, for the one the modern era answers at the HTTP
 // level (errReadOnlyToken).
-func (s *Server) mcpToolsCall(r *http.Request, u *user, raw json.RawMessage) (result map[string]any, bad string, callErr error) {
+func (s *Server) mcpToolsCall(r *http.Request, u *user, raw json.RawMessage, ask *mcpAsk) (result map[string]any, bad string, callErr error) {
 	var params struct {
 		Name      string          `json:"name"`
 		Arguments json.RawMessage `json:"arguments"`
@@ -336,7 +345,7 @@ func (s *Server) mcpToolsCall(r *http.Request, u *user, raw json.RawMessage) (re
 	if !s.mcpRate.allow(u.ID) {
 		return textResult("rate limit exceeded: too many requests, slow down", true), "", nil
 	}
-	out, err := s.mcpCall(u, params.Name, params.Arguments, s.publicShareBase(r))
+	out, err := s.mcpCallAsk(u, params.Name, params.Arguments, s.publicShareBase(r), ask)
 	if err != nil {
 		return textResult(err.Error(), true), "", err
 	}

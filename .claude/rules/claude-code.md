@@ -43,5 +43,9 @@ shared instructions.
   - `/security-review` when sign-in, sessions, permissions, tokens or a
     `canRead`/`canWrite`/`credentialMayEnter` gate change.
   The pull request names which ran and what each found.
+- **"Read handoff" means the pinned issue [#643](https://github.com/neatlittlemacapps/nigari/issues/643)**:
+  its body, then its newest comment, then the live state on GitHub. Not a file:
+  `docs/handoffs/` is pre-rename history. Twice a session read that file first
+  and reported a month-old state (owner, 2026-11-28).
 - **Parallel work follows `.claude/skills/steward/SKILL.md`**: at most two
   streams, Claude steering, each in its own files.

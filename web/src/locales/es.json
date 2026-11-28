@@ -1013,6 +1013,7 @@
   "used {date}": "utilizado {date}",
   "value": "valor",
   "via {name}": "a través de {name}",
+  "was told no when it asked to:": "recibió un no al pedir:",
   "with": "con",
   "your password right now": "tu contraseña en este momento",
   "{name} becomes owner: emergency access, instance backup, deleting accounts.": "{name} pasa a ser propietario: acceso de emergencia, copia de seguridad de la instancia, eliminación de cuentas.",

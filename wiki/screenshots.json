@@ -732,7 +732,7 @@
         }
       ],
       "takenAt": {
-        "web/src/components/UserMenu.tsx": "76682e4fd79f",
+        "web/src/components/UserMenu.tsx": "5f9ce7ce5d0d",
         "web/src/tokens.css": "8d21b71b2e0e",
         "web/src/theme.css": "3feaedbcede5"
       },
@@ -768,7 +768,7 @@
       ],
       "takenAt": {
         "server/users.go": "136e05917103",
-        "web/src/components/UserMenu.tsx": "76682e4fd79f",
+        "web/src/components/UserMenu.tsx": "5f9ce7ce5d0d",
         "web/src/components/AccountAdmin.tsx": "45466365ea7d",
         "web/src/tokens.css": "8d21b71b2e0e",
         "web/src/theme.css": "3feaedbcede5"
@@ -839,7 +839,7 @@
       ],
       "takenAt": {
         "web/src/components/AgentConnect.tsx": "f782d67997ca",
-        "server/mcp.go": "c6075fb9b6ea",
+        "server/mcp.go": "0eb3dfcdf2e9",
         "web/src/tokens.css": "8d21b71b2e0e",
         "web/src/theme.css": "3feaedbcede5"
       },
