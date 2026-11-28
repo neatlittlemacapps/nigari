@@ -143,9 +143,10 @@ func mcpEra(r *http.Request, req rpcRequest) (*mcpModernRequest, *mcpRefusal) {
 		return nil, nil
 	}
 	var params struct {
-		Meta map[string]json.RawMessage `json:"_meta"`
-		Name string                     `json:"name"`
-		URI  string                     `json:"uri"`
+		Meta   map[string]json.RawMessage `json:"_meta"`
+		Name   string                     `json:"name"`
+		URI    string                     `json:"uri"`
+		TaskID string                     `json:"taskId"`
 	}
 	// Params that are not an object say nothing about the era; the method's
 	// own handler refuses them as it always has.
@@ -178,6 +179,9 @@ func mcpEra(r *http.Request, req rpcRequest) (*mcpModernRequest, *mcpRefusal) {
 			return mismatch("Mcp-Name", params.Name, required)
 		case "resources/read":
 			return mismatch("Mcp-Name", params.URI, required)
+		case "tasks/get", "tasks/update", "tasks/cancel":
+			// The Tasks extension routes these on the task they name.
+			return mismatch("Mcp-Name", params.TaskID, required)
 		}
 		return nil
 	}
@@ -258,8 +262,8 @@ func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user,
 	case "server/discover":
 		// What initialize used to hand over once, asked for whenever the
 		// client wants it, and cacheable (plan D4, D5). Capabilities name only
-		// what is built: the tasks and skills extensions are declared by the
-		// phases that implement them, not before.
+		// what is built: the skills extension is declared by the phase that
+		// implements it, not before.
 		info := s.mcpServerInfo(r, true)
 		// The PNG icon's address comes from the Host header when no public
 		// address is configured. A shared cache that keys on the path alone
@@ -273,11 +277,14 @@ func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user,
 		rpcResult(w, req.ID, map[string]any{
 			"resultType":        "complete",
 			"supportedVersions": mcpSupportedVersions,
-			"capabilities":      map[string]any{"tools": map[string]any{}},
-			"instructions":      mcpInstructions,
-			"ttlMs":             mcpListTTLms,
-			"cacheScope":        scope,
-			"_meta":             map[string]any{mcpMetaServerInfo: info},
+			"capabilities": map[string]any{
+				"tools":      map[string]any{},
+				"extensions": map[string]any{mcpTasksExtension: map[string]any{}},
+			},
+			"instructions": mcpInstructions,
+			"ttlMs":        mcpListTTLms,
+			"cacheScope":   scope,
+			"_meta":        map[string]any{mcpMetaServerInfo: info},
 		})
 	case "tools/list":
 		// One static list in a fixed order (the slice's), the same for every
@@ -322,7 +329,21 @@ func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user,
 			rpcResult(w, req.ID, out)
 			return
 		}
+		// A client that declared the Tasks extension gets import_url as a
+		// task (spec 027, US3). The import ran through mcpCall like any call,
+		// gates, audit and idempotency included; only the answer differs.
+		if callErr == nil && mcpDeclaresExtension(modern, mcpTasksExtension) && mcpCallName(req.Params) == "import_url" {
+			if text, ok := mcpResultText(result); ok {
+				if task, ok := s.importTaskResult(u, text); ok {
+					task["_meta"] = map[string]any{mcpMetaServerInfo: s.mcpServerInfo(r, false)}
+					rpcResult(w, req.ID, task)
+					return
+				}
+			}
+		}
 		s.rpcResultModern(w, r, req.ID, result)
+	case "tasks/get", "tasks/update", "tasks/cancel":
+		s.serveTaskMethod(w, r, u, req, modern)
 	default:
 		rpcErrorStatus(w, http.StatusNotFound, req.ID, rpcMethodNotFound, "method not found: "+req.Method, nil)
 	}
