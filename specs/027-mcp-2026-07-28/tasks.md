@@ -32,14 +32,14 @@ comes first. B to E depend only on A and may run as two streams
 
 ## Phase B: Authorization hardening (US5, P3)
 
-- [ ] T010 [US5] [backend] `server/safe_fetch.go` (new): move `ingestHTTPClient`, `safeDial` and `blockedIP`'s use out of `ingest.go` into one guarded client with per-call time and size limits. `import_url` and webhooks keep their behaviour (D9)
-- [ ] T011 [US5] [backend] Upgrade step in `server/upgrade_steps.go`: `oauth_clients.metadata_fetched_at`, with the fixture `server/testdata/upgrade/step-<N-1>.db` written first
-- [ ] T012 [US5] [backend] `server/oauth_provider.go`: a `client_id` that is an `https://` URL is fetched through the guarded client (5 s, 64 KB). The document's `client_id` must equal the URL and its `redirect_uris` must pass `validRedirectURI`. It is stored in `oauth_clients` and refreshed after 24 h. The metadata advertises `client_id_metadata_document_supported` (FR-018, FR-022)
-- [ ] T013 [US5] [backend] `server/oauth_provider.go`: every redirect from `/oauth/authorize`, errors included, carries `iss`. The metadata advertises `authorization_response_iss_parameter_supported` (FR-020)
-- [ ] T014 [US5] [mcp] `server/mcp.go`: a read token calling a write tool under the modern era gets HTTP 403 `insufficient_scope`, `scope="write"`, mapped from `mcpCall`'s typed error. The legacy era is unchanged (D10, FR-021)
+- [x] T010 [US5] [backend] `server/safe_fetch.go` (new): move `ingestHTTPClient`, `safeDial` and `blockedIP`'s use out of `ingest.go` into one guarded client with per-call time and size limits. `import_url` and webhooks keep their behaviour (D9)
+- [x] T011 [US5] [backend] Upgrade step in `server/upgrade_steps.go`: `oauth_clients.metadata_fetched_at`, with the fixture `server/testdata/upgrade/step-<N-1>.db` written first
+- [x] T012 [US5] [backend] `server/oauth_provider.go`: a `client_id` that is an `https://` URL is fetched through the guarded client (5 s, 64 KB). The document's `client_id` must equal the URL and its `redirect_uris` must pass `validRedirectURI`. It is stored in `oauth_clients` and refreshed after 24 h. The metadata advertises `client_id_metadata_document_supported` (FR-018, FR-022)
+- [x] T013 [US5] [backend] `server/oauth_provider.go`: every redirect from `/oauth/authorize`, errors included, carries `iss`. The metadata advertises `authorization_response_iss_parameter_supported` (FR-020)
+- [x] T014 [US5] [mcp] `server/mcp.go`: a read token calling a write tool under the modern era gets HTTP 403 `insufficient_scope`, `scope="write"`, mapped from `mcpCall`'s typed error. The legacy era is unchanged (D10, FR-021)
 - [ ] T015 [P] [US5] [ui] `web/src/components/OAuthConsent.tsx`: a metadata-URL client shows its name and "from {host}", in light and dark, with existing `ui/` styles (FR-019)
 - [ ] T016 [P] [US5] [i18n] "from {host}" in `web/src/locales/de.json`, `es.json` and `nl.json`
-- [ ] T017 [P] [US5] [test] Go: a metadata URL on a private address, a mismatched `client_id`, an unlisted redirect, a slow or oversized document, `iss` on success and error redirects, DCR still works, and the 403 in the modern era only
+- [x] T017 [P] [US5] [test] Go: a metadata URL on a private address, a mismatched `client_id`, an unlisted redirect, a slow or oversized document, `iss` on success and error redirects, DCR still works, and the 403 in the modern era only
 - [ ] T018 [P] [US5] [wiki] The connect pages describe metadata-URL clients. Retake the consent screenshot with `web/scripts/shoot-wiki.mjs`
 
 ## Phase C: Confirmations through elicitation (US2, P2)
