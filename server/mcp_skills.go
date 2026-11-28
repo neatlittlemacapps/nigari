@@ -56,8 +56,15 @@ func (s *Server) mcpSkills(u *user, base string) []mcpSkill {
 			{"reference/block.md", skillBlock(base, nil)},
 		},
 	}}
-	taken := map[string]bool{"nigari": true}
-	for _, w := range s.skillWorkspaces(u.ID) {
+	member := s.skillWorkspaces(u.ID)
+	// Slugs are counted over every workspace of the account, not only the
+	// ones this credential is served: two tokens of one person then never
+	// get one name for two workspaces (code review).
+	slugs := map[string]int{}
+	for _, w := range member {
+		slugs[skillSlug(w.Name)]++
+	}
+	for _, w := range member {
 		// The gate the zip uses: membership (skillWorkspaces) and the
 		// credential's own reach (FR-017). A workspace closed to agents, or
 		// outside a token's list, has no skill here, listed or fetched.
@@ -68,10 +75,9 @@ func (s *Server) mcpSkills(u *user, base string) []mcpSkill {
 		if strings.TrimSpace(w.Rules) == "" && len(templates) == 0 {
 			continue
 		}
-		name := skillName(w, taken)
-		taken[name] = true
+		name := skillName(w, slugs)
 		ws := w
-		desc := workspaceSkillDescription(w.Name)
+		desc := workspaceSkillDescription(w.ID)
 		out = append(out, mcpSkill{
 			name:        name,
 			description: desc,
@@ -86,13 +92,27 @@ func (s *Server) mcpSkills(u *user, base string) []mcpSkill {
 
 // skillName is a workspace skill's name under the Agent Skills naming rules:
 // lowercase letters, digits and single hyphens, at most 64 characters, and
-// equal to the last segment of its skill:// path. Two workspaces with the same
-// name, or one whose name has no letter or digit, are told apart by the start
-// of their id.
-func skillName(w skillWorkspace, taken map[string]bool) string {
+// equal to the last segment of its skill:// path. Two workspaces of the
+// account with the same slug, or one whose name has no letter or digit, are
+// told apart by the start of their id. slugs counts the account's slugs.
+func skillName(w skillWorkspace, slugs map[string]int) string {
+	slug := skillSlug(w.Name)
+	id := w.ID
+	if len(id) > 8 {
+		id = id[:8]
+	}
+	if slug != "" && slugs[slug] == 1 && slug != "nigari" {
+		return "nigari-" + slug
+	}
+	return strings.ReplaceAll(strings.Trim("nigari-"+slug+"-"+strings.ToLower(id), "-"), "--", "-")
+}
+
+// skillSlug is a name's ASCII letters and digits, lowercase, with single
+// hyphens between runs, at most 40 characters.
+func skillSlug(name string) string {
 	var b strings.Builder
 	dash := false
-	for _, r := range strings.ToLower(w.Name) {
+	for _, r := range strings.ToLower(name) {
 		if r < unicode.MaxASCII && (unicode.IsLetter(r) || unicode.IsDigit(r)) {
 			b.WriteRune(r)
 			dash = false
@@ -105,35 +125,17 @@ func skillName(w skillWorkspace, taken map[string]bool) string {
 	if len(slug) > 40 {
 		slug = strings.Trim(slug[:40], "-")
 	}
-	id := w.ID
-	if len(id) > 8 {
-		id = id[:8]
-	}
-	name := "nigari-" + slug
-	if slug == "" || taken[name] {
-		name = strings.Trim("nigari-"+slug+"-"+strings.ToLower(id), "-")
-		name = strings.ReplaceAll(name, "--", "-")
-	}
-	return name
+	return slug
 }
 
-// workspaceSkillDescription names the workspace a skill is for: one line, the
-// name in single quotes and at most 80 runes of it. The name is a person's
-// text, so it must not end the line or the quotes; in SKILL.md the whole
-// description is a JSON string, which YAML reads as a double-quoted scalar, so
-// a ": " or a "#" in the name cannot break the frontmatter either.
-func workspaceSkillDescription(name string) string {
-	clean := strings.Map(func(r rune) rune {
-		if unicode.IsControl(r) || r == '\'' {
-			return ' '
-		}
-		return r
-	}, name)
-	if r := []rune(clean); len(r) > 80 {
-		clean = string(r[:80])
-	}
-	return "The rules and database templates of one nigari workspace, '" + strings.TrimSpace(clean) +
-		"'. Load it before working in that workspace."
+// workspaceSkillDescription says what a workspace skill is for. It carries
+// the workspace's id, not its name: a host shows descriptions to the model to
+// choose a skill, outside any frame, and a name is whatever a person typed
+// (code review). The name reaches the model inside SKILL.md's untrusted frame,
+// and as letters and digits in the skill's own name.
+func workspaceSkillDescription(id string) string {
+	return "The rules and database templates of one nigari workspace (id " + id +
+		"), named in this skill's name. Load it before working in that workspace."
 }
 
 // skillTemplate is one database template a workspace skill lists.
@@ -147,8 +149,12 @@ type skillTemplate struct {
 // skillTemplates are the database templates of a workspace this person may
 // read. Drained before canRead runs (one writer connection).
 func (s *Server) skillTemplates(userID, wsID string) []skillTemplate {
-	rows, err := s.db.Query(`SELECT t.id, t.title, t.template_of, COALESCE(c.title, '')
-		FROM pages t LEFT JOIN pages c ON c.id = t.template_of
+	// idx_pages_db_templates (step 7) answers the first three conditions. A
+	// template's parent is not its database (addDatabaseTemplate), so a
+	// trashed database leaves its templates live: the join drops them, as
+	// listDatabaseTemplates' callers do with isLiveCollection (code review).
+	rows, err := s.db.Query(`SELECT t.id, t.title, t.template_of, c.title
+		FROM pages t JOIN pages c ON c.id = t.template_of AND c.trashed_at IS NULL
 		WHERE t.workspace_id = ? AND t.is_template = 1 AND t.template_of != '' AND t.trashed_at IS NULL
 		ORDER BY c.title, t.title`, wsID)
 	if err != nil {
@@ -215,6 +221,12 @@ func skillEntry(sk mcpSkill) map[string]any {
 // serveSkillMethod answers skills/list, skills/get, resources/list and
 // resources/read.
 func (s *Server) serveSkillMethod(w http.ResponseWriter, r *http.Request, u *user, req rpcRequest) {
+	// The budget tools/call and tasks/* spend: every call rebuilds the
+	// skills from the database (code review).
+	if !s.mcpRate.allow(u.ID) {
+		rpcErrorStatus(w, http.StatusTooManyRequests, req.ID, rpcInternalError, "rate limit exceeded: too many requests, slow down", nil)
+		return
+	}
 	var p struct {
 		URI string `json:"uri"`
 	}

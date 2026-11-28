@@ -193,7 +193,7 @@ func TestWorkspaceSkillFollowsTheCredentialsReach(t *testing.T) {
 	// agent must not reach.
 	var closedName string
 	for _, sk := range f.s.mcpSkills(&user{ID: f.uid}, "") {
-		if strings.Contains(sk.description, "Payroll") {
+		if strings.Contains(sk.description, f.closed) {
 			closedName = sk.name
 		}
 	}
@@ -260,10 +260,10 @@ func TestWorkspaceSkillChangesWithItsRulesAndTemplates(t *testing.T) {
 	if !strings.Contains(rules, "an owner and a date") {
 		t.Error("the rules are not in the rules frame")
 	}
-	// The workspace's name, with ": " and "#" in it, cannot break the
-	// frontmatter: the description is one JSON string.
+	// The frontmatter, which hosts show the model outside any frame, names
+	// the workspace by id and never by the name a person typed.
 	head := strings.SplitN(text, "\n---\n", 2)[0]
-	if !strings.Contains(head, `description: "The rules and database templates of one nigari workspace, 'Product: Team #1'.`) {
+	if strings.Contains(head, "Product") || !strings.Contains(head, f.open) {
 		t.Errorf("frontmatter: %s", head)
 	}
 }
@@ -343,5 +343,75 @@ func TestWorkspaceSkillListsOnlyReadableTemplates(t *testing.T) {
 	}
 	if text := read(f.tok); !strings.Contains(text, "Hidden template") {
 		t.Error("the owner's skill lost the template of their own private database")
+	}
+}
+
+// A trashed database's templates stay live (their parent is not the
+// database), so the skill must leave them out itself.
+func TestWorkspaceSkillLeavesOutTemplatesOfTrashedDatabases(t *testing.T) {
+	f := newSkillFixture(t)
+	col := f.s.makeCollection(t, f.open, f.uid, "Old tasks", `[]`)
+	if _, err := f.s.addDatabaseTemplate(f.uid, col, "Stale template", ""); err != nil {
+		t.Fatal(err)
+	}
+	text, _ := readSkillFile(t, f.s, f.tok, "skill://nigari-product-team-1/SKILL.md")
+	if !strings.Contains(text, "Stale template") {
+		t.Fatal("the template is not listed while its database is live")
+	}
+	f.s.db.Exec(`UPDATE pages SET trashed_at = ? WHERE id = ?`, now(), col)
+	text, _ = readSkillFile(t, f.s, f.tok, "skill://nigari-product-team-1/SKILL.md")
+	if strings.Contains(text, "Stale template") {
+		t.Error("a trashed database's template is still listed")
+	}
+}
+
+// Two workspaces with the same name both carry the id's start, for every
+// credential: a token that sees only one of them does not get the plain name
+// for it while another token gets the plain name for the other.
+func TestSameNamedWorkspacesGetDistinctSkillNamesForEveryToken(t *testing.T) {
+	f := newSkillFixture(t)
+	mk := func() string {
+		id := newID()
+		f.s.db.Exec(`INSERT INTO workspaces (id, name, created_at, owner_id, rules) VALUES (?, 'Team', ?, ?, 'r')`, id, now(), f.uid)
+		f.s.db.Exec(`INSERT INTO workspace_members (workspace_id, user_id, role) VALUES (?, ?, 'admin')`, id, f.uid)
+		return id
+	}
+	a, b := mk(), mk()
+	names := map[string]bool{}
+	for _, n := range listSkills(t, f.s, f.tok).names() {
+		names[n] = true
+	}
+	wantA, wantB := "nigari-team-"+a[:8], "nigari-team-"+b[:8]
+	if !names[wantA] || !names[wantB] || names["nigari-team"] {
+		t.Errorf("unrestricted token: %v", names)
+	}
+	narrow := mcpToken(t, f.s, f.uid, "write")
+	f.s.db.Exec(`UPDATE api_tokens SET workspace_scope = ? WHERE token_hash = ?`, b, tokenHash(narrow))
+	if got := strings.Join(listSkills(t, f.s, narrow).names(), ","); got != "nigari,"+wantB {
+		t.Errorf("a token narrowed to the second Team lists %s, want nigari,%s", got, wantB)
+	}
+}
+
+// The templates query uses the step-7 index, not a scan of every page.
+func TestSkillTemplatesQueryUsesItsIndex(t *testing.T) {
+	f := newSkillFixture(t)
+	rows, err := f.s.db.Query(`EXPLAIN QUERY PLAN SELECT t.id, t.title, t.template_of, c.title
+		FROM pages t JOIN pages c ON c.id = t.template_of AND c.trashed_at IS NULL
+		WHERE t.workspace_id = ? AND t.is_template = 1 AND t.template_of != '' AND t.trashed_at IS NULL
+		ORDER BY c.title, t.title`, f.open)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var plan []string
+	for rows.Next() {
+		var a, b, c int
+		var d string
+		rows.Scan(&a, &b, &c, &d)
+		plan = append(plan, d)
+	}
+	joined := strings.Join(plan, " | ")
+	if !strings.Contains(joined, "idx_pages_db_templates") || strings.Contains(joined, "SCAN t") {
+		t.Errorf("plan: %s", joined)
 	}
 }

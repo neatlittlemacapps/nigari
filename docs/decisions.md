@@ -26,19 +26,30 @@ Spec 027, phase E (US4, plan D8).
 - **One generator for the zip and MCP** (`skill.go`). `skillMain` takes
   `overMCP`: the built-in skill names no workspace and points to the
   workspace skills instead. The zip from `GET /api/skill` came out
-  byte-identical to before, checked by comparing both outputs with rules and
-  two workspaces. *Turned down*: static playbook files (plan D8).
+  byte-identical to before for an account with a workspace, checked by
+  comparing both outputs with rules and two workspaces. With no workspace
+  in reach, `reference/block.md` now reads "in the workspace you work in"
+  instead of an empty id. *Turned down*: static playbook files (plan D8).
 - **A workspace skill holds the rules, the readable database templates and
   the block.** The name and template titles travel in the untrusted frame,
-  the rules in the frame that says to follow them. The description is
-  written into the frontmatter as a JSON string (YAML reads it as a
-  double-quoted scalar), so a workspace named "Product: Team #1" cannot break
-  it. Skill names follow the Agent Skills rules (lowercase, digits, hyphens,
-  64 at most); the start of the workspace id tells two same-named
-  workspaces apart.
+  the rules in the frame that says to follow them. The description names the
+  workspace by id, not by name: hosts show descriptions to the model outside
+  any frame, and a name is whatever a person typed (code review). Skill names
+  follow the Agent Skills rules (lowercase, digits, hyphens, 64 at most); the
+  start of the workspace id tells apart two workspaces of the account with
+  the same name, counted over all of the account's workspaces so two tokens
+  never get one name for two workspaces.
 - **Five minutes, private.** `ttlMs` 300000 so a rule an admin changes
   reaches agents within minutes (acceptance 5); `cacheScope: "private"`
-  because the list depends on the credential (FR-017).
+  because the list depends on the credential (FR-017). The skill methods
+  share the MCP rate limit.
+- **Upgrade step 7: a partial index for database templates**
+  (`idx_pages_db_templates`, on `workspace_id` where `is_template = 1 AND
+  template_of != ''`). Every skill request lists each workspace's templates,
+  and `pages` had no index on either column, so each request read the whole
+  table once per workspace (code review). *Turned down*: caching the skills
+  in memory (a second truth to invalidate on every rule and template
+  change).
 
 ---
 
