@@ -291,6 +291,19 @@ func TestZipAndMCPServeTheSameSkill(t *testing.T) {
 	if tools == "" || tools != inZip["nigari/reference/tools.md"] {
 		t.Error("reference/tools.md differs between the zip and MCP")
 	}
+	// The how-to the tool descriptions point to is in both (SC-005): an agent
+	// on the zip must find what an MCP agent finds.
+	howto, _ := readSkillFile(t, f.s, f.tok, "skill://nigari/reference/howto.md")
+	if howto == "" || howto != inZip["nigari/reference/howto.md"] || !strings.Contains(howto, pageLinkHint) || !strings.Contains(howto, "api.trello.com") {
+		t.Error("reference/howto.md differs between the zip and MCP, or lost what the descriptions point to")
+	}
+	for _, tl := range mcpTools {
+		if d, _ := tl["description"].(string); strings.Contains(d, "reference/howto.md") || tl["name"] == "write_content" {
+			if !strings.Contains(d, "reference/howto.md") {
+				t.Errorf("%s no longer points to the how-to it gave up", tl["name"])
+			}
+		}
+	}
 	main, _ := readSkillFile(t, f.s, f.tok, "skill://nigari/SKILL.md")
 	for _, part := range []string{"## Do this first, once per repository", "## The standing rules", "## What is in the box", "## When something is refused"} {
 		zi, mi := strings.Index(inZip["nigari/SKILL.md"], part), strings.Index(main, part)
