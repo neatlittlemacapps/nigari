@@ -7,6 +7,50 @@ entries are not edited away.
 
 ---
 
+## 2026-11-28 — Four acts ask the person first, when the client can ask; the answer counts for one exact call
+
+- **Why.** Trashing a page with its sub-pages, making a page readable by
+  link, deleting a view and building a workspace from another one ran at
+  once for every agent (spec 027 phase 3, US2, #1034). MCP 2026-07-28 lets a
+  server ask the person through the client (elicitation, as an
+  `input_required` result), and Claude supports it.
+- **Decided:**
+  - **Only a client that declares form elicitation is asked**; every other
+    client keeps today's behaviour (owner, 2026-11-27, FR-010). So this is a
+    safety net for the person, not a security boundary: leaving the
+    capability out skips the question, as it always could.
+  - **The question comes after every gate**, and after what the act itself
+    would refuse (a locked view, the last view, a source the credential may
+    not enter), so a person is never asked about something that cannot
+    happen. The retry runs every gate again (FR-009).
+  - **`requestState` is HMAC-signed with a key made at start and kept in
+    memory** (plan D7: there is no instance secret to reuse; a restart only
+    means a question is asked again). It binds the credential key the
+    idempotency cache uses, the tool, a hash of the arguments in canonical
+    form (a client that re-encodes them still matches) and a hash of the
+    question. It expires after 10 minutes and is spent once: the revision
+    says an HMAC alone does not stop a replay, and a server that needs
+    single use must enforce it.
+  - **The question is part of what is signed.** If the reach changed in
+    between (one more sub-page, a renamed view), the person is asked again
+    about what would happen now; if the act no longer needs a question (the
+    tree was trashed meanwhile), the yes is refused instead of running a
+    no-op on someone's agreement to something else.
+  - **Trash asks only for a page with sub-pages still outside the trash.**
+    FR-007 says "recursive trash"; a single page is one click to restore, and
+    asking for every trash would teach people to press yes. (Claude's
+    reading of FR-007.)
+  - **No and cancel differ.** A no (decline, or accept with the box left
+    unticked) is logged as `mcp.declined` with the tool's name; a closed
+    question was no choice, so it is not logged.
+- *Turned down*: a question for every trash (see above); a URL-mode
+  question (the act is a yes/no, and a client with URL mode only is not
+  asked); keeping the state in the database (the plan's in-memory key is
+  enough for a 10-minute question, and a stored one would need its own
+  housekeeping); honouring a state for a call it was not made for.
+
+---
+
 ## 2026-11-28 — OAuth clients may be metadata documents, and fetching one is guarded harder than an import
 
 - **Why.** MCP 2026-07-28 prefers a client named by the https URL of its

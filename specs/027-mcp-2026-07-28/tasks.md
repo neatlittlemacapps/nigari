@@ -44,11 +44,11 @@ comes first. B to E depend only on A and may run as two streams
 
 ## Phase C: Confirmations through elicitation (US2, P2)
 
-- [ ] T019 [US2] [mcp] `server/mcp_elicit.go` (new): `requestState` signed with HMAC over credential id, tool, arguments hash and expiry (10 min), using a random key made at start and kept in memory. Verification rejects a forged, stale or reused state (D7, FR-009)
-- [ ] T020 [US2] [mcp] `server/mcp.go`: for a modern client that declared elicitation, `set_trashed` (recursive, trashing), `set_sharing` (public or link), `delete_view` (database or embed) and `workspace` with `from_workspace` answer `input_required` with one yes/no question. The question names the title (inside `wrapUntrusted`) and the reach. It is asked after every gate, and after `checkViewsUnlocked` for views. A client that cannot ask gets today's behaviour (FR-007, FR-008, FR-010)
-- [ ] T021 [US2] [backend] `audit`: a confirmed act is logged as the direct call is. A declined one is logged as `mcp.declined`, with the tool name
-- [ ] T022 [P] [US2] [test] Go, for each of the four acts: confirm runs it, decline changes nothing, a forged state and a state for other arguments are refused, a page trashed or a permission lost between ask and retry is refused, a locked view is refused before anyone is asked, and a client without elicitation runs as today
-- [ ] T023 [P] [US2] [wiki] `wiki/mcp-tools.md` (the confirmable acts) and `wiki/agent-access.md` (what a person is asked)
+- [x] T019 [US2] [mcp] `server/mcp_elicit.go` (new): `requestState` signed with HMAC over credential id, tool, arguments hash and expiry (10 min), using a random key made at start and kept in memory. Verification rejects a forged, stale or reused state (D7, FR-009)
+- [x] T020 [US2] [mcp] `server/mcp.go`: for a modern client that declared elicitation, `set_trashed` (recursive, trashing), `set_sharing` (public or link), `delete_view` (database or embed) and `workspace` with `from_workspace` answer `input_required` with one yes/no question. The question names the title (inside `wrapUntrusted`) and the reach. It is asked after every gate, and after `checkViewsUnlocked` for views. A client that cannot ask gets today's behaviour (FR-007, FR-008, FR-010)
+- [x] T021 [US2] [backend] `audit`: a confirmed act is logged as the direct call is. A declined one is logged as `mcp.declined`, with the tool name
+- [x] T022 [P] [US2] [test] Go, for each of the four acts: confirm runs it, decline changes nothing, a forged state and a state for other arguments are refused, a page trashed or a permission lost between ask and retry is refused, a locked view is refused before anyone is asked, and a client without elicitation runs as today
+- [x] T023 [P] [US2] [wiki] `wiki/mcp-tools.md` (the confirmable acts) and `wiki/agent-access.md` (what a person is asked)
 
 ## Phase D: Tasks (US3, P2)
 

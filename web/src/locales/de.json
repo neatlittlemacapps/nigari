@@ -989,6 +989,7 @@
   "used {date}": "benutzt {date}",
   "value": "Wert",
   "via {name}": "über {name}",
+  "was told no when it asked to:": "bekam ein Nein, als es fragte:",
   "with": "mit",
   "your password right now": "dein jetziges Passwort",
   "{name} becomes owner: emergency access, instance backup, deleting accounts.": "{name} wird Owner: Notfallzugriff, Instanz-Sicherung, Konten löschen.",

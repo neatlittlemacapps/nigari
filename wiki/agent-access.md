@@ -423,6 +423,28 @@ write it, is it in the trash, what is my role here), including *why* writing is
 refused when it is ("this API token is read-only", or "you are a viewer in this
 workspace").
 
+## When an agent asks you first
+
+Four things an agent can do are hard to take back, so some agents stop and ask
+you before doing them:
+
+- moving a page to the trash together with the pages inside it (a page with
+  nothing inside it is not asked about);
+- making a page readable by anyone with its link;
+- deleting a view of a database;
+- creating a new workspace from the structure of another one.
+
+Your agent app shows a plain yes or no question. Answer yes and the agent goes
+ahead. Answer no and everything stays as it was; the activity log then shows
+that the agent was told no, with the name of the act. Closing the question
+without answering also changes nothing, and is not logged.
+
+This only happens with agent apps that support asking. If yours does not, the
+agent just does the act, as before. So it is a safety net, not a lock: what an
+agent may do is still decided by the permissions above, and a yes never gives it
+more than it already had. Developers: see
+[Confirmations](mcp-tools.md#confirmations).
+
 ## Ending access
 
 **An API token**: account menu → **API tokens** → the ✕ on its row. It stops

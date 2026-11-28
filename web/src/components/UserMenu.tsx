@@ -434,6 +434,9 @@ export function ActivityModal({ onClose, pageId, pageTitle }: { onClose: () => v
     // action name, which reads like a bug rather than an entry.
     working_on: t('started working on:'),
     working_on_end: t('finished working on:'),
+    // A person said no when an agent asked before something hard to undo
+    // (spec 027, server/mcp_elicit.go). The detail is the tool's name.
+    'mcp.declined': t('was told no when it asked to:'),
   };
   // A database's views (spec 013, server/viewaudit.go): the entry's page is
   // the database, its detail the view's name ("Old → New" for a rename). Said
