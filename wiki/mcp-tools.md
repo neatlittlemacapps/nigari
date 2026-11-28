@@ -272,7 +272,7 @@ credential, so no answer may be shared between two.
 
 | Skill | Files |
 | --- | --- |
-| `nigari` | `SKILL.md`, `reference/tools.md`, `reference/block.md` |
+| `nigari` | `SKILL.md`, `reference/tools.md`, `reference/howto.md`, `reference/block.md` |
 | `nigari-<workspace name>` | `SKILL.md`, `reference/block.md` |
 
 A workspace skill exists for each workspace the credential may enter that has

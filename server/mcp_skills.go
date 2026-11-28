@@ -53,6 +53,7 @@ func (s *Server) mcpSkills(u *user, base string) []mcpSkill {
 		files: []skillDoc{
 			{"SKILL.md", s.skillMain(base, nil, nil, true)},
 			{"reference/tools.md", skillTools()},
+			{"reference/howto.md", skillHowto()},
 			{"reference/block.md", skillBlock(base, nil)},
 		},
 	}}

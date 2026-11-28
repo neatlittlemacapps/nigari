@@ -43,6 +43,20 @@ Spec 027, phase E (US4, plan D8).
   reaches agents within minutes (acceptance 5); `cacheScope: "private"`
   because the list depends on the credential (FR-017). The skill methods
   share the MCP rate limit.
+- **The how-to leaves the tool descriptions now** (owner, 2026-11-28, "Now",
+  after the options A ship as is / B trim now / C two sets of descriptions).
+  SC-005 asks for a smaller start: every agent reads every tool description
+  at the start of every conversation. The Markdown spelling (page links,
+  diagrams, blocks; in `create_page` and `write_content`), the finer points of
+  `set_view`, the `import_url` Trello example and the blueprint rationale of
+  `workspace` move into `reference/howto.md`, in the MCP skill and in the
+  zip. Measured on the tool list: 55,653 bytes before, 52,811 after (2,842
+  fewer, 5.1%); descriptions 18,041 to 16,094. Each description still NAMES
+  what moved and points to the file: `pageLinkHint`'s own history says a
+  feature nobody is told about goes unused, so the pointer keeps it visible
+  to an agent that never loads the skill. *Turned down*: A (SC-005 unmet), C
+  (two descriptions per tool to keep in step, for clients that mostly cannot
+  load skills yet either). More can follow the same way.
 - **Upgrade step 7: a partial index for database templates**
   (`idx_pages_db_templates`, on `workspace_id` where `is_template = 1 AND
   template_of != ''`). Every skill request lists each workspace's templates,

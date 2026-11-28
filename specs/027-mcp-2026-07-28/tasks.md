@@ -64,5 +64,5 @@ comes first. B to E depend only on A and may run as two streams
 - [x] T030 [US4] [mcp] `server/mcp_skills.go` (new): for a client that declared `io.modelcontextprotocol/skills`, `skills/list`, `skills/get`, and `resources/read` for `skill://<name>/<file>`, with `sha256:` digests and `cacheScope: "private"`. An unknown skill or file gets -32602 (FR-015, FR-017)
 - [x] T031 [US4] [test] `web/scripts/check-skill.mjs` (new) or a Go test: every tool name in the built-in skill text exists in `mcpTools` (FR-016)
 - [x] T032 [P] [US4] [test] Go: a workspace closed to agents and one outside a token's scope are neither listed nor readable; a rules change changes the digest; the zip and MCP serve the same text
-- [ ] T033 [P] [US4] [perf] Measure the initial instructions and descriptions before and after moving how-to text into the skill, and record it in the pull request (SC-005)
+- [x] T033 [P] [US4] [perf] Measure the initial instructions and descriptions before and after moving how-to text into the skill, and record it in the pull request (SC-005)
 - [x] T034 [P] [US4] [wiki] `wiki/mcp-tools.md`: skills. The page describing `GET /api/skill` names both ways to get the skill

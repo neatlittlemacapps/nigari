@@ -93,6 +93,7 @@ func (s *Server) buildSkill(u *user, base string, chosen string) []skillDoc {
 	return []skillDoc{
 		{"nigari/SKILL.md", s.skillMain(base, main, all, false)},
 		{"nigari/reference/tools.md", skillTools()},
+		{"nigari/reference/howto.md", skillHowto()},
 		{"nigari/reference/block.md", skillBlock(base, main)},
 		{"nigari/README.md", skillReadme(base)},
 	}
@@ -221,8 +222,9 @@ second page about a thing that already has one is worse than no page.
 ` + "`get_page`, `search`, `list`, `create_page`, `write_content`, `update_page`" + `
 for documents; ` + "`create_database`, `create_rows`, `query_rows`, `set_properties`," + `
 ` + "`update_schema`, `set_view`" + ` for collections. The full list with what each is
-for is in ` + "`reference/tools.md`" + `, and ` + "`whoami`" + ` tells you at any moment what
-this connection may actually do.
+for is in ` + "`reference/tools.md`" + `, the spelling and worked examples the tool
+descriptions leave out are in ` + "`reference/howto.md`" + `, and ` + "`whoami`" + ` tells
+you at any moment what this connection may actually do.
 
 A note on vocabulary that will otherwise confuse you: what the interface calls a
 **Collection** the tools call a **database**. Same thing. People see "Collection"
@@ -310,6 +312,60 @@ read at the start of every session, by every agent, without anybody remembering
 to ask. The rules were being forgotten because of where they were kept, not
 because agents are careless — so the fix is where they are kept.
 `, base, where)
+}
+
+// skillHowto is the how-to the tool descriptions used to carry in full (spec
+// 027, SC-005; owner, 2026-11-28: cut it from the descriptions now). Every
+// agent reads every description on every turn; this file only when a task
+// calls for it. The descriptions still name each feature and point here, so
+// an agent that never loads the skill knows the feature exists.
+func skillHowto() string {
+	return `# How to: the details the tool descriptions leave out
+
+## Writing Markdown (write_content, create_page)
+
+` + pageLinkHint + `
+
+` + diagramHint + `
+
+` + blockSpellingHint + `
+
+## Views (set_view)
+
+- A board groups by a select, a multiselect or a relation property; a row with
+  several tags appears under each of them.
+- A chart: ` + "`group_by`" + ` "__row" draws one bar per row, with ` + "`aggregate`" + ` sum and
+  ` + "`aggregate_property`" + `. To put a chart into a document, ` + "`embed_database`" + ` with its
+  ` + "`view_id`" + `.
+- ` + "`type`" + ` with ` + "`view_id`" + ` changes the view's layout: every other setting stays (a
+  table's widths and order, a board's lanes, a chart's settings, kept unused
+  and back when the type returns), and what the new type needs is filled in
+  when the view has none that works (a board: the first select or status; a
+  calendar or timeline: the first date property; a chart: a count by the first
+  property it can group by). The answer names what was chosen, and a
+  ` + "`group_by`" + ` or ` + "`date_prop`" + ` in the same call wins.
+- A table: ` + "`column_order`" + ` sets this view's column order without changing other
+  views or the schema; ` + "`get_collection`" + ` returns it on the view as colOrder.
+- A table or list groups with ` + "`group_by`" + `, and with ` + "`period`" + ` for a date,
+  ` + "`show_empty_groups`" + `, ` + "`hidden_groups`" + `, ` + "`group_reverse`" + ` and ` + "`status_groups`" + `. A
+  board changed to a table or list stays grouped by its columns' property.
+
+## A workspace from another one (workspace, from_workspace)
+
+There is no separate template object on purpose: the workspace you point at
+is the blueprint, so it cannot drift out of step with how you actually work.
+
+## Bulk import (import_url)
+
+A Trello board, as an example of every part of the mapping:
+
+` + "```json" + `
+{"url": "https://api.trello.com/1/boards/ID?cards=all&lists=all&key=K&token=T",
+ "items": "cards", "title": "name", "markdown": "desc", "database_id": "...",
+ "properties": {"Status": "idList", "Due": "due", "Labels": "labels[].name"},
+ "resolve": {"idList": {"from": "lists", "match": "id", "to": "name"}}}
+` + "```" + `
+`
 }
 
 func skillTools() string {

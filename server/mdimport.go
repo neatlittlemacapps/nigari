@@ -64,11 +64,15 @@ var linkRe = regexp.MustCompile(`^\[([^\]]*)\]\(([^)]+)\)`)
 // is the safe direction to be wrong in.
 var pageHrefRe = regexp.MustCompile(`(?:^|/)p/([0-9a-f]{32})/?$`)
 
-// pageLinkHint tells an agent that the conversion above exists. It goes in
-// every tool description that takes Markdown, because the schema is the only
-// documentation an agent reliably reads — and until this sentence was there,
-// the feature was invisible: agents kept writing plain links and wondering why
-// get_backlinks came back empty on pages they had just wired together.
+// pageLinkHint tells an agent that the conversion above exists. Until a
+// sentence about it was in the tool descriptions, the feature was invisible:
+// agents kept writing plain links and wondering why get_backlinks came back
+// empty on pages they had just wired together. Since spec 027 phase E the
+// full text lives in the agent skill (reference/howto.md) and the
+// descriptions carry markdownPointer, which still NAMES the feature: an
+// agent that never loads the skill still learns that page links and
+// diagrams exist, and the owner chose a smaller start over the full
+// spelling in every description (2026-11-28).
 const pageLinkHint = `A Markdown link whose target is a page of this instance ` +
 	`(` + "`[Handbook](/p/<32-hex-id>)`" + `, or the absolute URL set_sharing ` +
 	`returns) becomes a REAL page link: it shows up in get_links and in the ` +
@@ -95,6 +99,12 @@ const blockSpellingHint = `Blocks beyond plain Markdown, each on its own lines: 
 	`toggle "<details><summary>Title</summary>" … "</details>"; divider "---"; ` +
 	`table of contents "[[toc]]"; sub-pages list "[[subpages]]"; bookmark "<https://…>"; ` +
 	`columns ":::: columns" with 2 to 4 "::: column" (or "::: {.column width=\"70%\"}") sections each closed by ":::", then "::::".`
+
+// markdownPointer is what a tool description that takes Markdown says about
+// the three hints above: that the features exist, and where their spelling is.
+const markdownPointer = `A link to /p/<page id> becomes a real page link (see get_links); a fenced mermaid block becomes a diagram; ` +
+	`callouts, toggles, columns, a table of contents and bookmarks have their own Markdown. ` +
+	`How-to and examples: the nigari skill, reference/howto.md.`
 
 // parseInline converts inline markdown to BlockNote inline content.
 func parseInline(md string) []any {
