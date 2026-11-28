@@ -1,17 +1,13 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 // Bulk import, without the content passing through the agent.
@@ -100,77 +96,6 @@ func (reg *ingestRegistry) update(id string, fn func(*ingestJob)) {
 }
 
 // --- Fetching the source -----------------------------------------------------
-
-// allowPrivateImport opens imports up to private networks. Deliberately ONLY
-// through an environment variable at startup (NIGARI_IMPORT_ALLOW_PRIVATE=1), not
-// through the API and certainly not through MCP: whoever starts the service
-// makes that decision — an agent cannot. Meant for self-hosted sources on your
-// own network (your own Jira, your own wiki).
-var allowPrivateImport = os.Getenv("NIGARI_IMPORT_ALLOW_PRIVATE") == "1"
-
-// blockedIP decides whether an address is off limits for the server. Everything
-// that is not publicly routable is refused: loopback, private networks,
-// link-local (which is where 169.254.169.254 lives, the metadata service of
-// many providers), multicast and the unspecified address.
-func blockedIP(ip net.IP) bool {
-	if allowPrivateImport {
-		return false
-	}
-	return ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() ||
-		ip.IsLinkLocalMulticast() || ip.IsInterfaceLocalMulticast() ||
-		ip.IsMulticast() || ip.IsUnspecified()
-}
-
-// safeDial resolves the name, checks EVERY address and then connects to
-// exactly the address it checked.
-//
-// The second half is the important one: connecting through the name again after
-// the check would let an attacker serve a different address between check and
-// connection (DNS rebinding), and the check would be worthless. Because the
-// dialer runs again on EVERY redirect, this covers redirects to internal
-// targets as well.
-func safeDial(ctx context.Context, network, addr string) (net.Conn, error) {
-	host, port, err := net.SplitHostPort(addr)
-	if err != nil {
-		return nil, err
-	}
-	ips, err := net.DefaultResolver.LookupIP(ctx, "ip", host)
-	if err != nil {
-		return nil, fmt.Errorf("cannot resolve %q", host)
-	}
-	d := &net.Dialer{Timeout: 10 * time.Second}
-	for _, ip := range ips {
-		if blockedIP(ip) {
-			return nil, fmt.Errorf("refusing to fetch from %s (%s): only public addresses are allowed, "+
-				"so an import cannot be used to reach this server's private network", host, ip)
-		}
-	}
-	var lastErr error
-	for _, ip := range ips {
-		c, err := d.DialContext(ctx, network, net.JoinHostPort(ip.String(), port))
-		if err == nil {
-			return c, nil
-		}
-		lastErr = err
-	}
-	return nil, lastErr
-}
-
-func ingestHTTPClient() *http.Client {
-	return &http.Client{
-		Timeout:   3 * time.Minute,
-		Transport: &http.Transport{DialContext: safeDial},
-		CheckRedirect: func(r *http.Request, via []*http.Request) error {
-			if len(via) >= 5 {
-				return fmt.Errorf("too many redirects")
-			}
-			if r.URL.Scheme != "http" && r.URL.Scheme != "https" {
-				return fmt.Errorf("refusing to follow a %s:// redirect", r.URL.Scheme)
-			}
-			return nil
-		},
-	}
-}
 
 // fetchSource fetches the source. headers allows authentication (bearer token,
 // API key) without nigari storing the credentials — they hold for this one fetch

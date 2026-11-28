@@ -27,6 +27,7 @@ func upgradeSteps() []*goose.Migration {
 		goose.NewGoMigration(2, &goose.GoFunc{RunTx: viewPrefsAndLock}, nil),
 		goose.NewGoMigration(3, &goose.GoFunc{RunTx: commentEditsAndReactions}, nil),
 		goose.NewGoMigration(4, &goose.GoFunc{RunTx: formUploads}, nil),
+		goose.NewGoMigration(5, &goose.GoFunc{RunTx: clientMetadataFetched}, nil),
 	}
 }
 
@@ -363,6 +364,21 @@ func formUploads(ctx context.Context, tx *sql.Tx) error {
 	}
 	if _, err := tx.Exec(`CREATE INDEX form_uploads_created ON form_uploads(created_at)`); err != nil {
 		return fmt.Errorf("create form_uploads_created: %w", err)
+	}
+	return nil
+}
+
+// clientMetadataFetched is step 5 (spec 027, plan D9): an OAuth client can
+// be a Client ID Metadata Document, identified by the https URL it is served
+// at instead of an id nigari gave it at registration. Its row in
+// oauth_clients holds what the document said; metadata_fetched_at is when it
+// was read, so the next authorization after 24 hours reads it again and a
+// client that changed its name or its redirect addresses is not held to the
+// old ones. Empty for a client registered through /oauth/register, which has
+// no document to read.
+func clientMetadataFetched(ctx context.Context, tx *sql.Tx) error {
+	if _, err := tx.Exec(`ALTER TABLE oauth_clients ADD COLUMN metadata_fetched_at TEXT NOT NULL DEFAULT ''`); err != nil {
+		return fmt.Errorf("add oauth_clients.metadata_fetched_at: %w", err)
 	}
 	return nil
 }

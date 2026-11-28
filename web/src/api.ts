@@ -629,15 +629,20 @@ export const api = {
     }),
   // Signing an agent in (oauth_provider.go). Both need a browser session —
   // approving a grant with a token would be a key minting a better key.
-  oauthRequestInfo: (clientId: string) =>
+  // redirectUri is confirmed by the server against the client (#1130): the
+  // consent screen sends the browser there, on Deny too.
+  oauthRequestInfo: (clientId: string, redirectUri: string) =>
     req<{
       clientName: string;
       clientId: string;
       workspaces: { id: string; name: string }[];
       instanceName: string;
       host: string;
+      clientHost: string;
+      issuer: string;
     }>(
-      '/api/oauth/request?client_id=' + encodeURIComponent(clientId),
+      '/api/oauth/request?client_id=' + encodeURIComponent(clientId) +
+        '&redirect_uri=' + encodeURIComponent(redirectUri),
     ),
   oauthApprove: (body: {
     clientId: string;

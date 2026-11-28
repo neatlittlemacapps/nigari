@@ -13,6 +13,7 @@ is the newest one.
 | `step-1.db` | `main` at `f3fbaba`, the last commit with step 1 as the newest step | step 2 |
 | `step-2.db` | `main` at `d106b79`, the last commit with step 2 as the newest step | step 3 |
 | `step-3.db` | `main` at `0977418`, the last commit with step 3 as the newest step | step 4 |
+| `step-4.db` | `main` at `f1918a8`, the last commit with step 4 as the newest step | step 5 |
 
 ## Adding one
 

@@ -7,6 +7,59 @@ entries are not edited away.
 
 ---
 
+## 2026-11-28 — OAuth clients may be metadata documents, and fetching one is guarded harder than an import
+
+- **Why.** MCP 2026-07-28 prefers a client named by the https URL of its
+  metadata document to Dynamic Client Registration, which it deprecates, and
+  asks for `iss` on every authorization response (RFC 9207) and HTTP 403
+  `insufficient_scope` for a missing scope (spec 027 phase 2, #1034). nigari
+  had registration only, so the consent screen could show nothing but a name
+  a stranger typed.
+- **Decided:**
+  - **The fetch guard has no admin switch here.** Anyone can send a
+    `client_id` to `/oauth/authorize` without signing in, so
+    `NIGARI_IMPORT_ALLOW_PRIVATE`, which lets the people an admin trusts
+    import from the admin's own network, would let strangers reach it too.
+    `publicDial` (`server/safe_fetch.go`) refuses every address that is not
+    public, always.
+  - **5 KB, not the plan's 64 KB.** 5 KB is the draft's recommended limit,
+    and a document holds a name and a few addresses. Also 5 seconds, no
+    redirect (one URL's identity must not come from another), and a fetch
+    limit per address (20 a minute, a burst of 10; an IPv6 /64 counts as one
+    address) and overall (120 a minute), so nigari is nobody's fetching
+    proxy. From the security review: the host must be plain ASCII (a
+    lookalike letter would defeat showing it), no query, port 443 only, and
+    the consent screen and approval refuse a document older than a day (a
+    link straight to the consent screen skips the re-reading). These fetches
+    also refuse the non-public ranges the import guard lets through; the
+    import guard itself is #1129.
+  - **A return address the browser would run is refused everywhere**
+    (#1130, found by the code review, older than this work): `javascript:`,
+    `data:` and the like at registration, in a document and on use, and the
+    consent screen redirects only to an address the server confirmed for the
+    client. Deny used to follow whatever the link said.
+  - **Read at authorization only, again after 24 hours.** The token endpoint
+    never fetches: a client's site being down must not end connections that
+    are already granted. A document that no longer passes stops the next
+    authorization. There is no fallback to the stored copy, because the
+    draft forbids caching an invalid document.
+  - **Unused documents are forgotten after 30 days** (`sweepOAuth`), since
+    anyone can make nigari store one.
+  - **The browser adds `iss`** to the code and `access_denied` redirects,
+    because the consent screen builds them. The server gives it the issuer
+    with the request info.
+  - **The 403 is for the modern era only**, mapped from `mcpCall`'s own
+    read-only refusal (`errReadOnlyToken`). Its `error_description` is a
+    fixed sentence, because the tool name in quotes would end the header's
+    quoted string.
+- **Turned down:** honouring the private-import switch for documents (above);
+  following redirects; a fallback to a stale document when the fetch fails;
+  fetching at the token endpoint; `private_key_jwt` clients (the draft allows
+  them; not built, refused with a sentence); dropping registration, which
+  older clients still need.
+
+---
+
 ## 2026-11-27 — /mcp serves MCP 2026-07-28 and the legacy era on one endpoint
 
 - **Why.** The 2026-07-28 revision of MCP removed the `initialize`

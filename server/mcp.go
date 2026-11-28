@@ -721,7 +721,7 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 	case "tools/list":
 		rpcResult(w, req.ID, map[string]any{"tools": mcpTools})
 	case "tools/call":
-		result, bad := s.mcpToolsCall(r, u, req.Params)
+		result, bad, _ := s.mcpToolsCall(r, u, req.Params)
 		if bad != "" {
 			rpcError(w, req.ID, rpcInvalidParams, bad)
 			return
@@ -919,7 +919,7 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 	// A read-only API token may call only the read tools (Q12). A name that is
 	// no tool at all gets the plain answer below, not this one.
 	if mutating && u.TokenScope == "read" && isMCPTool(name) {
-		return "", fmt.Errorf("this API token is read-only; %q requires a write token", name)
+		return "", errReadOnlyToken{tool: name}
 	}
 	idemKey := ""
 	if mutating && args.IdempotencyKey != "" {

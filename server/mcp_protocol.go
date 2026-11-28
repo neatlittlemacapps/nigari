@@ -3,6 +3,8 @@ package server
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -289,9 +291,26 @@ func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user,
 			"cacheScope": "public",
 		})
 	case "tools/call":
-		result, bad := s.mcpToolsCall(r, u, req.Params)
+		result, bad, callErr := s.mcpToolsCall(r, u, req.Params)
 		if bad != "" {
 			rpcErrorStatus(w, http.StatusBadRequest, req.ID, rpcInvalidParams, bad, nil)
+			return
+		}
+		// A read-only credential calling a write tool is told so at the HTTP
+		// level (plan D10, MCP 2026-07-28 authorization): 403 with the scope
+		// it lacks, so the client can ask the person for more (step-up)
+		// instead of showing an agent a dead end. The decision is mcpCall's
+		// own read-only gate, mapped from its typed error, not a second copy.
+		// The legacy era keeps the isError result: its clients do not expect
+		// a 403 in the middle of a session.
+		var scopeErr errReadOnlyToken
+		if errors.As(callErr, &scopeErr) {
+			w.Header().Set("WWW-Authenticate", `Bearer error="insufficient_scope", scope="write", `+
+				`resource_metadata="`+s.publicBase(r)+`/.well-known/oauth-protected-resource", `+
+				// A fixed sentence: the tool name is quoted in the error's
+				// text, and a quote inside a quoted header value ends it.
+				`error_description="this credential is read-only; the tool needs the write scope"`)
+			httpError(w, http.StatusForbidden, scopeErr.Error())
 			return
 		}
 		s.rpcResultModern(w, r, req.ID, result)
@@ -302,24 +321,35 @@ func (s *Server) serveModernMCP(w http.ResponseWriter, r *http.Request, u *user,
 
 // mcpToolsCall runs tools/call for either era and returns its result, or the
 // reason its params are unreadable. Rate limit, then mcpCall with its gates;
-// a refusal is an isError result in both eras, as before (plan D2).
-func (s *Server) mcpToolsCall(r *http.Request, u *user, raw json.RawMessage) (map[string]any, string) {
+// a refusal is an isError result in both eras, as before (plan D2). callErr
+// is mcpCall's refusal itself, for the one the modern era answers at the HTTP
+// level (errReadOnlyToken).
+func (s *Server) mcpToolsCall(r *http.Request, u *user, raw json.RawMessage) (result map[string]any, bad string, callErr error) {
 	var params struct {
 		Name      string          `json:"name"`
 		Arguments json.RawMessage `json:"arguments"`
 	}
 	if err := json.Unmarshal(raw, &params); err != nil {
-		return nil, "invalid params"
+		return nil, "invalid params", nil
 	}
 	// Stop a runaway agent from hammering the sync layer.
 	if !s.mcpRate.allow(u.ID) {
-		return textResult("rate limit exceeded: too many requests, slow down", true), ""
+		return textResult("rate limit exceeded: too many requests, slow down", true), "", nil
 	}
-	result, err := s.mcpCall(u, params.Name, params.Arguments, s.publicShareBase(r))
+	out, err := s.mcpCall(u, params.Name, params.Arguments, s.publicShareBase(r))
 	if err != nil {
-		return textResult(err.Error(), true), ""
+		return textResult(err.Error(), true), "", err
 	}
-	return textResult(result, false), ""
+	return textResult(out, false), "", nil
+}
+
+// errReadOnlyToken is mcpCall's refusal of a write tool to a read-only
+// credential. Its text is the sentence both eras showed before spec 027's
+// phase 2; the modern era also maps it to HTTP 403 insufficient_scope.
+type errReadOnlyToken struct{ tool string }
+
+func (e errReadOnlyToken) Error() string {
+	return fmt.Sprintf("this API token is read-only; %q requires a write token", e.tool)
 }
 
 // publicShareBaseFromHost reports whether publicShareBase fell through to the

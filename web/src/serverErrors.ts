@@ -27,6 +27,14 @@ export function serverMessage(code: string, fallback: string, data?: ErrorData):
   const withDetail = (s: string) => (detail ? `${s} (${detail})` : s);
   switch (code) {
     // ---- registration and sign-in ----
+    // The consent screen opened on a metadata-URL client whose document is
+    // more than a day old: normally the sign-in just started and refreshed
+    // it, so this is a stale or forwarded consent link (server/oauth_cimd.go).
+    case 'client_metadata_stale':
+      return t('This sign-in is out of date. Start it again from the app that asked for access.');
+    // A consent link whose return address the app never registered (#1130).
+    case 'invalid_redirect_uri':
+      return t('This sign-in names an address the app did not register. Start it again from the app.');
     case 'signup_not_allowed':
       return t('This email address cannot register on its own. Ask for an invitation.');
     case 'bad_credentials':
