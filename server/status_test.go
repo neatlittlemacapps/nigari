@@ -392,7 +392,13 @@ func TestEveryRowDoorStartsInToDo(t *testing.T) {
 			}
 		}},
 		{"ingest", func(title string) {
-			d.s.runIngest("test-job", d.uid, col, d.ws, []ingestItem{{title: title, props: map[string]any{"Note": "imported"}}},
+			// The runner writes into its task row and stops without one.
+			job := &ingestJob{ID: newID(), Total: 1}
+			owner := taskOwnerOf(d.u)
+			if err := d.s.createTask(owner, job.ID, "import", "", job); err != nil {
+				t.Fatal(err)
+			}
+			d.s.runIngest(job, owner, col, d.ws, []ingestItem{{title: title, props: map[string]any{"Note": "imported"}}},
 				map[string]string{"note": "note", "stage": "stage"})
 		}},
 	}

@@ -272,8 +272,9 @@ func TestModernClientDiscoversListsAndCalls(t *testing.T) {
 	if v, _ := json.Marshal(d["supportedVersions"]); !strings.Contains(string(v), `"2026-07-28"`) || !strings.Contains(string(v), `"2025-06-18"`) {
 		t.Errorf("supportedVersions: %s", v)
 	}
-	if c, _ := json.Marshal(d["capabilities"]); string(c) != `{"tools":{}}` {
-		// Extensions are declared by the phase that builds them, not before.
+	if c, _ := json.Marshal(d["capabilities"]); string(c) != `{"extensions":{"io.modelcontextprotocol/tasks":{}},"tools":{}}` {
+		// Extensions are declared by the phase that builds them, not before:
+		// tasks since phase D, skills not yet.
 		t.Errorf("capabilities: %s", c)
 	}
 	info, _ := d["_meta"].(map[string]any)[mcpMetaServerInfo].(map[string]any)

@@ -500,13 +500,21 @@ func (s *Server) oauthRefresh(w http.ResponseWriter, r *http.Request) {
 	// secret this whole thing exists to avoid.
 	s.db.Exec(`DELETE FROM oauth_grants WHERE id = ?`, id)
 	s.db.Exec(`DELETE FROM oauth_access WHERE grant_id = ?`, id)
-	s.issueGrant(w, r, userID, clientID, scope, workspaces, resource)
+	if newID := s.issueGrant(w, r, userID, clientID, scope, workspaces, resource); newID != "" {
+		// The connection's tasks move with it. A task checks before each
+		// step that its grant still exists, and a refresh is not a revoke:
+		// without this, a client refreshing its hourly token stopped its own
+		// import (code review, spec 027 phase D).
+		s.db.Exec(`UPDATE mcp_tasks SET token_id = ? WHERE token_kind = ? AND token_id = ?`, newID, tokenKindOAuth, id)
+	}
 }
 
 // issueGrant writes the pair and answers with it: a short access token and the
 // refresh token that keeps the connection alive without anybody signing in
 // again.
-func (s *Server) issueGrant(w http.ResponseWriter, r *http.Request, userID, clientID, scope, workspaces, resource string) {
+//
+// It returns the new grant's id, or "" when it answered with an error.
+func (s *Server) issueGrant(w http.ResponseWriter, r *http.Request, userID, clientID, scope, workspaces, resource string) string {
 	grantID := newID()
 	refresh := randomToken(32)
 	access := randomToken(32)
@@ -516,12 +524,12 @@ func (s *Server) issueGrant(w http.ResponseWriter, r *http.Request, userID, clie
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, '')`,
 		grantID, userID, clientID, tokenHash(refresh), scope, workspaces, resource, now()); err != nil {
 		oauthError(w, 500, "server_error", "could not issue a grant")
-		return
+		return ""
 	}
 	if _, err := s.db.Exec(`INSERT INTO oauth_access (token_hash, grant_id, expires_at) VALUES (?, ?, ?)`,
 		tokenHash(access), grantID, exp.Format(time.RFC3339Nano)); err != nil {
 		oauthError(w, 500, "server_error", "could not issue a token")
-		return
+		return ""
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	writeJSON(w, map[string]any{
@@ -531,6 +539,7 @@ func (s *Server) issueGrant(w http.ResponseWriter, r *http.Request, userID, clie
 		"refresh_token": refresh,
 		"scope":         scope,
 	})
+	return grantID
 }
 
 // handleOAuthRevoke is the "disconnect" button meaning what it says: the grant
@@ -573,11 +582,22 @@ func (s *Server) userForAccessToken(tok, ip string) *user {
 		Scan(&userID, &scope, &workspaces) != nil {
 		return nil
 	}
-	u := s.userByID(userID)
+	u := s.grantUser(grantID, userID, scope, workspaces)
 	if u == nil {
 		return nil
 	}
 	s.db.Exec(`UPDATE oauth_grants SET last_used_at = ?, last_used_ip = ? WHERE id = ?`, now(), ip, grantID)
+	return u
+}
+
+// grantUser is the user an OAuth grant acts as: its account with the grant's
+// scope and workspace list. currentUser and a running task (credentialNow)
+// build it here.
+func (s *Server) grantUser(grantID, userID, scope, workspaces string) *user {
+	u := s.userByID(userID)
+	if u == nil {
+		return nil
+	}
 	// The very same fields an API token sets. A grant is not a second permission
 	// model, it is another way to arrive at the one that exists — TokenScope
 	// being non-empty is what every existing gate already reads.
@@ -586,13 +606,8 @@ func (s *Server) userForAccessToken(tok, ip string) *user {
 	}
 	u.TokenScope = scope
 	u.TokenKind = tokenKindOAuth
-	if strings.TrimSpace(workspaces) != "" {
-		for _, w := range strings.Split(workspaces, ",") {
-			if w = strings.TrimSpace(w); w != "" {
-				u.TokenWorkspaces = append(u.TokenWorkspaces, w)
-			}
-		}
-	}
+	u.TokenID = grantID
+	u.TokenWorkspaces = splitWorkspaces(workspaces)
 	return u
 }
 

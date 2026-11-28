@@ -143,6 +143,7 @@ func (s *Server) startCleanup() {
 
 func (s *Server) runCleanup() {
 	s.deleteExpiredSessions()
+	s.deleteExpiredTasks()
 	// Idempotency keys are only useful for a short retry window.
 	s.db.Exec(`DELETE FROM idempotency WHERE created_at < ?`, time.Now().UTC().Add(-24*time.Hour).Format(time.RFC3339Nano))
 	s.mcpRate.evict()

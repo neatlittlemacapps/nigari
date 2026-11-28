@@ -7,6 +7,65 @@ entries are not edited away.
 
 ---
 
+## 2026-11-28 — An import is a stored task; a workspace copy is one transaction
+
+Spec 027, phase D (US3, plan D6) and #1133.
+
+- **One stored row per import, read by both eras.** `mcp_tasks` (upgrade
+  step 6) replaces the in-memory map of the last 20 jobs. The runner writes
+  its progress into the row after each record; `get_import_status` and
+  `tasks/get` read it. *Turned down*: keeping the map and persisting beside
+  it (two sources for one job, plan D6).
+- **The task belongs to the credential itself**: the account, the kind and
+  the API token's or OAuth grant's id (`user.TokenID`, new). The plan keyed it
+  on the token's workspace list, as the idempotency cache does; the code
+  review showed a snapshot of the list fails both ways (a token narrowed
+  mid-import lost sight of its own task; two tokens alike in reach could read
+  each other's). `get_import_status` checks the same, so another token of the
+  same person no longer reads a job (it checked the account only). Another
+  credential's task, an expired one and an unknown id all get the same "not
+  found" (`-32602`), so an id says nothing about whose it is. An OAuth
+  refresh replaces the grant row, so it moves the grant's tasks to the new id.
+- **A credential that can no longer write there stops its import.** Before
+  each record the runner rebuilds the credential from the row (through
+  `apiTokenUser` / `grantUser`, the functions `currentUser` uses) and checks
+  it exists, is not read-only, its account is active and `credentialMayEnter`
+  the target workspace. Revoking or narrowing a token is how a person stops
+  an agent; an import of 20000 records ran on for minutes after it. Measured
+  on 2000 records: 1.67–1.71 s with the checks, 1.40–1.70 s without.
+  *Turned down*: checking every N records (no measurable saving, and a cancel
+  or revoke would land N records late).
+- **Cancelling is a write**: a read-only credential gets 403
+  `insufficient_scope`, and an agent's cancel is in the activity log
+  (`mcp.tasks_cancel`). `tasks/*` share the MCP rate limit.
+- **An import's record is framed as untrusted when it carries errors**: they
+  quote the source's titles. It went out bare through `get_import_status`
+  before (found by the review).
+- **Cancel is a status change the runner sees.** `tasks/cancel` sets the
+  row to `cancelled` only while it is `working`; the runner's progress write
+  is conditional on `working`, so the next record finds it and stops.
+  Records already written stay. A cancel of an ended task is acknowledged
+  and changes nothing (the extension: a terminal state does not change).
+  *Turned down*: an in-memory cancel flag (lost on restart, a second truth).
+- **A restart reads as `failed`** with the reason "interrupted by a
+  restart", set by the start-up pass. The extension reserves `failed` for a
+  JSON-RPC error, so the task carries `error` with code `-32603`. Per-record
+  failures are part of a `completed` result, as a tool result would carry
+  them.
+- **Only `import_url` becomes a task**, and only for a client that declares
+  `io.modelcontextprotocol/tasks` on that request; the server decides, as the
+  extension says. Its answer is built from mcpCall's own reply, so gates,
+  audit and idempotency are unchanged; an idempotent retry returns the same
+  task. Other long work (recursive duplicate, bulk rows) stays for later
+  (FR-011 says MAY).
+- **#1133: everything is read first, then one transaction** writes the
+  workspace, its member row, the databases, their schemas and the rules.
+  `insertWorkspace` takes the database or the transaction, and
+  `mcpCreateWorkspace` uses it too. Reads inside the transaction would wait
+  forever on the one writer connection.
+
+---
+
 ## 2026-11-28 — Imports and webhooks refuse every address that is not public; trashing takes the whole sub-tree
 
 - **Imports and webhooks (#1129).** The guard now refuses what client

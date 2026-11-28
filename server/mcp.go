@@ -575,7 +575,7 @@ var mcpTools = []map[string]any{
 	},
 	{
 		"name":        "import_url",
-		"description": "Bulk-import records from a JSON URL — nigari fetches and writes them itself, so NONE of the content passes through you. Use this instead of looping create_page/create_rows whenever there are more than ~20 records: a large source would otherwise exhaust your context long before the import finishes. Returns a job_id immediately; poll get_import_status. Only public hosts can be fetched. Example for a Trello board: {url: \"https://api.trello.com/1/boards/ID?cards=all&lists=all&key=K&token=T\", items: \"cards\", title: \"name\", markdown: \"desc\", database_id: \"...\", properties: {\"Status\": \"idList\", \"Due\": \"due\", \"Labels\": \"labels[].name\"}, resolve: {\"idList\": {from: \"lists\", match: \"id\", to: \"name\"}}}",
+		"description": "Bulk-import records from a JSON URL — nigari fetches and writes them itself, so NONE of the content passes through you. Use this instead of looping create_page/create_rows whenever there are more than ~20 records: a large source would otherwise exhaust your context long before the import finishes. Returns a job_id immediately; poll get_import_status (a client that declared the Tasks extension gets a task instead and polls tasks/get). Only public hosts can be fetched. Example for a Trello board: {url: \"https://api.trello.com/1/boards/ID?cards=all&lists=all&key=K&token=T\", items: \"cards\", title: \"name\", markdown: \"desc\", database_id: \"...\", properties: {\"Status\": \"idList\", \"Due\": \"due\", \"Labels\": \"labels[].name\"}, resolve: {\"idList\": {from: \"lists\", match: \"id\", to: \"name\"}}}",
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{
 				"url":          map[string]any{"type": "string", "description": "http(s) URL returning JSON. Put API keys in the query string or in headers."},
@@ -594,7 +594,7 @@ var mcpTools = []map[string]any{
 	},
 	{
 		"name":        "get_import_status",
-		"description": "Progress of an import_url job: how many records are written, whether it finished, and any errors. Poll every few seconds until status is \"done\". Read-only.",
+		"description": "Progress of an import_url job: how many records are written, whether it finished, and any errors. Poll every few seconds until status is no longer \"running\": done, failed (with a reason) or cancelled. Read-only.",
 		"inputSchema": map[string]any{"type": "object",
 			"properties": map[string]any{"job_id": map[string]any{"type": "string"}},
 			"required":   []string{"job_id"}},
@@ -1288,23 +1288,25 @@ func (s *Server) mcpCallAsk(u *user, name string, rawArgs json.RawMessage, publi
 			if err != nil {
 				return "", err
 			}
-			j, _ := s.ingest.get(jobID)
+			j, err := s.importJob(u, jobID)
+			if err != nil {
+				return "", err
+			}
 			b, _ := json.Marshal(map[string]any{
 				"job_id": jobID, "status": j.Status, "total": j.Total, "target": j.Target,
 				"note": j.Note,
-				"next": "nigari is writing these records itself — nothing further is needed from you. Poll get_import_status with this job_id until status is \"done\".",
+				"next": "nigari is writing these records itself — nothing further is needed from you. Poll get_import_status with this job_id until status is no longer \"running\" (done, failed or cancelled).",
 			})
 			return string(b), nil
 		case "get_import_status":
-			j, ok := s.ingest.get(args.JobID)
-			if ok && j.OwnerID != "" && j.OwnerID != u.ID {
-				ok = false // somebody else's job: treat it as not present
+			// The task row, read for this credential only: another person's
+			// job, or one a wider token of the same person started, reads as
+			// not present.
+			j, err := s.importJob(u, args.JobID)
+			if err != nil {
+				return "", fmt.Errorf("import job %q not found — a finished import is kept for 24 hours (pages already created stay)", args.JobID)
 			}
-			if !ok {
-				return "", fmt.Errorf("import job %q not found — job status is kept in memory, so it is lost if the server restarts (pages already created are not)", args.JobID)
-			}
-			b, _ := json.Marshal(j)
-			return string(b), nil
+			return importJobText(j), nil
 		case "get_collection":
 			if args.EmbedID != "" {
 				out, err := s.mcpGetEmbed(u, args.PageID, args.EmbedID)

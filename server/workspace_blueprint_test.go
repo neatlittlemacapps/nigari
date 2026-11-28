@@ -231,3 +231,42 @@ func TestBlueprintExcludesUnreadableCollections(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// A step that fails halfway leaves nothing behind (#1133). The copy was made
+// statement by statement, so a failure after the databases (a full disk, say)
+// left a workspace with databases and no schemas, after the person had said
+// yes to the whole copy. The trigger fails the second database's schema,
+// after the workspace, both databases and the first schema are written.
+func TestBlueprintThatFailsHalfwayLeavesNothing(t *testing.T) {
+	s := testServer(t)
+	uid, _ := signedIn(t, s, "bp-half@example.test")
+	u := &user{ID: uid, Name: "Jeremia"}
+	ws := s.firstWorkspaceOf(t, uid)
+	blueprintSource(t, s, ws, uid)
+	var workspacesBefore, pagesBefore int
+	s.db.QueryRow(`SELECT COUNT(*) FROM workspaces`).Scan(&workspacesBefore)
+	s.db.QueryRow(`SELECT COUNT(*) FROM pages`).Scan(&pagesBefore)
+
+	if _, err := s.db.Exec(`CREATE TRIGGER fail_second AFTER INSERT ON collections
+		WHEN (SELECT COUNT(*) FROM collections c JOIN pages p ON p.id = c.page_id
+		      WHERE p.workspace_id NOT IN (SELECT workspace_id FROM pages WHERE workspace_id = '` + ws + `')) >= 2
+		BEGIN SELECT RAISE(ABORT, 'disk is full'); END`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.blueprintWorkspace(u, "Half", ws); err == nil || !strings.Contains(err.Error(), "disk is full") {
+		t.Fatalf("the failing copy did not fail as arranged: %v", err)
+	}
+	var workspacesAfter, pagesAfter, named int
+	s.db.QueryRow(`SELECT COUNT(*) FROM workspaces`).Scan(&workspacesAfter)
+	s.db.QueryRow(`SELECT COUNT(*) FROM pages`).Scan(&pagesAfter)
+	s.db.QueryRow(`SELECT COUNT(*) FROM workspaces WHERE name = 'Half'`).Scan(&named)
+	if workspacesAfter != workspacesBefore || pagesAfter != pagesBefore || named != 0 {
+		t.Errorf("a half-made copy stayed: workspaces %d→%d, pages %d→%d", workspacesBefore, workspacesAfter, pagesBefore, pagesAfter)
+	}
+
+	// Once nothing fails, the same copy is made whole.
+	s.db.Exec(`DROP TRIGGER fail_second`)
+	if _, err := s.blueprintWorkspace(u, "Half", ws); err != nil {
+		t.Fatalf("blueprint after the failure: %v", err)
+	}
+}

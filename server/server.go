@@ -41,7 +41,6 @@ type Server struct {
 	collab      *collabHub
 	mcpRate     *rateLimiter
 	mcpIcon     string          // data URI of the logo for serverInfo.icons (see mcp.go)
-	ingest      *ingestRegistry // bulk imports in flight (see ingest.go)
 	loginRate   *rateLimiter
 	tokenRate   *rateLimiter
 	formRate    *rateLimiter
@@ -136,7 +135,6 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 		publicCSS: cssHref,
 		mcpIcon:   iconURI,
 		lucide:    lucideSet,
-		ingest:    newIngestRegistry(),
 		db:        db,
 		rdb:       rdb,
 		mux:       http.NewServeMux(),
@@ -198,6 +196,10 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 	applyMemoryLimit()
 	s.backfillSnippets()
 	s.deleteExpiredSessions()
+	// Before anything can start a task: a row still working was cut off by
+	// the restart (spec 027, FR-013).
+	s.failInterruptedTasks()
+	s.deleteExpiredTasks()
 	s.startCleanup()
 
 	m := s.mux

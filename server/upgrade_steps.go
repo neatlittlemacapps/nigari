@@ -28,6 +28,7 @@ func upgradeSteps() []*goose.Migration {
 		goose.NewGoMigration(3, &goose.GoFunc{RunTx: commentEditsAndReactions}, nil),
 		goose.NewGoMigration(4, &goose.GoFunc{RunTx: formUploads}, nil),
 		goose.NewGoMigration(5, &goose.GoFunc{RunTx: clientMetadataFetched}, nil),
+		goose.NewGoMigration(6, &goose.GoFunc{RunTx: mcpTasksTable}, nil),
 	}
 }
 
@@ -379,6 +380,50 @@ func formUploads(ctx context.Context, tx *sql.Tx) error {
 func clientMetadataFetched(ctx context.Context, tx *sql.Tx) error {
 	if _, err := tx.Exec(`ALTER TABLE oauth_clients ADD COLUMN metadata_fetched_at TEXT NOT NULL DEFAULT ''`); err != nil {
 		return fmt.Errorf("add oauth_clients.metadata_fetched_at: %w", err)
+	}
+	return nil
+}
+
+// mcpTasksTable is step 6 (spec 027, plan D6): long work an agent started,
+// stored so that a restart does not lose it. Before this step an import's
+// progress lived in a map in memory that kept the last 20 jobs, and the MCP
+// Tasks extension requires a task to be readable before its handle is sent.
+//
+// The owner is the CREDENTIAL, not only the account: user_id, token_kind and
+// token_workspaces are the fields the gates read (the idempotency cache keys
+// on the same three), so a narrower token of the same person cannot read the
+// wider one's task. token_id is the API token or OAuth grant itself, so a
+// running import stops once its credential is revoked.
+//
+// status is working, completed, failed or cancelled (the extension's names).
+// progress is the import's own record as get_import_status shows it.
+// expires_at is empty while the task runs and 24 hours after its end once it
+// has ended; the cleanup pass deletes rows past it.
+func mcpTasksTable(ctx context.Context, tx *sql.Tx) error {
+	for _, q := range []string{
+		`CREATE TABLE mcp_tasks (
+			id TEXT PRIMARY KEY,
+			user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			token_kind TEXT NOT NULL DEFAULT '',
+			token_id TEXT NOT NULL DEFAULT '',
+			token_workspaces TEXT NOT NULL DEFAULT '',
+			kind TEXT NOT NULL,
+			status TEXT NOT NULL,
+			status_message TEXT NOT NULL DEFAULT '',
+			progress TEXT NOT NULL DEFAULT '{}',
+			error TEXT NOT NULL DEFAULT '',
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			expires_at TEXT NOT NULL DEFAULT ''
+		)`,
+		`CREATE INDEX idx_mcp_tasks_user ON mcp_tasks(user_id, id)`,
+		// The start-up pass looks for rows still working, and the cleanup
+		// pass for ended rows past their expiry.
+		`CREATE INDEX idx_mcp_tasks_status ON mcp_tasks(status, expires_at)`,
+	} {
+		if _, err := tx.Exec(q); err != nil {
+			return fmt.Errorf("create mcp_tasks: %w", err)
+		}
 	}
 	return nil
 }

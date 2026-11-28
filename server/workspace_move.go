@@ -130,16 +130,23 @@ func (s *Server) mcpCreateWorkspace(userID, name string) (string, error) {
 		return "", err
 	}
 	id := newID()
-	if _, err := s.db.Exec(`INSERT INTO workspaces (id, name, created_at, owner_id) VALUES (?, ?, ?, ?)`, id, name, now(), userID); err != nil {
-		return "", err
-	}
-	// Like the REST handler: workspace_members has no created_at.
-	if _, err := s.db.Exec(`INSERT INTO workspace_members (workspace_id, user_id, role) VALUES (?, ?, 'admin')`,
-		id, userID); err != nil {
+	if err := insertWorkspace(s.db, id, name, userID); err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("Created workspace %q with id %s — you are its admin. Use move_page with workspace_id to move existing pages into it. "+
 		"It has no rules yet: consider drafting working conventions with the user and submitting them via propose_workspace_rules — an admin applies them in the browser.", name, id), nil
+}
+
+// insertWorkspace writes a new workspace with its creator as admin. It takes
+// the database or a transaction, so a workspace built from another one
+// (workspace_blueprint.go) is made in the same transaction as its databases.
+func insertWorkspace(db execer, id, name, userID string) error {
+	if _, err := db.Exec(`INSERT INTO workspaces (id, name, created_at, owner_id) VALUES (?, ?, ?, ?)`, id, name, now(), userID); err != nil {
+		return err
+	}
+	// Like the REST handler: workspace_members has no created_at.
+	_, err := db.Exec(`INSERT INTO workspace_members (workspace_id, user_id, role) VALUES (?, ?, 'admin')`, id, userID)
+	return err
 }
 
 // mcpMoveToWorkspace is the MCP facade of the move.
