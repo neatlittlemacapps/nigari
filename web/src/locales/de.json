@@ -1068,6 +1068,7 @@
   "Make the instance public for that (Instance settings → Domain & proxy) and connect through the public URL. Local CLIs on the same network work directly.": "Dafür die Instanz öffentlich machen (Instanz-Einstellungen → Domain & Proxy) und über die öffentliche URL verbinden. Lokale CLIs im selben Netz funktionieren direkt.",
   "“{client}” is asking to work in your account.": "„{client}“ möchte in deinem Konto arbeiten.",
   "from {host}": "von {host}",
+  "This sign-in names an address the app did not register. Start it again from the app.": "Diese Anmeldung nennt eine Adresse, die die App nicht registriert hat. Starte sie erneut in der App.",
   "This sign-in is out of date. Start it again from the app that asked for access.": "Diese Anmeldung ist veraltet. Starte sie erneut in der App, die um Zugriff gebeten hat.",
   "“{name}” deleted.": "„{name}“ gelöscht.",
   "“{name}” is no longer assigned to new accounts.": "„{name}“ wird neuen Konten nicht mehr zugewiesen.",

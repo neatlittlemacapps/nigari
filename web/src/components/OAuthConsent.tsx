@@ -66,10 +66,10 @@ export default function OAuthConsent() {
 
   useEffect(() => {
     void api
-      .oauthRequestInfo(clientId)
+      .oauthRequestInfo(clientId, redirectUri)
       .then(setInfo)
       .catch((e) => setError(e instanceof Error ? e.message : String(e)));
-  }, [clientId]);
+  }, [clientId, redirectUri]);
 
   const toggle = (id: string) =>
     setPicked((prev) => {
@@ -79,14 +79,23 @@ export default function OAuthConsent() {
       return next;
     });
 
+  // Where the browser goes back to the client. Only once the server has
+  // confirmed the address belongs to this client (info is set only then), and
+  // never to a scheme the browser would run on this page instead of leaving
+  // it: a javascript: address ran as script here, signed in as the person
+  // deciding (#1130). The server refuses those too; this is the second guard.
+  const backToClient = (params: Record<string, string>) => {
+    if (!info) return;
+    const u = new URL(redirectUri);
+    if (['javascript:', 'data:', 'vbscript:', 'file:', 'blob:', 'about:', 'filesystem:'].includes(u.protocol)) return;
+    for (const [k, v] of Object.entries(params)) if (v) u.searchParams.set(k, v);
+    window.location.href = u.toString();
+  };
+
   const deny = () => {
     // Denying answers the client properly instead of leaving it hanging — a
     // silent close looks like a broken server and gets retried.
-    const u = new URL(redirectUri);
-    u.searchParams.set('error', 'access_denied');
-    if (state) u.searchParams.set('state', state);
-    if (info?.issuer) u.searchParams.set('iss', info.issuer);
-    window.location.href = u.toString();
+    backToClient({ error: 'access_denied', state, iss: info?.issuer ?? '' });
   };
 
   const approve = async () => {
@@ -104,11 +113,7 @@ export default function OAuthConsent() {
         allWorkspaces: reach === 'all',
         workspaces: reach === 'all' ? [] : [...picked],
       });
-      const u = new URL(redirectUri);
-      u.searchParams.set('code', code);
-      if (state) u.searchParams.set('state', state);
-      if (info?.issuer) u.searchParams.set('iss', info.issuer);
-      window.location.href = u.toString();
+      backToClient({ code, state, iss: info?.issuer ?? '' });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setBusy(false);

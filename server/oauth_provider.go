@@ -220,6 +220,15 @@ func validRedirectURI(raw string) error {
 	if err != nil || u.Scheme == "" {
 		return fmt.Errorf("redirect_uri must be an absolute URI")
 	}
+	// A scheme the browser runs or reads locally instead of navigating to: the
+	// consent screen sends the browser there with nigari's page open, so
+	// javascript: would run as script on nigari's own origin, signed in as the
+	// person deciding (#1130). Custom schemes (com.example.app:) stay allowed;
+	// that is how native apps receive a code.
+	switch strings.ToLower(u.Scheme) {
+	case "javascript", "data", "vbscript", "file", "blob", "about", "filesystem":
+		return fmt.Errorf("redirect_uri must not use the %s: scheme", strings.ToLower(u.Scheme))
+	}
 	if u.Fragment != "" || strings.Contains(raw, "#") {
 		return fmt.Errorf("redirect_uri must not contain a fragment")
 	}
@@ -593,6 +602,11 @@ type oauthClient struct {
 // its own method so there is one place to read, and one place a well-meant
 // "just allow a trailing slash" would have to be argued for.
 func (c *oauthClient) allows(uri string) bool {
+	// Checked again here, not only at registration: a client registered
+	// before #1130 may hold an address that is refused now.
+	if validRedirectURI(uri) != nil {
+		return false
+	}
 	for _, u := range c.RedirectURIs {
 		if u == uri {
 			return true
@@ -667,6 +681,14 @@ func (s *Server) handleOAuthRequestInfo(w http.ResponseWriter, r *http.Request) 
 	}
 	if s.clientMetadataStale(c.ID) {
 		httpErrorCode(w, 400, "client_metadata_stale", "This sign-in is out of date. Start it again from the app that asked for access.")
+		return
+	}
+	// The screen sends the browser back to this address, on Deny as well as
+	// on Allow, so it is confirmed here before the screen shows anything: an
+	// address the client did not register, or a script scheme, is refused
+	// (#1130). Without this, Deny went wherever the link said.
+	if !c.allows(r.URL.Query().Get("redirect_uri")) {
+		httpErrorCode(w, 400, "invalid_redirect_uri", "This sign-in names an address the app did not register. Start it again from the app.")
 		return
 	}
 	type wsInfo struct {

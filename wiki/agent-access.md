@@ -94,7 +94,11 @@ next week (by a colleague, or by the agent itself) is not in it, and the
 connection will not cover it. "Every workspace, including ones added later"
 follows along.
 
-**Deny** answers the client properly rather than leaving it hanging.
+**Deny** answers the client properly rather than leaving it hanging. Both
+answers go only to an address the client registered (or its document lists),
+checked by the server before the screen appears: a sign-in link naming any
+other address, or one the browser would run as a script (`javascript:` and
+the like), shows an error instead of the screen.
 
 ### Where the client's name comes from
 

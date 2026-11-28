@@ -1091,6 +1091,7 @@
   "{pages} in shared workspaces stay where they are.": "{pages} en espacios de trabajo compartidos permanecen donde están.",
   "“{client}” is asking to work in your account.": "«{client}» solicita acceso para trabajar en tu cuenta.",
   "from {host}": "de {host}",
+  "This sign-in names an address the app did not register. Start it again from the app.": "Este inicio de sesión indica una dirección que la aplicación no registró. Vuelve a empezarlo desde la aplicación.",
   "This sign-in is out of date. Start it again from the app that asked for access.": "Este inicio de sesión está caducado. Vuelve a empezarlo desde la aplicación que pidió acceso.",
   "“{name}” deleted.": "«{name}» eliminado.",
   "“{name}” is no longer assigned to new accounts.": "«{name}» ya no se asigna a cuentas nuevas.",

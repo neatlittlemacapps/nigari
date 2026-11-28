@@ -24,8 +24,20 @@ entries are not edited away.
     public, always.
   - **5 KB, not the plan's 64 KB.** 5 KB is the draft's recommended limit,
     and a document holds a name and a few addresses. Also 5 seconds, no
-    redirect (one URL's identity must not come from another), and 20 fetches
-    a minute per address, so nigari is nobody's fetching proxy.
+    redirect (one URL's identity must not come from another), and a fetch
+    limit per address (20 a minute, a burst of 10; an IPv6 /64 counts as one
+    address) and overall (120 a minute), so nigari is nobody's fetching
+    proxy. From the security review: the host must be plain ASCII (a
+    lookalike letter would defeat showing it), no query, port 443 only, and
+    the consent screen and approval refuse a document older than a day (a
+    link straight to the consent screen skips the re-reading). These fetches
+    also refuse the non-public ranges the import guard lets through; the
+    import guard itself is #1129.
+  - **A return address the browser would run is refused everywhere**
+    (#1130, found by the code review, older than this work): `javascript:`,
+    `data:` and the like at registration, in a document and on use, and the
+    consent screen redirects only to an address the server confirmed for the
+    client. Deny used to follow whatever the link said.
   - **Read at authorization only, again after 24 hours.** The token endpoint
     never fetches: a client's site being down must not end connections that
     are already granted. A document that no longer passes stops the next

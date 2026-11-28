@@ -1068,6 +1068,7 @@
   "Make the instance public for that (Instance settings → Domain & proxy) and connect through the public URL. Local CLIs on the same network work directly.": "Maak daarvoor de instantie openbaar (Instellingen van de instantie → Domein en proxy) en verbind via de openbare URL. Lokale CLI's op hetzelfde netwerk werken rechtstreeks.",
   "“{client}” is asking to work in your account.": "“{client}” vraagt om in je account te mogen werken.",
   "from {host}": "van {host}",
+  "This sign-in names an address the app did not register. Start it again from the app.": "Deze aanmelding noemt een adres dat de app niet heeft geregistreerd. Begin opnieuw vanuit de app.",
   "This sign-in is out of date. Start it again from the app that asked for access.": "Deze aanmelding is verouderd. Begin opnieuw vanuit de app die om toegang vroeg.",
   "“{name}” deleted.": "“{name}” verwijderd.",
   "“{name}” is no longer assigned to new accounts.": "“{name}” wordt niet meer aan nieuwe accounts toegewezen.",
