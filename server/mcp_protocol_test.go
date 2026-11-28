@@ -432,28 +432,57 @@ func TestModernRequestNeedsClientCapabilities(t *testing.T) {
 	}
 }
 
-// US1 scenario 4: a read-only token is refused a write tool in the modern era
-// exactly as in the legacy one, by mcpCall's own gate, and nothing is
-// written. (The HTTP 403 insufficient_scope answer is phase 2, D10.)
+// US1 scenario 4 and plan D10: a read-only token is refused a write tool in
+// both eras, by mcpCall's own gate, and nothing is written. The modern era
+// answers it at the HTTP level, 403 insufficient_scope naming the scope it
+// lacks, so the client can ask the person for more; the legacy era keeps
+// the isError result its clients expect.
 func TestModernReadTokenIsRefusedAWriteTool(t *testing.T) {
 	s := testServer(t)
 	uid, _ := signedIn(t, s, "reader@example.test")
 	tok := mcpToken(t, s, uid, "read")
 	ws := s.firstWorkspaceOf(t, uid)
 	call := `{"name":"create_page","arguments":{"workspace_id":"` + ws + `","title":"Read token wrote this"}}`
-	modern, mErr := mcpToolText(t, mcpRequest(t, s, tok, eraModern, "tools/call", call))
+	rec := mcpRequest(t, s, tok, eraModern, "tools/call", call)
 	legacy, lErr := mcpToolText(t, mcpRequest(t, s, tok, eraLegacy, "tools/call", call))
-	if !mErr || !lErr || modern != legacy || !strings.Contains(modern, "read-only") {
-		t.Errorf("modern %v %q, legacy %v %q", mErr, modern, lErr, legacy)
+	if rec.Code != 403 || !lErr || !strings.Contains(legacy, "read-only") {
+		t.Fatalf("modern %d %s; legacy %v %q", rec.Code, rec.Body.String(), lErr, legacy)
+	}
+	challenge := rec.Header().Get("WWW-Authenticate")
+	for _, want := range []string{`Bearer error="insufficient_scope"`, `scope="write"`,
+		`resource_metadata="http://example.com/.well-known/oauth-protected-resource"`} {
+		if !strings.Contains(challenge, want) {
+			t.Errorf("WWW-Authenticate %q lacks %s", challenge, want)
+		}
+	}
+	// Four parameters, each a quoted string: eight quotes, none escaped. A
+	// quote from the tool's name inside one would end it early, and a client
+	// would read a scope of nothing.
+	if strings.Count(challenge, `"`) != 8 || strings.Contains(challenge, `\`) {
+		t.Errorf("WWW-Authenticate is not four quoted parameters: %s", challenge)
+	}
+	var body struct {
+		Error string `json:"error"`
+	}
+	if json.Unmarshal(rec.Body.Bytes(), &body); body.Error != legacy {
+		t.Errorf("the 403 says %q, the legacy refusal %q", body.Error, legacy)
 	}
 	var n int
 	s.db.QueryRow(`SELECT COUNT(*) FROM pages WHERE title = 'Read token wrote this'`).Scan(&n)
 	if n != 0 {
 		t.Errorf("%d page(s) written by a read token", n)
 	}
-	// A read tool works for it in the modern era.
+	// A read tool works for it in the modern era, and a write token gets no 403.
 	if _, isErr := mcpToolText(t, mcpRequest(t, s, tok, eraModern, "tools/call", `{"name":"whoami","arguments":{}}`)); isErr {
 		t.Error("whoami refused to a read token")
+	}
+	writer := mcpToken(t, s, uid, "write")
+	if rec := mcpRequest(t, s, writer, eraModern, "tools/call", call); rec.Code != 200 {
+		t.Errorf("a write token got %d", rec.Code)
+	}
+	// Any other refusal stays an isError result in the modern era too.
+	if text, isErr := mcpToolText(t, mcpRequest(t, s, tok, eraModern, "tools/call", `{"name":"get_page","arguments":{"page_id":"nope"}}`)); !isErr || strings.Contains(text, "read-only") {
+		t.Errorf("a read refusal: %v %q", isErr, text)
 	}
 }
 

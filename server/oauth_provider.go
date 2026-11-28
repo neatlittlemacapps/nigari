@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -120,6 +121,16 @@ func (s *Server) handleAuthorizationServerMetadata(w http.ResponseWriter, r *htt
 		// S256 ONLY. Advertising "plain" as well would let a client choose the
 		// version that protects nothing.
 		"code_challenge_methods_supported": []string{"S256"},
+		// A client may name itself by the https URL of its metadata document
+		// instead of registering (oauth_cimd.go). MCP 2026-07-28 prefers it to
+		// registration_endpoint, which it deprecates and nigari keeps for
+		// older clients.
+		"client_id_metadata_document_supported": true,
+		// Every answer /oauth/authorize redirects back carries iss, errors
+		// included (RFC 9207): a client talking to two servers can tell which
+		// one a code came from, and a code from the wrong one is not sent on
+		// to the other's token endpoint (mix-up attack).
+		"authorization_response_iss_parameter_supported": true,
 	})
 }
 
@@ -237,6 +248,20 @@ func (s *Server) handleOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 
 	// Errors BEFORE the redirect target is verified must never be redirected —
 	// that would make this endpoint an open relay for anyone's error page.
+	//
+	// A client named by a URL is read from its document first (oauth_cimd.go).
+	// When that fails the authorization stops here, unredirected: the
+	// redirect addresses are the document's, so none is verified yet.
+	if isClientMetadataURL(clientID) {
+		if err := s.refreshClientMetadata(r, clientID); err != nil {
+			status := 400
+			if errors.Is(err, errClientMetadataRate) {
+				status = 429
+			}
+			oauthError(w, status, "invalid_client", err.Error())
+			return
+		}
+	}
 	client, err := s.connectorClient(clientID)
 	if err != nil {
 		oauthError(w, 400, "invalid_client", "unknown client_id")
@@ -255,6 +280,7 @@ func (s *Server) handleOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 		if state != "" {
 			v.Set("state", state)
 		}
+		v.Set("iss", s.publicBase(r))
 		u.RawQuery = v.Encode()
 		http.Redirect(w, r, u.String(), http.StatusFound)
 	}
@@ -357,7 +383,11 @@ func (s *Server) handleOAuthApprove(w http.ResponseWriter, r *http.Request) {
 		httpErrorCode(w, 500, "server_error", "could not issue a code")
 		return
 	}
-	s.audit("human", u.ID, u.Name, "oauth_consent", "", "", client.Name+" ("+body.Scope+")")
+	who := client.Name
+	if host := clientMetadataHost(client.ID); host != "" {
+		who += " from " + host
+	}
+	s.audit("human", u.ID, u.Name, "oauth_consent", "", "", who+" ("+body.Scope+")")
 	writeJSON(w, map[string]string{"code": code})
 }
 
@@ -608,6 +638,14 @@ func (s *Server) sweepOAuth() {
 	cutoff := time.Now().UTC().Format(time.RFC3339Nano)
 	s.db.Exec(`DELETE FROM oauth_access WHERE expires_at < ?`, cutoff)
 	s.db.Exec(`DELETE FROM oauth_codes WHERE expires_at < ?`, cutoff)
+	// A metadata-URL client nobody has granted anything, not read for 30 days,
+	// is forgotten: anyone can make nigari store one by starting an
+	// authorization, and a row nobody uses would otherwise stay for good. It
+	// comes back from its document the next time it is used. The table stays
+	// small (one row per client), so the subqueries need no index of their own.
+	s.db.Exec(`DELETE FROM oauth_clients WHERE metadata_fetched_at != '' AND metadata_fetched_at < ?
+		AND id NOT IN (SELECT client_id FROM oauth_grants) AND id NOT IN (SELECT client_id FROM oauth_codes)`,
+		time.Now().UTC().Add(-30*24*time.Hour).Format(time.RFC3339Nano))
 }
 
 // ---- what the browser needs ------------------------------------------------
@@ -649,6 +687,15 @@ func (s *Server) handleOAuthRequestInfo(w http.ResponseWriter, r *http.Request) 
 		// first question somebody should be able to answer at a glance.
 		"instanceName": s.setting("instance_name", ""),
 		"host":         r.Host,
+		// The host a metadata-URL client's document came from, "" for a
+		// registered client. Its name is then what that host serves, not what
+		// a stranger typed, and the screen says where it is from (the
+		// draft's section 6.4, against a name that imitates another client).
+		"clientHost": clientMetadataHost(c.ID),
+		// The browser builds the redirect back to the client (code or
+		// access_denied), so it is told the issuer to put in it (RFC 9207),
+		// the same value the metadata names.
+		"issuer": s.publicBase(r),
 	})
 }
 

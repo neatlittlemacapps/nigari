@@ -51,6 +51,10 @@ type Server struct {
 	// in every real build; set only by tests, whose receiver lives on an address
 	// safeDial refuses by design (see webhooks.go).
 	webhookTransport http.RoundTripper
+	// clientMetadataTransport does the same for client metadata documents
+	// (oauth_cimd.go): nil in every real build, a loopback receiver in tests.
+	clientMetadataTransport http.RoundTripper
+	clientMetadataRate      *rateLimiter
 }
 
 // Close stops background maintenance and releases the database. Call on
@@ -147,6 +151,9 @@ func New(dataDir string, dist fs.FS) (*Server, error) {
 		// Passwords on shared pages, per link and address. A share password was
 		// checked as fast as anybody could send guesses.
 		sharePwRate: newRateLimiter(10, 5),
+		// Client metadata documents fetched for /oauth/authorize, per address.
+		// Anyone may send a URL there without signing in (oauth_cimd.go).
+		clientMetadataRate: newRateLimiter(20, 10),
 		stopCleanup: make(chan struct{}),
 	}
 	if err := s.seed(); err != nil {
