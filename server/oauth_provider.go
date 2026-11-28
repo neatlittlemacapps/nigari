@@ -586,6 +586,7 @@ func (s *Server) userForAccessToken(tok, ip string) *user {
 	}
 	u.TokenScope = scope
 	u.TokenKind = tokenKindOAuth
+	u.TokenID = grantID
 	if strings.TrimSpace(workspaces) != "" {
 		for _, w := range strings.Split(workspaces, ",") {
 			if w = strings.TrimSpace(w); w != "" {

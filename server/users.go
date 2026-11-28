@@ -51,6 +51,11 @@ type user struct {
 	// unrestricted (all the user's workspaces); non-nil is the allow-list.
 	// Cookie/session auth is always nil (unrestricted). Not serialized.
 	TokenWorkspaces []string `json:"-"`
+	// TokenID is the API token's id or the OAuth grant's id: the credential
+	// itself, which outlives the access tokens a grant hands out. Work that
+	// runs on after the request (an import task) checks it is still there,
+	// so revoking a credential stops what it started. Not serialized.
+	TokenID string `json:"-"`
 }
 
 type ctxKey int
@@ -196,6 +201,7 @@ func (s *Server) currentUser(r *http.Request) *user {
 				}
 				u.TokenScope = scope
 				u.TokenKind = tokenKindAPI
+				u.TokenID = id
 				if strings.TrimSpace(wsScope) != "" {
 					for _, w := range strings.Split(wsScope, ",") {
 						if w = strings.TrimSpace(w); w != "" {

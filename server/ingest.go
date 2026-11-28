@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 // Bulk import, without the content passing through the agent.
@@ -32,14 +31,18 @@ import (
 const (
 	ingestMaxBytes = 64 << 20 // upper limit for the fetched source
 	ingestMaxItems = 20000    // ripcord against endless sources
-	ingestKeepJobs = 20       // this many finished jobs stay retrievable
 )
 
-// --- Auftragsverwaltung ------------------------------------------------------
+// --- The job record ----------------------------------------------------------
 
+// ingestJob is an import's progress as get_import_status shows it. It is kept
+// in the import's task row (tasks.go), not in memory: a restart used to lose
+// every job, and only the last 20 were kept even without one.
 type ingestJob struct {
-	ID       string   `json:"job_id"`
-	Status   string   `json:"status"` // running | done | failed
+	ID string `json:"job_id"`
+	// Status is filled from the task row when the job is read: running,
+	// done, failed or cancelled (the words this tool has always used).
+	Status   string   `json:"status"`
 	Total    int      `json:"total"`
 	Created  int      `json:"created"`
 	Failed   int      `json:"failed"`
@@ -48,51 +51,46 @@ type ingestJob struct {
 	Target   string   `json:"target"`
 	Started  string   `json:"started_at"`
 	Finished string   `json:"finished_at,omitempty"`
-	// OwnerID: the registry is process wide and the jobs carry target details
-	// and row titles. Without an owner, anybody holding a job id could read the
-	// progress of somebody else's import.
-	OwnerID string `json:"-"`
+	// Reason says why a job failed or stopped (a restart, a revoked
+	// credential).
+	Reason string `json:"reason,omitempty"`
 }
 
-type ingestRegistry struct {
-	mu    sync.Mutex
-	jobs  map[string]*ingestJob
-	order []string
+// legacyImportStatus is a task status in get_import_status's words, which
+// older clients already poll for ("done").
+var legacyImportStatus = map[string]string{
+	taskWorking: "running", taskCompleted: "done", taskFailed: "failed", taskCancelled: "cancelled",
 }
 
-func newIngestRegistry() *ingestRegistry {
-	return &ingestRegistry{jobs: map[string]*ingestJob{}}
-}
-
-func (reg *ingestRegistry) add(j *ingestJob) {
-	reg.mu.Lock()
-	defer reg.mu.Unlock()
-	reg.jobs[j.ID] = j
-	reg.order = append(reg.order, j.ID)
-	// Keep only the last N — the jobs live in memory, not in the database. A
-	// restart loses the STATUS, not the work: pages already created are saved.
-	for len(reg.order) > ingestKeepJobs {
-		delete(reg.jobs, reg.order[0])
-		reg.order = reg.order[1:]
+// importJob reads an import as get_import_status answers it, for the
+// credential that started it only.
+func (s *Server) importJob(u *user, id string) (ingestJob, error) {
+	t, err := s.taskFor(u, id)
+	if err != nil || t.Kind != "import" {
+		return ingestJob{}, errTaskNotFound
 	}
+	var j ingestJob
+	json.Unmarshal(t.Progress, &j)
+	j.ID = t.ID
+	j.Status = legacyImportStatus[t.Status]
+	if t.Status != taskWorking && j.Finished == "" {
+		j.Finished = t.Updated
+	}
+	if t.Error != "" {
+		j.Reason = t.Error
+	} else if t.Status == taskCancelled {
+		j.Reason = t.StatusMessage
+	}
+	return j, nil
 }
 
-func (reg *ingestRegistry) get(id string) (ingestJob, bool) {
-	reg.mu.Lock()
-	defer reg.mu.Unlock()
-	j, ok := reg.jobs[id]
-	if !ok {
-		return ingestJob{}, false
+// importMessage is a task's statusMessage for an import in progress.
+func importMessage(j *ingestJob) string {
+	m := fmt.Sprintf("%d of %d record(s) written", j.Created, j.Total)
+	if j.Failed > 0 {
+		m += fmt.Sprintf(", %d failed", j.Failed)
 	}
-	return *j, true // a copy: the caller must not reach into the running job
-}
-
-func (reg *ingestRegistry) update(id string, fn func(*ingestJob)) {
-	reg.mu.Lock()
-	defer reg.mu.Unlock()
-	if j, ok := reg.jobs[id]; ok {
-		fn(j)
-	}
+	return m
 }
 
 // --- Fetching the source -----------------------------------------------------
@@ -541,17 +539,29 @@ func (s *Server) startIngest(u *user, spec ingestSpec) (string, error) {
 	}
 
 	job := &ingestJob{
-		ID: newID(), Status: "running", Total: len(items),
-		Target: target, Started: now(), Note: note, OwnerID: u.ID,
+		ID: newID(), Total: len(items),
+		Target: target, Started: now(), Note: note,
 	}
-	s.ingest.add(job)
-	go s.runIngest(job.ID, u.ID, parentID, workspaceID, items, nameToID)
+	// Stored before the id goes back: a client may poll the moment it has
+	// it, and the Tasks extension forbids a handle tasks/get cannot find.
+	owner := taskOwnerOf(u)
+	if err := s.createTask(owner, job.ID, "import", importMessage(job), job); err != nil {
+		return "", err
+	}
+	go s.runIngest(job, owner, parentID, workspaceID, items, nameToID)
 	return job.ID, nil
 }
 
-// runIngest creates the entries. Runs in the background and keeps writing the
-// progress into the job, so an agent can watch.
-func (s *Server) runIngest(jobID, userID, parentID, workspaceID string, items []ingestItem, nameToID map[string]string) {
+// runIngest creates the entries. Runs in the background and writes the
+// progress into the task row after each record, so an agent can watch.
+//
+// Before each record it checks that the task is still working (a cancel
+// stops it there; records already written stay) and that the credential that
+// started it still exists: revoking a token is how a person stops an agent,
+// and an import of thousands of records must not run on for minutes after.
+func (s *Server) runIngest(job *ingestJob, owner taskOwner, parentID, workspaceID string, items []ingestItem, nameToID map[string]string) {
+	userID := owner.userID
+	defer s.pagesChanged()
 	var pos float64
 	if parentID != "" {
 		s.db.QueryRow(`SELECT COALESCE(MAX(position), 0) + 1 FROM pages WHERE parent_id = ?`, parentID).Scan(&pos)
@@ -564,6 +574,18 @@ func (s *Server) runIngest(jobID, userID, parentID, workspaceID string, items []
 	}
 
 	for _, it := range items {
+		if !s.credentialAlive(owner) {
+			job.Finished = now()
+			s.endTask(job.ID, taskFailed, taskRevoked, taskRevoked, job)
+			return
+		}
+		if !s.progressTask(job.ID, importMessage(job), job) {
+			// Cancelled. endTask keeps the cancelled state and stores the
+			// final count.
+			job.Finished = now()
+			s.endTask(job.ID, taskCancelled, "", "", job)
+			return
+		}
 		content := "[]"
 		if it.md != "" {
 			if c, err := mdToBlocksJSON(it.md); err == nil {
@@ -576,12 +598,10 @@ func (s *Server) runIngest(jobID, userID, parentID, workspaceID string, items []
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'workspace')`,
 			id, parent, it.title, content, pos, ts, ts, workspaceID, userID)
 		if err != nil {
-			s.ingest.update(jobID, func(j *ingestJob) {
-				j.Failed++
-				if len(j.Errors) < 10 {
-					j.Errors = append(j.Errors, fmt.Sprintf("%s: %v", it.title, err))
-				}
-			})
+			job.Failed++
+			if len(job.Errors) < 10 {
+				job.Errors = append(job.Errors, fmt.Sprintf("%s: %v", it.title, err))
+			}
 			continue
 		}
 		pos++
@@ -595,11 +615,9 @@ func (s *Server) runIngest(jobID, userID, parentID, workspaceID string, items []
 			if len(patch) > 0 {
 				b, _ := json.Marshal(patch)
 				if _, err := s.mcpSetProperties(id, b, nil); err != nil {
-					s.ingest.update(jobID, func(j *ingestJob) {
-						if len(j.Errors) < 10 {
-							j.Errors = append(j.Errors, fmt.Sprintf("%s: properties: %v", it.title, err))
-						}
-					})
+					if len(job.Errors) < 10 {
+						job.Errors = append(job.Errors, fmt.Sprintf("%s: properties: %v", it.title, err))
+					}
 				}
 			}
 		}
@@ -609,12 +627,9 @@ func (s *Server) runIngest(jobID, userID, parentID, workspaceID string, items []
 			s.fillStatusDefaults(parentID, id)
 		}
 		s.reindexPage(id)
-		s.ingest.update(jobID, func(j *ingestJob) { j.Created++ })
+		job.Created++
 	}
 
-	s.ingest.update(jobID, func(j *ingestJob) {
-		j.Status = "done"
-		j.Finished = now()
-	})
-	s.pagesChanged()
+	job.Finished = now()
+	s.endTask(job.ID, taskCompleted, importMessage(job), "", job)
 }

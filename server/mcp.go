@@ -1288,7 +1288,10 @@ func (s *Server) mcpCallAsk(u *user, name string, rawArgs json.RawMessage, publi
 			if err != nil {
 				return "", err
 			}
-			j, _ := s.ingest.get(jobID)
+			j, err := s.importJob(u, jobID)
+			if err != nil {
+				return "", err
+			}
 			b, _ := json.Marshal(map[string]any{
 				"job_id": jobID, "status": j.Status, "total": j.Total, "target": j.Target,
 				"note": j.Note,
@@ -1296,12 +1299,12 @@ func (s *Server) mcpCallAsk(u *user, name string, rawArgs json.RawMessage, publi
 			})
 			return string(b), nil
 		case "get_import_status":
-			j, ok := s.ingest.get(args.JobID)
-			if ok && j.OwnerID != "" && j.OwnerID != u.ID {
-				ok = false // somebody else's job: treat it as not present
-			}
-			if !ok {
-				return "", fmt.Errorf("import job %q not found — job status is kept in memory, so it is lost if the server restarts (pages already created are not)", args.JobID)
+			// The task row, read for this credential only: another person's
+			// job, or one a wider token of the same person started, reads as
+			// not present.
+			j, err := s.importJob(u, args.JobID)
+			if err != nil {
+				return "", fmt.Errorf("import job %q not found — a finished import is kept for 24 hours (pages already created stay)", args.JobID)
 			}
 			b, _ := json.Marshal(j)
 			return string(b), nil
