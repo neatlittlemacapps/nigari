@@ -82,7 +82,8 @@ and repeats its routing in headers. Methods answered:
 | --- | --- |
 | `server/discover` | The supported versions, the capabilities, `serverInfo` (name, version, icons) and the same instructions `initialize` gives |
 | `tools/list` | The same catalogue as the legacy era, in the same order |
-| `tools/call` | The same result as the legacy era |
+| `tools/call` | The same result as the legacy era, except `import_url` for a client that declares the Tasks extension (see [Tasks](#tasks)) |
+| `tasks/get`, `tasks/update`, `tasks/cancel` | A task's state, an acknowledgement, a cancel (see [Tasks](#tasks)) |
 | `notifications/*` | `202`, no body |
 
 `ping` and `logging/setLevel` are not answered in this era, because the
@@ -107,7 +108,7 @@ tool runs:
 | --- | --- | --- |
 | `MCP-Protocol-Version` | the version in `_meta` | every request |
 | `Mcp-Method` | `method` | every request |
-| `Mcp-Name` | the tool's `name`, or the `uri` | `tools/call` and `prompts/get` (`name`), `resources/read` (`uri`) |
+| `Mcp-Name` | the tool's `name`, the `uri`, or the `taskId` | `tools/call` and `prompts/get` (`name`), `resources/read` (`uri`), `tasks/get`, `tasks/update` and `tasks/cancel` (`taskId`) |
 
 A value that is not plain ASCII is sent as `=?base64?<Base64 of the UTF-8>?=`
 and decoded before the comparison. A header that is missing or disagrees gets
@@ -121,6 +122,7 @@ way, so a gateway that routes on them cannot be passed by leaving `_meta` out. T
 | `-32022` | 400 | the version in `_meta` is not one nigari speaks | `supported` (every version nigari answers) and `requested` |
 | `-32602` | 400 | `_meta` lacks the client's capabilities, its version is not a string, or `tools/call` params are unreadable | — |
 | `-32601` | 404 | the method is not answered in this era | — |
+| `-32021` | 400 | a `tasks/*` method from a client that did not declare the Tasks extension on that request | `requiredCapabilities` |
 | none | 403 | a read-only credential calls a write tool. The body is `{"error":"this API token is read-only; \"<tool>\" requires a write token"}` and the answer carries `WWW-Authenticate: Bearer error="insufficient_scope", scope="write", resource_metadata="<base>/.well-known/oauth-protected-resource"`, so a client can ask the person for more access | — |
 
 A tool that refuses for any other reason still answers with an `isError`
@@ -207,6 +209,43 @@ Legacy clients (the 2025 revisions) and 2026-07-28 clients without the
 capability get the old behaviour, unchanged. This is a safety net for the
 person, not a security boundary: a client can leave the capability out, as it
 always could.
+
+#### Tasks
+
+An import can take minutes, so a 2026-07-28 client that declares the Tasks
+extension gets `import_url` as a task instead of a job id. The client declares
+it in each request's capabilities:
+
+```json
+"io.modelcontextprotocol/clientCapabilities": {"extensions": {"io.modelcontextprotocol/tasks": {}}}
+```
+
+`server/discover` lists the same extension under `capabilities.extensions`.
+nigari decides which calls become tasks; today that is `import_url` alone.
+Its answer is the task, stored before it is sent:
+
+```json
+{"resultType": "task", "taskId": "…", "status": "working", "statusMessage": "0 of 120 record(s) written",
+ "createdAt": "…", "lastUpdatedAt": "…", "ttlMs": 86400000, "pollIntervalMs": 2000}
+```
+
+| Method | Params | Answer |
+| --- | --- | --- |
+| `tasks/get` | `taskId` | The task as above, with `resultType: "complete"`. Once it has ended: `completed` carries `result`, the import's record as `get_import_status` shows it; `failed` carries `error` with the reason; `cancelled` carries nothing more |
+| `tasks/cancel` | `taskId` | An empty acknowledgement. The import stops at its next record, and the records already written stay. A task that has already ended keeps its state |
+| `tasks/update` | `taskId`, `inputResponses` | An empty acknowledgement. An import asks for no input, so any answer in `inputResponses` is refused |
+
+Poll no faster than `pollIntervalMs`. A task belongs to the credential that
+started it: another person, or another token of the same person with a
+different reach, gets "Failed to retrieve task: Task not found" (`-32602`),
+the same answer as an id that does not exist. An ended task is kept for 24
+hours (`ttlMs`), then deleted.
+
+A task reads as `failed` when nigari restarted while it ran ("interrupted by a
+restart"), or when the token or connection that started it was revoked or its
+account deactivated, which stops it at its next record. A client without the
+extension gets the `job_id` answer and polls `get_import_status`, which reads
+the same stored record.
 
 ### What a tool returns
 
@@ -1848,7 +1887,9 @@ addresses (where cloud metadata services live), the shared carrier range
 self-hosted source needs the operator to start the server with
 `NIGARI_IMPORT_ALLOW_PRIVATE=1`; an agent cannot open that door.
 
-Returns immediately with `{job_id, status, total, target, note, next}`. Ceilings:
+Returns immediately with `{job_id, status, total, target, note, next}`, or a
+task for a 2026-07-28 client that declares the Tasks extension (see
+[Tasks](#tasks)). The job is stored before the answer is sent. Ceilings:
 64 MB of fetched source, 20000 records.
 
 Errors: `url is required`; `title is required — name the field each record's
@@ -1864,15 +1905,18 @@ has: …`; `database "…" not found`.
 | `job_id` | string | yes |
 
 Poll every few seconds until the status is done. The answer carries the whole
-job: job_id, status (running, done or failed), total, created, failed, up to ten
-errors, target, started_at and finished_at.
+job: job_id, status (running, done, failed or cancelled), total, created,
+failed, up to ten errors, target, started_at, finished_at, and a reason when
+it failed or was cancelled.
 
-Job status lives in memory, not in the database, and only the last 20 jobs are
-kept. A restart loses the status, never the work: pages already created are
-saved. Somebody else's job reads as not found.
+The job is stored in the database and kept for 24 hours after it ends. A job
+that was running when nigari restarted reads as failed, with the reason
+"interrupted by a restart"; pages already created stay. A job belongs to the
+credential that started it: somebody else's, or one another token of yours
+with a different reach started, reads as not found.
 
-Errors: `import job "…" not found — job status is kept in memory, so it is lost
-if the server restarts (pages already created are not)`.
+Errors: `import job "…" not found — a finished import is kept for 24 hours
+(pages already created stay)`.
 
 ## Presence
 

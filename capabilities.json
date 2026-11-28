@@ -332,7 +332,7 @@
       "wiki": "wiki/account.md"
     },
     "infrastructure.transport": {
-      "summary": "Health, live events, presence feed, realtime editing, MCP endpoint (both protocol eras, with the protocol methods initialize, ping, server/discover, tools/list, tools/call), the agent skill bundle, uploaded files, the app itself, licences",
+      "summary": "Health, live events, presence feed, realtime editing, MCP endpoint (both protocol eras, with the protocol methods initialize, ping, server/discover, tools/list, tools/call, tasks/get, tasks/update, tasks/cancel), the agent skill bundle, uploaded files, the app itself, licences",
       "agent": "infrastructure",
       "rest": ["GET /api/health", "GET /api/events", "GET /api/presence", "GET /collab/{id}", "/mcp", "/mcp/{token}", "GET /api/skill", "GET /files/", "/", "GET /licenses", "GET /api/public-base", "GET /ics/{token}"],
       "wiki": "wiki/self-hosting.md"
