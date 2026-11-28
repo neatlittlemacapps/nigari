@@ -23,33 +23,28 @@ import (
 // blueprint. Documents are not copied either: they are content, and a workspace
 // full of somebody else's notes is not an empty start.
 
-// blueprintWorkspace creates a new workspace with the structure of an existing
-// one: its rules, its databases, their schemas and their views.
-func (s *Server) blueprintWorkspace(u *user, name, sourceWS string) (string, error) {
-	name = strings.TrimSpace(name)
-	if name == "" {
-		return "", fmt.Errorf("name is required")
-	}
-	if !s.isMember(u.ID, sourceWS) || !s.credentialMayEnter(u, sourceWS) {
-		return "", fmt.Errorf("workspace %q not found", sourceWS)
-	}
+// blueprintDB is one database a blueprint copies.
+type blueprintDB struct {
+	id, title, icon string
+}
 
-	// The databases of the source, and their configuration. Drained before
-	// anything else runs — with SetMaxOpenConns(1) a query inside an open cursor
-	// blocks the whole server.
-	type source struct {
-		id, title, icon string
-	}
-	var sources []source
+// blueprintDBs are the databases of a workspace the caller may read, in
+// sidebar order: what a blueprint of it copies. One function, so the
+// confirmation question (mcp_elicit.go) counts the same databases the copy
+// makes.
+func (s *Server) blueprintDBs(u *user, sourceWS string) ([]blueprintDB, error) {
+	// Drained before anything else runs — with SetMaxOpenConns(1) a query
+	// inside an open cursor blocks the whole server.
+	var sources []blueprintDB
 	rows, err := s.db.Query(`
 		SELECT id, title, icon FROM pages
 		WHERE workspace_id = ? AND type = 'collection' AND trashed_at IS NULL
 		ORDER BY position`, sourceWS)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	for rows.Next() {
-		var c source
+		var c blueprintDB
 		if rows.Scan(&c.id, &c.title, &c.icon) == nil {
 			sources = append(sources, c)
 		}
@@ -63,7 +58,24 @@ func (s *Server) blueprintWorkspace(u *user, name, sourceWS string) (string, err
 			readable = append(readable, c)
 		}
 	}
-	sources = readable
+	return readable, nil
+}
+
+// blueprintWorkspace creates a new workspace with the structure of an existing
+// one: its rules, its databases, their schemas and their views.
+func (s *Server) blueprintWorkspace(u *user, name, sourceWS string) (string, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return "", fmt.Errorf("name is required")
+	}
+	if !s.isMember(u.ID, sourceWS) || !s.credentialMayEnter(u, sourceWS) {
+		return "", fmt.Errorf("workspace %q not found", sourceWS)
+	}
+
+	sources, err := s.blueprintDBs(u, sourceWS)
+	if err != nil {
+		return "", err
+	}
 	if len(sources) == 0 {
 		return "", fmt.Errorf("workspace %q has no databases to copy: nothing to use as a blueprint", sourceWS)
 	}

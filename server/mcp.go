@@ -721,7 +721,7 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 	case "tools/list":
 		rpcResult(w, req.ID, map[string]any{"tools": mcpTools})
 	case "tools/call":
-		result, bad, _ := s.mcpToolsCall(r, u, req.Params)
+		result, bad, _ := s.mcpToolsCall(r, u, req.Params, nil)
 		if bad != "" {
 			rpcError(w, req.ID, rpcInvalidParams, bad)
 			return
@@ -740,6 +740,14 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 // Cloudflare tunnel or request host) — needed so that share_page hands back a
 // link that actually works.
 func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBase string) (string, error) {
+	return s.mcpCallAsk(u, name, rawArgs, publicBase, nil)
+}
+
+// mcpCallAsk is mcpCall with the confirmation gate (mcp_elicit.go, spec 027
+// US2): ask carries a modern client's elicitation capability and the answer
+// of a retry. nil switches the gate off, which is every caller but the
+// modern era's tools/call.
+func (s *Server) mcpCallAsk(u *user, name string, rawArgs json.RawMessage, publicBase string, ask *mcpAsk) (string, error) {
 	userID := u.ID
 	var args struct {
 		Query  string `json:"query"`
@@ -1497,6 +1505,19 @@ func (s *Server) mcpCall(u *user, name string, rawArgs json.RawMessage, publicBa
 		default:
 			return "", fmt.Errorf("unknown tool %q", name)
 		}
+	}
+
+	// The confirmation gate, after every gate above and before the act: a
+	// person is asked only about what this credential may do, and a yes is
+	// checked by all of them again (FR-009). A question or a no returns here,
+	// with nothing changed, nothing cached and no generic log entry.
+	if done, reply, err := s.confirmGate(u, name, rawArgs, confirmArgs{
+		PageID: args.PageID, EmbedID: args.EmbedID, ViewID: args.ViewID,
+		WorkspaceID: args.WorkspaceID, FromWorkspace: args.FromWorkspace, Tag: args.Tag,
+		Name: args.Name, Password: args.Password, ExpiresInDays: args.ExpiresInDays,
+		Trashed: args.Trashed, Public: args.Public,
+	}, ask); done {
+		return reply, err
 	}
 
 	result, err := run()
