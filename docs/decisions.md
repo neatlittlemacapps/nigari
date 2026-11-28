@@ -7,6 +7,66 @@ entries are not edited away.
 
 ---
 
+## 2026-11-28 — The agent skill over MCP: one generator, no client declaration
+
+Spec 027, phase E (US4, plan D8).
+
+- **Served to any 2026-07-28 client.** The plan (T030) said "for a client
+  that declared `io.modelcontextprotocol/skills`". The extension defines no
+  client declaration: a client lists skills after it sees the server declare
+  the extension. Gating on a declaration no host sends would hide the skills
+  from every client. The legacy era does not get them; the extension is
+  written for 2026-07-28.
+- **`resources` is declared, and `resources/list` answers an empty list.**
+  The extension requires the resources capability (its files are read
+  through `resources/read`). Skill files are found through `skills/list`;
+  listing them again in `resources/list` would be a second index of the same
+  files, and nigari serves no other resource yet (pages as resources is
+  phase 6).
+- **One generator for the zip and MCP** (`skill.go`). `skillMain` takes
+  `overMCP`: the built-in skill names no workspace and points to the
+  workspace skills instead. The zip from `GET /api/skill` came out
+  byte-identical to before for an account with a workspace, checked by
+  comparing both outputs with rules and two workspaces. With no workspace
+  in reach, `reference/block.md` now reads "in the workspace you work in"
+  instead of an empty id. *Turned down*: static playbook files (plan D8).
+- **A workspace skill holds the rules, the readable database templates and
+  the block.** The name and template titles travel in the untrusted frame,
+  the rules in the frame that says to follow them. The description names the
+  workspace by id, not by name: hosts show descriptions to the model outside
+  any frame, and a name is whatever a person typed (code review). Skill names
+  follow the Agent Skills rules (lowercase, digits, hyphens, 64 at most); the
+  start of the workspace id tells apart two workspaces of the account with
+  the same name, counted over all of the account's workspaces so two tokens
+  never get one name for two workspaces.
+- **Five minutes, private.** `ttlMs` 300000 so a rule an admin changes
+  reaches agents within minutes (acceptance 5); `cacheScope: "private"`
+  because the list depends on the credential (FR-017). The skill methods
+  share the MCP rate limit.
+- **The how-to leaves the tool descriptions now** (owner, 2026-11-28, "Now",
+  after the options A ship as is / B trim now / C two sets of descriptions).
+  SC-005 asks for a smaller start: every agent reads every tool description
+  at the start of every conversation. The Markdown spelling (page links,
+  diagrams, blocks; in `create_page` and `write_content`), the finer points of
+  `set_view`, the `import_url` Trello example and the blueprint rationale of
+  `workspace` move into `reference/howto.md`, in the MCP skill and in the
+  zip. Measured on the tool list: 55,653 bytes before, 52,811 after (2,842
+  fewer, 5.1%); descriptions 18,041 to 16,094. Each description still NAMES
+  what moved and points to the file: `pageLinkHint`'s own history says a
+  feature nobody is told about goes unused, so the pointer keeps it visible
+  to an agent that never loads the skill. *Turned down*: A (SC-005 unmet), C
+  (two descriptions per tool to keep in step, for clients that mostly cannot
+  load skills yet either). More can follow the same way.
+- **Upgrade step 7: a partial index for database templates**
+  (`idx_pages_db_templates`, on `workspace_id` where `is_template = 1 AND
+  template_of != ''`). Every skill request lists each workspace's templates,
+  and `pages` had no index on either column, so each request read the whole
+  table once per workspace (code review). *Turned down*: caching the skills
+  in memory (a second truth to invalidate on every rule and template
+  change).
+
+---
+
 ## 2026-11-28 — An import is a stored task; a workspace copy is one transaction
 
 Spec 027, phase D (US3, plan D6) and #1133.

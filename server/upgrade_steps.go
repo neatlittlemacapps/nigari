@@ -29,6 +29,7 @@ func upgradeSteps() []*goose.Migration {
 		goose.NewGoMigration(4, &goose.GoFunc{RunTx: formUploads}, nil),
 		goose.NewGoMigration(5, &goose.GoFunc{RunTx: clientMetadataFetched}, nil),
 		goose.NewGoMigration(6, &goose.GoFunc{RunTx: mcpTasksTable}, nil),
+		goose.NewGoMigration(7, &goose.GoFunc{RunTx: databaseTemplatesIndex}, nil),
 	}
 }
 
@@ -380,6 +381,21 @@ func formUploads(ctx context.Context, tx *sql.Tx) error {
 func clientMetadataFetched(ctx context.Context, tx *sql.Tx) error {
 	if _, err := tx.Exec(`ALTER TABLE oauth_clients ADD COLUMN metadata_fetched_at TEXT NOT NULL DEFAULT ''`); err != nil {
 		return fmt.Errorf("add oauth_clients.metadata_fetched_at: %w", err)
+	}
+	return nil
+}
+
+// databaseTemplatesIndex is step 7 (spec 027 phase E): the database templates
+// of a workspace, found without reading every page. The skills an agent
+// loads over MCP list each workspace's templates on every request
+// (mcp_skills.go), and pages had no index on workspace_id or is_template, so
+// each request read the whole table once per workspace (code review). The
+// index is partial: templates are a handful of rows among all the pages, and
+// a query states the same two conditions to use it.
+func databaseTemplatesIndex(ctx context.Context, tx *sql.Tx) error {
+	if _, err := tx.Exec(`CREATE INDEX idx_pages_db_templates ON pages(workspace_id)
+		WHERE is_template = 1 AND template_of != ''`); err != nil {
+		return fmt.Errorf("create idx_pages_db_templates: %w", err)
 	}
 	return nil
 }

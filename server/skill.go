@@ -91,23 +91,28 @@ func (s *Server) buildSkill(u *user, base string, chosen string) []skillDoc {
 	}
 
 	return []skillDoc{
-		{"nigari/SKILL.md", s.skillMain(base, main, all)},
+		{"nigari/SKILL.md", s.skillMain(base, main, all, false)},
 		{"nigari/reference/tools.md", skillTools()},
+		{"nigari/reference/howto.md", skillHowto()},
 		{"nigari/reference/block.md", skillBlock(base, main)},
 		{"nigari/README.md", skillReadme(base)},
 	}
 }
 
+// skillDescription is the built-in skill's description, in its SKILL.md and in
+// skills/list alike.
+const skillDescription = "Work with this team's nigari instance — the shared workspace where decisions, tasks and documentation live. Use at the START of any task that touches project knowledge, and whenever the user says to record, look up or file something. Also installs the standing rules into this repo so they survive a lost context."
+
 // skillMain is what the agent reads when the skill is invoked.
-func (s *Server) skillMain(base string, main *skillWorkspace, all []skillWorkspace) string {
-	name, id := "your workspace", ""
-	if main != nil {
-		name, id = main.Name, main.ID
-	}
+//
+// overMCP is the built-in skill served over MCP (mcp_skills.go): one text for
+// every workspace, so it names none. What the zip says about the chosen
+// workspace and the others, each workspace's own skill says there.
+func (s *Server) skillMain(base string, main *skillWorkspace, all []skillWorkspace, overMCP bool) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, `---
 name: nigari
-description: Work with this team's nigari instance — the shared workspace where decisions, tasks and documentation live. Use at the START of any task that touches project knowledge, and whenever the user says to record, look up or file something. Also installs the standing rules into this repo so they survive a lost context.
+description: `+skillDescription+`
 ---
 
 # Working with nigari
@@ -115,9 +120,7 @@ description: Work with this team's nigari instance — the shared workspace wher
 nigari at %s is where this team keeps what it knows: decisions and why they
 were made, what is being worked on, and the documentation that outlives the
 conversation. It is reachable over MCP, so you can read and write it directly.
-
-Main workspace: **%s** (`+"`%s`"+`)
-
+%s
 ## If the tools are not there yet
 
 The endpoint is `+"`%s/mcp`"+`. Most clients sign in from that address alone —
@@ -188,9 +191,11 @@ time.
 **Read before you write.** `+"`search`"+` and `+"`get_page`"+` are cheap. A
 second page about a thing that already has one is worse than no page.
 
-`, base, name, id, strings.TrimRight(base, "/"))
+`, base, skillMainWorkspace(main, overMCP), strings.TrimRight(base, "/"))
 
-	if main != nil && strings.TrimSpace(main.Rules) != "" {
+	if overMCP {
+		b.WriteString("## The rules of each workspace\n\nEach workspace you can reach that has rules or database templates has a skill of\nits own here, named `nigari-` and the workspace's name. Load the one for the\nworkspace you are about to work in: it holds that workspace's rules, its\ntemplates and the block to install. `get_workspace(workspace_id)` returns the\nlive rules at any moment, and they outrank this file.\n\n")
+	} else if main != nil && strings.TrimSpace(main.Rules) != "" {
 		b.WriteString("## The rules of this workspace\n\n")
 		b.WriteString("Written by the people who work here. They are the authority; re-read them\nwith `get_workspace()` when you return, because they change and this file does\nnot.\n\n")
 		for _, line := range strings.Split(strings.TrimSpace(main.Rules), "\n") {
@@ -201,7 +206,7 @@ second page about a thing that already has one is worse than no page.
 		b.WriteString("## The rules of this workspace\n\nNone are written yet. `get_workspace()` will say so too. If you notice conventions\nwhile working here, offer to draft some — `propose_workspace_rules` leaves a\nproposal for a person to approve, it never sets them itself.\n\n")
 	}
 
-	if len(all) > 1 {
+	if len(all) > 1 && !overMCP {
 		b.WriteString("## The other workspaces you can reach\n\n")
 		for _, w := range all {
 			if main != nil && w.ID == main.ID {
@@ -217,8 +222,9 @@ second page about a thing that already has one is worse than no page.
 ` + "`get_page`, `search`, `list`, `create_page`, `write_content`, `update_page`" + `
 for documents; ` + "`create_database`, `create_rows`, `query_rows`, `set_properties`," + `
 ` + "`update_schema`, `set_view`" + ` for collections. The full list with what each is
-for is in ` + "`reference/tools.md`" + `, and ` + "`whoami`" + ` tells you at any moment what
-this connection may actually do.
+for is in ` + "`reference/tools.md`" + `, the spelling and worked examples the tool
+descriptions leave out are in ` + "`reference/howto.md`" + `, and ` + "`whoami`" + ` tells
+you at any moment what this connection may actually do.
 
 A note on vocabulary that will otherwise confuse you: what the interface calls a
 **Collection** the tools call a **database**. Same thing. People see "Collection"
@@ -238,13 +244,27 @@ are not missing by accident; they are closed to agents on purpose.
 	return b.String()
 }
 
+// skillMainWorkspace is the line that names the main workspace, with the
+// blank line around it, as the zip has always had it. The built-in skill over
+// MCP names none.
+func skillMainWorkspace(main *skillWorkspace, overMCP bool) string {
+	if overMCP {
+		return ""
+	}
+	name, id := "your workspace", ""
+	if main != nil {
+		name, id = main.Name, main.ID
+	}
+	return fmt.Sprintf("\nMain workspace: **%s** (`%s`)\n", name, id)
+}
+
 // skillBlock is the part that survives a lost context. Kept deliberately short:
 // it is pasted into a file that every session reads, so every line costs
 // attention on every future task, and a long block is one people delete.
 func skillBlock(base string, main *skillWorkspace) string {
-	name, id := "the workspace", ""
+	where := "in the workspace you work in"
 	if main != nil {
-		name, id = main.Name, main.ID
+		where = fmt.Sprintf("workspace **%s** (`%s`)", main.Name, main.ID)
 	}
 	return fmt.Sprintf(`# The block to install
 
@@ -262,7 +282,7 @@ deletes.
 ## This project is documented in nigari — use it at every step
 
 Decisions, tasks and documentation live at %s,
-workspace **%s** (`+"`%s`"+`), reachable over MCP. It is not a place to file
+%s, reachable over MCP. It is not a place to file
 things at the end; it is where the work is recorded while it happens.
 
 - **Before starting anything that takes more than a moment:** `+"`working_on(page_id, agent, label, note)`"+`,
@@ -291,7 +311,61 @@ A skill is loaded when it is invoked. `+"`CLAUDE.md`"+` and `+"`AGENTS.md`"+` ar
 read at the start of every session, by every agent, without anybody remembering
 to ask. The rules were being forgotten because of where they were kept, not
 because agents are careless — so the fix is where they are kept.
-`, base, name, id)
+`, base, where)
+}
+
+// skillHowto is the how-to the tool descriptions used to carry in full (spec
+// 027, SC-005; owner, 2026-11-28: cut it from the descriptions now). Every
+// agent reads every description on every turn; this file only when a task
+// calls for it. The descriptions still name each feature and point here, so
+// an agent that never loads the skill knows the feature exists.
+func skillHowto() string {
+	return `# How to: the details the tool descriptions leave out
+
+## Writing Markdown (write_content, create_page)
+
+` + pageLinkHint + `
+
+` + diagramHint + `
+
+` + blockSpellingHint + `
+
+## Views (set_view)
+
+- A board groups by a select, a multiselect or a relation property; a row with
+  several tags appears under each of them.
+- A chart: ` + "`group_by`" + ` "__row" draws one bar per row, with ` + "`aggregate`" + ` sum and
+  ` + "`aggregate_property`" + `. To put a chart into a document, ` + "`embed_database`" + ` with its
+  ` + "`view_id`" + `.
+- ` + "`type`" + ` with ` + "`view_id`" + ` changes the view's layout: every other setting stays (a
+  table's widths and order, a board's lanes, a chart's settings, kept unused
+  and back when the type returns), and what the new type needs is filled in
+  when the view has none that works (a board: the first select or status; a
+  calendar or timeline: the first date property; a chart: a count by the first
+  property it can group by). The answer names what was chosen, and a
+  ` + "`group_by`" + ` or ` + "`date_prop`" + ` in the same call wins.
+- A table: ` + "`column_order`" + ` sets this view's column order without changing other
+  views or the schema; ` + "`get_collection`" + ` returns it on the view as colOrder.
+- A table or list groups with ` + "`group_by`" + `, and with ` + "`period`" + ` for a date,
+  ` + "`show_empty_groups`" + `, ` + "`hidden_groups`" + `, ` + "`group_reverse`" + ` and ` + "`status_groups`" + `. A
+  board changed to a table or list stays grouped by its columns' property.
+
+## A workspace from another one (workspace, from_workspace)
+
+There is no separate template object on purpose: the workspace you point at
+is the blueprint, so it cannot drift out of step with how you actually work.
+
+## Bulk import (import_url)
+
+A Trello board, as an example of every part of the mapping:
+
+` + "```json" + `
+{"url": "https://api.trello.com/1/boards/ID?cards=all&lists=all&key=K&token=T",
+ "items": "cards", "title": "name", "markdown": "desc", "database_id": "...",
+ "properties": {"Status": "idList", "Due": "due", "Labels": "labels[].name"},
+ "resolve": {"idList": {"from": "lists", "match": "id", "to": "name"}}}
+` + "```" + `
+`
 }
 
 func skillTools() string {

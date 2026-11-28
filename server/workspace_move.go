@@ -88,6 +88,36 @@ func (s *Server) moveSubtreeToWorkspace(userID, pageID, targetWS string, tokenOK
 	if _, err := tx.Exec(`UPDATE pages SET workspace_id = ?, updated_at = ? WHERE id IN (`+ph+`)`, args...); err != nil {
 		return 0, err
 	}
+	// A database's templates go with it. They hang off it by template_of,
+	// not by parent_id, so the subtree walk never finds them; left behind
+	// they were orphans in the old workspace, listed there and usable from
+	// nowhere (#1137).
+	var templates []string
+	trows, err := tx.Query(`SELECT id FROM pages WHERE is_template = 1 AND template_of IN (`+ph+`)`, args[2:]...)
+	if err != nil {
+		return 0, err
+	}
+	for trows.Next() {
+		var id string
+		if trows.Scan(&id) == nil {
+			templates = append(templates, id)
+		}
+	}
+	trows.Close()
+	if len(templates) > 0 {
+		tph := strings.TrimSuffix(strings.Repeat("?,", len(templates)), ",")
+		targs := []any{targetWS, now()}
+		for _, id := range templates {
+			targs = append(targs, id)
+		}
+		if _, err := tx.Exec(`UPDATE pages SET workspace_id = ?, updated_at = ? WHERE id IN (`+tph+`)`, targs...); err != nil {
+			return 0, err
+		}
+		if _, err := tx.Exec(`UPDATE files SET workspace_id = ? WHERE page_id IN (`+tph+`)`,
+			append([]any{targetWS}, targs[2:]...)...); err != nil {
+			return 0, err
+		}
+	}
 	// The file index carries the workspace as well (files.go) and the file list
 	// filters on it. Left behind, a moved page's files stayed listed in the
 	// workspace it came from, and were missing from the one it is in now.
@@ -98,7 +128,7 @@ func (s *Server) moveSubtreeToWorkspace(userID, pageID, targetWS string, tokenOK
 	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
-	for _, id := range ids {
+	for _, id := range append(ids, templates...) {
 		s.reindexPage(id)
 	}
 	s.pagesChanged()

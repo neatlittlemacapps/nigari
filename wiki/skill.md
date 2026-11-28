@@ -15,8 +15,8 @@ is [MCP tools](mcp-tools.md).
 ## What it is
 
 A file named `nigari-skill.zip`, generated at the moment you press the button.
-It contains four Markdown documents in a folder called `nigari/`, nothing
-executable, nothing binary. Every download builds all four again from the
+It contains five Markdown documents in a folder called `nigari/`, nothing
+executable, nothing binary. Every download builds all five again from the
 instance as it is right then.
 
 It is **not** a static file that ships with the product. A generic playbook
@@ -102,6 +102,29 @@ it first. Leave it out and one of your workspaces is picked for you; there is no
 "default workspace" setting anywhere in the product, and the one picked need not
 be the one you have open. Pass `workspace` whenever it matters which you get.
 
+## Or over MCP, without downloading anything
+
+An agent connected with a current client (MCP revision 2026-07-28) does not need
+the zip at all: nigari serves the same skill over MCP, file by file, and the
+client loads it when a task calls for it. Nothing to unpack, and nothing goes
+stale in a repository, because the client asks again when its copy is older than
+five minutes.
+
+There are two kinds of skill there:
+
+| Skill | What it holds |
+| --- | --- |
+| `nigari` | The playbook below, the tool catalogue and the block to install. It is the zip's `SKILL.md` without the part about one workspace, so it reads the same for every workspace. |
+| `nigari-<workspace name>` | One for each workspace you may reach that has rules or database templates: the rules, the database templates you may read, and the block naming that workspace. A workspace with neither has no skill of its own. |
+
+A token sees only the workspace skills its reach allows, exactly as with the
+zip: a workspace outside a narrowed token's list, or one closed to agents, has
+no skill for it, listed or fetched. The details for client authors are in
+[MCP tools](mcp-tools.md#skills).
+
+The zip stays for agents and clients that cannot load skills over MCP; its
+content did not change when the MCP skills were added.
+
 ## What is inside the archive
 
 ```
@@ -110,6 +133,7 @@ nigari/
   README.md           how to install it, for a person
   reference/block.md  the block to paste into CLAUDE.md / AGENTS.md
   reference/tools.md  the tool catalogue, arranged by what you want to do
+  reference/howto.md  the spelling and examples the tool descriptions leave out
 ```
 
 ### SKILL.md
@@ -151,6 +175,17 @@ agent to load it at the start of any task that touches project knowledge), then:
 
 The block to install, on its own, in a fenced code block you can copy by hand,
 plus a short explanation of why a file beats a skill for this particular job.
+
+### reference/howto.md
+
+The details an agent needs only for some tasks, which the tool descriptions
+used to carry in full and now only name: how to write a page link, a diagram,
+callouts, toggles, columns and the other blocks in Markdown; the finer points
+of views (charts, changing a view's type, column order, grouping); and a
+worked `import_url` example for a Trello board. Every agent reads every tool
+description at the start of every conversation, so moving this text here made
+that start smaller (about 2.8 KB of the 55.7 KB tool list). Each description
+still names the feature and points to this file.
 
 ### reference/tools.md
 
@@ -239,7 +274,7 @@ existence.
 Tests in `server/skill_test.go` cover the mechanical part of this: that the
 bundle carries this instance's workspace name, id and rules; that the
 downloader's own API token, its stored hash and their own email address never
-appear in any of the four files; and that a workspace the account is not in is
+appear in any of the files; and that a workspace the account is not in is
 both refused and unnamed. They run with `go test ./...`; they are not part of
 `make build` or of the release workflows, and they do not check for member names.
 
@@ -256,7 +291,7 @@ README. Workspace rules change; this file does not.
 **Download it again when the instance changes**: a new public address, a new
 workspace worth pointing agents at, a rewritten set of rules you want in the
 playbook itself. Unpack the new bundle over the old `nigari/` folder: it is the
-same four paths every time, so all four are replaced.
+same five paths every time, so all five are replaced.
 
 The block already installed in `CLAUDE.md` needs re-visiting far less often: it
 carries the address and the workspace id, which rarely move, and it points at
