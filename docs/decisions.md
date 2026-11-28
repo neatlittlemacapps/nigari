@@ -7,6 +7,41 @@ entries are not edited away.
 
 ---
 
+## 2026-11-28 — The agent skill over MCP: one generator, no client declaration
+
+Spec 027, phase E (US4, plan D8).
+
+- **Served to any 2026-07-28 client.** The plan (T030) said "for a client
+  that declared `io.modelcontextprotocol/skills`". The extension defines no
+  client declaration: a client lists skills after it sees the server declare
+  the extension. Gating on a declaration no host sends would hide the skills
+  from every client. The legacy era does not get them; the extension is
+  written for 2026-07-28.
+- **`resources` is declared, and `resources/list` answers an empty list.**
+  The extension requires the resources capability (its files are read
+  through `resources/read`). Skill files are found through `skills/list`;
+  listing them again in `resources/list` would be a second index of the same
+  files, and nigari serves no other resource yet (pages as resources is
+  phase 6).
+- **One generator for the zip and MCP** (`skill.go`). `skillMain` takes
+  `overMCP`: the built-in skill names no workspace and points to the
+  workspace skills instead. The zip from `GET /api/skill` came out
+  byte-identical to before, checked by comparing both outputs with rules and
+  two workspaces. *Turned down*: static playbook files (plan D8).
+- **A workspace skill holds the rules, the readable database templates and
+  the block.** The name and template titles travel in the untrusted frame,
+  the rules in the frame that says to follow them. The description is
+  written into the frontmatter as a JSON string (YAML reads it as a
+  double-quoted scalar), so a workspace named "Product: Team #1" cannot break
+  it. Skill names follow the Agent Skills rules (lowercase, digits, hyphens,
+  64 at most); the start of the workspace id tells two same-named
+  workspaces apart.
+- **Five minutes, private.** `ttlMs` 300000 so a rule an admin changes
+  reaches agents within minutes (acceptance 5); `cacheScope: "private"`
+  because the list depends on the credential (FR-017).
+
+---
+
 ## 2026-11-28 — An import is a stored task; a workspace copy is one transaction
 
 Spec 027, phase D (US3, plan D6) and #1133.

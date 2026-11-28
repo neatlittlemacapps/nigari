@@ -80,10 +80,13 @@ and repeats its routing in headers. Methods answered:
 
 | Method | Answer |
 | --- | --- |
-| `server/discover` | The supported versions, the capabilities, `serverInfo` (name, version, icons) and the same instructions `initialize` gives |
+| `server/discover` | The supported versions, the capabilities (tools, resources, and the Tasks and Skills extensions), `serverInfo` (name, version, icons) and the same instructions `initialize` gives |
 | `tools/list` | The same catalogue as the legacy era, in the same order |
 | `tools/call` | The same result as the legacy era, except `import_url` for a client that declares the Tasks extension (see [Tasks](#tasks)) |
 | `tasks/get`, `tasks/update`, `tasks/cancel` | A task's state, an acknowledgement, a cancel (see [Tasks](#tasks)) |
+| `skills/list`, `skills/get` | The agent skills this credential is served (see [Skills](#skills)) |
+| `resources/read` | One skill file, by its `skill://` address |
+| `resources/list` | An empty list: skill files are found through `skills/list`, and nigari serves no other resource yet |
 | `notifications/*` | `202`, no body |
 
 `ping` and `logging/setLevel` are not answered in this era, because the
@@ -246,6 +249,46 @@ restart"), or when the token or connection that started it was revoked or its
 account deactivated, which stops it at its next record. A client without the
 extension gets the `job_id` answer and polls `get_import_status`, which reads
 the same stored record.
+
+#### Skills
+
+The agent skill that [the agent skill page](skill.md) describes as a zip is also
+served over MCP, so a 2026-07-28 client loads nigari's how-to only when a task
+calls for it. `server/discover` declares the Skills extension
+(`io.modelcontextprotocol/skills`) and the `resources` capability it needs. The
+extension asks nothing of the client in return: any 2026-07-28 client may call
+these methods. A legacy client gets "method not found".
+
+| Method | Params | Answer |
+| --- | --- | --- |
+| `skills/list` | none | `skills`: each with `uri` (its `SKILL.md`), `frontmatter` (`name`, `description`) and `resources`, every file with its `uri`, `digest` (`sha256:` and 64 hex characters) and `size` in bytes |
+| `skills/get` | `uri` of a `SKILL.md` | `skill`, the same entry for that one skill |
+| `resources/read` | `uri` of a file | `contents`: one entry with the `uri`, `mimeType: "text/markdown"` and the `text` |
+
+Files live at `skill://<skill name>/<path>`, for example
+`skill://nigari/reference/tools.md`. Every answer carries `ttlMs: 300000` (five
+minutes) and `cacheScope: "private"`: what a client is served depends on its
+credential, so no answer may be shared between two.
+
+| Skill | Files |
+| --- | --- |
+| `nigari` | `SKILL.md`, `reference/tools.md`, `reference/block.md` |
+| `nigari-<workspace name>` | `SKILL.md`, `reference/block.md` |
+
+A workspace skill exists for each workspace the credential may enter that has
+rules or database templates. Its name is the workspace's name in lowercase
+letters, digits and hyphens, with the start of the workspace id added when two
+workspaces would get the same name or the name has no letter or digit. Its
+`SKILL.md` holds the workspace id, the workspace's name and the database
+templates the person may read (in an untrusted frame, as people wrote them), and
+the rules in the frame that says to follow them. A rule changed by an admin
+reaches the skill at once, with a new digest; a client sees it after its five
+minutes.
+
+A skill the credential may not reach (a workspace outside a token's list, one
+closed to agents, one the person is not a member of) reads exactly like one that
+does not exist: `-32602`, "No skill is served at …", and the same for a file:
+"No resource is served at …".
 
 ### What a tool returns
 

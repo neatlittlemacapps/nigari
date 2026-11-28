@@ -102,6 +102,29 @@ it first. Leave it out and one of your workspaces is picked for you; there is no
 "default workspace" setting anywhere in the product, and the one picked need not
 be the one you have open. Pass `workspace` whenever it matters which you get.
 
+## Or over MCP, without downloading anything
+
+An agent connected with a current client (MCP revision 2026-07-28) does not need
+the zip at all: nigari serves the same skill over MCP, file by file, and the
+client loads it when a task calls for it. Nothing to unpack, and nothing goes
+stale in a repository, because the client asks again when its copy is older than
+five minutes.
+
+There are two kinds of skill there:
+
+| Skill | What it holds |
+| --- | --- |
+| `nigari` | The playbook below, the tool catalogue and the block to install. It is the zip's `SKILL.md` without the part about one workspace, so it reads the same for every workspace. |
+| `nigari-<workspace name>` | One for each workspace you may reach that has rules or database templates: the rules, the database templates you may read, and the block naming that workspace. A workspace with neither has no skill of its own. |
+
+A token sees only the workspace skills its reach allows, exactly as with the
+zip: a workspace outside a narrowed token's list, or one closed to agents, has
+no skill for it, listed or fetched. The details for client authors are in
+[MCP tools](mcp-tools.md#skills).
+
+The zip stays for agents and clients that cannot load skills over MCP; its
+content did not change when the MCP skills were added.
+
 ## What is inside the archive
 
 ```
