@@ -14,6 +14,7 @@ is the newest one.
 | `step-2.db` | `main` at `d106b79`, the last commit with step 2 as the newest step | step 3 |
 | `step-3.db` | `main` at `0977418`, the last commit with step 3 as the newest step | step 4 |
 | `step-4.db` | `main` at `f1918a8`, the last commit with step 4 as the newest step | step 5 |
+| `step-5.db` | `main` at `fe6d0f6`, the last commit with step 5 as the newest step | step 6 |
 
 ## Adding one
 
