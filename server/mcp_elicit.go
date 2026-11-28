@@ -256,16 +256,29 @@ func (s *Server) confirmQuestion(u *user, name string, a confirmArgs) (string, s
 		if rules != "" {
 			q = strings.TrimSuffix(q, "?") + ", and its workspace rules?"
 		}
-		return q, "New workspace: " + newName + "\nCopied from: " + from, nil
+		return q, "New workspace: " + untitled(newName) + "\nCopied from: " + untitled(from), nil
 	}
 	return "", "", nil
 }
 
+// untitled is how a title or name stands in the question: on one line, at
+// most 120 characters, with no run of dashes that could pass for the frame's
+// own marker. The frame is read by a person here, not only by a model, and a
+// title holding a newline and "----- END UNTRUSTED CONTENT -----" would put
+// its own words below a frame that looks closed, as if nigari said them
+// (security review, spec 027 phase 3).
 func untitled(title string) string {
-	if strings.TrimSpace(title) == "" {
+	t := strings.Join(strings.Fields(title), " ")
+	for strings.Contains(t, "--") {
+		t = strings.ReplaceAll(t, "--", "-")
+	}
+	if r := []rune(t); len(r) > 120 {
+		t = string(r[:119]) + "…"
+	}
+	if t == "" {
 		return "Untitled"
 	}
-	return title
+	return t
 }
 
 func countWord(n int, one, many string) string {
