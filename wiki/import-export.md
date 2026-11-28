@@ -313,10 +313,11 @@ Four behaviours to rely on:
 - **Only public addresses can be fetched.** Every resolved address is checked
   and then connected to directly, so an import cannot be used to reach the
   server's own network: a router, a hypervisor, a cloud metadata service. The
-  refusal names the address and the variable. That covers the shared carrier
-  range `100.64.x` too, so a Tailscale machine needs it. Whoever runs the server can open this up for
-  self-hosted sources with `NIGARI_IMPORT_ALLOW_PRIVATE=1`; it is deliberately not
-  a setting an agent can change.
+  refusal names the address and the variable that opens it. The shared
+  carrier range `100.64.x` counts as private too, so importing from a Tailscale
+  machine needs that variable. Whoever runs the server can open this up for
+  self-hosted sources with `NIGARI_IMPORT_ALLOW_PRIVATE=1`; it is deliberately
+  not a setting an agent can change.
 
 The call returns a `job_id` at once. Poll `get_import_status` with it every few
 seconds until the status reads `done`; the answer carries how many records were
